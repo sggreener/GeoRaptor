@@ -371,8 +371,15 @@
 							org.GeoRaptor.SpatialView.layers
 						</_exportcontents>
 						<Require-Bundle>
+							oracle.external.jdbc,
+							oracle.javaxide,
+							oracle.db-api,
 							oracle.ide,
+							oracle.ide.navigator,
+							oracle.layout-managers,
 							oracle.sqldeveloper,
+							oracle.sqldeveloper.snippet,
+							oracle.sqldeveloper.utils,
 							oracle.javatools-nodeps,
 							oracle.uic,
 							oracle.idert
