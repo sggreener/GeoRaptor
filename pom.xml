@@ -91,13 +91,6 @@
 		<!-- Add by Bessie -->
 		<dependency>
 			<groupId>oracle</groupId>
-			<artifactId>idert</artifactId>
-			<version>12.2.0</version>
-			<scope>system</scope>
-			<systemPath>${sqldev.basedir}/ide/lib/idert.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>oracle</groupId>
 			<artifactId>jdev-rt</artifactId>
 			<version>12.2.0</version>
 			<scope>system</scope>
