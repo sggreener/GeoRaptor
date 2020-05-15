@@ -21,7 +21,7 @@
 				</os>
 			</activation>
 			<properties>
-				<sqldev.basedir>C:/app/sqldeveloper19.1.0</sqldev.basedir>
+				<sqldev.basedir>D:\github\sqldeveloper19.1.0</sqldev.basedir>
 			</properties>
 		</profile>
 		<profile>
