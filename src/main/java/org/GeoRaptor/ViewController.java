@@ -1,12 +1,7 @@
 package org.GeoRaptor;
 
-import java.sql.Connection;
-
 import javax.swing.JOptionPane;
 
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel;
-import org.GeoRaptor.io.Import.ShapefileLoad;
-import org.GeoRaptor.io.Import.ShapefileLoadEmpty;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
@@ -79,7 +74,7 @@ public class ViewController implements Controller {
 			}
 		}else if (cmdId == LOAD_SHAPEFILE) {
 			if (checkConnection()) {			
-				ShapefileLoadEmpty.getInstance().initialise();
+//				ShapefileLoadEmpty.getInstance().initialise();
 			}else {
 				show("No active connection");
 			}
