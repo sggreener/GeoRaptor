@@ -240,26 +240,29 @@
 		</triggers>
 	</trigger-hooks>
 
+	<hooks>
+		<jdeveloper-hook
+			xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+			<addins>
+				<addin>org.GeoRaptor.PreferenceAddin</addin>
+				<addin>org.GeoRaptor.Menu</addin>
+				<!-- <addin>org.GeoRaptor.SpatialView.JDevInt.AnAddinSV</addin> <addin>org.GeoRaptor.Snippets.GeoRaptorSnippetsAddin</addin> 
+					<addin>org.GeoRaptor.SpatialView.JDevInt.SpatialColRendererAddin</addin> -->
+				<!-- <addin>org.GeoRaptor.Menu</addin> -->
+			</addins>
+			<gallery>
+				<item>
+					<name>org.GeoRaptor.MenuViewController</name>
+					<description>Oracle Spatial extension for Oracle SQL Developer
+					</description>
+					<help>Oracle Spatial extension for Oracle SQL Developer</help>
+					<category>General</category>
+					<folder>GeoRaptor</folder>
+					<parameter>java.lang.String</parameter>
+					<technologyKey>ESDK</technologyKey>
+				</item>
+			</gallery>
+		</jdeveloper-hook>
+	</hooks>
 
-	<jdeveloper-hook
-		xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
-		<addins>
-			<addin>org.GeoRaptor.PreferenceAddin</addin>
-			<!-- <addin>org.GeoRaptor.SpatialView.JDevInt.AnAddinSV</addin> <addin>org.GeoRaptor.Snippets.GeoRaptorSnippetsAddin</addin> 
-				<addin>org.GeoRaptor.SpatialView.JDevInt.SpatialColRendererAddin</addin> -->
-			<!-- <addin>org.GeoRaptor.Menu</addin> -->
-		</addins>
-		<gallery>
-			<item>
-				<name>org.GeoRaptor.MenuViewController</name>
-				<description>Oracle Spatial extension for Oracle SQL Developer
-				</description>
-				<help>Oracle Spatial extension for Oracle SQL Developer</help>
-				<category>General</category>
-				<folder>GeoRaptor</folder>
-				<parameter>java.lang.String</parameter>
-				<technologyKey>ESDK</technologyKey>
-			</item>
-		</gallery>
-	</jdeveloper-hook>
 </extension>
