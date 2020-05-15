@@ -1,0 +1,265 @@
+<extension id="org.GeoRaptor" version="#EXTENSION_VERSION#"
+	esdk-version="2.0" xmlns="http://jcp.org/jsr/198/extension-manifest"
+	rsbundle-class="org.GeoRaptor.Resources">
+	<name rskey="EXTENSION_NAME" />
+	<owner rskey="EXTENSION_OWNER" />
+
+	<!-- features may be used to enable/disable extensions without uninstalling 
+		them -->
+	<feature id="org.GeoRaptor"
+		xmlns="http://xmlns.oracle.com/ide/extension">
+		<category-id>db-category</category-id>
+		<name>#EXTENSION_NAME#</name>
+		<description><![CDATA[#EXTENSION_DESCRIPTION#]]></description>
+		<type>
+			<service can-user-disable="true" reload-if-used="true" />
+		</type>
+	</feature>
+
+	<!-- register rules, actions, controllers and context menu items -->
+	<trigger-hooks
+		xmlns="http://xmlns.oracle.com/ide/extension">
+		<rules>
+			<rule id="table-show-menu" type="context-has-element">
+				<parameters>
+					<param name="element-class"
+						value="oracle.dbtools.raptor.navigator.impl.ObjectNode" />
+				</parameters>
+			</rule>
+			<rule id="table-menu" type="context-has-element">
+				<parameters>
+					<param name="element-class"
+						value="oracle.dbtools.raptor.navigator.impl.ObjectFolder" />
+				</parameters>
+			</rule>
+			<composite-rule id="table-show-menu-comp">
+				<and>
+		<!-- Don't really need this, just showing composite and how to specify 
+						multiple/single selection constraints -->
+					<or>
+						<rule-reference id="on-multiple-selection" />
+						<rule-reference id="on-single-selection" />
+					</or>
+					<rule-reference id="table-show-menu" />
+				</and>
+			</composite-rule>
+			<composite-rule id="table-menu-comp">
+				<and>
+					<or>
+						<rule-reference id="on-multiple-selection" />
+						<rule-reference id="on-single-selection" />
+					</or>
+					<rule-reference id="table-menu" />
+				</and>
+			</composite-rule>
+		</rules>
+		<triggers xmlns:c="http://xmlns.oracle.com/ide/customization">
+			<actions
+				xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+
+				<!-- object context menu -->
+				<action id="ZOOM_TO_MAP">
+					<properties>
+						<property name="Name">Zoom to Map</property>
+					</properties>
+				</action>
+				<action id="ADD_TO_MAP">
+					<properties>
+						<property name="Name">Add to Map</property>
+					</properties>
+				</action>
+				<action id="CREATE_SPATIAL_INDEX">
+					<properties>
+						<property name="Name">Create Spatial Index</property>
+					</properties>
+				</action>
+				<action id="DROP_SPATIAL_INDEX">
+					<properties>
+						<property name="Name">Drop Spatial Index</property>
+					</properties>
+				</action>
+				<action id="MANAGE_METADATA">
+					<properties>
+						<property name="Name">Manage Metadata</property>
+					</properties>
+				</action>
+				<action id="DROP_METADATA">
+					<properties>
+						<property name="Name">Drop Metadata</property>
+					</properties>
+				</action>
+				<action id="EXPORT">
+					<properties>
+						<property name="Name">Export</property>
+					</properties>
+				</action>
+				<action id="VALIDATE_GEOMETRY">
+					<properties>
+						<property name="Name">Validate geometry</property>
+					</properties>
+				</action>
+
+				<!-- table context menu -->
+				<action id="IMPORT_SHAPEFILE">
+					<properties>
+						<property name="Name">Import Shapefile</property>
+					</properties>
+				</action>
+
+				<!-- view menu -->
+				<action id="OPEN_MAP">
+					<properties>
+						<property name="Name">${VIEW_SUBMENU_1_LABEL}</property>
+						<property name="SmallIcon">res:${SUBMENU_ONE_ICON}</property>
+					</properties>
+				</action>
+				<action id="MANAGE_ALL_METADATA">
+					<properties>
+						<property name="Name">${VIEW_SUBMENU_2_LABEL}</property>
+						<property name="SmallIcon">res:${SUBMENU_TWO_ICON}</property>
+					</properties>
+				</action>
+				<action id="LOAD_SHAPEFILE">
+					<properties>
+						<property name="Name">${VIEW_SUBMENU_3_LABEL}</property>
+						<property name="SmallIcon">res:${SUBMENU_THREE_ICON}</property>
+					</properties>
+				</action>
+				<action id="ABOUT_GEORAPTOR">
+					<properties>
+						<property name="Name">${VIEW_SUBMENU_4_LABEL}</property>
+						<property name="SmallIcon">res:${SUBMENU_FOUR_ICON}</property>
+					</properties>
+				</action>
+			</actions>
+
+			<!-- controller -->
+			<controllers
+				xmlns="http://xmlns.oracle.com/ide/extension">
+				<controller
+					class="org.GeoRaptor.TableContextMenuController">
+					<update-rules>
+						<update-rule rule="always-enabled">
+							<action id="ZOOM_TO_MAP" />
+							<action id="ADD_TO_MAP" />
+							<action id="CREATE_SPATIAL_INDEX" />
+							<action id="DROP_SPATIAL_INDEX" />
+							<action id="MANAGE_METADATA" />
+							<action id="DROP_METADATA" />
+							<action id="EXPORT" />
+							<action id="VALIDATE_GEOMETRY" />
+							<action id="IMPORT_SHAPEFILE" />
+						</update-rule>
+					</update-rules>
+				</controller>
+				<controller class="org.GeoRaptor.ViewController">
+					<update-rules>
+						<update-rule rule="always-enabled">
+							<action id="OPEN_MAP" />
+							<action id="MANAGE_ALL_METADATA" />
+							<action id="LOAD_SHAPEFILE" />
+							<action id="ABOUT_GEORAPTOR" />
+						</update-rule>
+					</update-rules>
+				</controller>
+			</controllers>
+			<!-- /controller -->
+
+			<!-- context-menu -->
+			<context-menu-hook rule="table-show-menu">
+				<site idref="db_nav" />
+				<menu>
+					<section xmlns="http://jcp.org/jsr/198/extension-manifest"
+						id="CONTEXT_MENU_SECTION_ID" weight="0.1">
+						<menu id="CONTEXT_SUBMENU_ID" weight="2.0f">
+							<label>GeoRaptor</label>
+							<section id="CONTEXT_SUBMENU_SECTION_ID" weight="10.0f">
+								<item action-ref="ZOOM_TO_MAP" />
+								<item action-ref="ADD_TO_MAP" />
+								<item action-ref="CREATE_SPATIAL_INDEX" />
+								<item action-ref="DROP_SPATIAL_INDEX" />
+								<item action-ref="MANAGE_METADATA" />
+								<item action-ref="DROP_METADATA" />
+								<item action-ref="EXPORT" />
+								<item action-ref="VALIDATE_GEOMETRY" />
+							</section>
+						</menu>
+					</section>
+				</menu>
+			</context-menu-hook>
+			<context-menu-hook rule="table-menu">
+				<site idref="db_nav" />
+				<menu>
+					<section xmlns="http://jcp.org/jsr/198/extension-manifest"
+						id="CONTEXT_TABLLEMENU_SECTION_ID" weight="0.1">
+						<menu id="CONTEXT_TABLLESUBMENU_ID" weight="2.0f">
+							<label>GeoRaptor</label>
+							<section id="CONTEXT_TABLLESUBMENU_SECTION_ID"
+								weight="10.0f">
+								<item action-ref="IMPORT_SHAPEFILE" />
+							</section>
+						</menu>
+					</section>
+				</menu>
+			</context-menu-hook>
+			<!-- /context-menu -->
+
+			<!-- menu -->
+			<menu-hook
+				xmlns="http://jcp.org/jsr/198/extension-manifest">
+				<menus>
+					<menubar id="javax.ide.view.MAIN_WINDOW_MENUBAR_ID">
+						<menu id="javax.ide.VIEW_MENU_ID">
+							<section id="VIEW_MENU_SECTION_ID" weight="0.3f">
+								<menu id="VIEW_SUBMENU_ID" weight="2.0f">
+									<label>GeoRaptor</label>
+									<iconpath>org/GeoRaptor/images/two.png</iconpath>
+									<section id="VIEW_SUBMENU_SECTION_ID" weight="10.0f">
+										<item action-ref="OPEN_MAP" />
+										<item action-ref="MANAGE_ALL_METADATA" />
+										<item action-ref="LOAD_SHAPEFILE" />
+										<item action-ref="ABOUT_GEORAPTOR" />
+									</section>
+								</menu>
+							</section>
+						</menu>
+					</menubar>
+				</menus>
+			</menu-hook>
+			<!-- /menu -->
+
+			<!-- preference -->
+			<settings-ui-hook>
+				<page id="PREFERENCES_PAGE_ID" parent-idref="/preferences">
+					<label>${PREFERENCES_TITEL}</label>
+					<traversable-class>org.GeoRaptor.PreferencePanel</traversable-class>
+				</page>
+			</settings-ui-hook>
+			<!-- /preference -->
+
+		</triggers>
+	</trigger-hooks>
+
+
+	<jdeveloper-hook
+		xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+		<addins>
+			<addin>org.GeoRaptor.PreferenceAddin</addin>
+			<!-- <addin>org.GeoRaptor.SpatialView.JDevInt.AnAddinSV</addin> <addin>org.GeoRaptor.Snippets.GeoRaptorSnippetsAddin</addin> 
+				<addin>org.GeoRaptor.SpatialView.JDevInt.SpatialColRendererAddin</addin> -->
+			<!-- <addin>org.GeoRaptor.Menu</addin> -->
+		</addins>
+		<gallery>
+			<item>
+				<name>org.GeoRaptor.MenuViewController</name>
+				<description>Oracle Spatial extension for Oracle SQL Developer
+				</description>
+				<help>Oracle Spatial extension for Oracle SQL Developer</help>
+				<category>General</category>
+				<folder>GeoRaptor</folder>
+				<parameter>java.lang.String</parameter>
+				<technologyKey>ESDK</technologyKey>
+			</item>
+		</gallery>
+	</jdeveloper-hook>
+</extension>

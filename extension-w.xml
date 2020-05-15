@@ -1,0 +1,44 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<extension xmlns="http://jcp.org/jsr/198/extension-manifest"
+              id="org.GeoRaptor" 
+         version="19.1" 
+    esdk-version="2.0"
+  rsbundle-class="org.GeoRaptor.Resources">
+  <name>GeoRaptor</name>
+  <owner>GeoRaptor Development Team at SourceForge</owner>
+  
+  
+  <hooks xmlns:c="http://xmlns.oracle.com/ide/customization">
+    <sqldev-navigator-hook xmlns="http://xmlns.oracle.com/sqldeveloper/sqldev-navigator">
+      <descriptor>/org/GeoRaptor/xml/navigator.xml</descriptor>
+    </sqldev-navigator-hook>
+    
+    <jdeveloper-hook xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+      <addins>
+        <addin>org.GeoRaptor.Menu</addin>
+        <addin>org.GeoRaptor.PreferenceAddin</addin>
+        <addin>org.GeoRaptor.SpatialView.JDevInt.AnAddinSV</addin>
+        <!--addin>org.GeoRaptor.Snippets.GeoRaptorSnippetsAddin</addin-->
+        <addin>org.GeoRaptor.SpatialView.JDevInt.SpatialColRendererAddin</addin>
+      </addins>
+      <gallery>
+        <item>
+          <name>org.GeoRaptor.MenuViewController</name>
+          <category>General</category>
+          <folder>GeoRaptor</folder>
+          <description>Oracle Spatial extension for Oracle SQL Developer</description>
+          <help>Oracle Spatial extension for Oracle SQL Developer</help>
+          <technologyKey>ESDK</technologyKey>
+        </item>
+      </gallery>
+    </jdeveloper-hook>
+    
+    <settings-ui-hook xmlns="http://xmlns.oracle.com/ide/extension">
+      <page id="Preferences" parent-idref="/preferences">
+        <label>GeoRaptor</label>
+        <traversable-class>org.GeoRaptor.PreferencePanel</traversable-class>
+      </page>
+    </settings-ui-hook>
+  </hooks>
+</extension>
+
