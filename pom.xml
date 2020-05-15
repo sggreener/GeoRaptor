@@ -163,10 +163,8 @@
 		
 		<dependency>
 			<groupId>com.vividsolutions</groupId>
-			<artifactId>jts</artifactId>
-			<version>1.13</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/org/GeoRaptor/lib/jts.jar</systemPath>
+			<artifactId>jts-ora</artifactId>
+			<version>1.14.0</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
