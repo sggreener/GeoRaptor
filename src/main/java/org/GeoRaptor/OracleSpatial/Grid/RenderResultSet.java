@@ -211,7 +211,7 @@ public class RenderResultSet
         this.propertyManager = new PropertiesManager(RenderResultSet.propertiesFile);
         this.mainPrefs = MainSettings.getInstance().getPreferences();
         this.renderTool = new RenderTool();
-        makeVisible();
+        //makeVisible();
         initAction();
     }
     
