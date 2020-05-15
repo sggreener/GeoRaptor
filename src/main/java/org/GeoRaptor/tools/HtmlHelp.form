@@ -1,0 +1,97 @@
+<?xml version="1.1" encoding="UTF-8" ?>
+
+<Form version="1.3" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+  <Properties>
+    <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+      <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
+        <TitledBorder title="Metadata Manager Help">
+          <Border PropertyName="innerBorder" info="org.netbeans.modules.form.compat2.border.EmptyBorderInfo">
+            <EmptyBorder/>
+          </Border>
+          <Font PropertyName="font" name="SansSerif" size="14" style="1"/>
+        </TitledBorder>
+      </Border>
+    </Property>
+    <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+      <Dimension value="[860, 685]"/>
+    </Property>
+  </Properties>
+  <AccessibilityProperties>
+    <Property name="AccessibleContext.accessibleParent" type="javax.accessibility.Accessible" editor="org.netbeans.modules.form.RADVisualComponent$AccessibleParentEditor">
+      <ComponentRef name="Form"/>
+    </Property>
+  </AccessibilityProperties>
+  <AuxValues>
+    <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/>
+    <AuxValue name="FormSettings_generateMnemonicsCode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_i18nAutoMode" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_layoutCodeTarget" type="java.lang.Integer" value="1"/>
+    <AuxValue name="FormSettings_listenerGenerationStyle" type="java.lang.Integer" value="0"/>
+    <AuxValue name="FormSettings_variablesLocal" type="java.lang.Boolean" value="false"/>
+    <AuxValue name="FormSettings_variablesModifier" type="java.lang.Integer" value="2"/>
+  </AuxValues>
+
+  <Layout>
+    <DimensionLayout dim="0">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="spHtml" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+          </Group>
+      </Group>
+    </DimensionLayout>
+    <DimensionLayout dim="1">
+      <Group type="103" groupAlignment="0" attributes="0">
+          <Component id="spHtml" alignment="1" max="32767" attributes="0"/>
+      </Group>
+    </DimensionLayout>
+  </Layout>
+  <SubComponents>
+    <Container class="javax.swing.JScrollPane" name="spHtml">
+      <Properties>
+        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="cc" green="cc" red="cc" type="rgb"/>
+        </Property>
+        <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+          <Border info="null"/>
+        </Property>
+        <Property name="horizontalScrollBarPolicy" type="int" value="32"/>
+        <Property name="verticalScrollBarPolicy" type="int" value="22"/>
+        <Property name="viewportBorder" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+          <Border info="org.netbeans.modules.form.compat2.border.EmptyBorderInfo">
+            <EmptyBorder/>
+          </Border>
+        </Property>
+        <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="null"/>
+        </Property>
+        <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="null"/>
+        </Property>
+        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[830, 656]"/>
+        </Property>
+      </Properties>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="javax.swing.JTextPane" name="tpHtml">
+          <Properties>
+            <Property name="contentType" type="java.lang.String" value="text/html"/>
+            <Property name="editable" type="boolean" value="false"/>
+            <Property name="text" type="java.lang.String" value="&lt;html&gt;This dialog box is used to manage spatial metadata in the xxx_SDO_GEOM_METADATA views.&lt;p&gt;The dialog can be accessed in two ways:&lt;ol&gt;&lt;li&gt;By right clicking on a Table/Column/View/Synonym/Materialised View, and selecting &lt;i&gt;GeoRaptor-&gt;Manage Metadata&lt;/i&gt;&lt;/li&gt;&lt;li&gt;By selecting &lt;i&gt;View-&gt;GeoRaptor-&gt;Manage All Metadata&lt;/i&gt;&lt;/li&gt;&lt;/ol&gt;&lt;/p&gt;&lt;h4&gt;&lt;u&gt;Current Object Metadata&lt;/u&gt;&lt;/h4&gt;&lt;p&gt; The top half of the dialog displays the details for the currently selected object.  If any metadata exists for the object then it is displayed in the &lt;i&gt;Dim Array Elements&lt;/i&gt; section.&lt;/p&gt;&lt;p&gt;&lt;b&gt;SRID:&lt;/b&gt; To change the SRID for the current object metadata, enter the new value in the text box, or use the &lt;i&gt;Select SRID&lt;/i&gt; dialog to choose one.&lt;/p&gt;&lt;b&gt;Connection:&lt;/b&gt; Use the &lt;i&gt;Name&lt;/i&gt; drop down list to switch to another open connection.  If new connections have been opened since the modal Manage Metadata dialog was first launched, use the &lt;i&gt;Reload Connections&lt;/i&gt; button to refresh the list of available open connections.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Calculate Elements:&lt;/b&gt; By clicking this button, a SQL query is executed to calculate the bounds of the SDO_GEOMETRY data in the current object.  Depending on the size of the object, this query can take a while to execute.  Use the &lt;i&gt;Sample&lt;/i&gt; slider to indicate the percentage of the object data to be queried.  When complete, the results are populated in the &lt;i&gt;Dim Array Elements&lt;/i&gt; table.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Edit Dim Array Elements:&lt;/b&gt; To enter specific values, type directly in the table.  To delete an element, select a row and press the &lt;i&gt;Delete&lt;/i&gt; key.  Use the &lt;i&gt;Add Element&lt;/i&gt; button to add a new row to the table.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Apply:&lt;/b&gt; After the metadata values for an object have been set, press the &lt;i&gt;Apply&lt;/i&gt; button to run the update statement against the XXX_SDO_GEOM_METADATA view.  Note that pressing &lt;i&gt;Close&lt;/i&gt; does &lt;u&gt;not&lt;/u&gt; result in the update statement being run, therefore the &lt;i&gt;Apply&lt;/i&gt; button must be used.&lt;/p&gt;&lt;h4&gt;&lt;u&gt;All metadata for user &lt;i&gt;xxx&lt;/i&gt;&lt;/u&gt;&lt;/h4&gt;&lt;p&gt; The bottom half of the dialog displays a colour-coded list of all the &lt;i&gt;existing&lt;/i&gt; and &lt;i&gt;potential&lt;/i&gt; metadata for objects containing SDO_GEOMETRY columns.  The SQL used to populate the table queries the XXX_SDO_GEOM_METADATA and XXX_TAB_COLUMNS views to retrieve a list of all metadata entries along with all objects with columns of data type SDO_GEOMETRY.&lt;/br&gt;Entries in the table are colour-coded depending based on the following: &lt;ul&gt;&lt;li&gt;&lt;font style=&quot;background-color: #A7F287&quot;&gt;Database Object Has Metadata &lt;/font&gt;&lt;/br&gt;An objects exists in XXX_TAB_COLUMNS with data type SDO_GEOMETRY and a corresponding entry exists in XXX_SDO_GEOM_METADATA.&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;background-color: #FF5053&quot;&gt;No Database Object - Orphan Metadata &lt;/font&gt;&lt;/br&gt;An entry exists in XXX_SDO_GEOM_METADATA but no corresponding object exists in XXX_TAB_COLUMNS with data type SDO_GEOMETRY.&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;background-color: #716FFD&quot;&gt;Database Object with Geometry - No Metadata&lt;/font&gt;&lt;/br&gt;An objects exists in XXX_TAB_COLUMNS with data type SDO_GEOMETRY but no corresponding entry exists in XXX_SDO_GEOM_METADATA.&lt;/li&gt;&lt;/ul&gt; Check/Uncheck the colour-coded check boxes under the table to toggle display of entries matching that criteria.&lt;p&gt; Note that the colours can be changed in &lt;i&gt;Tools-&gt;Preferences-&gt;GeoRaptor&lt;/i&gt;&lt;/p&gt;&lt;p&gt; If the &lt;b&gt;All schemas&lt;/b&gt; checkbox is selected, then the table displays entries for ALL_* views.  When deselected, the table displays entries for USER_* views.&lt;/p&gt;&lt;b&gt;Table selection&lt;/b&gt;&lt;ul&gt;&lt;li&gt; Right-click on a row in the table and select &lt;i&gt;Copy entry to clipboard&lt;/i&gt; to copy the row contents to the clipboard.&lt;/li&gt;&lt;li&gt; Right-click on a row in the table and select &lt;i&gt;Delete Entry&lt;/i&gt; to delete the entry from the XXX_SDO_GEOM_METADATA view.&lt;/li&gt;&lt;li&gt; Right-click on a row in the table and select &lt;i&gt;Copy diminfo values to current metadata record &lt;/i&gt; to load the metadata for the selected object into the &lt;i&gt;Dim Array Elements&lt;/i&gt; table for the object whose metadata is currently being managed.&lt;/li&gt;&lt;li&gt; Right-click on a row in the table and select &lt;i&gt;Switch to managing this meatdata entry&lt;/i&gt; to make this the Current Object for which metadata is being managed. Note that double clicking on a row has the same affect.&lt;/li&gt;&lt;/ul&gt;&lt;/p&gt;&lt;/html&gt;"/>
+            <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+              <Dimension value="[0, 0]"/>
+            </Property>
+            <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+              <Dimension value="[840, 640]"/>
+            </Property>
+          </Properties>
+        </Component>
+      </SubComponents>
+    </Container>
+  </SubComponents>
+</Form>

@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="dialogs.xsd">
+	<!--Create folder with thee menu items for GeoRaptor-->
+    <folder type="TABLE_FOLDER">
+        <name>GeoRaptor</name>
+        <item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="importNew" selectionMode="SINGLE" weight="0">
+            <title>Import Shapefile</title>
+        </item>
+    </folder>
+    <folder type="TABLE" connType="MySQL">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="add2map" selectionMode="SINGLE" weight="0">
+			<title>Add to Map</title>
+		</item>    
+    </folder>
+    <folder type="TABLE">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="create_index" selectionMode="SINGLE" weight="2">
+			<title>Create Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="drop_index" selectionMode="SINGLE" weight="3">
+			<title>Drop Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="metadata" selectionMode="SINGLE" weight="4">
+			<title>Manage Metadata</title>
+		</item>
+	   	<item type="TABLE" weight="5">
+	        	<title>Drop Metadata</title>
+	        	<prompt>
+	            		<label>Column</label>
+	            		<value>
+					<![CDATA[select column_name from user_sdo_geom_metadata where table_name = :OBJECT_NAME]]>
+	            		</value>
+	            		<default>
+	              	 		<![CDATA[select column_name from user_sdo_geom_metadata where table_name = :OBJECT_NAME and ROWNUM = 1 ]]>
+	            		</default>
+	        	</prompt>
+	        	<prompt reload="true:0" type="confirm">
+	            		<label>Press Apply To Delete Metadata</label>
+	        	</prompt>
+	        	<sql>
+	            		<![CDATA[DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '#OBJECT_NAME#' AND COLUMN_NAME = '#0#']]>
+	        	</sql>
+	        	<help>Delete Metadata on the selected column.</help>
+	        	<confirmation>
+	            		<title>Result</title>
+	            		<prompt>Spatial Metadata on "#OBJECT_NAME#"."#0#" has been deleted</prompt>
+	        	</confirmation>
+	    	</item>    
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="export" selectionMode="SINGLE" weight="6">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="TABLE" classArgs="validate" selectionMode="SINGLE" weight="7">
+			<title>Validate geometry</title>
+		</item>
+	</folder>
+    <folder type="COLUMN" connType="MySQL">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_add2map" selectionMode="SINGLE" weight="0">
+			<title>Add to Map</title>
+		</item>    
+    </folder>
+	<folder type="COLUMN">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_create_index" selectionMode="SINGLE" weight="2">
+			<title>Create Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_drop_index" selectionMode="SINGLE" weight="3">
+			<title>Drop Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_metadata" selectionMode="SINGLE" weight="4">
+			<title>Manage Metadata</title>
+		</item>
+        <item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_export" selectionMode="SINGLE" weight="5">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="COLUMN" classArgs="column_validate" selectionMode="SINGLE" weight="6">
+			<title>Validate geometry</title>
+		</item>
+	</folder>
+	<folder type="MATERIALIZED VIEW">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="create_index" selectionMode="SINGLE" weight="2">
+			<title>Create Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="drop_index" selectionMode="SINGLE" weight="3">
+			<title>Drop Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="metadata" selectionMode="SINGLE" weight="4">
+			<title>Manage Metadata</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="export" selectionMode="SINGLE" weight="5">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MATERIALIZED VIEW" classArgs="validate" selectionMode="SINGLE" weight="6">
+			<title>Validate geometry</title>
+		</item>
+	</folder>
+    <folder type="MV_COLUMN">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_create_index" selectionMode="SINGLE" weight="2">
+			<title>Create Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_drop_index" selectionMode="SINGLE" weight="3">
+			<title>Drop Spatial Index</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_metadata" selectionMode="SINGLE" weight="4">
+			<title>Manage Metadata</title>
+		</item>
+        <item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_export" selectionMode="SINGLE" weight="5">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="MV_COLUMN" classArgs="column_validate" selectionMode="SINGLE" weight="6">
+			<title>Validate geometry</title>
+		</item>
+    </folder>
+	<folder type="VIEW">
+		<name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW" classArgs="zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW" classArgs="add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW" classArgs="metadata" selectionMode="SINGLE" weight="2">
+			<title>Manage Metadata</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW" classArgs="export" selectionMode="SINGLE" weight="3">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW" classArgs="validate" selectionMode="SINGLE" weight="4">
+			<title>Validate geometry</title>
+		</item>
+	</folder>
+    <folder type="VIEW_COLUMN">
+        <name>GeoRaptor</name>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW_COLUMN" classArgs="zoom2map" selectionMode="SINGLE" weight="0">
+			<title>Zoom to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW_COLUMN" classArgs="add2map" selectionMode="SINGLE" weight="1">
+			<title>Add to Map</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW_COLUMN" classArgs="metadata" selectionMode="SINGLE" weight="2">
+			<title>Manage Metadata</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW_COLUMN" classArgs="export" selectionMode="SINGLE" weight="3">
+			<title>Export</title>
+		</item>
+		<item className="org.GeoRaptor.MenuAction" type="VIEW_COLUMN" classArgs="validate" selectionMode="SINGLE" weight="4">
+			<title>Validate geometry</title>
+		</item>
+    </folder>
+    
+        <!-- The Spatial network folder has to exist. See navigator.xml for the following to appear-->
+        <item type="SPATIAL_NETWORK_FOLDER" reloadparent="true">
+            <title>Create SDO Network...</title>
+		    <prompt required="true" validator="charset">
+			  <label>New Network Name</label>
+		    </prompt>
+            <prompt required="true">
+              <label>Number of Hierarchy Levels</label>
+            </prompt> 		
+            <prompt required="true">
+              <label>Directed</label>
+			  <value>STATIC:TRUE:FALSE</value>
+            </prompt> 		
+            <prompt required="true">
+              <label>Cost on Nodes</label>
+			  <value>STATIC:TRUE:FALSE</value>
+            </prompt> 		
+            <sql><![CDATA[
+declare
+begin
+   SDO_NET.CREATE_SDO_NETWORK('#0#', #1#, #2#, #3#);
+end;
+                       ]]>
+            </sql>
+        </item>
+        <item type="SPATIAL_NETWORK_FOLDER" reloadparent="true">
+           <title>Create Topology Network...</title>
+		   <prompt required="true" validator="charset">
+		      <label>New Network Name</label>
+		   </prompt>
+           <prompt required="true">
+              <label>Number of Hierarchy Levels</label>
+           </prompt> 		
+           <prompt required="true">
+              <label>Directed</label>
+		      <value>STATIC:TRUE:FALSE</value>
+           </prompt> 		
+           <prompt required="true">
+              <label>Cost on Nodes</label>
+		      <value>STATIC:TRUE:FALSE</value>
+           </prompt> 		
+           <sql><![CDATA[
+declare
+begin
+   SDO_NET.CREATE_TOPO_NETWORK('#0#', #1#, #2#, #3#);
+end;
+                       ]]>
+           </sql>
+        </item> 
+        <item type="SPATIAL_NETWORK_FOLDER" reloadparent="true">
+           <title>Create Logical Network...</title>
+		   <prompt required="true" validator="charset">
+		      <label>New Network Name</label>
+		   </prompt>
+           <prompt required="true">
+              <label>Number of Hierarchy Levels</label>
+           </prompt> 		
+           <prompt required="true">
+              <label>Directed</label>
+		      <value>STATIC:TRUE:FALSE</value>
+           </prompt> 		
+           <prompt required="true">
+              <label>Cost on Nodes</label>
+		      <value>STATIC:TRUE:FALSE</value>
+           </prompt> 		
+           <sql><![CDATA[
+declare
+begin
+   SDO_NET.CREATE_LOGICAL_NETWORK('#0#', #1#, #2#, #3#);
+end;
+                       ]]>
+           </sql>
+        </item> 
+
+        <!-- A Spatial network has to exist in a folder under the main one for the following two items to appear-->
+        <item type="SPATIAL_NETWORK" reloadparent="true">
+            <title>Copy Network...</title>
+            <prompt required="true" validator="charset">
+              <label>New Network Name</label>
+		    </prompt>
+            <sql><![CDATA[
+declare
+begin
+  SDO_NET.COPY_NETWORK('#OBJECT_NAME#', '#0#');
+end;
+                       ]]>
+            </sql>
+        </item> 
+        <item type="SPATIAL_NETWORK" removeFromParent="true">
+            <title>Drop Network...</title>
+            <prompt type="confirm">
+			  <label>Are you sure you want to drop this network?</label>
+		    </prompt>
+            <sql><![CDATA[
+declare
+begin
+  SDO_NET.DROP_NETWORK('#OBJECT_NAME#');
+end;
+                       ]]>
+           </sql>
+        </item> 
+
+</items>
