@@ -354,6 +354,22 @@
 						<Export-Package>
 							org.GeoRaptor
 						</Export-Package>
+						<_exportcontents>
+							com.vividsolutions.jts.algorithm,
+							com.vividsolutions.jts.geom,
+							com.vividsolutions.jts.math,
+							org.geotools.data,
+							org.geotools.data.shapefile,
+							org.geotools.data.shapefile.shp,
+							org.GeoRaptor.sql,
+							org.GeoRaptor.tools,
+							org.GeoRaptor.OracleSpatial.Metadata,
+							org.GeoRaptor.OracleSpatial.ValidateSDOGeometry,
+							org.GeoRaptor.SpatialView.JDevInt,
+							org.GeoRaptor.SpatialView, 
+							org.GeoRaptor.SpatialView.SupportClasses,
+							org.GeoRaptor.SpatialView.layers
+						</_exportcontents>
 						<Require-Bundle>
 							oracle.ide,
 							oracle.sqldeveloper,
