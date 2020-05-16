@@ -1,10 +1,10 @@
 package org.GeoRaptor.SpatialView.layers;
 
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.PrecisionModel;
-import com.vividsolutions.jts.io.oracle.OraReader;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.oracle.OraReader;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -463,7 +463,7 @@ public class SVSpatialLayerDraw {
             
             // Now do the calculation
             //
-            com.vividsolutions.jts.geom.Point p = geo.getInteriorPoint();
+            org.locationtech.jts.geom.Point p = geo.getInteriorPoint();
             if ( p == null ) {
                 LOGGER.warn("Could not compute centroid.");
                 return null;

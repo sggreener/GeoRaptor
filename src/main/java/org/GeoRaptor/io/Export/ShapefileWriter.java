@@ -17,9 +17,9 @@ package org.GeoRaptor.io.Export;
  *    Lesser General Public License for more details.
  *
  */
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
 
 import java.io.File;
 import java.io.FileNotFoundException;
