@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2016 Vivid Solutions.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v. 1.0 which accompanies this distribution.
+ * The Eclipse Public License is available at http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *
+ * http://www.eclipse.org/org/documents/edl-v10.php.
+ */
+
+package org.locationtech.jts.io.oracle;
+
+import java.math.BigDecimal;
+
+import java.sql.Array;
+import java.sql.SQLException;
+import java.sql.Struct;
+
+import oracle.jdbc.OracleArray;
+import oracle.jdbc.OracleConnection;
+
+import oracle.sql.NUMBER;
+
+/**
+ * Utility methods for working with Oracle structures.
+ *
+ * @author Martin Davis
+ *
+ */
+public class OraUtil
+{
+  /**
+   * Converts an Oracle <code>Datum</code> into an <code>int</code> value, 
+   * with a default value used if the datum is NULL.
+   * 
+   * @param datum the Oracle Datum
+   * @param defaultValue the value to use for NULLs
+   * @return an integer value
+   * @throws SQLException if an error occurs
+   */
+    public static int toInteger(Object datum,
+                                int    defaultValue) 
+    {
+      // Note Returning null for null sdo_geometry structure
+        if (datum == null) 
+          return defaultValue;
+        
+        BigDecimal bigDec = (BigDecimal)datum;
+        if (bigDec == null) {
+            return defaultValue;
+        }
+        return bigDec.intValue();
+    }
+
+  /**
+   * Converts an Oracle <code>ARRAY</code> into a <code>int</code> array, 
+   * with a default value used to represent NULL values.
+   * 
+   * @param array an Oracle ARRAY of integer values
+   * @param defaultValue the value to use for NULL values
+   * @return an array of ints
+   * @throws SQLException if an error was encountered
+   */
+  // Changed 17th August 2019
+  public static int[] toIntArray(Array array, 
+                                 int defaultValue) 
+  throws SQLException
+  {
+      if (array == null) 
+          return null;
+      
+      OracleArray intOArray = (OracleArray)array;
+      Object[]    intArray = (Object[])intOArray.getArray();
+      int[]           ints = new int[intArray.length];    
+      BigDecimal bd;
+      for (int i =0; i < intArray.length; i++) { 
+          bd = (BigDecimal)intArray[i];
+          ints[i] = (defaultValue == 0) ? bd.intValue() : defaultValue;
+      }
+      return ints;
+  }
+
+  /** Presents Datum[] as a int[] */
+  public static int[] toIntArray(Object[] data, final int defaultValue)
+      throws SQLException
+  {
+    if (data == null)
+      return null;
+        
+    int array[] = new int[data.length];
+    for (int i = 0; i < data.length; i++) {
+      array[i] = toInteger(data[i], defaultValue);
+    }
+    return array;
+  }
+
+
+  /** Presents array as a double[] */
+  // Changed 17th August 2019
+  public static double[] toDoubleArray(Array array, final double defaultValue)
+      throws SQLException
+  {
+      if ( array == null )
+          return null;
+      
+      OracleArray dblOArray = (OracleArray)array;
+      Object[]     dblArray = (Object[])dblOArray.getArray();
+      double[]         dbls = new double[dblArray.length];    
+      BigDecimal bd;
+      for (int i =0; i < dblArray.length; i++) { 
+          bd = (BigDecimal)dblArray[i];
+          dbls[i] = Double.isNaN(defaultValue) ? bd.doubleValue() : defaultValue;
+      }
+      return dbls;
+  }
+
+    /**
+     * An SDO_POINT_TYPE object is not an array but a Struct.
+     * This method converts the contents of the SDO_POINT object within an SDO_GEOMETRY to a double array
+     * @param _struct
+     * @author Simon Greener, August 17th 2019
+     * @return
+     */
+    // note Tested 16th August
+    public static double[] toDoubleArray(Struct _struct, final double defaultValue) 
+    {
+        if (_struct == null) 
+            return null;
+
+        try {
+            Struct stGeom      = _struct;
+            Struct sdo_point   = stGeom;
+            String sqlTypeName = _struct.getSQLTypeName();
+            if ( sqlTypeName.equalsIgnoreCase("MDSYS.SDO_GEOMETRY") ) {
+                // Get Point element from sdo_geometry structure
+                Object[] data = _struct.getAttributes();
+                sdo_point     = (Struct)data[2];
+                sqlTypeName   = sdo_point.getSQLTypeName();
+            }
+            if ( sqlTypeName.equalsIgnoreCase("MDSYS.SDO_POINT_TYPE") ) {
+                sdo_point = _struct;
+            }
+            if (sdo_point == null) {
+                return null;
+            }
+            // Extract values and return array
+            Object[] data = sdo_point.getAttributes();
+            BigDecimal x = (BigDecimal)data[0];
+            BigDecimal y = (BigDecimal)data[1];
+            BigDecimal z = (BigDecimal)data[2];
+            return new double[] { (x==null ? defaultValue : x.doubleValue()), 
+                                  (y==null ? defaultValue : y.doubleValue()), 
+                                  (z==null ? defaultValue : z.doubleValue()) 
+                                };
+        } catch (SQLException sqle) {
+            return null;
+        }
+    }
+
+  /** Presents datum as a double */
+  public static double toDouble(Object datum, final double defaultValue)
+  {
+      // Note Returning null for null sdo_geometry structure
+      if (datum == null) 
+          return defaultValue;
+      
+      BigDecimal bigDec = (BigDecimal)datum;
+      if (bigDec == null) {
+          return defaultValue;
+      }
+      return bigDec.intValue();
+  }
+
+  /**
+   * Convenience method for NUMBER construction.
+   * <p>
+   * Double.NaN is represented as <code>NULL</code> to agree with JTS use.
+   * </p>
+   */
+  public static NUMBER toNUMBER(double number) throws SQLException
+  {
+    if (Double.isNaN(number)) {
+      return null;
+    }
+    return new NUMBER(number);
+  }
+
+  /**
+   * Convience method for ARRAY construction.
+   * </p>
+   */
+  // Changed 17th August 2019
+  public static Array toArray(double[] doubles, 
+                              String dataType,
+                              OracleConnection connection) 
+  throws SQLException
+  {
+      Object arrayOfDoubles = doubles; 
+      Array dArray = connection.createOracleArray(dataType,arrayOfDoubles);
+      return dArray;
+  }
+
+  /**
+   * Convience method for ARRAY construction.
+   */
+  // Changed 17th August 2019
+  public static Array toArray(int[] ints, 
+                              String dataType,
+                              OracleConnection connection) 
+  throws SQLException
+  {
+      Array dArray = connection.createOracleArray(dataType, ints);
+      return dArray;
+  }
+
+  /** Convenience method for Struct construction. */
+  // Changed 17th August 2019
+  public static Struct toStruct(Object[] attributes, 
+                                String dataType, 
+                                OracleConnection connection) 
+  throws SQLException
+  {
+    //TODO: fix this to be more generic
+    if (dataType.startsWith("*.")) {
+      dataType = "DRA." + dataType.substring(2);
+    }
+    Struct stObject = connection.createStruct(dataType, attributes);
+    return stObject;
+  }
+
+}

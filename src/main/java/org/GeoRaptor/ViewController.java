@@ -2,6 +2,7 @@ package org.GeoRaptor;
 
 import javax.swing.JOptionPane;
 
+import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
@@ -74,7 +75,7 @@ public class ViewController implements Controller {
 			}
 		}else if (cmdId == LOAD_SHAPEFILE) {
 			if (checkConnection()) {			
-//				ShapefileLoadEmpty.getInstance().initialise();
+				ShapefileLoad.getInstance().initialise();
 			}else {
 				show("No active connection");
 			}

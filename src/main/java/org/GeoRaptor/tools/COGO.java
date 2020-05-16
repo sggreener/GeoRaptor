@@ -20,7 +20,7 @@ public class COGO {
     protected SVSpatialLayer sPanel;
 
     /**
-     * If we have HTML output, do we still writting coordinates.
+     * If we have HTML output, do we still writing coordinates.
      */
     protected boolean stillWriteHTMLtoOutput;
 

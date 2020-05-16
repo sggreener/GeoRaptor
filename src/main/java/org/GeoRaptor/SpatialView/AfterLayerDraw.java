@@ -8,7 +8,7 @@ import java.awt.Graphics2D;
  */
 public class AfterLayerDraw {
     /**
-     * Remove class from arraylist after draw methos is call.
+     * Remove class from array list after draw methods is call.
      */
     protected boolean removeAfterDraw;
 

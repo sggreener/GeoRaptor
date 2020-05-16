@@ -1,11 +1,11 @@
 package org.GeoRaptor.tools;
 
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.PrecisionModel;
-import com.vividsolutions.jts.io.oracle.OraReader;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.oracle.OraReader;
 
 import java.awt.geom.Point2D;
 import java.math.BigDecimal;

@@ -8,8 +8,6 @@ import java.net.URL;
 import oracle.dbtools.raptor.controls.grid.RaptorGridTable;
 import oracle.dbtools.raptor.dialogs.actions.XMLBasedObjectAction;
 
-import oracle.dbtools.raptor.snippet.SnippetAddin;
-
 import oracle.ide.Addin;
 
 import org.GeoRaptor.OracleSpatial.Grid.RenderResultSet;
