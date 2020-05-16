@@ -3,8 +3,7 @@ package org.GeoRaptor;
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
-import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometryEmpty;
-import org.GeoRaptor.io.Import.ShapefileLoadEmpty;
+import org.GeoRaptor.io.Import.ShapefileLoad;
 
 import oracle.ide.Context;
 import oracle.ide.Ide;
@@ -57,7 +56,7 @@ public class TableContextMenuController implements Controller{
 //			vs.setVisible(true);
 			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
 		}else if (cmdId == IMPORT_SHAPEFILE) {
-			ShapefileLoadEmpty.getInstance().initialise();
+			ShapefileLoad.getInstance().initialise();
 		}
 		return true;
 	}
