@@ -18,7 +18,7 @@ import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.util.logging.Logger;
 import org.xBaseJ.micro.fields.Field;
 
-import com.vividsolutions.jts.geom.Envelope;
+import org.locationtech.jts.geom.Envelope;
 
 public class TABExporter 
      extends SHPExporter 
