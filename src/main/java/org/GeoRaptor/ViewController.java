@@ -5,6 +5,9 @@ import javax.swing.JOptionPane;
 import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.Strings;
+import org.geotools.util.logging.Logger;
+import org.geotools.util.logging.Logging;
+
 import oracle.ide.Context;
 import oracle.ide.Ide;
 import oracle.ide.controller.Controller;
@@ -17,7 +20,9 @@ import oracle.ide.controller.IdeAction;
  *	Menu Hook controller
  */
 public class ViewController implements Controller {
-		
+	
+	private static final Logger LOGGER = Logging.getLogger(ViewController.class.getName());
+	
 	/**
 	 * VIEW_SUBMENU_1_ACTION_ID Open Map
 	 * VIEW_SUBMENU_2_ACTION_ID Manage All Metadata
@@ -29,6 +34,8 @@ public class ViewController implements Controller {
 	private static final int LOAD_SHAPEFILE = Ide.findOrCreateCmdID("LOAD_SHAPEFILE");
 	private static final int ABOUT_GEORAPTOR = Ide.findOrCreateCmdID("ABOUT_GEORAPTOR");
 	
+	
+
 	public ViewController() {
 		super();
 	}

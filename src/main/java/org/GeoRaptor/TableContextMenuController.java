@@ -3,6 +3,7 @@ package org.GeoRaptor;
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
+
 import org.GeoRaptor.io.Import.ShapefileLoad;
 
 import oracle.ide.Context;

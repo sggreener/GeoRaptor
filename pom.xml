@@ -162,13 +162,12 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>com.vividsolutions</groupId>
-			<artifactId>jts</artifactId>
-			<version>1.13</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/org/GeoRaptor/lib/jts.jar</systemPath>
+			<groupId>org.locationtech.jts</groupId>
+			<artifactId>jts-core</artifactId>
+			<version>1.16.1</version>
+			<type>bundle</type>
 		</dependency>
-		
+	
 		<!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
 		<dependency>
 		    <groupId>commons-codec</groupId>

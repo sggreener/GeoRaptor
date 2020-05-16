@@ -2277,7 +2277,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             this.fireTableDataChanged();
         }
 
-        public Vector<TableRow> getDataVector() {
+        @SuppressWarnings("rawtypes")
+        public Vector getDataVector() {
             return new Vector<TableRow>(this.dataVector);
         }
 
