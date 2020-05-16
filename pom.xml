@@ -91,13 +91,6 @@
 		<!-- Add by Bessie -->
 		<dependency>
 			<groupId>oracle</groupId>
-			<artifactId>idert</artifactId>
-			<version>12.2.0</version>
-			<scope>system</scope>
-			<systemPath>${sqldev.basedir}/ide/lib/idert.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>oracle</groupId>
 			<artifactId>jdev-rt</artifactId>
 			<version>12.2.0</version>
 			<scope>system</scope>
@@ -362,9 +355,32 @@
 						<Export-Package>
 							org.GeoRaptor
 						</Export-Package>
+						<_exportcontents>
+							com.vividsolutions.jts.algorithm,
+							com.vividsolutions.jts.geom,
+							com.vividsolutions.jts.math,
+							org.geotools.data,
+							org.geotools.data.shapefile,
+							org.geotools.data.shapefile.shp,
+							org.GeoRaptor.sql,
+							org.GeoRaptor.tools,
+							org.GeoRaptor.OracleSpatial.Metadata,
+							org.GeoRaptor.OracleSpatial.ValidateSDOGeometry,
+							org.GeoRaptor.SpatialView.JDevInt,
+							org.GeoRaptor.SpatialView, 
+							org.GeoRaptor.SpatialView.SupportClasses,
+							org.GeoRaptor.SpatialView.layers
+						</_exportcontents>
 						<Require-Bundle>
+							oracle.external.jdbc,
+							oracle.javaxide,
+							oracle.db-api,
 							oracle.ide,
+							oracle.ide.navigator,
+							oracle.layout-managers,
 							oracle.sqldeveloper,
+							oracle.sqldeveloper.snippet,
+							oracle.sqldeveloper.utils,
 							oracle.javatools-nodeps,
 							oracle.uic,
 							oracle.idert
