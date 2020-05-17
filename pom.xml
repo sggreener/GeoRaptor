@@ -158,7 +158,7 @@
 			<artifactId>xBaseJMicro</artifactId>
 			<version>12.2.0</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/org/GeoRaptor/lib/xBaseJMicro.jar</systemPath>
+			<systemPath>${project.basedir}/lib/xBaseJMicro.jar</systemPath>
 		</dependency>
 		
 		<dependency>
