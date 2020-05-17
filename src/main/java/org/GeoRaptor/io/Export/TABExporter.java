@@ -16,7 +16,7 @@ import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.util.logging.Logger;
-import org.xBaseJ.micro.fields.Field;
+import org.xBaseJ.fields.Field;
 
 import org.locationtech.jts.geom.Envelope;
 

@@ -40,14 +40,14 @@ import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
 
-import org.xBaseJ.micro.DBF;
-import org.xBaseJ.micro.fields.CharField;
-import org.xBaseJ.micro.fields.DateField;
-import org.xBaseJ.micro.fields.Field;
-import org.xBaseJ.micro.fields.FloatField;
-import org.xBaseJ.micro.fields.MemoField;
-import org.xBaseJ.micro.fields.NumField;
-import org.xBaseJ.micro.xBaseJException;
+import org.xBaseJ.DBF;
+import org.xBaseJ.fields.CharField;
+import org.xBaseJ.fields.DateField;
+import org.xBaseJ.fields.Field;
+import org.xBaseJ.fields.FloatField;
+import org.xBaseJ.fields.MemoField;
+import org.xBaseJ.fields.NumField;
+import org.xBaseJ.xBaseJException;
 
 
 @SuppressWarnings("deprecation")

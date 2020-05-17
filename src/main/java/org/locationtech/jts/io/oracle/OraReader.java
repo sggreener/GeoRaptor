@@ -164,7 +164,7 @@ public class OraReader
             if (struct == null)
                 return null;
 
-	    String sqlTypeName = struct.getSQLTypeName();
+            String sqlTypeName = struct.getSQLTypeName();
             if ( ! sqlTypeName.equals("MDSYS.SDO_GEOMETRY") )
                 return null;
          

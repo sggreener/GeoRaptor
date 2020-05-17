@@ -21,7 +21,7 @@
 				</os>
 			</activation>
 			<properties>
-				<sqldev.basedir>D:\github\sqldeveloper19.1.0</sqldev.basedir>
+				<sqldev.basedir>D:\github\sqldeveloper</sqldev.basedir>
 			</properties>
 		</profile>
 		<profile>
@@ -32,10 +32,11 @@
 				</os>
 			</activation>
 			<properties>
-				<sqldev.basedir>/Applications/SQLDeveloper19.1.0.app/Contents/Resources/sqldeveloper</sqldev.basedir>
+				<sqldev.basedir>/Applications/SQLDeveloper.app/Contents/Resources/sqldeveloper</sqldev.basedir>
 			</properties>
 		</profile>
 	</profiles>
+
 	<dependencies>
 		<!-- SQL Developer dependencies not available in public Maven repositories -->
 		<dependency>
@@ -145,15 +146,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.snippet.jar</systemPath>
 		</dependency>
-				
-		<dependency>
-			<groupId>xBaseJ</groupId>
-			<artifactId>xBaseJMicro</artifactId>
-			<version>12.2.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/org/GeoRaptor/lib/xBaseJMicro.jar</systemPath>
-		</dependency>
-		
+	
 		<dependency>
 			<groupId>org.locationtech.jts</groupId>
 			<artifactId>jts-core</artifactId>
@@ -168,14 +161,18 @@
 		    <version>1.13</version>
 		</dependency>
 
+		<!-- Maven Central xBaseJ -->
+        <dependency>
+          <groupId>org.xBaseJ</groupId>
+          <artifactId>xbasej</artifactId>
+          <version>20091203</version>
+        </dependency>
 
 	</dependencies>
 	
 	
-
 	<!-- Build Settings -->
 	<build>
-
 
 		<sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
 		<plugins>
