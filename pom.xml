@@ -374,7 +374,8 @@
 							org.GeoRaptor.SpatialView.layers,
 							org.locationtech.jts.algorithm,
 							org.locationtech.jts.geom,
-							org.locationtech.jts.math
+							org.locationtech.jts.math,
+							org.w3c.dom
 						</_exportcontents>
 						<Require-Bundle>
 							oracle.external.jdbc,
