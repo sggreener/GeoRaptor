@@ -61,6 +61,13 @@
 		</dependency>
 		<dependency>
 			<groupId>oracle</groupId>
+			<artifactId>oracle.sqldeveloper.jdbcproxy</artifactId>
+			<version>12.2.0</version>
+			<scope>system</scope>
+			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.jdbcproxy.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>oracle</groupId>
 			<artifactId>dbapi</artifactId>
 			<version>12.2.1</version>
 			<scope>system</scope>
@@ -379,6 +386,7 @@
 							oracle.ide.navigator,
 							oracle.layout-managers,
 							oracle.sqldeveloper,
+							oracle.sqldeveloper.jdbcproxy,
 							oracle.sqldeveloper.snippet,
 							oracle.sqldeveloper.utils,
 							oracle.javatools-nodeps,
