@@ -32,7 +32,7 @@
 				</os>
 			</activation>
 			<properties>
-				<sqldev.basedir>/Applications/SQLDeveloper.app/Contents/Resources/sqldeveloper</sqldev.basedir>
+				<sqldev.basedir>/Applications/SQLDeveloper19.1.0.app/Contents/Resources/sqldeveloper</sqldev.basedir>
 			</properties>
 		</profile>
 	</profiles>
@@ -59,6 +59,13 @@
 			<version>12.2.0</version>
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>oracle</groupId>
+			<artifactId>oracle.sqldeveloper.jdbcproxy</artifactId>
+			<version>12.2.0</version>
+			<scope>system</scope>
+			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.jdbcproxy.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>oracle</groupId>
@@ -146,7 +153,6 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.snippet.jar</systemPath>
 		</dependency>
-	
 		<dependency>
 			<groupId>org.locationtech.jts</groupId>
 			<artifactId>jts-core</artifactId>
@@ -353,9 +359,8 @@
 							org.GeoRaptor
 						</Export-Package>
 						<_exportcontents>
-							com.vividsolutions.jts.algorithm,
-							com.vividsolutions.jts.geom,
-							com.vividsolutions.jts.math,
+							oracle.spatial.geometry,
+							oracle.spatial.util,
 							org.geotools.data,
 							org.geotools.data.shapefile,
 							org.geotools.data.shapefile.shp,
@@ -366,7 +371,11 @@
 							org.GeoRaptor.SpatialView.JDevInt,
 							org.GeoRaptor.SpatialView, 
 							org.GeoRaptor.SpatialView.SupportClasses,
-							org.GeoRaptor.SpatialView.layers
+							org.GeoRaptor.SpatialView.layers,
+							org.locationtech.jts.algorithm,
+							org.locationtech.jts.geom,
+							org.locationtech.jts.math,
+							org.w3c.dom
 						</_exportcontents>
 						<Require-Bundle>
 							oracle.external.jdbc,
@@ -376,6 +385,7 @@
 							oracle.ide.navigator,
 							oracle.layout-managers,
 							oracle.sqldeveloper,
+							oracle.sqldeveloper.jdbcproxy,
 							oracle.sqldeveloper.snippet,
 							oracle.sqldeveloper.utils,
 							oracle.javatools-nodeps,
@@ -385,7 +395,7 @@
 						<Import-Package>!*</Import-Package>
 						<Embed-Directory>lib</Embed-Directory>
 						<Embed-Transitive>true</Embed-Transitive>
-						<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+						<Embed-Dependency>sdoapi|sdoutl;scope=system,*;scope=compile|runtime</Embed-Dependency>
 						<_removeheaders>Ignore-Package,Include-Resource,Private-Package,Embed-Dependency,*_ICON,*_LABEL,*_TITLE</_removeheaders>
 					</instructions>
 				</configuration>

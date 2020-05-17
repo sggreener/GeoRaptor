@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 import oracle.dbtools.raptor.controls.grid.ResultSetTable;
 import oracle.dbtools.raptor.controls.grid.ResultSetTableModel;
 import oracle.dbtools.raptor.controls.grid.contextmenu.GridContextMenuItem;
+import oracle.dbtools.raptor.proxy.ProxyRegistry;
 import oracle.dbtools.raptor.utils.Connections;
 
 import oracle.ide.Context;
@@ -2376,9 +2377,9 @@ public class RenderResultSet
                 LOGGER.error("RenderResultSet.getConnection(): Exception - " + e.getMessage());
             }
         }
-        return (localConnection==null)
+        return ProxyRegistry.unwrap((localConnection==null)
                ? DatabaseConnections.getInstance().getActiveConnection()
-               : localConnection;
+               : localConnection);
     }
     
     public boolean update(IdeAction ideAction, Context context) 
