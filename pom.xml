@@ -363,9 +363,8 @@
 							org.GeoRaptor
 						</Export-Package>
 						<_exportcontents>
-							com.vividsolutions.jts.algorithm,
-							com.vividsolutions.jts.geom,
-							com.vividsolutions.jts.math,
+							oracle.spatial.geometry,
+							oracle.spatial.util,
 							org.geotools.data,
 							org.geotools.data.shapefile,
 							org.geotools.data.shapefile.shp,
@@ -376,7 +375,10 @@
 							org.GeoRaptor.SpatialView.JDevInt,
 							org.GeoRaptor.SpatialView, 
 							org.GeoRaptor.SpatialView.SupportClasses,
-							org.GeoRaptor.SpatialView.layers
+							org.GeoRaptor.SpatialView.layers,
+							org.locationtech.jts.algorithm,
+							org.locationtech.jts.geom,
+							org.locationtech.jts.math
 						</_exportcontents>
 						<Require-Bundle>
 							oracle.external.jdbc,
