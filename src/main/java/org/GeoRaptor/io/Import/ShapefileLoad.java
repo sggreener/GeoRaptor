@@ -67,8 +67,8 @@ import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
 
-import org.xBaseJ.micro.DBF;
-import org.xBaseJ.micro.fields.Field;
+import org.xBaseJ.DBF;
+import org.xBaseJ.fields.Field;
 
 /**
  * @author Simon Greener, May 2010

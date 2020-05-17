@@ -45,14 +45,14 @@ import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.data.shapefile.shp.ShapefileException;
 import org.geotools.util.logging.Logger;
 
-import org.xBaseJ.micro.fields.CharField;
-import org.xBaseJ.micro.fields.DateField;
-import org.xBaseJ.micro.fields.Field;
-import org.xBaseJ.micro.fields.LogicalField;
-import org.xBaseJ.micro.fields.MemoField;
-import org.xBaseJ.micro.fields.NumField;
-import org.xBaseJ.micro.fields.PictureField;
-import org.xBaseJ.micro.xBaseJException;
+import org.xBaseJ.fields.CharField;
+import org.xBaseJ.fields.DateField;
+import org.xBaseJ.fields.Field;
+import org.xBaseJ.fields.LogicalField;
+import org.xBaseJ.fields.MemoField;
+import org.xBaseJ.fields.NumField;
+import org.xBaseJ.fields.PictureField;
+import org.xBaseJ.xBaseJException;
 
 
 @SuppressWarnings("deprecation")
