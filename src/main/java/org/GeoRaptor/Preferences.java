@@ -21,7 +21,7 @@ import oracle.jdbc.OracleTypes;
  */
 public class Preferences extends HashStructureAdapter {
 
-	private static final String DATA_KEY = "org.GeoRaptor.Preferences";
+	private static final String DATA_KEY = "org.GeoRaptor.GeoPreferences";
 
 	private Preferences(final HashStructure hash) {
 		super(hash);

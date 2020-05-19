@@ -128,7 +128,7 @@ public class MapPanel
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.MapPanel";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.MapPanel";
     protected PropertiesManager propertyManager = null;
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.MapPanel");

@@ -65,7 +65,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	/**
 	 * Reference to resource manager for accesing messages in properties file
 	 */
-	private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.CreateSpatialIndex.resource.ManageSpatialIndex";
+	private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex";
 	protected PropertiesManager propertyManager = null;
 	protected ErrorDialogHandler errorDialogHandler = null;
 

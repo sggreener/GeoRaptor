@@ -96,7 +96,7 @@ public class SpatialView {
   /** 
    * Properties File Manager
    **/
-  private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SpatialView";
+  private static final String propertiesFile = "org.GeoRaptor.SpatialView.SpatialView";
   protected PropertiesManager propertyManager = null;
 
   /**

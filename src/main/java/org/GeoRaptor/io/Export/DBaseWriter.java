@@ -63,7 +63,7 @@ public class DBaseWriter {
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.io.Export.export.ui";
+    private static final String propertiesFile = "org.GeoRaptor.io.ui";
     protected PropertiesManager propertyManager = null;
 
         

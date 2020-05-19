@@ -134,7 +134,7 @@ extends JPanel
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SpatialViewPanel";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.SpatialViewPanel";
     protected PropertiesManager propertyManager;
     private XYLayout xyMainToolbarLayout = new XYLayout();
 

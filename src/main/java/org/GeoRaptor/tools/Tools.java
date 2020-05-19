@@ -61,7 +61,7 @@ import org.geotools.util.logging.Logger;
 public class Tools {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.Tools");    
-    private static final String propertiesFile = "org.GeoRaptor.tools.tools";
+    private static final String propertiesFile = "org.GeoRaptor.tools.Tools";
     protected static PropertiesManager propertyManager = new PropertiesManager(propertiesFile);
 
     /**

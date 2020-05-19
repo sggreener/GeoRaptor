@@ -136,7 +136,7 @@ public class ViewLayerTree
     
     private SpatialViewPanel svp;
       
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.ViewLayerTree";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.ViewLayerTree";
     protected PropertiesManager propertyManager = null;
     
     protected DefaultMutableTreeNode   rootNode = null;

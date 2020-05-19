@@ -69,7 +69,8 @@ public class ExporterWriter
       /** 
        * Properties File Manager
        **/
-      private static final String propertiesFile = "org.GeoRaptor.io.Export.ui.export";
+      //private static final String propertiesFile = "org.GeoRaptor.io.Export.ui.export";
+      private static final String propertiesFile = "org.GeoRaptor.io.export";
       protected PropertiesManager propertyManager;
 
       /** UI for when work is actually done

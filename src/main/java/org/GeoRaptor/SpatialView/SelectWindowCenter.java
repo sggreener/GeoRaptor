@@ -41,7 +41,7 @@ public class SelectWindowCenter extends JDialog {
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SpatialViewPanel";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.SpatialViewPanel";
     protected PropertiesManager propertyManager = null;
     protected ErrorDialogHandler errorDialogHandler = null;
 

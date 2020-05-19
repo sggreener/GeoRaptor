@@ -87,7 +87,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 	protected Preferences prefs;
 	protected PropertiesManager propertyManager;
-	private static final String propertiesFile = "org.GeoRaptor.io.Import.import";
+	//private static final String propertiesFile = "org.GeoRaptor.io.Import.import";
+	private static final String propertiesFile = "org.GeoRaptor.io.import";
 	private final String iconDirectory = "org/GeoRaptor/images/";
 	private ClassLoader cl = this.getClass().getClassLoader();
 
