@@ -16,8 +16,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
@@ -28,6 +26,7 @@ import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
+import java.sql.Connection;
 
 
 /*
@@ -548,7 +547,7 @@ public class SpatialViewProperties
 
     private void processSRIDAction()
     {
-        OracleConnection c = (OracleConnection)this.spatialView.getConnection();
+        Connection c = this.spatialView.getConnection();
         if ( c == null ) {
             // TOBEDONE: Need error message
             LOGGER.error(propertyManager.getMsg("SVP_NULL_CONNECTION"));
@@ -599,7 +598,7 @@ public class SpatialViewProperties
     
     public boolean initDialog(final boolean _showSRIDButton) 
     {
-        final OracleConnection conn = spatialView.getConnection();
+        final Connection conn = spatialView.getConnection();
         if ( conn==null ) {
             JOptionPane.showMessageDialog(null,
                                     propertyManager.getMsg("SVP_NULL_CONNECTION"),

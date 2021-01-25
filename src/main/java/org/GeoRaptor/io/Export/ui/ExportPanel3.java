@@ -33,8 +33,8 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 
 import oracle.jdeveloper.layout.VerticalFlowLayout;
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;

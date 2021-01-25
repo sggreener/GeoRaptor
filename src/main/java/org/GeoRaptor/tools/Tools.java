@@ -104,6 +104,53 @@ public class Tools {
             return String.format( "%dd%d:%02d:%05.3f", days, hours,minutes,seconds );
     }  
 
+
+    protected static double precisionModelScale = Math.pow(10,3);
+
+    /**
+     * setPrecisionScale
+     * For example, to specify 3 decimal places of precision, use a scale factor
+     * of 1000. To specify -3 decimal places of precision (i.e. rounding to
+     * the nearest 1000), use a scale factor of 0.001.
+     *
+     * @param _numDecPlaces : int : Number of digits of precision
+     * @since Simon Greener, August 2011, Original Coding
+     */
+    public static void setPrecisionScale(int _numDecPlaces)
+    {
+        precisionModelScale = _numDecPlaces < 0 
+                              ? (double)(1.0/Math.pow(10, Math.abs(_numDecPlaces))) 
+                              : (double)Math.pow(10, _numDecPlaces);
+    }
+
+    /**
+     * getPrecisionScale
+     * For 3 decimal places of precision, the required JTS scale factor
+     * is 1000. If -3 decimal places of precision (i.e. rounding to
+     * the nearest 1000), then a scale factor of 0.001 is required.
+     * @param _numDecPlaces : int : Number of digits of precision
+     * @since             : Simon Greener, August 2011, Original Coding
+     * @copyright           : Simon Greener, 2011 - 2013
+     * @license             : Creative Commons Attribution-Share Alike 2.5 Australia License. 
+     *                        http://creativecommons.org/licenses/by-sa/2.5/au/
+     */
+    public static double getPrecisionScale(int _numDecPlaces)
+    {
+        return _numDecPlaces < 0 
+               ? (double)(1.0/Math.pow(10, Math.abs(_numDecPlaces))) 
+               : (double)Math.pow(10, _numDecPlaces);
+    }
+
+    /**
+     * getPrecisionScale
+     * Gets current value of class property.
+     * @return
+     */
+    public static double getPrecisionScale()
+    {
+        return precisionModelScale;
+    }
+    
     public static ArrayList<String> getCharsets(String _oracleCharset) {
         DBConfig dbConf = DBConfig.getInstance();
         // String nlsLength   = dbConf.getString(DBConfig.NLS_LENGTH);  // CHAR or BYTE
@@ -183,8 +230,8 @@ public class Tools {
         df.setMinimumFractionDigits(1);
         df.setMinimumIntegerDigits(1);
         return df;
-
     }
+    
     public static DecimalFormat getDecimalFormatter() {
         // Method with no arguments should be used whenever a double is to be used directly in SQL 
         return new DecimalFormat("###0.0#####", new DecimalFormatSymbols(Locale.US));

@@ -17,6 +17,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
@@ -61,7 +62,6 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import oracle.ide.dialogs.ProgressBar;
-import oracle.jdbc.OracleConnection;
 
 
 /**
@@ -113,7 +113,7 @@ public class MetadataPanel extends javax.swing.JDialog {
     /**
      * Database connection
      */
-    protected OracleConnection             conn = null;
+    protected Connection                   conn = null;
     protected DatabaseConnections dbConnections = null;
     
     /**
@@ -957,7 +957,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         if ( this.dbConnections.findDisplayName(currentDisplayName) == null ) {
             this.conn = this.dbConnections.getConnectionAt(0).getConnection();
             try {
-                this.schemaName = this.conn.getCurrentSchema();
+                this.schemaName = this.conn.getSchema();
             } catch (SQLException e) {
             }
             this.userName   = this.schemaName;
@@ -1272,11 +1272,11 @@ public class MetadataPanel extends javax.swing.JDialog {
         }
     }
     
-    public boolean initialise(OracleConnection _conn, 
-                              String           _schemaName,
-                              String           _objectName,
-                              String           _columnName,
-                              String           _userName) 
+    public boolean initialise(Connection _conn, 
+                              String     _schemaName,
+                              String     _objectName,
+                              String     _columnName,
+                              String     _userName) 
     throws Exception 
     {
         // 1. Set up connections
@@ -1287,7 +1287,7 @@ public class MetadataPanel extends javax.swing.JDialog {
             throw new Exception(propertyManager.getMsg("MD_NO_CONNECTION_FOR","Metadata Manager"));
         }
         this.conn = (_conn!=null)? _conn : this.dbConnections.getConnectionAt(0).getConnection();
-        this.schemaName = Strings.isEmpty(_schemaName)?this.conn.getCurrentSchema():_schemaName;
+        this.schemaName = Strings.isEmpty(_schemaName)?this.conn.getSchema():_schemaName;
         this.userName = Strings.isEmpty(_userName)  ?this.schemaName             :_userName;
 
         // 2. Initialize connection pulldown
@@ -1298,7 +1298,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         } else {
             for ( int i=0; i<this.cmbConnections.getItemCount(); i++ ) {
                 DatabaseConnection dbConn = this.dbConnections.getConnectionAt(i);
-                if ( dbConn!=null && dbConn.getCurrentSchema().equalsIgnoreCase(this.conn.getCurrentSchema()) ) {
+                if ( dbConn!=null && dbConn.getCurrentSchema().equalsIgnoreCase(this.conn.getSchema()) ) {
                     this.cmbConnections.setSelectedIndex(i);
                     break;
                 }
@@ -1595,7 +1595,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         {
             // Prepare update SQL
             //
-            if ( this.schemaName.equalsIgnoreCase(this.conn.getUserName()) ) {
+            if ( this.schemaName.equalsIgnoreCase(this.conn.getSchema()) ) {
                 sql = userSdoGeomMetadataSQL(this.schemaName,
                                              this.objectName,
                                              targetColumn,
@@ -2004,10 +2004,10 @@ public class MetadataPanel extends javax.swing.JDialog {
             return canEdit[columnIndex];
         }
 
-        public void addFromMetadata(OracleConnection _conn, 
-                                    String           _schemaName,
-                                    String           _objectName,
-                                    String           _columnName )
+        public void addFromMetadata(Connection _conn, 
+                                    String     _schemaName,
+                                    String     _objectName,
+                                    String     _columnName )
         {
             this.clearModel();
             try {
@@ -2237,9 +2237,9 @@ public class MetadataPanel extends javax.swing.JDialog {
             }
         }
 
-        public String readMetadataIntoTable(OracleConnection _conn, 
-                                            String           _schemaName,
-                                            boolean          _allSchemas)
+        public String readMetadataIntoTable(Connection _conn, 
+                                            String     _schemaName,
+                                            boolean    _allSchemas)
         {
             String returnString = sOK; 
             setAlwaysOnTop(false);
@@ -2247,14 +2247,14 @@ public class MetadataPanel extends javax.swing.JDialog {
             class MetadataReader implements Runnable 
             {
                 protected ProgressBar progressBar;
-                protected OracleConnection   conn;
+                protected Connection         conn;
                 protected boolean      allSchemas;
                 protected String       schemaName;
                 protected String     errorMessage = sCancelled;
                 
-                public MetadataReader(OracleConnection _conn,
-                                      String           _schemaName,
-                                      boolean          _allSchemas) 
+                public MetadataReader(Connection _conn,
+                                      String     _schemaName,
+                                      boolean    _allSchemas) 
                 {
                     this.conn       = _conn;
                     this.allSchemas = _allSchemas;

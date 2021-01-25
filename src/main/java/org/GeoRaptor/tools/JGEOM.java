@@ -1,22 +1,33 @@
 package org.GeoRaptor.tools;
 
-import org.GeoRaptor.Constants;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
-
 import java.awt.geom.Point2D;
-
+import java.sql.Array;
+import java.sql.SQLException;
+import java.sql.Struct;
 import java.util.Iterator;
 import java.util.List;
 
+import org.GeoRaptor.Constants;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.locationtech.jts.io.oracle.OraUtil;
+
 import oracle.spatial.geometry.JGeometry;
 
+public class JGeom {
 
-public class JGEOM
-{    
-
-    public static final int                 SRID_NULL = -1;    
-    public static final int                 NULL_SRID = -1;
-    public static final int                   NO_SRID = 0;
+    /**
+     * @function gType
+     * @param _geom
+     * @author Simon Greener, April 2010
+     *          Useful function for creating SDO_GEOMETRY SDO_GTYPEs numbers
+     *          as JGeometry class does not do this.
+     */
+    public static int buildFullGType(JGeometry _jGeom) 
+    {
+        return (_jGeom.getDimensions()  * 1000) + 
+               (_jGeom.getLRMDimension() * 100) + 
+                _jGeom.getType();
+    }
     
     public static JGeometry rectangle2Polygon2D(JGeometry _rectangle) {
         // We only map in 2D so don't worry about loss of other dimensions (yet)
@@ -40,7 +51,6 @@ public class JGEOM
         } 
     }
 
-    
     /**
      * @method getOrientedPointMBR
      * @description MBR of oriented point has to be manually calculated from manipulation of sdo_ordinate_array
@@ -95,6 +105,62 @@ public class JGEOM
         return mbr;
     }
 
+    /**
+     * @function isRectangle
+     * @precis JGeometry.isRectangle does not work in all cases
+     * @param _geo
+     * @return
+     * @author Simon Greener, April 4th 2010
+     */
+    public static boolean isRectangle(JGeometry _geo) {
+        if (_geo == null)
+            return false;
+  
+        if (_geo.isPoint() )
+            return false;
+        
+        if (_geo.isRectangle())
+            return true;
+  
+        int[] eia = _geo.getElemInfo();
+        for (int i = 0; i < (eia.length / 3); i++) {
+            if ((eia[(i * 3) + 1] == 1003 || eia[(i * 3) + 1] == 2003) &&
+                eia[(i * 3) + 2] == 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+  
+    /**
+     * @function hasArc
+     * @precis JGeometry.hasCompoundArc/isCircle, are wrapped in a new function
+     *         like isRectangle
+     * @param _geo
+     * @return
+     * @author Simon Greener, April 4th 2010
+     */
+    public static boolean hasArc(JGeometry _geo) 
+    {
+        if (_geo == null)
+            return false;
+  
+        if (_geo.isPoint() )
+            return false;
+        
+        if (_geo.hasCircularArcs() || _geo.isCircle())
+            return true;
+  
+        int[] eia = _geo.getElemInfo();
+        for (int i = 1; i < (eia.length / 3); i = (i * 3) + 1) {
+            if ((eia[i] == 1005 || eia[i] == 2005 || eia[i] == 4) ||
+                (eia[i] == 2 && eia[i + 1] == 2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+  
     public static Envelope getGeoMBR(JGeometry _geo) 
     {
         if (_geo == null) return null;
@@ -148,86 +214,68 @@ public class JGEOM
         Envelope mbr = new Envelope(Constants.MAX_PRECISION);
         Iterator<JGeometry> iter = _geomSet.iterator();
         while (iter.hasNext()) {
-            mbr.setMaxMBR(SDO.getGeoMBR(iter.next()));
+            mbr.setMaxMBR(getGeoMBR(iter.next()));
         }
         return mbr;
     }
-    
 
-    /**
-     * @function isRectangle
-     * @precis JGeometry.isRectangle does not work in all cases
-     * @param _geo
-     * @return
-     * @author Simon Greener, April 4th 2010
-     */
-    public static boolean isRectangle(JGeometry _geo) {
-        if (_geo == null)
-            return false;
-  
-        if (_geo.isPoint() )
-            return false;
-        
-        if (_geo.isRectangle())
-            return true;
-  
-        int[] eia = _geo.getElemInfo();
-        for (int i = 0; i < (eia.length / 3); i++) {
-            if ((eia[(i * 3) + 1] == 1003 || eia[(i * 3) + 1] == 2003) &&
-                eia[(i * 3) + 2] == 3) {
-                return true;
-            }
-        }
-        return false;
-    }
+	public static JGeometry getDimArrayAsJGeometry(Array _dimArray, int _srid) throws SQLException {
+		if (_dimArray == null) {
+			return null;
+		}
+		if (_dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT)) {
+			Object[] dimElements = (Object[]) _dimArray.getArray();
+			int arraySize = dimElements.length;
+			if (arraySize == 0)
+				return null;
 
-    /**
-     * @function hasArc
-     * @precis JGeometry.hasCompoundArc/isCircle, are wrapped in a new function
-     *         like isRectangle
-     * @param _geo
-     * @return
-     * @author Simon Greener, April 4th 2010
-     */
-    public static boolean hasArc(JGeometry _geo) {
-        if (_geo == null)
-            return false;
-  
-        if (_geo.isPoint() )
-            return false;
-        
-        if (_geo.hasCircularArcs() || _geo.isCircle())
-            return true;
-  
-        int[] eia = _geo.getElemInfo();
-        for (int i = 1; i < (eia.length / 3); i = (i * 3) + 1) {
-            if ((eia[i] == 1005 || eia[i] == 2005 || eia[i] == 4) ||
-                (eia[i] == 2 && eia[i + 1] == 2)) {
-                return true;
-            }
-        }
-        return false;
-    }
-  
-    /**
-     * @function buildFullGType
-     * @param _geom
-     * @author Simon Greener, April 2010
-     *          Useful function for creating SDO_GEOMETRY SDO_GTYPEs numbers
-     *          as JGeometry class does not do this.
-     */
-    public static int buildFullGType(JGeometry _jGeom) 
-    {
-        return (_jGeom.getDimensions()  * 1000) + 
-               (_jGeom.getLRMDimension() * 100) + 
-                _jGeom.getType();
-        /*    
-        return ((_geom.getDimensions() * 1000) +
-                ((_geom.isLRSGeometry() && _geom.getDimensions() == 3) ? 300 :
-                 ((_geom.isLRSGeometry() && _geom.getDimensions() == 4) ? 400 :
-                  0)) + _geom.getType());
-        */
-    }
+			String DIM_NAME = "";
+			double SDO_LB = Double.NaN;
+			double SDO_UB = Double.NaN;
+			double minX = 0.0, minY = 0.0, maxX = 0.0, maxY = 0.0;
+			double minZ = Double.NaN, maxZ = Double.NaN, minM = Double.NaN, maxM = Double.NaN;
 
+			for (int i = 0; i < arraySize; i++) {
+				Object[] element = ((Struct) dimElements[i]).getAttributes();
+				DIM_NAME = (String) element[0];
+				SDO_LB = OraUtil.toDouble(element[1], Double.NaN);
+				SDO_UB = OraUtil.toDouble(element[2], Double.NaN);
+				if (i == 0) {
+					minX = SDO_LB;
+					maxX = SDO_UB;
+				} else if (i == 1) {
+					minY = SDO_LB;
+					maxY = SDO_UB;
+				} else if (i >= 2) {
+					if (DIM_NAME.toUpperCase().equals("Z")) {
+						minZ = SDO_LB;
+						maxZ = SDO_UB;
+					} else if (DIM_NAME.toUpperCase().equals("M")) {
+						minM = SDO_LB;
+						maxM = SDO_UB;
+					}
+				}
+			}
+			if (arraySize == 2) {
+				return new JGeometry(minX, minY, maxX, maxY, _srid > 0 ? _srid : Constants.NULL_SRID);
+			} else if (arraySize == 3) {
+				if (Double.isNaN(minZ)) {
+					return new JGeometry(3303, _srid > 0 ? _srid : Constants.NULL_SRID, new int[] { 1, 1003, 3 },
+							new double[] { minX, minY, minM, maxX, minY, minM, maxX, maxY, maxM, minX, maxY, maxM, minX,
+									minY, minM });
+
+				} else {
+					return new JGeometry(3003, _srid > 0 ? _srid : Constants.NULL_SRID, new int[] { 1, 1003, 3 },
+							new double[] { minX, minY, minZ, maxX, minY, minZ, maxX, maxY, maxZ, minX, maxY, maxZ, minX,
+									minY, minZ });
+				}
+			} else if (arraySize == 4) {
+				return new JGeometry(4403, _srid > 0 ? _srid : Constants.NULL_SRID, new int[] { 1, 1003, 3 },
+						new double[] { minX, minY, minZ, minM, maxX, minY, minZ, minM, maxX, maxY, maxZ, maxM, minX,
+								maxY, maxZ, maxM, minX, minY, minZ, minM });
+			}
+		}
+		return null;
+	}
 
 }

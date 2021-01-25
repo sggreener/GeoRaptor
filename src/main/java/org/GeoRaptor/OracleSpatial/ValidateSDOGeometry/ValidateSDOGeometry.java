@@ -23,10 +23,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 
@@ -74,19 +75,16 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
-import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleTypes;
 
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 import oracle.spatial.geometry.ElementExtractor;
 import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -110,6 +108,7 @@ import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.ErrorDialogHandler;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -143,7 +142,6 @@ import org.geotools.util.logging.Logging;
  *          Improved dialog by application of titled borders etc.
  *          Added copy to clipboard for SELECT and UPDATE statements
  */
-@SuppressWarnings("deprecation")
 public class ValidateSDOGeometry extends JDialog implements Observer 
 {
 	private static final long serialVersionUID = -8079134652561357147L;
@@ -687,7 +685,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         // Function returns first column if null or same column if exists
         //
         String geoColumn = _objectName;
-        OracleConnection conn = DatabaseConnections.getInstance().getConnection(_connName);
+        Connection conn = DatabaseConnections.getInstance().getConnection(_connName);
         if ( conn!=null ) {
             if ( DatabaseConnections.getInstance().isConnectionOpen(_connName)) {
                 geoColumn = MetadataTool.getGeometryColumn(conn,_schemaName,_objectName,_columnName);
@@ -1232,8 +1230,12 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 case GEOMETRY     : sBuffer.append(this.vtModel.getValueAt(row,ValidationTableModel.geoConstructorColumn));
                                     break;
                 case ELEMENT_INFO : sBuffer.append(
-                                        RenderTool.renderElemInfoArray(SDO_GEOMETRY.getSdoElemInfo((STRUCT)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn)), 
-                                                                           false, false, Constants.bracketType.NONE));
+                                        RenderTool.renderElemInfoArray(
+                                           SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn),
+                                                                       0), 
+                                           false, 
+                                           false, 
+                                           Constants.bracketType.NONE));
                                     break;
                 case ERROR_TEXT   :
                 default           : sBuffer.append(this.vtModel.getValueAt(row,ValidationTableModel.errorColumn) + " " +
@@ -1250,8 +1252,12 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 case GEOMETRY     : sBuffer.append(this.vtModel.getValueAt(viewRow,ValidationTableModel.geoConstructorColumn)); 
                                     break;
                 case ELEMENT_INFO : sBuffer.append(
-                                        RenderTool.renderElemInfoArray(SDO_GEOMETRY.getSdoElemInfo((STRUCT)this.vtModel.getValueAt(viewRow,ValidationTableModel.geometryColumn)), 
-                                                                           false, false, Constants.bracketType.NONE));
+                                        RenderTool.renderElemInfoArray(
+                                        		SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(viewRow,ValidationTableModel.geometryColumn),
+                                        				                    0), 
+                                                false, 
+                                                false, 
+                                                Constants.bracketType.NONE));
                                     break;
                 case ERROR_TEXT   :
                 default           : sBuffer.append(this.vtModel.getValueAt(viewRow,ValidationTableModel.errorColumn) + " " +
@@ -1276,7 +1282,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             return;
         }
         
-        OracleConnection conn = this.getConnection();
+        Connection conn = this.getConnection();
         lblMessages.setText("");
         int rows[] = this.resultTable.getSelectedRows();
         List<QueryRow> geoSet             = new ArrayList<QueryRow>(); 
@@ -1286,7 +1292,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         // Some error messages are for completely invalid geometries that cannot be processed or mapped
         // if return is null we skip this geometry for mapping or context analysis
         //
-        JGeometry geom = convertGeometry((STRUCT)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn));
+        JGeometry geom = convertGeometry((Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn));
         if ( geom == null ) {
             // Should we change the colour of this row selection to red?
             Toolkit.getDefaultToolkit().beep();
@@ -1344,8 +1350,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     
     // Getters and Setters
 
-    public OracleConnection getConnection() {
-        OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connectionName);
+    public Connection getConnection() {
+        Connection conn = DatabaseConnections.getInstance().getConnection(this.connectionName);
         if ( conn == null ) {
             // Try and get any connection though this should be connection of object.
             conn = DatabaseConnections.getInstance().getActiveConnection();
@@ -1668,19 +1674,19 @@ public class ValidateSDOGeometry extends JDialog implements Observer
      *          - Some sdo_geometries with errors are so bad they cannot even be mapped
      *            This method tries to check that before any processing proceeds.
      *            The tests we will apply is to:
-     *                1. Convert STRUCT to JGeometry
+     *                1. Convert Struct to JGeometry
      *                2. Get MBR of JGeometry
      */
-    private JGeometry convertGeometry(STRUCT _stGeom)
+    private JGeometry convertGeometry(Struct _stGeom)
     {
         if ( _stGeom == null )
             return null;
         JGeometry geom;
         try {
-            geom = JGeometry.load(_stGeom);
+            geom = JGeometry.loadJS(_stGeom);
             if ( geom == null )
                 return null;
-            Envelope mbr = SDO_GEOMETRY.getGeoMBR(geom);
+            Envelope mbr = JGeom.getGeoMBR(geom);
             if ( mbr == null )
                 return null;
             // Must be OK
@@ -1709,7 +1715,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 dbConn.reOpen();
             }
         }
-        OracleConnection conn = dbConn.getConnection();
+        Connection conn = dbConn.getConnection();
         int rows[] = this.resultTable.getSelectedRows();
         List<QueryRow> geoSet             = new ArrayList<QueryRow>(); 
         LinkedHashMap<String,Object> attr = new LinkedHashMap<String,Object>();
@@ -1721,7 +1727,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             // Some error messages are for completely invalid geometries that cannot be processed or mapped
             // if return is null we skip this geometry for mapping or context analysis
             //
-            JGeometry geom = convertGeometry((STRUCT)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn));
+            JGeometry geom = convertGeometry((Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn));
             if ( geom == null ) {
                 // Should we change the colour of this row selection to red?
                 Toolkit.getDefaultToolkit().beep();
@@ -1754,7 +1760,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 } else {
                     geoSet.add(new QueryRow(this.vtModel.getValueAt(row,0).toString(), 
                                             new LinkedHashMap<String,Object>(attr),
-                                            (STRUCT)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn)));
+                                            (Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn)));
                 }
             }
         }
@@ -1860,7 +1866,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                     if ( element != null ) {
                         // DEBUG LOGGER.info("element is " + element.getType());
                         if ( element.isRectangle() ) {
-                            element = SDO_GEOMETRY.rectangle2Polygon2D(element);
+                            element = JGeom.rectangle2Polygon2D(element);
                         }
                     }
                 } else if ( tok.startsWith("Rings") ) { 
@@ -2444,12 +2450,11 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             // Execute actual query ...
             //
             String sql = "";
-            OraclePreparedStatement validationPS = null;
-            OracleResultSet         validationRS = null;
+            PreparedStatement validationPS = null;
+            ResultSet         validationRS = null;
             try {
                 sql = this.main.getSQL();
                 validationPS = (OraclePreparedStatement)this.main.getConnection().prepareStatement(sql);
-                validationPS.setRowPrefetch(150);
                 validationPS.setFetchSize(150);
                 validationPS.setFetchDirection(ResultSet.FETCH_FORWARD);
                 validationRS = (OracleResultSet)validationPS.executeQuery();
@@ -2463,7 +2468,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 int geomColumnId              = validationRS.findColumn( this.main.getGeomColumnName());
                 if ( geomColumnId==-1 )       throw new SQLException("Required, named, column " + this.main.getGeomColumnName()+ " not found");
                 
-                STRUCT stGeom;
+                Struct stGeom;
                 this.main.setNullRowCount(0);
                 this.main.setValidRowCount(0);
                 int indx = -1,
@@ -2472,8 +2477,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 while (validationRS.next() && this.isNotCancelled()) {
                     error = "";
                     rowCount++;
-                    if ( validationRS.getMetaData().getColumnType(primaryKeyColumn)==OracleTypes.ROWID )
-                        id = new String(validationRS.getROWID(primaryKeyColumn).getBytes());
+                    if ( ((OracleResultSet)validationRS).getMetaData().getColumnType(primaryKeyColumn)==OracleTypes.ROWID )
+                        id = new String(((OracleResultSet)validationRS).getROWID(primaryKeyColumn).getBytes());
                     else
                         id = validationRS.getString(primaryKeyColumn); 
                     status = validationRS.getString(contextColumn);
@@ -2498,7 +2503,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                                 status = status.substring(indx+1);
                             }
                         }
-                        stGeom = validationRS.getSTRUCT(geomColumnId);
+                        stGeom = (java.sql.Struct)validationRS.getObject(geomColumnId);
                         this.main.vtModel.addRow(new TableRow(id, error, status, stGeom));
                         // Update layer MBR with this geometry's
                         //

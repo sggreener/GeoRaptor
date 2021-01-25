@@ -32,6 +32,7 @@ public class Preferences extends HashStructureAdapter {
     }
 	
 	public static Preferences getInstance(final PropertyStorage prefs) {
+System.out.println("Preferences = " + Preferences.DATA_KEY);
 		return new Preferences(HashStructureAdapter.findOrCreate(prefs, Preferences.DATA_KEY));
 	}
 

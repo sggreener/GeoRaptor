@@ -36,9 +36,9 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
-
+import java.sql.Connection;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.text.DecimalFormat;
 
 import java.util.ArrayList;
@@ -68,13 +68,9 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
-import oracle.jdbc.OracleConnection;
-
 import oracle.jdeveloper.layout.VerticalFlowLayout;
 
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -2215,15 +2211,15 @@ public class MapPanel
     {
         if ( _geometry == null )
             return;
-        OracleConnection conn = null;
+        Connection conn = null;
         conn = spatialView.getActiveLayer().getConnection();
-        STRUCT stGeom = null;
+        Struct stGeom = null;
         try {
-            stGeom = (STRUCT)JGeometry.storeJS(conn,_geometry);
+            stGeom = JGeometry.storeJS(conn,_geometry);
         } catch (Exception e) {
             return;
         }
-        final String geometry = SDO_GEOMETRY.convertGeometryForClipboard(stGeom,conn);
+        final String geometry = SDO_GEOMETRY.getGeometryAsString(stGeom,conn);
         SwingUtilities.invokeLater(new Runnable() {
               public void run() {
                   final ViewLayerTree         vlt = spatialView.getSVPanel().getViewLayerTree();
@@ -2285,17 +2281,17 @@ public class MapPanel
     {
         if ( _geometry == null )
             return null;
-        OracleConnection conn = null;
+        Connection conn = null;
         conn = spatialView.getActiveLayer().getConnection();
-        STRUCT stGeom = null;
+        Struct stGeom = null;
         try {
-            stGeom = (STRUCT)JGeometry.storeJS(conn,_geometry);
+            stGeom = JGeometry.storeJS(conn,_geometry);
         } catch (Exception e) {
             return null;
         }
         String returnVal = "";
         JFrame frame = new JFrame ();
-        ShapeReviewDialog cd = new ShapeReviewDialog(frame, SDO_GEOMETRY.convertGeometryForClipboard(stGeom,conn));
+        ShapeReviewDialog cd = new ShapeReviewDialog(frame, SDO_GEOMETRY.getGeometryAsString(stGeom,conn));
         cd.pack();
         cd.setVisible(true);
         if ( ! cd.isCancelled() ) 

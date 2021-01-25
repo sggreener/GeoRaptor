@@ -9,6 +9,10 @@ import java.io.Serializable;
  *
  */
 public class XYConstraints implements Cloneable, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2396331626227522829L;
 	int x;
 	int y;
 	int width;

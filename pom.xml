@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+﻿<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -96,7 +96,7 @@
 			<systemPath>${sqldev.basedir}/ide/lib/uic.jar</systemPath>
 		</dependency>
 		
-		<!-- Add by Bessie -->
+		<!-- Add by Simon -->
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>jdev-rt</artifactId>
@@ -274,11 +274,15 @@
 						<configuration>
 							<resources>
 								<resource>
-									<directory>src/main/java</directory>
+									<directory>${project.basedir}/src/main/resources</directory>
 									<includes>
 										<include>**/*.xml</include>
 										<include>**/*.properties</include>
+										<include>**/*.bmp</include>
 										<include>**/*.png</include>
+										<include>**/*.jpg</include>
+                                        <include>**/*.gif</include>
+                                        <include>**/*.ico</include>
 									</includes>
 								</resource>
 							</resources>
@@ -494,10 +498,10 @@
 	</organization>
 	<developers>
 		<developer>
-			<email>sadbessie@gmail.com</email>
-			<name>Bingxin Gong</name>
-			<url>https://github.com/BessieGong/</url>
-			<id>BessieGong</id>
+			<email>simon@spdba.com.au</email>
+			<name>Simon Greener</name>
+			<url>http://www.spdba.com.au/</url>
+			<id>SimonGreener</id>
 			<roles>
 				<role>lead</role>
 				<role>developer</role>
@@ -508,12 +512,14 @@
 	<!-- Environment Settings -->
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/BessieGong/GeoRaptor/issues</url>
+		<url>https://github.com/sggreener/GeoRaptor/issues</url>
 	</issueManagement>
+	
 	<scm>
-		<connection>scm:git:https://github.com/BessieGong/GeoRaptor.git</connection>
-		<developerConnection>scm:git:https://github.com/BessieGong/GeoRaptor.git</developerConnection>
+		<connection>scm:git:https://github.com/sggreener/GeoRaptor.git</connection>
+		<developerConnection>scm:git:https://github.com/sggreener/GeoRaptor.git</developerConnection>
 		<tag>master</tag>
-		<url>https://github.com/BessieGong/</url>
+		<url>https://github.com/sggreener/</url>
 	</scm>
+	
 </project>

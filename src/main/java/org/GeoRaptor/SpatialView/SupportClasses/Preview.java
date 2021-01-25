@@ -23,6 +23,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,15 +38,14 @@ import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
-import oracle.sql.STRUCT;
 
 
-@SuppressWarnings("deprecation")
 public class Preview 
 extends JPanel 
 implements ComponentListener
@@ -125,7 +125,7 @@ implements ComponentListener
         initialize(_geom,null,_imageSize,_conn);
     }
 
-    public Preview(STRUCT     _geoStruct, 
+    public Preview(Struct     _geoStruct, 
                    Dimension  _imageSize,
                    Connection _conn,
                    JFrame     _frame)
@@ -136,10 +136,10 @@ implements ComponentListener
         }
         String sqlTypeName = "";
         try { sqlTypeName = _geoStruct.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("Thumbnail: Failed to get sqlTypeName of Struct"); return; }
-        STRUCT stGeom = ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
+        Struct stGeom = ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
                         : _geoStruct;
         JGeometry geom = null;
-        try { geom = JGeometry.load(stGeom); } catch (SQLException e) { geom = null; }
+        try { geom = JGeometry.loadJS(stGeom); } catch (SQLException e) { geom = null; }
         if ( geom == null ) {
             LOGGER.error("Failed to get convert STRUCT to JGeometry");
             return ;
@@ -201,7 +201,7 @@ implements ComponentListener
 
         // MBR ....
         //
-        this.mbr = SDO_GEOMETRY.getGeoMBR(geoSet);
+        this.mbr = JGeom.getGeoMBR(geoSet);
         if (this.mbr == null) {
             LOGGER.error("Failed to get geometry(s) this.mbr");
             return;

@@ -16,13 +16,15 @@
  */
 package org.geotools.data.shapefile.shp;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.Orientation;
+import org.locationtech.jts.algorithm.RayCrossingCounter;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 
@@ -42,7 +44,6 @@ import java.util.List;
  */
 public class PolygonHandler implements ShapeHandler {
   GeometryFactory geometryFactory = new GeometryFactory();
-  CGAlgorithms cga = new CGAlgorithms();  
   
   final ShapeType shapeType;
   
@@ -181,7 +182,7 @@ public class PolygonHandler implements ShapeHandler {
       if(points.length == 0 || points.length > 3){ 
           LinearRing ring = geometryFactory.createLinearRing(points);
 
-          if (CGAlgorithms.isCCW(points)) {
+          if (Orientation.isCCW(points)) {
             // counter-clockwise
             holes.add(ring);
           } else {
@@ -305,8 +306,11 @@ public class PolygonHandler implements ShapeHandler {
           boolean isContained = false;
           Coordinate[] coordList = tryRing.getCoordinates();
           
-          if ( tryEnv.contains(testEnv) && 
-            (CGAlgorithms.isPointInRing(testPt, coordList) || (pointInList(testPt, coordList)))) {
+          int location = RayCrossingCounter.locatePointInRing(testPt, coordList);
+          if ( tryEnv.contains(testEnv) 
+               && 
+               (location != Location.EXTERIOR || 
+               (pointInList(testPt, coordList)))) {
             isContained = true;
           }
           

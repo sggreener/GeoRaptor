@@ -1,6 +1,5 @@
 package org.GeoRaptor.SpatialView.layers;
 
-
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
@@ -13,7 +12,7 @@ import java.io.IOException;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -26,7 +25,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleResultSetMetaData;
@@ -34,8 +32,6 @@ import oracle.jdbc.OracleStatement;
 import oracle.jdbc.OracleTypes;
 
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -46,6 +42,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -53,11 +50,11 @@ import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 
 import org.w3c.dom.Node;
+import java.sql.Connection;
 
 
-@SuppressWarnings("deprecation")
 public class SVWorksheetLayer 
-extends SVSpatialLayer 
+extends SVSpatialLayer
 {
     public static final String CLASS_NAME = Constants.KEY_SVWorksheetLayer;
 
@@ -159,7 +156,7 @@ extends SVSpatialLayer
             return true;
         }
 
-        OracleConnection conn = null;
+        Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
@@ -192,7 +189,7 @@ extends SVSpatialLayer
         double pointSizeValue = 4,
                    angleValue = 0.0f;
         String    sqlTypeName = "";
-        STRUCT         stGeom = null;
+        Struct         stGeom = null;
         JGeometry       jgeom = null;
         byte[]    geomPickler = null;
         long    mbrCalcStart  = 0,
@@ -218,14 +215,14 @@ extends SVSpatialLayer
                    (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
             {
                 /// reading a geometry from database
-                sqlTypeName = ((oracle.sql.STRUCT)rSet.getOracleObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
+                sqlTypeName = ((java.sql.Struct)rSet.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
                 if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
                     geomPickler = rSet.getBytes(super.getGeoColumn().replace("\"",""));
                     if (geomPickler == null) continue;
                     //convert image into a JGeometry object using the SDO pickler
                     jgeom = JGeometry.load(geomPickler);
                 } else {
-                    stGeom = (oracle.sql.STRUCT)rSet.getOracleObject(super.getGeoColumn().replace("\"",""));
+                    stGeom = (java.sql.Struct)rSet.getOracleObject(super.getGeoColumn().replace("\"",""));
                     if (stGeom == null) continue;
                     // If ST_GEOMETRY, extract SDO_GEOMETRY
                     if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
@@ -234,13 +231,13 @@ extends SVSpatialLayer
                     if (stGeom==null) {
                         jgeom = null;
                     }else {
-                        jgeom = JGeometry.load(stGeom);
+                        jgeom = JGeometry.loadJS(stGeom);
                     }
                 }
                 if (jgeom == null) {
                     continue;
                 }
-                geoMBR.setMBR(SDO_GEOMETRY.getGeoMBR(jgeom));
+                geoMBR.setMBR(JGeom.getGeoMBR(jgeom));
                 if ( ! _mbr.intersects(geoMBR) ) {
                     continue;
                 }
@@ -388,7 +385,7 @@ extends SVSpatialLayer
                 return null;
             }
             LinkedHashMap<String, String> columnsTypes = new LinkedHashMap<String,String>(255);
-            OracleConnection conn = super.getConnection();
+            Connection conn = super.getConnection();
             try {
                 LOGGER.debug("SQL Before="+layerSql);
                 OraclePreparedStatement pstmt;
@@ -459,7 +456,7 @@ extends SVSpatialLayer
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); 
         Envelope   mbr = new Envelope(super.getDefaultPrecision());
         
-        OracleConnection oConn = null;
+        Connection oConn = null;
         try {
             // Make sure layer's connection has not been lost
             oConn = super.getConnection();
@@ -508,7 +505,7 @@ LOGGER.debug("queryByPoint sql: "+qSql);
 
 LOGGER.debug("SQL executed in " + executeTime);
             
-            STRUCT     stGeom = null;
+            Struct     stGeom = null;
             long dataReadTime = 0,
                 dataReadStart = 0,
                 totalFeatures = 0;
@@ -532,7 +529,7 @@ LOGGER.debug("queryByPoint row number: "+rSet.getRow());
                     columnTypeName = rSetM.getColumnTypeName(col);
 LOGGER.debug("queryByPoint columnName: "+columnName+ " columnTypeName="+columnTypeName);
                     if (columnName.equalsIgnoreCase(geoColumn)) {
-                        stGeom = (oracle.sql.STRUCT)rSet.getObject(col);
+                        stGeom = (java.sql.Struct)rSet.getObject(col);
                         // If ST_GEOMETRY, extract SDO_GEOMETRY
                         if ( stGeom.getSQLTypeName().indexOf("MDSYS.ST_")==0 ) {
                             stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);

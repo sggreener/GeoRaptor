@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,10 +31,8 @@ import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleStatement;
 
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
-
-import oracle.sql.STRUCT;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -52,7 +50,6 @@ import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.util.logging.Logger;
 
 
-@SuppressWarnings("deprecation")
 public class ExporterWriter 
      extends JFrame 
   implements ActionListener
@@ -70,7 +67,7 @@ public class ExporterWriter
        * Properties File Manager
        **/
       //private static final String propertiesFile = "org.GeoRaptor.io.Export.ui.export";
-      private static final String propertiesFile = "org.GeoRaptor.io.export";
+      private static final String propertiesFile = "org.GeoRaptor.io.Export";
       protected PropertiesManager propertyManager;
 
       /** UI for when work is actually done
@@ -589,7 +586,7 @@ public class ExporterWriter
                     geoExporter.setGeoColumnName(getColumnName());
                     geoExporter.setExportMetadata(this.resultMeta);
                     
-                    STRUCT geoStruct = null;
+                    Struct geoStruct = null;
 
                     // Discover geometryMetadata
                     //
@@ -635,7 +632,7 @@ public class ExporterWriter
                     {
                         // Process geometry first to see if we can skip the whole row.
                         //
-                        geoStruct = (oracle.sql.STRUCT)rSet.getOracleObject(getColumnName());
+                        geoStruct = (java.sql.Struct)rSet.getObject(getColumnName());
                         if ( rSet.wasNull() || geoStruct == null ) {
                             if ( isSkipNullGeometry() ) {
                                 setSkipStatistics(ShapeType.NULL,false);

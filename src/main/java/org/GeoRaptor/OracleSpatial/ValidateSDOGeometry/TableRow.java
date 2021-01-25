@@ -1,14 +1,13 @@
 package org.GeoRaptor.OracleSpatial.ValidateSDOGeometry;
 
+import java.sql.Struct;
+
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
 
-import oracle.sql.STRUCT;
-
-@SuppressWarnings("deprecation")
 public class TableRow {
 
     protected SpatialRenderer              sRenderer = null;
@@ -16,7 +15,7 @@ public class TableRow {
     protected String                              id = null, 
                                                error = null,
                                          checkResult = null;
-    protected STRUCT                        geometry = null;
+    protected Struct                        geometry = null;
     protected String                     geoRenderer = null;  // Selected SDO_GEOMETRY column in (possibly coloured) display string form.
     protected boolean              currentIsColoured = false;
     protected Constants.renderType currentRenderType = null;
@@ -27,7 +26,7 @@ public class TableRow {
     public TableRow(String _id, 
                     String _error,
                     String _checkResult, 
-                    STRUCT _geometry) 
+                    Struct _geometry) 
     {
         this.id                = _id;
         this.error             = _error;
@@ -68,18 +67,18 @@ public class TableRow {
         return this.checkResult;
     }
 
-    public void setGeometry(STRUCT geometry) {
+    public void setGeometry(Struct geometry) {
         this.geometry = geometry;
     }
 
-    public STRUCT getGeometry() {
+    public Struct getGeometry() {
         return this.geometry;
     }
 
     public String getGeoConstructor() {
         try {
             if ( this.geometry != null )
-                return RenderTool.renderSTRUCTAsPlainText(
+                return RenderTool.renderStructAsPlainText(
                                         this.geometry,
                                         Constants.bracketType.NONE, 
                                         Constants.MAX_PRECISION

@@ -37,7 +37,7 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -83,11 +83,7 @@ import oracle.ide.util.dnd.TransferableTreeNode;
 
 import oracle.ideimpl.explorer.dnd.MultiTransferable;
 
-import oracle.jdbc.OracleConnection;
-
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -110,13 +106,14 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
+import java.sql.Connection;
 
 
 /**
  * @author Simon Greener, September 13th 2010
  *          Created from original TreeActiveLayer
  **/
- @SuppressWarnings("deprecation")
+
 public class ViewLayerTree 
       extends JTree
    implements DragSourceListener,
@@ -1771,9 +1768,9 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
                                                    mbr.getMaxX(), 
                                                    mbr.getMaxY(), 
                                                    fLayerNode.getSpatialLayer().getSRIDAsInteger());
-					STRUCT stGeom;
+					Struct stGeom;
                     try {
-                        stGeom = (STRUCT) JGeometry.storeJS(geom,fLayerNode.getSpatialLayer().getConnection());
+                        stGeom = (Struct) JGeometry.storeJS(geom,fLayerNode.getSpatialLayer().getConnection());
                         svp.showGeometry(fLayerNode.getSpatialLayer(),stGeom, null, SDO_GEOMETRY.getGeoMBR(stGeom), true, true, false);
                         /* ??? */ sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
                     } catch (Exception f) {
@@ -2097,7 +2094,7 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
           
           boolean supportedVersion = true;
           try {
-              OracleConnection conn = _fLayerNode.getSpatialLayer().getConnection();
+              Connection conn = _fLayerNode.getSpatialLayer().getConnection();
               if ( conn == null ) {
                   supportedVersion = false;
               } else {

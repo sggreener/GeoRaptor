@@ -15,11 +15,9 @@ package org.locationtech.jts.io.oracle;
 import java.math.BigDecimal;
 
 import java.sql.Array;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
-
-import oracle.jdbc.OracleArray;
-import oracle.jdbc.OracleConnection;
 
 import oracle.sql.NUMBER;
 
@@ -41,17 +39,14 @@ public class OraUtil
    * @throws SQLException if an error occurs
    */
     public static int toInteger(Object datum,
-                                int    defaultValue) 
+    		                       int defaultValue) 
     {
       // Note Returning null for null sdo_geometry structure
         if (datum == null) 
           return defaultValue;
         
         BigDecimal bigDec = (BigDecimal)datum;
-        if (bigDec == null) {
-            return defaultValue;
-        }
-        return bigDec.intValue();
+        return (bigDec == null) ? defaultValue : Integer.valueOf(bigDec.intValue());
     }
 
   /**
@@ -71,12 +66,12 @@ public class OraUtil
       if (array == null) 
           return null;
       
-      OracleArray intOArray = (OracleArray)array;
-      Object[]    intArray = (Object[])intOArray.getArray();
-      int[]           ints = new int[intArray.length];    
-      BigDecimal bd;
+      Array   intOArray = (Array)array;
+      Object[] intArray = (Object[])intOArray.getArray();
+      int[]        ints = new int[intArray.length];    
+      BigDecimal     bd;
       for (int i =0; i < intArray.length; i++) { 
-          bd = (BigDecimal)intArray[i];
+          bd = (BigDecimal)intArray[i];          
           ints[i] = (defaultValue == 0) ? bd.intValue() : defaultValue;
       }
       return ints;
@@ -105,10 +100,10 @@ public class OraUtil
       if ( array == null )
           return null;
       
-      OracleArray dblOArray = (OracleArray)array;
-      Object[]     dblArray = (Object[])dblOArray.getArray();
-      double[]         dbls = new double[dblArray.length];    
-      BigDecimal bd;
+      Array   dblOArray = (Array)array;
+      Object[] dblArray = (Object[])dblOArray.getArray();
+      double[]     dbls = new double[dblArray.length];    
+      BigDecimal     bd;
       for (int i =0; i < dblArray.length; i++) { 
           bd = (BigDecimal)dblArray[i];
           dbls[i] = Double.isNaN(defaultValue) ? bd.doubleValue() : defaultValue;
@@ -124,29 +119,19 @@ public class OraUtil
      * @return
      */
     // note Tested 16th August
-    public static double[] toDoubleArray(Struct _struct, final double defaultValue) 
+    public static double[] toDoubleArray(Struct _SdoPoint, 
+                                          final double defaultValue) 
     {
-        if (_struct == null) 
+        if (_SdoPoint == null) 
             return null;
 
         try {
-            Struct stGeom      = _struct;
-            Struct sdo_point   = stGeom;
-            String sqlTypeName = _struct.getSQLTypeName();
-            if ( sqlTypeName.equalsIgnoreCase("MDSYS.SDO_GEOMETRY") ) {
-                // Get Point element from sdo_geometry structure
-                Object[] data = _struct.getAttributes();
-                sdo_point     = (Struct)data[2];
-                sqlTypeName   = sdo_point.getSQLTypeName();
-            }
-            if ( sqlTypeName.equalsIgnoreCase("MDSYS.SDO_POINT_TYPE") ) {
-                sdo_point = _struct;
-            }
-            if (sdo_point == null) {
+            String sqlTypeName = _SdoPoint.getSQLTypeName();
+            if ( ! sqlTypeName.equalsIgnoreCase("MDSYS.SDO_POINT_TYPE") ) {
                 return null;
             }
             // Extract values and return array
-            Object[] data = sdo_point.getAttributes();
+            Object[] data = _SdoPoint.getAttributes();
             BigDecimal x = (BigDecimal)data[0];
             BigDecimal y = (BigDecimal)data[1];
             BigDecimal z = (BigDecimal)data[2];
@@ -167,10 +152,7 @@ public class OraUtil
           return defaultValue;
       
       BigDecimal bigDec = (BigDecimal)datum;
-      if (bigDec == null) {
-          return defaultValue;
-      }
-      return bigDec.intValue();
+      return (bigDec == null) ? defaultValue : bigDec.doubleValue();
   }
 
   /**
@@ -194,11 +176,11 @@ public class OraUtil
   // Changed 17th August 2019
   public static Array toArray(double[] doubles, 
                               String dataType,
-                              OracleConnection connection) 
+                              Connection connection) 
   throws SQLException
   {
       Object arrayOfDoubles = doubles; 
-      Array dArray = connection.createOracleArray(dataType,arrayOfDoubles);
+      Array dArray = connection.createArrayOf(dataType,(Object[]) arrayOfDoubles);
       return dArray;
   }
 
@@ -208,10 +190,11 @@ public class OraUtil
   // Changed 17th August 2019
   public static Array toArray(int[] ints, 
                               String dataType,
-                              OracleConnection connection) 
+                              Connection connection) 
   throws SQLException
   {
-      Array dArray = connection.createOracleArray(dataType, ints);
+      Object arrayOfIntegers = ints; 
+      Array dArray = connection.createArrayOf(dataType, (Object[])arrayOfIntegers);
       return dArray;
   }
 
@@ -219,7 +202,7 @@ public class OraUtil
   // Changed 17th August 2019
   public static Struct toStruct(Object[] attributes, 
                                 String dataType, 
-                                OracleConnection connection) 
+                                Connection connection) 
   throws SQLException
   {
     //TODO: fix this to be more generic

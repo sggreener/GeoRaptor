@@ -28,10 +28,10 @@ public class PropertiesManager {
     throws IllegalArgumentException
     {
         super();
+System.out.println("PropertiesManager: " + _place);
         // eg "org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel";
         if (Strings.isEmpty(_place) )
             throw new IllegalArgumentException("Resource name must be provided");
-        
         this.rBoundle = ResourceBundle.getBundle(_place, Locale.getDefault());
 
         // support for internationalization

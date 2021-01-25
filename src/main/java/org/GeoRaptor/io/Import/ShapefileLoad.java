@@ -7,19 +7,16 @@
 package org.GeoRaptor.io.Import;
 
 import java.awt.Toolkit;
-
 import java.io.File;
 import java.io.IOException;
-
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.sql.Types;
-
 import java.text.DateFormat;
-
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -40,35 +37,30 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 
-import oracle.ide.dialogs.ProgressBar;
-
-import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OracleTypes;
-
-import oracle.spatial.geometry.JGeometry;
-import oracle.spatial.util.DBFReaderJGeom;
-import oracle.spatial.util.ShapefileFeatureJGeom;
-import oracle.spatial.util.ShapefileReaderJGeom;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Messages;
+import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
-import org.GeoRaptor.Preferences;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
-
 import org.xBaseJ.DBF;
 import org.xBaseJ.fields.Field;
+
+import oracle.ide.dialogs.ProgressBar;
+import oracle.jdbc.OracleTypes;
+import oracle.spatial.geometry.JGeometry;
+import oracle.spatial.util.DBFReaderJGeom;
+import oracle.spatial.util.ShapefileFeatureJGeom;
+import oracle.spatial.util.ShapefileReaderJGeom;
 
 /**
  * @author Simon Greener, May 2010
@@ -88,7 +80,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	protected Preferences prefs;
 	protected PropertiesManager propertyManager;
 	//private static final String propertiesFile = "org.GeoRaptor.io.Import.import";
-	private static final String propertiesFile = "org.GeoRaptor.io.import";
+	private static final String propertiesFile = "org.GeoRaptor.io.Import";
 	private final String iconDirectory = "org/GeoRaptor/images/";
 	private ClassLoader cl = this.getClass().getClassLoader();
 
@@ -1035,7 +1027,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.connName = _connName;
 		DatabaseConnections.getInstance().addConnection(this.connName);
 		this.load_operation = LOAD_TYPE.INSERT;
-		OracleConnection conn = this.getConnection(this.connName, false);
+		Connection conn = this.getConnection(this.connName, false);
 
 		// Check existance of object to be loaded
 		// by getting SDO_GEOM_METADATA for the supplied parameters.
@@ -1166,8 +1158,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		return org.GeoRaptor.SpatialView.SpatialViewPanel.LayerReturnCode.Success;
 	}
 
-	private OracleConnection getConnection(String _connName, boolean _display) {
-		DatabaseConnection dbConn = _display ? DatabaseConnections.getInstance().findDisplayName(_connName)
+	private Connection getConnection(String _connName, boolean _display) {
+		DatabaseConnection dbConn = _display 
+				? DatabaseConnections.getInstance().findDisplayName(_connName)
 				: DatabaseConnections.getInstance().findConnectionName(_connName);
 		if (dbConn == null) {
 			this.setAlwaysOnTop(false);
@@ -1533,7 +1526,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	public void executeSQL(String _sql) throws SQLException {
 		Statement stmt;
 		try {
-			OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 			stmt = conn.createStatement();
 			stmt.executeUpdate(_sql);
 			conn.commit();
@@ -1962,7 +1955,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 			// We need to know if the SRID of this table is geodetic
 			//
-			OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 			Constants.SRID_TYPE sridType = null;
 			if (conn == null) {
 				sridType = Tools.discoverSRIDType(this.srid);
@@ -1987,7 +1980,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				//
 				sql = me.deleteSQL();
 				this.sfl.executeSQL(sql);
-				OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+				Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 				conn.commit();
 
 				// Insert new Metadata Entry
@@ -2061,7 +2054,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		 *              column may come from another table.
 		 */
 		private void loadShapefile(String _shapefileName, String _idName, boolean _fidProcessing) {
-			OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 
 			DBFReaderJGeom dbfr = null;
 			ShapefileReaderJGeom sfh = null;

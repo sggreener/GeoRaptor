@@ -22,8 +22,8 @@ import javax.swing.SwingConstants;
 
 import javax.swing.event.ListSelectionListener;
 
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 import org.GeoRaptor.Constants;
 

@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.sql.Connection;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,9 +28,8 @@ import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
-import oracle.jdbc.OracleConnection;
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 
 public class ValidationSelectQuery extends JDialog {
@@ -93,7 +93,7 @@ public class ValidationSelectQuery extends JDialog {
                 public void windowDeiconified(WindowEvent e) {}
                 public void windowDeactivated(WindowEvent e) {}
             });
-            OracleConnection conn = this.mainValidationForm.getConnection();
+            Connection conn = this.mainValidationForm.getConnection();
             if ( conn == null || conn.getMetaData().getDatabaseMajorVersion() < 11 ) {
                 this.cb2D.setEnabled(false);
             }

@@ -44,8 +44,6 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.TableSortIndicator;
 
-import oracle.jdbc.OracleConnection;
-
 
 /**
  *
@@ -143,8 +141,8 @@ public class SRIDPanel extends javax.swing.JDialog implements Observer {
 
     // ====================== Non-Netbeans initiation
 
-    public boolean initialise(OracleConnection _conn, 
-                              String           _srid) {
+    public boolean initialise(Connection _conn, 
+                              String     _srid) {
         // Always refresh getting of connection as last one used may be different from now or closed
         // Any connection will do
         //

@@ -3,16 +3,11 @@ package org.GeoRaptor.io.Export;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-
 import java.sql.Connection;
-
+import java.sql.Struct;
 import java.util.LinkedHashMap;
 
 import javax.sql.RowSetMetaData;
-
-import oracle.spatial.util.GML3;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
@@ -21,11 +16,10 @@ import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
 
+import oracle.spatial.util.GML3;
 
-@SuppressWarnings("deprecation")
 public class GMLExporter implements IExporter 
 {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GMLExporter");
@@ -178,7 +172,7 @@ public class GMLExporter implements IExporter
                             OraRowSetMetaDataImpl _columnMetaData) 
     {
         String gmlText = "";
-        STRUCT stValue = null; 
+        Struct stValue = null; 
         try {
             // Mappable column?
             // System.out.println(_columnMetaData.getCatalogName(1) + "\t" + _columnMetaData.getColumnTypeName(1));
@@ -188,7 +182,7 @@ public class GMLExporter implements IExporter
                 if ( _columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) 
                 {
                     gmlText = "";
-                    stValue = (STRUCT)_object; 
+                    stValue = (Struct)_object; 
                     if ( stValue == null ) {
                         LOGGER.warn("NULL Geometry: No featureMember element written for row " + (row+1));
                         // Will produce an empty featureMember

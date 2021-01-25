@@ -4,11 +4,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import oracle.ide.Context;
 import oracle.ide.Ide;
 import oracle.ide.IdeMainWindow;
-import oracle.ide.controller.Controller;
-import oracle.ide.controller.IdeAction;
 import oracle.ide.controller.MenuManager;
 import oracle.ide.controller.Menubar;
 

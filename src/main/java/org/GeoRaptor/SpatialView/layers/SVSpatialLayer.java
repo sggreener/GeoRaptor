@@ -11,11 +11,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-
+import java.sql.Connection;
 import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.RowId;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
@@ -35,15 +38,12 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -57,6 +57,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -80,7 +81,6 @@ import org.xml.sax.SAXException;
  * 64 - 2.5 Geometry Examples
  * 75 - 2.5.8 Several Geometry Types
  */
-@SuppressWarnings("deprecation")
 public class SVSpatialLayer 
      extends SVLayer
 {
@@ -273,7 +273,9 @@ public class SVSpatialLayer
     }
 
     private void initialise() {
+System.out.println("gettin preferences");
         this.preferences = MainSettings.getInstance().getPreferences();
+System.out.println("getFetchSize=" + String.valueOf(preferences.getFetchSize()));
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
     }
@@ -535,7 +537,7 @@ public class SVSpatialLayer
     }
     
     public void setIndex() {
-        OracleConnection conn = null; 
+        Connection conn = null; 
         try {
             conn = super.getConnection();
         } catch (IllegalStateException ise) {
@@ -556,9 +558,6 @@ public class SVSpatialLayer
             LOGGER.debug("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
         } catch (IllegalArgumentException iae) {
             LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
-            this.indexExists = false;
-        } catch (SQLException e) {
-            LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() SQLException: " + e.toString());
             this.indexExists = false;
         }
     }
@@ -585,7 +584,7 @@ public class SVSpatialLayer
     public boolean setLayerMBR(Envelope _defaultMBR,
                                int             _targetSRID)
     {
-        OracleConnection conn = super.getConnection();
+        Connection conn = super.getConnection();
          
         // If source is INDEX get MBR from RTree index
         //
@@ -747,22 +746,22 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         return sdoFilterClause;
     }
     
-    private STRUCT getSearchFilterGeometry(Envelope _mbr,
+    private Struct getSearchFilterGeometry(Envelope _mbr,
                                            boolean         _project,
                                            int             _sourceSRID,
                                            int             _destinationSRID) 
     throws SQLException 
     {
-        STRUCT filterGeom = null;
+    	Struct filterGeom = null;
         try {
-            OracleConnection conn = null;
+            Connection conn = null;
             conn = super.getConnection();
             // JGeometry codes NULL srid from value 0 not -1
             int srid = _sourceSRID == Constants.SRID_NULL ? 0 : _sourceSRID; 
             JGeometry jGeom = new JGeometry(_mbr.getMinX(),_mbr.getMinY(),_mbr.getMaxX(),_mbr.getMaxY(),srid);
             filterGeom = _project 
             		     ? MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID) 
-                         : (STRUCT) JGeometry.storeJS(conn,jGeom);
+                         : (Struct) JGeometry.storeJS(conn,jGeom);
         } catch (Exception e) {
             LOGGER.warning(propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
             filterGeom = null;
@@ -806,7 +805,7 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         LOGGER.debug("   Before="+_sql );        
         String SQL = _sql;
         
-        OracleConnection conn = null;
+        Connection conn = null;
         // Get connection, including trying to open it.
         if ( super.openConnection() ) {
             conn = super.getConnection();
@@ -992,14 +991,14 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         return this.numberOfFeatures;
     }
     
-    protected OraclePreparedStatement setParameters(String          _sql, 
-                                                    Envelope _mbr) 
+    protected PreparedStatement setParameters(String _sql, 
+                                            Envelope _mbr) 
     {
         LOGGER.debug("SVSpatialLayer.setParameters()");
-        OraclePreparedStatement pStatement = null;
-        String         spatialFilterClause = "";
-        STRUCT                  filterGeom = null;
-        int                 stmtParamIndex = 1;
+        PreparedStatement pStatement = null;
+        String   spatialFilterClause = "";
+        Struct            filterGeom = null;
+        int           stmtParamIndex = 1;
         try 
         {
             boolean project = this.project &&
@@ -1017,7 +1016,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             // Filter Geom is always expressed in terms of the layer's SRID
             //
             filterGeom = this.getSearchFilterGeometry(_mbr,project,querySRID,this.getSRIDAsInteger());
-            pStatement.setSTRUCT(stmtParamIndex++, filterGeom);
+            pStatement.setObject(stmtParamIndex++, filterGeom, java.sql.Types.STRUCT);
             LOGGER.debug("SVSpatialLayer.setParameters(): window geometry parameter " + (stmtParamIndex-1) + " to STRUCT is " + (filterGeom==null?"null":"not null"));
 
             // Set up SDO_Filter clause depending on whether min_resolution is to be applied or not
@@ -1044,7 +1043,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             LOGGER.debug("SVSpatialLayer.setParameters(): this.getPrefreences().isLogSearchStats() = " + this.getPreferences().isLogSearchStats() );
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info("\n" + _sql + "\n" + 
-                            String.format("?=%s\n?=%s", SDO_GEOMETRY.convertGeometryForClipboard(filterGeom),
+                            String.format("?=%s\n?=%s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                           spatialFilterClause));
             }
         } catch (SQLException sqle) {
@@ -1055,7 +1054,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
                                                                sqle.getMessage()),
                                   _sql + "\n" +
-                                  String.format("? %s\n? %s", SDO_GEOMETRY.convertGeometryForClipboard(filterGeom),
+                                  String.format("? %s\n? %s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                                 spatialFilterClause));
         } 
         LOGGER.debug("returning pStatement");
@@ -1070,7 +1069,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
      */
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
-        OracleConnection conn = null;
+        Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
@@ -1115,7 +1114,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
 
         // Set up parameters for statement
         //
-        OraclePreparedStatement pStatement = null;
+        PreparedStatement pStatement = null;
         pStatement = this.setParameters(sql,_mbr);
 
         // Now execute query and return result
@@ -1124,9 +1123,9 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         return success;
     }
 
-    protected boolean executeDrawQuery(OraclePreparedStatement _pStatement,
-                                       String                  _sql2Debug,
-                                       Graphics2D              _g2)
+    protected boolean executeDrawQuery(PreparedStatement _pStatement,
+                                       String            _sql2Debug,
+                                       Graphics2D        _g2)
     {
         LOGGER.debug("** START: executeDrawQuery\n=======================");
         if ( _g2 == null ) {
@@ -1134,7 +1133,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             return false;
         }
         // connection needed for 
-        OracleResultSet    ors = null;
+        ResultSet    ors = null;
         Envelope newMBR = new Envelope(this.getDefaultPrecision());
         String     labelValue = null,
                    shadeValue = null,
@@ -1144,7 +1143,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         boolean isFastPickler = this.getPreferences().isFastPicklerConversion();
         double pointSizeValue = 4,
                    angleValue = 0.0f;
-        STRUCT         stGeom = null;
+        Struct         stGeom = null;
         JGeometry       jGeom = null;
         byte[]    geomPickler = null;
         long    mbrCalcStart  = 0,
@@ -1158,11 +1157,11 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                   executeTime = 0;    
         try 
         {
-            OracleConnection oConn = (OracleConnection)_pStatement.getConnection();
+            Connection oConn = (Connection)_pStatement.getConnection();
             // Set graphics2D once for all features
             drawTools.setGraphics2D(_g2);
             executeStart = System.currentTimeMillis();
-            ors = (OracleResultSet)_pStatement.executeQuery();
+            ors = _pStatement.executeQuery();
             ors.setFetchDirection(OracleResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
             executeTime = ( System.currentTimeMillis() - executeStart );
@@ -1170,21 +1169,21 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                    (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
             {
                 /// reading a geometry from database                
-                sqlTypeName = ((oracle.sql.STRUCT)ors.getOracleObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
+                sqlTypeName = ((java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
                 if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
                     geomPickler = ors.getBytes(super.getGeoColumn().replace("\"",""));
                     if (geomPickler == null) { continue; }
                     //convert image into a JGeometry object using the SDO pickler
                     jGeom = JGeometry.load(geomPickler);
                 } else {
-                    stGeom = (oracle.sql.STRUCT)ors.getOracleObject(super.getGeoColumn().replace("\"",""));
+                    stGeom = (java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""));
                     if (stGeom == null) continue;
                     // If ST_GEOMETRY, extract SDO_GEOMETRY
                     if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                         stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
                     } 
                     if (stGeom==null) { continue; }
-                    jGeom = JGeometry.load(stGeom);
+                    jGeom = JGeometry.loadJS(stGeom);
                 }
                 if (jGeom == null) continue;
                 
@@ -1195,7 +1194,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 }
                 if (this.styling.getRotationColumn() != null) {
                     try {
-                        angleValue = ors.getNUMBER(this.styling.getRotationColumn().replace("\"","")).doubleValue();
+                        angleValue = ors.getDouble(this.styling.getRotationColumn().replace("\"",""));
                     } catch (Exception e) {
                         angleValue = 0.0f;
                     }
@@ -1250,7 +1249,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 if ( this.getMBRRecalculation() ) {
                     LOGGER.debug("**** MBR Recalculation - processing individual geometry for " + this.getLayerNameAndConnectionName());
                     mbrCalcStart =  System.currentTimeMillis();
-                    newMBR.setMaxMBR(SDO_GEOMETRY.getGeoMBR(jGeom));
+                    newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
                     mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );
                 }
                 if ( this.preferences.isQueryLimited() && totalFeatures >= this.preferences.getQueryLimit() ) {
@@ -1333,7 +1332,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         // Otherwise go to table itself.
         //
         try {
-            OracleConnection conn = super.getConnection();
+            Connection conn = super.getConnection();
             String layerSql = this.getSQL();
             if (Strings.isEmpty(layerSql)) {
                 return new LinkedHashMap<String, String>(MetadataTool.getColumnsAndTypes(conn,
@@ -1421,7 +1420,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
      *          - Also moved setting of temporary layer transparency to own function
      *          and to before this function is called (for each and all geometries)
      */
-    public void callDrawFunction(STRUCT _struct, 
+    public void callDrawFunction(Struct _struct, 
                                  String _label, 
                                  String _shadeValue,
                                  String _pointColorValue,
@@ -1434,7 +1433,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         if (_struct == null) {
             return;
         }
-        STRUCT stGeom = _struct;
+        Struct stGeom = _struct;
         String sqlTypeName = _struct.getSQLTypeName();
         if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
             stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
@@ -1442,7 +1441,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         if (stGeom == null) {
             return;
         }
-        JGeometry geo = JGeometry.load(stGeom);
+        JGeometry geo = JGeometry.loadJS(stGeom);
         if (geo == null) {
             return;
         }
@@ -1696,7 +1695,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
     public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, 
                                             int     _numSearchPixels) 
     {
-        STRUCT            retSTRUCT = null; // read SDO_GEOMETRY column
+    	Struct            retSTRUCT = null; // read SDO_GEOMETRY column
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); // list of return rows
         int         numSearchPixels = _numSearchPixels <= 0 ? this.getPreferences().getSearchPixels() : _numSearchPixels;
         // Need future check for 3D indexed layers??
@@ -1705,7 +1704,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         String querySQL = "";
         String params = "";
         String spatialFilterClause = ""; 
-        OracleConnection conn = null;
+        Connection conn = null;
         try {
             // Set up the connection and statement
             //
@@ -1740,9 +1739,9 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             // Create search mbr, distance measurement variables
             //
             Point2D.Double pixelSize = null;
-            STRUCT   searchPoint = null;
-            STRUCT distancePoint = null;
-            STRUCT     searchMBR = null;
+            Struct   searchPoint = null;
+            Struct distancePoint = null;
+            Struct     searchMBR = null;
             try {
                 // Compute End point of search distance line
                 // Note: first point of line denoting search distance is the passed in point (world units)
@@ -1750,19 +1749,19 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
                 JGeometry searchJPoint = new JGeometry(_worldPoint.getX(),_worldPoint.getY(),querySRID);
                 searchPoint = project ? MetadataTool.projectJGeometry(conn,searchJPoint,this.getSRIDAsInteger()) 
-                              : (STRUCT) JGeometry.storeJS(conn,  searchJPoint);               
+                              : (Struct) JGeometry.storeJS(conn,  searchJPoint);               
                 JGeometry distanceJPoint = new JGeometry(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
                                                          _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0),
                                                          querySRID);
                 distancePoint = project ? MetadataTool.projectJGeometry(conn,distanceJPoint,this.getSRIDAsInteger()) 
-                                : (STRUCT) JGeometry.storeJS(conn,  distanceJPoint);
+                                : (Struct) JGeometry.storeJS(conn,  distanceJPoint);
                 // SDO_Filter geometry has same SRID as layer
                 Envelope mbr = new Envelope(_worldPoint.getX() - (numSearchPixels*pixelSize.getX()/1.9),
                                                           _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
                                                           _worldPoint.getX() + (numSearchPixels*pixelSize.getX()/1.9),
                                                           _worldPoint.getY() + (numSearchPixels*pixelSize.getY()/1.9));
                 JGeometry searchJMBR = new JGeometry(mbr.getMinX(),mbr.getMinY(),mbr.getMaxX(),mbr.getMaxY(),this.getSRIDAsInteger());
-                searchMBR = (STRUCT) JGeometry.storeJS(conn,searchJMBR);
+                searchMBR = (Struct) JGeometry.storeJS(conn,searchJMBR);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Failed to create search SDO_GEOMETRY objects " + e.getMessage());
                 return null;
@@ -1786,13 +1785,13 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 //               : "a.*\n" 
                 //               )
                 //"  FROM (" + this.getSQL() + 
-                pStatement.setOracleObject(stmtParamIndex++,searchPoint);                     params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setOracleObject(stmtParamIndex++,distancePoint);                   params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble      (stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString      (stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
+                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);                   params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
+                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
                 // MBR for SDO_FILTER 
                 //
-                pStatement.setSTRUCT      (stmtParamIndex++, searchMBR);                          params += String.format("? %s\n", SDO_GEOMETRY.convertGeometryForClipboard(searchMBR));
+                pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);                          params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
                 if ( ! this.isSTGeometry() ) {
                     spatialFilterClause = this.sdoFilterClause; // Default
                     if (this.getMinResolution()) {
@@ -1811,16 +1810,16 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                     //       "   AND SDO_NN_DISTANCE(1) < s.dist \n" +  
                     //       "   AND b.rowid = a.rowid \n " +
                     //       " ORDER BY sdo_nn_distance(1)";
-                    pStatement.setOracleObject(stmtParamIndex++,searchPoint);                 params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                    pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                 params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
                     String     sdo_num_res = "sdo_num_res=" + String.valueOf(numSearchPixels * 2);
-                    pStatement.setString      (stmtParamIndex++,sdo_num_res+units_parameter); params += "? '" + sdo_num_res + "'\n";                    
+                    pStatement.setString(stmtParamIndex++,sdo_num_res+units_parameter); params += "? '" + sdo_num_res + "'\n";                    
                 } else {
                     // "   AND MDSYS.SDO_WITHIN_DISTANCE(" + super.getGeoColumn() + ",?/*search point*/,'distance=' || (SELECT s.dist FROM searchDistance s) || ?) = 'TRUE' ) a\n";
-                    pStatement.setOracleObject(stmtParamIndex++,searchPoint);                     params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                    pStatement.setString      (stmtParamIndex++,units_parameter);                 params += String.format("? '%s'\n",units_parameter);
+                    pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                    pStatement.setString(stmtParamIndex++,units_parameter);                 params += String.format("? '%s'\n",units_parameter);
                 }
             } else {
-                pStatement.setSTRUCT(stmtParamIndex++, searchMBR);                                params += String.format("? %s\n", SDO_GEOMETRY.convertGeometryForClipboard(searchMBR));
+                pStatement.setObject(stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);                                params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
                 pStatement.setDouble(stmtParamIndex++, this.getTolerance());                      params += String.format("? '%s'\n",this.getTolerance());
                 // "   AND MDSYS.SDO_GEOM.SDO_DISTANCE(t." + super.getGeoColumn() + ",
                 //                                     ?/*searchPoint*/,
@@ -1832,26 +1831,26 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 // If Not Indexed: 7 Parameters
                 // SearchPoint, Tol, Unit
                 // SearchPoint, DistancePoint, Tol, Unit
-                pStatement.setOracleObject(stmtParamIndex++,searchPoint);                     params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble      (stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString      (stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
-                pStatement.setOracleObject(stmtParamIndex++,searchPoint);                     params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setOracleObject(stmtParamIndex++,distancePoint);                   params += String.format("? %s\n",RenderTool.renderSTRUCTAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble      (stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString      (stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
+                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
+                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
+                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);                   params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
+                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
             }
 
             // ****************** Execute the query ************************
             //
-            OracleResultSet ors = (OracleResultSet)pStatement.executeQuery();
-            ors.setFetchDirection(OracleResultSet.FETCH_FORWARD);
+            ResultSet ors = pStatement.executeQuery();
+            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
             String value = "";
             String columnName = "";
             String columnTypeName = "";
-            String rowID = "";
+            RowId rowID = null;
             while (ors.next()) {
                 LinkedHashMap<String, Object> calValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
                 for (int col = 1; col <= rSetM.getColumnCount(); col++) {
@@ -1863,7 +1862,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                         continue;
                     }
                     if (columnName.equalsIgnoreCase(geoColumn)) {
-                        retSTRUCT = (oracle.sql.STRUCT)ors.getObject(col);
+                        retSTRUCT = (java.sql.Struct)ors.getObject(col);
                         if (ors.wasNull() || retSTRUCT==null) {
                             break; // process next row
                         }                        
@@ -1884,8 +1883,8 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                                       value = "NULL";
                                   } else {
                                       if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
-                                          rowID = ors.getROWID(col).stringValue(); 
-                                          value = rowID;
+                                          rowID = ors.getRowId(col); 
+                                          value = rowID.toString();
                                       } else {
                                           value = SQLConversionTools.convertToString(conn, ors, col);
                                           if (value == null)
@@ -1899,7 +1898,7 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                           }
                     }
                 }
-                retList.add(new QueryRow(rowID, calValueMap, retSTRUCT));
+                retList.add(new QueryRow(rowID.toString(), calValueMap, retSTRUCT));
             }
             ors.close();
             pStatement.close();

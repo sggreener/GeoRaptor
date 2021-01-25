@@ -21,20 +21,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-
+import java.sql.Connection;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.text.DecimalFormat;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,7 +57,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -69,23 +65,16 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
-
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
-
-import oracle.sql.STRUCT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
-import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.MyImageSelection;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
@@ -98,23 +87,22 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 
 /**
  * @author Simon Greener, April 11th
  **/
 
-@SuppressWarnings("deprecation")
 public class SpatialViewPanel 
 extends JPanel 
 {
@@ -1219,15 +1207,15 @@ LOGGER.debug("btnQueryByPoint: finish");
                                  this.activeView.getPrecision(false));
     }
     
-    public LayerReturnCode addNewSpatialLayer(String           _schemaName,
-                                              String           _objectName, 
-                                              String           _columnName,
-                                              String           _objectType, /* TABLE/VIEW/MATERIALIZED VIEW */
-                                              String           _connectionName, 
-                                              OracleConnection _conn,
-                                              boolean          _zoom) 
+    public LayerReturnCode addNewSpatialLayer(String     _schemaName,
+                                              String     _objectName, 
+                                              String     _columnName,
+                                              String     _objectType, /* TABLE/VIEW/MATERIALIZED VIEW */
+                                              String     _connectionName, 
+                                              Connection _conn,
+                                              boolean    _zoom) 
     {
-        LOGGER.debug("START: SpatialViewPanel.addNewSpatialLayer");
+        LOGGER.info("START: SpatialViewPanel.addNewSpatialLayer");
         String columnName = null;
         try 
         {
@@ -1264,7 +1252,7 @@ LOGGER.debug("btnQueryByPoint: finish");
                 if ( geoColumns.size()==1 ) {
                     columnName = geoColumns.get(0);
                 } else {
-                    LOGGER.debug("Requesting column to map from geometry column list.");
+                    LOGGER.info("Requesting column to map from geometry column list.");
                     // Ask which one want to map
                     //
                     String entryList[] = new String[geoColumns.size()];
@@ -1297,7 +1285,7 @@ LOGGER.debug("btnQueryByPoint: finish");
                     return LayerReturnCode.Fail;                    
                 }
             }
-            LOGGER.debug("Geometry column being processed is " + columnName);
+            LOGGER.info("Geometry column being processed is " + columnName);
         } catch (Exception e) {
           LOGGER.error("Failed to add new layer because " + e.toString());
           return LayerReturnCode.Fail;
@@ -1318,7 +1306,7 @@ LOGGER.debug("btnQueryByPoint: finish");
                                                    _objectName,
                                                    columnName,
                                                    false);
-            LOGGER.debug(metaEntries.toString());
+            LOGGER.info(metaEntries.toString());
             // Find and assign mEntry based on choice
             for (MetadataEntry me: metaEntries.values() ) {
                 if ( me.getColumnName().equalsIgnoreCase(columnName) )  {
@@ -1345,7 +1333,8 @@ LOGGER.debug("btnQueryByPoint: finish");
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                      mEntry.getObjectName(), 
                                                      mEntry.getColumnName());
-        LOGGER.debug("layerName from mEntry is " + layerName);
+System.out.println(mEntry.toString());
+        LOGGER.info("layerName from mEntry is " + layerName);
 
         // layer gtype discovery
         //
@@ -1359,6 +1348,7 @@ LOGGER.debug("btnQueryByPoint: finish");
                                                                   mEntry.getColumnName(),
                                                                   0, /* samplePercentage */
                                                                   1  /* sampleRows */ );
+System.out.println(layerGeometryType);
             if (Strings.isEmpty(layerGeometryType)) {
                 LOGGER.error("getLayerGeometryType for " + layerName + " returned null");
             }
@@ -1372,12 +1362,14 @@ LOGGER.debug("btnQueryByPoint: finish");
         // We have enough information to create a valid layer
         // Need to construct using _objectType ????
         //
+System.out.println(this.activeView == null ? "activeView is null":this.activeView.toString());
+System.out.println(layerName);
+
         SVSpatialLayer layer = new SVSpatialLayer(this.activeView,  // Use activeView temporarily
                                                   layerName, 
                                                   SVPanelPreferences.isSchemaPrefix()
-                                                     ? layerName :
-                               Strings.append(mEntry.getObjectName(),
-                                                                    mEntry.getColumnName(),"."), 
+                                                     ? layerName : Strings.append(mEntry.getObjectName(),
+                                                                                  mEntry.getColumnName(),"."), 
                                                   layerName,
                                                   mEntry,
                                                   true /* draw - should be GeoRaptor Property */);
@@ -1387,13 +1379,13 @@ LOGGER.debug("btnQueryByPoint: finish");
                               layer.getSRIDAsInteger())==false) {
             return LayerReturnCode.MBR;
         }
-        LOGGER.debug(layer.getVisibleName() + "'s mbr is " + layer.getMBR());
+        LOGGER.info(layer.getVisibleName() + "'s mbr is " + layer.getMBR());
 
         // Set layer properties
         // 
         layer.setConnectionName(_connectionName);
-        layer.setGeometryType(layerGeometryType); LOGGER.debug("connection set to " + _connectionName);
-        layer.setSRIDType();                      LOGGER.debug("layer srid type is " + layer.getSRIDType().toString());
+        layer.setGeometryType(layerGeometryType); LOGGER.info("connection set to " + _connectionName);
+        layer.setSRIDType();                      LOGGER.info("layer srid type is " + layer.getSRIDType().toString());
         if ( layer.getSRIDType().toString().startsWith("GEO") ) {
             layer.setPrecision(Constants.MAX_PRECISION);
         } else {
@@ -1840,7 +1832,7 @@ LOGGER.debug("btnQueryByPoint: finish");
     *          Added improved selection colouring based on geometry or layer type
     */  
     public void showGeometry(final SVSpatialLayer  _layer,
-                             final STRUCT          _geo, 
+                             final Struct          _geo, 
                              final List<QueryRow>  _geoSet,
                              final Envelope _mbr,
                              final boolean         _selectionColouring,
@@ -1990,7 +1982,7 @@ LOGGER.debug("propertiesLayer = " + (propertiesLayer!=null?propertiesLayer.getLa
         // create for after draw shade operation
         class ShadeAfterDraw extends AfterLayerDraw 
         {
-            STRUCT geo;
+            Struct geo;
             List<QueryRow> geoSet;
 
             boolean selectionColouring = false;
@@ -1999,7 +1991,7 @@ LOGGER.debug("propertiesLayer = " + (propertiesLayer!=null?propertiesLayer.getLa
             SVSpatialLayer renderLayer = null;
             
             public ShadeAfterDraw(Graphics2D     _g2d,
-                                  STRUCT         _geo, 
+                                  Struct         _geo, 
                                   List<QueryRow> _geoSet,
                                   SVSpatialLayer _renderLayer,
                                   boolean        _selectionColouring)

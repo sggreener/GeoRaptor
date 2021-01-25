@@ -1,5 +1,7 @@
+
 package org.GeoRaptor.SpatialView.JDevInt;
 
+import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DecimalFormat;
@@ -11,11 +13,6 @@ import java.util.List;
 
 import oracle.spatial.geometry.JGeometry;
 
-import oracle.sql.Datum;
-import oracle.sql.STRUCT;
-import oracle.sql.NUMBER;
-import oracle.sql.ARRAY;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
@@ -25,8 +22,8 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.io.oracle.OraUtil;
 
-@SuppressWarnings("deprecation")
 public class RenderTool {
 
     @SuppressWarnings("unused")
@@ -68,17 +65,17 @@ public class RenderTool {
   
     public static boolean isSupported(Object _value) {
         try {
-            if ( _value instanceof oracle.sql.STRUCT ) {
-                STRUCT stValue = (STRUCT)_value;
+            if ( _value instanceof Struct ) {
+                Struct stValue = (Struct)_value;
                 return ( stValue.getSQLTypeName().indexOf("MDSYS.ST_")==0 ||
                          stValue.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ||
                          stValue.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ||
                          stValue.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) );
-            } else if (_value instanceof oracle.sql.ARRAY) {
-                ARRAY aryValue = (ARRAY)_value;
-                return ( aryValue.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ||
-                         aryValue.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_ELEM_ARRAY) ||
-                         aryValue.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_ORD_ARRAY));
+            } else if (_value instanceof Array) {
+                Array aryValue = (Array)_value;
+                return ( aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ||
+                         aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEM_ARRAY) ||
+                         aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ORD_ARRAY));
             }
         } catch (SQLException sqle) {
           return false;
@@ -86,32 +83,25 @@ public class RenderTool {
         return false;
     }
     
-    public static String renderSTRUCTAsPlainText(Struct                _struct,
-    		                                     Constants.bracketType _bracket,
-                                                 int                   _ordPrecision)
-           throws SQLException {
-      return renderSTRUCT((STRUCT)_struct, false, _bracket, false, _ordPrecision);
-    }
-
 
     /**
      * @param st
      * @return
      * @throws SQLException
      */
-    public static String renderSTRUCTAsPlainText(STRUCT                _struct,
+    public static String renderStructAsPlainText(Struct                _struct,
                                                  Constants.bracketType _bracket,
                                                  int                   _ordPrecision)
     throws SQLException {
-        return renderSTRUCT(_struct, false, _bracket, false, _ordPrecision);
+        return renderStruct(_struct, false, _bracket, false, _ordPrecision);
     }
 
-    public static String renderSTRUCTAsHTML(STRUCT                _struct, 
+    public static String renderStructAsHTML(Struct                _struct, 
                                             Constants.bracketType _bracket,
                                             boolean               _coordNumbering,
                                             int                   _ordPrecision) 
     throws SQLException {
-        return renderSTRUCT(_struct, true, _bracket, _coordNumbering, _ordPrecision);
+        return renderStruct(_struct, true, _bracket, _coordNumbering, _ordPrecision);
     }
 
     /**
@@ -123,7 +113,7 @@ public class RenderTool {
      * @author Simon Greener May 28th 2010
      *          Changed GTYPE assignment so that it defaults to 2D if not provided.
      */
-    public static String renderSTRUCT(STRUCT                _struct,
+    public static String renderStruct(Struct                _struct,
                                       boolean               _renderAsHTML,
                                       Constants.bracketType _bracket,
                                       boolean               _coordNumbering,
@@ -134,16 +124,16 @@ public class RenderTool {
         if (_struct == null) {
             return null;
         }
-        STRUCT stGeom = _struct;
+        Struct stGeom = _struct;
         String sqlTypeName = _struct.getSQLTypeName();
         if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
             stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
         } 
-        final int    GTYPE = SDO_GEOMETRY.getFullGType(stGeom,0);
-        final int    SRID = SDO_GEOMETRY.getSRID(stGeom);
-        final double POINT[] = SDO_GEOMETRY.getSdoPoint(stGeom);
-        final int    ELEMINFO[] = SDO_GEOMETRY.getSdoElemInfo(stGeom);
-        final double ORDINATES[] = SDO_GEOMETRY.getSdoOrdinates(stGeom);
+        final int          GTYPE = SDO_GEOMETRY.getFullGType(stGeom,0);
+        final int           SRID = SDO_GEOMETRY.getSRID(stGeom);
+        final double     POINT[] = SDO_GEOMETRY.getSdoPoint(stGeom,Double.NaN);
+        final int     ELEMINFO[] = SDO_GEOMETRY.getSdoElemInfo(stGeom,0);
+        final double ORDINATES[] = SDO_GEOMETRY.getSdoOrdinates(stGeom,Double.NaN);
         return (_renderAsHTML ? renderGeometryElementsAsHTML(sqlTypeName, GTYPE, SRID, POINT, ELEMINFO, ORDINATES, _bracket, _coordNumbering, _ordPrecision)
                               : renderGeometryElements      (sqlTypeName, GTYPE, SRID, POINT, ELEMINFO, ORDINATES, _bracket, _ordPrecision) );
     }
@@ -687,7 +677,7 @@ public class RenderTool {
      * @return
      * @author Simon Greener, June 8th 2010 - Original coding
      */
-    public static String renderVertexType(STRUCT  _colValue,
+    public static String renderVertexType(Struct  _colValue,
                                           boolean _renderAsHTML )
     {
         if ( GeoRaptorPrefs == null ) {
@@ -697,11 +687,11 @@ public class RenderTool {
         StringBuffer labelBuffer = new StringBuffer();
         try 
         {
-            Datum data[] = _colValue.getOracleAttributes();
-            double x = ((NUMBER)data[0]).doubleValue();
-            double y = ((NUMBER)data[1]).doubleValue();
-            double z = (data[2] != null) ? ((NUMBER)data[2]).doubleValue() : Double.NaN;
-            double w = (data[3] != null) ? ((NUMBER)data[3]).doubleValue() : Double.NaN;
+            Object data[] = _colValue.getAttributes();
+            double x = OraUtil.toDouble(data[0],Double.NaN);
+            double y = OraUtil.toDouble(data[1],Double.NaN);
+            double z = (data[2] != null) ? OraUtil.toDouble(data[2],Double.NaN) : Double.NaN;
+            double w = (data[3] != null) ? OraUtil.toDouble(data[3],Double.NaN) : Double.NaN;
 
             String NULL     = _renderAsHTML ? FONT_NULL : "NULL";
             labelBuffer.append((_renderAsHTML 
@@ -733,7 +723,7 @@ public class RenderTool {
         return _renderAsHTML ? htmlWrap(labelBuffer.toString()) : labelBuffer.toString();      
     }
 
-    public static String renderDimArray(ARRAY   _dimArray,
+    public static String renderDimArray(Array   _dimArray,
                                         boolean _renderAsHTML)
     {
         if ( GeoRaptorPrefs == null ) {
@@ -743,22 +733,22 @@ public class RenderTool {
         String returnString = "";
         try 
         {
-            ARRAY dimArray =  _dimArray;
-            if ( dimArray.getDescriptor().getSQLName().getName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
+            Array dimArray =  _dimArray;
+            if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
             {
                 String DIM_NAME = "";
                 double SDO_LB   = Double.MAX_VALUE;
                 double SDO_UB   = Double.MAX_VALUE;
                 double SDO_TOL  = Double.MAX_VALUE;
                 MetadataEntry mEntry = new MetadataEntry();
-                Datum[] objs = dimArray.getOracleArray();
+                Object objs[] = (Object[])dimArray.getArray();
                 for (int i =0; i < objs.length; i++) {
-                    STRUCT dimElement = (STRUCT)objs[i];
-                    Datum data[] = dimElement.getOracleAttributes();
-                    DIM_NAME = data[0].stringValue();
-                    SDO_LB   = data[1].doubleValue();
-                    SDO_UB   = data[2].doubleValue();
-                    SDO_TOL  = data[3].doubleValue();
+                    Struct dimElement = (Struct)objs[i];
+                    Object data[] = dimElement.getAttributes();
+                    DIM_NAME = (String)data[0];
+                    SDO_LB   = OraUtil.toDouble(data[1],Double.NaN);
+                    SDO_UB   = OraUtil.toDouble(data[2],Double.NaN);
+                    SDO_TOL  = OraUtil.toDouble(data[3],Double.NaN);
                     mEntry.add(DIM_NAME,SDO_LB,SDO_UB,SDO_TOL);
                 }
                 if ( _renderAsHTML ) {

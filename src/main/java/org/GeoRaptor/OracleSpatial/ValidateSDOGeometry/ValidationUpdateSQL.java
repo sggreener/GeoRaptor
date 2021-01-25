@@ -47,8 +47,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdeveloper.layout.XYConstraints;
-import oracle.jdeveloper.layout.XYLayout;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 
 import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry.ValidationTableModel;
 import org.GeoRaptor.tools.Strings;

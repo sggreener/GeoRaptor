@@ -16,8 +16,6 @@ import oracle.dbtools.raptor.utils.Connections;
 
 import oracle.javatools.db.DBException;
 
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.Messages;
 import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.SpatialView.SpatialView;
@@ -45,16 +43,15 @@ public class DatabaseConnections {
                 Connection conn = null;
                 try {
                     conn = Connections.getInstance().getConnection(evt.getConnectionName());
-                    if (conn instanceof OracleConnection) { 
-                        ((OracleConnection)conn).setDefaultRowPrefetch(DBConfig.getInstance().getInt(DBConfig.ARRAYFETCHSIZE));
+                    if (conn instanceof Connection) { 
+                        //conn.setFetchSize(DBConfig.getInstance().getInt(DBConfig.ARRAYFETCHSIZE));
                         addConnection(new DatabaseConnection(evt.getConnectionName()));
                     }
                 } catch (DBException dbe) {
                     LOGGER.error("DatabaseConnections failed to instantiate: " + dbe.getMessage());
-                } catch (SQLException sqle) {
-                    LOGGER.error("DatabaseConnections failed to instantiate: " + sqle.getMessage());
                 }
             }
+
          public void connectionAdded(ConnectionEvent evt) {
              //LOGGER.debug("Connection - "+evt.getConnectionName() + " Added.");
              addSQLConnection(evt);
@@ -124,11 +121,11 @@ public class DatabaseConnections {
         return Connections.getActiveConnectionName();
      }
 
-    public OracleConnection getActiveConnection() 
+    public Connection getActiveConnection() 
     {
-        OracleConnection dbConn;
+        Connection dbConn;
         try {
-            dbConn = (OracleConnection)Connections.getInstance().getConnection(Connections.getActiveConnectionName());
+            dbConn = Connections.getInstance().getConnection(Connections.getActiveConnectionName());
         } catch (DBException e) {
             LOGGER.error("getActiveConnection failed with " + e.getMessage());
             return null;
@@ -136,10 +133,10 @@ public class DatabaseConnections {
         return dbConn==null?null:dbConn;
     }
 
-    public OracleConnection getAnyOpenConnection() 
+    public Connection getAnyOpenConnection() 
     {
         this.setConnections(true);
-        OracleConnection conn = getActiveConnection();
+        Connection conn = getActiveConnection();
         if ( conn==null ) {
            // Iterate over the whole set...
            Iterator<DatabaseConnection> iter = this.cache.values().iterator();
@@ -154,7 +151,7 @@ public class DatabaseConnections {
         return conn;
     }
     
-    public OracleConnection getConnection(String  _connName)
+    public Connection getConnection(String  _connName)
     {
         //LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
         DatabaseConnection dbConn = this.findConnectionByName(_connName);

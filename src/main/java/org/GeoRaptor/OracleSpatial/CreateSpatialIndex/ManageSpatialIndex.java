@@ -26,8 +26,6 @@ import javax.swing.text.Position;
 
 import oracle.ide.dialogs.ProgressBar;
 
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
@@ -142,6 +140,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	}
 
 	public static ManageSpatialIndex getInstance() {
+System.out.println("In ManageSpatialIndex.getInstance()");
 		if (ManageSpatialIndex.classInstance == null) {
 			ManageSpatialIndex.classInstance = new ManageSpatialIndex();
 		}
@@ -921,7 +920,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
 	private void discoverLayerGTypeBTNActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_discoverLayerGTypeBTNActionPerformed
 		String layerGType = null;
-		OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+		Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 		if (conn != null) {
 			try {
 				layerGType = MetadataTool.getLayerGeometryType(conn, this.schemaName, this.objectName, this.geoColumn,
@@ -1027,7 +1026,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 		this.geoColumn = _columnName;
 
 		String spatialIndexName = "";
-		OracleConnection conn = null;
+		Connection conn = null;
 		try {
 			// Get connection from DatabaseConnections pool
 			//
@@ -1227,7 +1226,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	 *         _columnName is null then gets index associated with first
 	 */
 	private String getIndexName(Connection _conn, String _schemaName, String _tableName, String _columnName) {
-		OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+		Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 		String indexName = "";
 		String columnClause = (Strings.isEmpty(_columnName) ? ")"
 				: "and aic.COLUMN_NAME = '" + _columnName.toUpperCase() + "' ) \n");
@@ -1409,7 +1408,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
 		String sComplete = "";
 		try {
-			OracleConnection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 			if (conn == null || DatabaseConnections.getInstance().isConnectionOpen(this.connName) == false) {
 				return this.propertyManager.getMsg("ERROR_MESSAGE_CONN_UNAVAILABLE", this.connName);
 			}

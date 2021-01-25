@@ -1,28 +1,20 @@
 package org.GeoRaptor.OracleSpatial.Metadata;
 
 import java.awt.geom.Point2D;
-
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.swing.JOptionPane;
 
-import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OraclePreparedStatement;
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleStatement;
-
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.ARRAY;
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -265,12 +257,14 @@ public class MetadataTool {
 
       psColumns.setFetchSize(100); // default is 10
       psColumns.setFetchDirection(ResultSet.FETCH_FORWARD);
-      ResultSet entriesRSet = psColumns.executeQuery();
-      if (entriesRSet.next()) {
-          columns = entriesRSet.getString(1);
+      ResultSet rSet = psColumns.executeQuery();
+      if (!rSet.isBeforeFirst() ) {    
+          columns = "";
+      } else if (rSet.next()) {
+          columns = rSet.getString(1);
       } 
-      entriesRSet.close();
-      entriesRSet = null;
+      rSet.close();
+      rSet = null;
       return columns;
     }
 
@@ -638,7 +632,11 @@ public class MetadataTool {
            psTable.setString(3, _columnName.toUpperCase() );
         }
         ResultSet rSet = psTable.executeQuery();
-        mDataExists = rSet.next(); 
+        if (!rSet.isBeforeFirst() ) {    
+          mDataExists = false;
+        } else {
+          mDataExists = rSet.next();
+        }
         rSet.close();
         psTable.close();
       
@@ -770,7 +768,7 @@ public class MetadataTool {
             "        and asgm.column_name (+)= f.column_name )\n" + 
             " order by f.owner,f.table_name,f.column_name";
         /* Get Schema, table, column and associated metadata */
-        OraclePreparedStatement psMEntries = (OraclePreparedStatement)_conn.prepareStatement(sql);
+        PreparedStatement psMEntries = _conn.prepareStatement(sql);
         int i = 0;
         if ( ! _allSchemas ) {
             String parmValues = "";
@@ -787,14 +785,14 @@ public class MetadataTool {
         
         psMEntries.setFetchSize(100); // default is 10
         psMEntries.setFetchDirection(ResultSet.FETCH_FORWARD);
-        OracleResultSet entriesRSet = (OracleResultSet)psMEntries.executeQuery();
+        ResultSet entriesRSet = psMEntries.executeQuery();
         String schema    = "";
         String table     = "";
         String geoColumn = "";
         String srid      = "";
         boolean orphan   = false;
         boolean missing  = false;
-        ARRAY dimArray   = null;
+        Array dimArray   = null;
         MetadataEntry metaEntry ;
         while (entriesRSet.next()) {
             // Get MetadaEntry header
@@ -806,7 +804,7 @@ public class MetadataTool {
             if (entriesRSet.wasNull()) srid = "NULL";
             orphan    = Boolean.valueOf(entriesRSet.getString(5)).booleanValue();
             missing   = Boolean.valueOf(entriesRSet.getString(6)).booleanValue();
-            dimArray  = entriesRSet.getARRAY(7);
+            dimArray  = entriesRSet.getArray(7);
             if (entriesRSet.wasNull()) dimArray = null;            
             metaEntry = new MetadataEntry(schema, table, geoColumn, srid);
             metaEntry.setOrphan(orphan);
@@ -827,16 +825,15 @@ public class MetadataTool {
      * @param _objectName
      * @param _columnName
      * @return List<String>
-     * @throws SQLException
      * @author Simon Greener, May 4th 2010
      * INCOMPLETE. Need to integrate with sdoapi.jar DimInfo class.
+     * @throws SQLException 
+     * @throws Exception 
      */
     public List<String> getDimInfo(Connection _conn, 
                                    String     _schemaName,
                                    String     _objectName,
-                                   String     _columnName) 
-      throws SQLException,
-             IllegalArgumentException
+                                   String     _columnName) throws SQLException 
     {
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
@@ -882,8 +879,12 @@ public class MetadataTool {
                       (columnClause.contains("?") ? ("\n? = " + _objectName.toUpperCase()) : ""));
 
         ResultSet rSet = psTable.executeQuery();
-        while (rSet.next()) {
-            dimensionInfo.add(rSet.getString(1));
+        if (!rSet.isBeforeFirst() ) {    
+        	LOGGER.error("No data in " + _objectName);
+        } else {
+        	while (rSet.next()) {
+        		dimensionInfo.add(rSet.getString(1));
+        	}
         }
         rSet.close();
         rSet = null;
@@ -922,8 +923,12 @@ public class MetadataTool {
         st.setFetchSize(100); // default is 10
         st.setFetchDirection(ResultSet.FETCH_FORWARD);
         ResultSet rSet = st.executeQuery(sql);
-        while (rSet.next()) 
-            srids.add(rSet.getString(1));
+        if (!rSet.isBeforeFirst() ) {    
+        	srids = new ArrayList<String>();
+        } else {
+        	while (rSet.next()) 
+        		srids.add(rSet.getString(1));
+        }
         rSet.close(); rSet = null;
         st.close(); st = null;
 
@@ -989,7 +994,9 @@ public class MetadataTool {
             LOGGER.logSQL(sql);
             Statement st = _conn.createStatement();
             ResultSet rSet = st.executeQuery(sql);
-            if (rSet.next()) {
+            if (!rSet.isBeforeFirst() ) {    
+            	sqlCount = 0;
+            } else if (rSet.next()) {
                 sqlCount = rSet.getInt(1);
                 sqlCount = rSet.wasNull() ? 0 : sqlCount;
             }
@@ -1101,26 +1108,31 @@ public class MetadataTool {
             
           Statement st = _conn.createStatement();
           ResultSet rSet = st.executeQuery(sql);
-          while (rSet.next() ) {
-              shapeType = rSet.getString(1); if ( rSet.wasNull() || Strings.isEmpty(shapeType) ) continue;
-              isZ       = rSet.getString(2); if ( rSet.wasNull() || Strings.isEmpty(isZ) ) isZ = "";
-              isM       = rSet.getString(3); if ( rSet.wasNull() || Strings.isEmpty(isM) ) isM = "";
-              if (Strings.isEmpty(isZ) && Strings.isEmpty(isM) ) {
-                  if ( ! shapeTypes.contains(shapeType) ) {
-                      shapeTypes.add(shapeType);
-                  }
-              } else {
-                  if ( !Strings.isEmpty(isZ) ) {
-                      if ( ! shapeTypes.contains(shapeType+isZ) ) {
-                          shapeTypes.add(shapeType+isZ);
-                      }
-                  }
-                  if ( !Strings.isEmpty(isM) ) {
-                      if ( ! shapeTypes.contains(shapeType+isM) ) {
-                          shapeTypes.add(shapeType+isM);
-                      }
-                  }
-              }
+          
+          if (!rSet.isBeforeFirst() ) {    
+              shapeTypes = new ArrayList<String>();
+          } else {
+	          while (rSet.next() ) {
+	              shapeType = rSet.getString(1); if ( rSet.wasNull() || Strings.isEmpty(shapeType) ) continue;
+	              isZ       = rSet.getString(2); if ( rSet.wasNull() || Strings.isEmpty(isZ) ) isZ = "";
+	              isM       = rSet.getString(3); if ( rSet.wasNull() || Strings.isEmpty(isM) ) isM = "";
+	              if (Strings.isEmpty(isZ) && Strings.isEmpty(isM) ) {
+	                  if ( ! shapeTypes.contains(shapeType) ) {
+	                      shapeTypes.add(shapeType);
+	                  }
+	              } else {
+	                  if ( !Strings.isEmpty(isZ) ) {
+	                      if ( ! shapeTypes.contains(shapeType+isZ) ) {
+	                          shapeTypes.add(shapeType+isZ);
+	                      }
+	                  }
+	                  if ( !Strings.isEmpty(isM) ) {
+	                      if ( ! shapeTypes.contains(shapeType+isM) ) {
+	                          shapeTypes.add(shapeType+isM);
+	                      }
+	                  }
+	              }
+	          }
           }
           rSet.close();
           st.close();
@@ -1238,15 +1250,16 @@ public class MetadataTool {
             LOGGER.logSQL(layerGeometryTypeSQL);
             Statement st = _conn.createStatement();
             ResultSet rSet = st.executeQuery(layerGeometryTypeSQL);
-            if (rSet.next())
+            
+            if (!rSet.isBeforeFirst() )     
+                layerGType = "";
+            else if (rSet.next())
                 layerGType = rSet.getString(1);
-            if ( rSet.wasNull() )
+            else if ( rSet.wasNull() )
                 layerGType = "";
             rSet.close();
             st.close();
         } catch (SQLException sqle) {
-            // Probably "No data read" error, ie table exists but is empty.
-            //
             String message = propertyManager.getMsg("OBJECT_RETRIEVAL_ERROR",
                                                     sqle.getMessage(),
                                                     propertyManager.getMsg("OBJECT_LAYER_GTYPE") + 
@@ -1275,9 +1288,8 @@ public class MetadataTool {
                                              String     _objectName,
                                              String     _columnName,
                                              String     _SRID) 
-    throws SQLException,
-           IllegalArgumentException
     {
+/* TODO: CHANGE THIS */
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
         }
@@ -1309,12 +1321,15 @@ public class MetadataTool {
                              " MDSYS.SDO_ORDINATE_ARRAY(0,0,1,1))) = 'TRUE'" +
             "   AND rownum < 2"; 
         LOGGER.logSQL(sql);
-        OracleStatement st = (OracleStatement)_conn.createStatement();
-        PreparedStatement psTable = _conn.prepareStatement(sql);
-        boolean indexExists = true;
+    	boolean indexExists = true;
         try {
+        	Statement st = _conn.createStatement();
+        	PreparedStatement psTable = _conn.prepareStatement(sql);
+        	
             ResultSet rSet = psTable.executeQuery();
-            if (rSet.next()) {
+            if (!rSet.isBeforeFirst() ) {    
+                indexExists = false;
+            } else if (rSet.next()) {
                 indexExists = true;
             } 
             rSet.close(); rSet = null;
@@ -1372,7 +1387,7 @@ public class MetadataTool {
             "                   AND aic.index_name  = ai.index_name \n" + 
             "                   AND aic.column_name = ?)";
 
-        OracleStatement st = (OracleStatement)_conn.createStatement();
+        Statement st = _conn.createStatement();
         PreparedStatement psTable = _conn.prepareStatement(sql);
         psTable.setString(1,schema);
         psTable.setString(2,_objectName.toUpperCase());
@@ -1385,7 +1400,9 @@ public class MetadataTool {
         ResultSet rSet = psTable.executeQuery();
         boolean indexExists = false;
         String indexName = "";
-        if (rSet.next()) {
+        if (!rSet.isBeforeFirst() ) {    
+        	indexExists = true;
+        } else if (rSet.next()) {
             indexName = rSet.getString(1);  // ignore result
             if ( !Strings.isEmpty(indexName) )
                 indexExists = true;
@@ -1432,7 +1449,7 @@ public class MetadataTool {
               "     and asii.table_name  = ? \n" + 
               "     and asii.column_name = ?";
 
-        OracleStatement st = (OracleStatement)_conn.createStatement();
+        Statement st = _conn.createStatement();
         PreparedStatement psTable = _conn.prepareStatement(sql);
         psTable.setString(1,schema);
         psTable.setString(2,_objectName.toUpperCase());
@@ -1444,7 +1461,9 @@ public class MetadataTool {
 
         ResultSet rSet = psTable.executeQuery();
         int sdo_index_dims = -1;
-        if (rSet.next()) {
+        if (!rSet.isBeforeFirst() ) {    
+            sdo_index_dims = -1;
+        } else if (rSet.next()) {
             sdo_index_dims = rSet.getInt(1);
         } 
         rSet.close(); rSet = null;
@@ -1491,7 +1510,7 @@ public class MetadataTool {
               "     and asii.table_name  = ? \n" + 
               "     and asii.column_name = ?";
 
-        OracleStatement st = (OracleStatement)_conn.createStatement();
+        Statement st = _conn.createStatement();
         PreparedStatement psTable = _conn.prepareStatement(sql);
         psTable.setString(1,schema);
         psTable.setString(2,_objectName.toUpperCase());
@@ -1503,7 +1522,9 @@ public class MetadataTool {
 
         ResultSet rSet = psTable.executeQuery();
         String sdo_index_name = "";
-        if (rSet.next()) {
+        if (!rSet.isBeforeFirst() ) {    
+            sdo_index_name = null;
+        } else if (rSet.next()) {
             sdo_index_name = rSet.getString(1);
             if (rSet.wasNull()) {
                 sdo_index_name = null;
@@ -1514,10 +1535,10 @@ public class MetadataTool {
         return sdo_index_name;
     }
     
-    public static STRUCT projectFilterGeometry(OracleConnection _conn,
-                                               Envelope  _mbr,
-                                               int              _sourceSRID,
-                                               int              _destinationSRID) 
+    public static Struct projectFilterGeometry(Connection      _conn,
+                                               Envelope         _mbr,
+                                               int       _sourceSRID,
+                                               int  _destinationSRID) 
     throws SQLException, 
            IllegalArgumentException
     {
@@ -1542,7 +1563,7 @@ public class MetadataTool {
                             "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)),?) as rect " +
                      "  FROM DUAL";
 
-        OraclePreparedStatement pStatement = (OraclePreparedStatement)_conn.prepareStatement(sql);
+        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         pStatement.setInt(1,_sourceSRID);
         pStatement.setDouble(2,_mbr.getMinX());
         pStatement.setDouble(3,_mbr.getMinY());
@@ -1556,10 +1577,10 @@ public class MetadataTool {
                       "\n? = " + _mbr.getMaxX() +
                       "\n? = " + _mbr.getMaxY() +
                       "\n? = " + _destinationSRID);
-        OracleResultSet rSet = (OracleResultSet)pStatement.executeQuery();
-        STRUCT retGeom = null;
+        ResultSet rSet = pStatement.executeQuery();
+        Struct retGeom = null;
         if (rSet.next()) {
-            retGeom = rSet.getSTRUCT(1);
+            retGeom = (Struct)rSet.getObject(1);
             if ( rSet.wasNull() ) retGeom = null;
         }
         rSet.close();
@@ -1569,9 +1590,9 @@ public class MetadataTool {
         return retGeom;
     }
 
-    public static STRUCT projectJGeometry(OracleConnection _conn,
-                                          JGeometry        _jGeom,
-                                          int              _destinationSRID) 
+    public static Struct projectJGeometry(Connection _conn,
+                                          JGeometry  _jGeom,
+                                          int        _destinationSRID) 
     throws SQLException, 
            IllegalArgumentException
     {
@@ -1590,14 +1611,14 @@ public class MetadataTool {
         
         String sql = "SELECT MDSYS.SDO_CS.TRANSFORM(?,?) as geom FROM DUAL";
 
-        OraclePreparedStatement pStatement = (OraclePreparedStatement)_conn.prepareStatement(sql);
+        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         try {
-			pStatement.setSTRUCT(1,(STRUCT) JGeometry.storeJS(_conn,_jGeom));
+			pStatement.setObject(1,JGeometry.storeJS(_conn,_jGeom));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-        pStatement.setInt   (2,_destinationSRID);
+        pStatement.setInt(2,_destinationSRID);
         try {
             LOGGER.logSQL(sql + 
                           "\n? = " + RenderTool.renderGeometryAsPlainText(_jGeom, Constants.TAG_SDO_GEOMETRY, Constants.bracketType.NONE, Constants.MAX_PRECISION) +
@@ -1606,10 +1627,10 @@ public class MetadataTool {
             LOGGER.logSQL(sql);
             e.printStackTrace();
         }
-        OracleResultSet rSet = (OracleResultSet)pStatement.executeQuery();
-        STRUCT retGeom = null;
+        ResultSet rSet = (ResultSet)pStatement.executeQuery();
+        Struct retGeom = null;
         if (rSet.next()) {
-            retGeom = rSet.getSTRUCT(1);
+            retGeom = (Struct)rSet.getObject(1);
             if ( rSet.wasNull() ) retGeom = null;
         }
         rSet.close();
@@ -1619,10 +1640,10 @@ public class MetadataTool {
         return retGeom;
     }
 
-    public static Point2D projectPoint(OracleConnection _conn,
-                                       Point2D          _point,
-                                       int              _sourceSRID,
-                                       int              _destinationSRID) 
+    public static Point2D projectPoint(Connection _conn,
+                                       Point2D    _point,
+                                       int        _sourceSRID,
+                                       int        _destinationSRID) 
     throws SQLException, 
            IllegalArgumentException
     {
@@ -1648,7 +1669,7 @@ public class MetadataTool {
                       " FROM (SELECT MDSYS.SDO_CS.TRANSFORM(SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL),?) as geom FROM DUAL) f" +
                      " WHERE f.geom is not null";
 
-        OraclePreparedStatement pStatement = (OraclePreparedStatement)_conn.prepareStatement(sql);
+        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         pStatement.setInt   (1,_sourceSRID);
         pStatement.setDouble(2,_point.getX());
         pStatement.setDouble(3,_point.getY());
@@ -1663,7 +1684,7 @@ public class MetadataTool {
             LOGGER.logSQL(sql);
             e.printStackTrace();
         }
-        OracleResultSet rSet = (OracleResultSet)pStatement.executeQuery();
+        ResultSet rSet = (ResultSet)pStatement.executeQuery();
         double x = Double.NaN, y = Double.NaN;
         if (rSet.next()) {
             x = rSet.getDouble(1);
@@ -1700,11 +1721,11 @@ public class MetadataTool {
      *          Need _sourceSRID because sdo_root_mbr does not have sdo_srid set
      */
     public static Envelope getExtentFromRTree(Connection _conn, 
-                                                     String     _schemaName,
-                                                     String     _objectName,
-                                                     String     _columnName,
-                                                     String     _sourceSRID,
-                                                     String     _destinationSRID) 
+                                              String     _schemaName,
+                                              String     _objectName,
+                                              String     _columnName,
+                                              String     _sourceSRID,
+                                              String     _destinationSRID) 
       throws SQLException, 
              IllegalArgumentException
     {
@@ -1801,10 +1822,10 @@ public class MetadataTool {
      *          Need _sourceSRID because sdo_root_mbr does not have sdo_srid set
      */
     public static Envelope getExtentFromSample(Connection _conn, 
-                                                  String     _schemaName,
-                                                  String     _objectName,
-                                                  String     _columnName,
-                                                  int        _sampleSize) 
+                                               String     _schemaName,
+                                               String     _objectName,
+                                               String     _columnName,
+                                               int        _sampleSize) 
       throws SQLException, 
              IllegalArgumentException
     {
@@ -1835,8 +1856,8 @@ public class MetadataTool {
         Envelope rd = new Envelope(Constants.MAX_PRECISION);
         try {
             LOGGER.logSQL(sql);
-            OracleStatement st = (OracleStatement)_conn.createStatement();
-            OracleResultSet rSet = (OracleResultSet)st.executeQuery(sql);
+            Statement st = _conn.createStatement();
+            ResultSet rSet = st.executeQuery(sql);
             if (rSet.next()) {
                 rd.minX  = rSet.getDouble(1); if ( rSet.wasNull() ) rd.minX = Double.MAX_VALUE;
                 rd.minY  = rSet.getDouble(2); if ( rSet.wasNull() ) rd.minY = Double.MAX_VALUE;
@@ -1867,10 +1888,10 @@ public class MetadataTool {
    *          Modified code to detect geodetic srids and throw exception
    */
     public static Envelope getExtentFromDimInfo(Connection _conn, 
-                                                     String     _schemaName,
-                                                     String     _objectName,
-                                                     String     _columnName,
-                                                     String     _destinationSRID) 
+                                                String     _schemaName,
+                                                String     _objectName,
+                                                String     _columnName,
+                                                String     _destinationSRID) 
       throws SQLException, 
              IllegalArgumentException
     {
@@ -1993,8 +2014,8 @@ public class MetadataTool {
         try {
             LOGGER.logSQL(sql);
 
-            OracleStatement st = (OracleStatement)_conn.createStatement();
-            OracleResultSet rSet = (OracleResultSet)st.executeQuery(sql);
+            Statement   st = _conn.createStatement();
+            ResultSet rSet = st.executeQuery(sql);
             if (rSet.next()) {
                 totalRows = rSet.getInt(1);
             } else {
@@ -2020,11 +2041,13 @@ public class MetadataTool {
     throws SQLException,
            IllegalArgumentException
     {
-        OracleStatement st = (OracleStatement)_conn.createStatement();
+        Statement st = _conn.createStatement();
         String sql = "select sdo_version() from dual";
-        OracleResultSet rSet = (OracleResultSet)st.executeQuery(sql);
+        ResultSet rSet = st.executeQuery(sql);
         String version = null;
-        if (rSet.next()) {
+        if (!rSet.isBeforeFirst() ) {    
+        	version = null;
+        } else if (rSet.next()) {
             version = rSet.getString(1);
             if ( rSet.wasNull() )
                 version = null;
@@ -2101,13 +2124,15 @@ public class MetadataTool {
       LOGGER.logSQL(sql + "\n? = " + _srid);
       
       String wkt = "";
-      ResultSet rs = psStmt.executeQuery();
-      if (rs.next()) {
-        wkt = rs.getString(1);
-        if ( rs.wasNull() )
+      ResultSet rSet = psStmt.executeQuery();
+      if (!rSet.isBeforeFirst() ) {    
+    	  wkt = null;
+      } else if (rSet.next()) {
+        wkt = rSet.getString(1);
+        if ( rSet.wasNull() )
             wkt = null;
       }
-      rs.close();     rs = null;
+      rSet.close();   rSet = null;
       psStmt.close(); psStmt = null;
       return wkt;
   }
@@ -2151,7 +2176,9 @@ public class MetadataTool {
       ps.setFetchSize(100); // default is 10
       ps.setFetchDirection(ResultSet.FETCH_FORWARD);
       ResultSet rSet = ps.executeQuery();
-      if (rSet.next()) {
+      if (!rSet.isBeforeFirst() ) {    
+    	  refSysKind = null;
+      } else if (rSet.next()) {
         refSysKind = rSet.getString(1); if ( rSet.wasNull() ) refSysKind = Constants.SRID_TYPE.UNKNOWN.toString();
       }
       rSet.close(); rSet = null;
@@ -2205,7 +2232,9 @@ public class MetadataTool {
       ps.setFetchSize(100); // default is 10
       ps.setFetchDirection(ResultSet.FETCH_FORWARD);
       ResultSet rSet = ps.executeQuery();
-      if (rSet.next()) {
+      if (!rSet.isBeforeFirst() ) {    
+    	  unitOfMeasure = "M";
+      } else if (rSet.next()) {
         unitOfMeasure = rSet.getString(1); if ( rSet.wasNull() ) unitOfMeasure = "M";
       }
       rSet.close(); rSet = null;
@@ -2372,7 +2401,9 @@ public class MetadataTool {
       LOGGER.logSQL(sql);
       Statement st = _conn.createStatement();
       ResultSet rSet = st.executeQuery(sql);
-      if (rSet.next()) {
+      if (!rSet.isBeforeFirst() ) {    
+    	  srid = Constants.SRID_NULL;
+      } else if (rSet.next()) {
           srid = rSet.getInt(1);
           srid = rSet.wasNull() ? Constants.SRID_NULL : srid;
       } else {

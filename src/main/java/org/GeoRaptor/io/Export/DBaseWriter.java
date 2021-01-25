@@ -2,55 +2,46 @@ package org.GeoRaptor.io.Export;
 
 
 import java.io.IOException;
-import java.io.Reader;
-
 import java.math.BigDecimal;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-
+import java.sql.Clob;
+import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.text.SimpleDateFormat;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.sql.RowSetMetaData;
 
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleTypes;
-
-import oracle.sql.CLOB;
-import oracle.sql.NCLOB;
-import oracle.sql.RAW;
-import oracle.sql.ROWID;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
+import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
-
 import org.xBaseJ.DBF;
+import org.xBaseJ.xBaseJException;
 import org.xBaseJ.fields.CharField;
 import org.xBaseJ.fields.DateField;
 import org.xBaseJ.fields.Field;
 import org.xBaseJ.fields.FloatField;
 import org.xBaseJ.fields.MemoField;
 import org.xBaseJ.fields.NumField;
-import org.xBaseJ.xBaseJException;
+
+import oracle.jdbc.OracleResultSet;
+import oracle.jdbc.OracleTypes;
+import oracle.sql.RAW;
+import oracle.sql.ROWID;
 
 
-@SuppressWarnings("deprecation")
 public class DBaseWriter {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.DBaseWriter");
@@ -63,16 +54,16 @@ public class DBaseWriter {
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.io.ui";
+    private static final String propertiesFile = "org.GeoRaptor.io.DBase";
     protected PropertiesManager propertyManager = null;
 
         
-    /** Maximum char column length allowed in Dbase (other than Memo). **/    
+    /** Maximum char column length allowed in DBase (other than Memo). **/    
     public static final int MAX_CHAR_LENGTH = 254;
     public static final int ROWID_LENGTH = 18;
     
-    /** Maximum numeric column length allowed in Dbase III. 
-    * MapInfo allows 19. Some dbase doc says 19,15, xBase says:
+    /** Maximum numeric column length allowed in DBase III. 
+    * MapInfo allows 19. Some DBase doc says 19,15, xBase says:
     * FloatField - Length range is 1 to 19 bytes
     * FloatField - Number of decimal positions range from 2 to 17 byte
     **/
@@ -110,7 +101,7 @@ public class DBaseWriter {
         this.df = new SimpleDateFormat(DATEFORMAT); 
         this.GeoRaptorPrefs = MainSettings.getInstance().getPreferences();
         try {
-            // Get localisation file
+            // Get localization file
             //
             this.propertyManager = new PropertiesManager(DBaseWriter.propertiesFile);
         } catch (Exception e) {
@@ -316,9 +307,9 @@ public class DBaseWriter {
     }
     
     /**
-     * Validates the given length is valid for a Dbase char column.
+     * Validates the given length is valid for a DBase char column.
      * @param length the length to validate.
-     * @return the maximum length for a Dbase char column if length exceeds the maximum; otherwise
+     * @return the maximum length for a DBase char column if length exceeds the maximum; otherwise
      * returns length.
      */
     public static int validateMaxCharLength(int length) {
@@ -326,9 +317,9 @@ public class DBaseWriter {
     }
     
     /**
-     * Validates the given length is valid for a Dbase numeric column.
+     * Validates the given length is valid for a DBase numeric column.
      * @param length the length to validate.
-     * @return the maximum length for a Dbase numeric column if the length exceeds the maximum; otherwise
+     * @return the maximum length for a DBase numeric column if the length exceeds the maximum; otherwise
      * returns length.
      */
     public static int validateMaxNumericLength(int length) {
@@ -362,7 +353,7 @@ public class DBaseWriter {
     /**
      * Maps Oracle columns to XBase field types and returns the field object
      * @param _metaData from which the XBase fields are created.
-     * @return the appropriate Dbase column length.
+     * @return the appropriate DBase column length.
      * @throws SQLException if there is an error reading the result set metadata.
      */
     public Field getXbaseField(OraRowSetMetaDataImpl _metaData) 
@@ -460,8 +451,8 @@ public class DBaseWriter {
     }
 
     /**
-     * Creates the Xbase file header Field set for all valid fields in the result set.
-     * @param resultSet - The resultSet whose metaData is used to define the Xbase header.
+     * Creates the XBase file header Field set for all valid fields in the result set.
+     * @param resultSet - The resultSet whose metaData is used to define the XBase header.
      * @throws SQLException if there is an error reading the result set metadata. 
      * @throws xBaseJException if there is an error creating the header file object.
      */
@@ -585,16 +576,9 @@ public class DBaseWriter {
                 break;
             case OracleTypes.NCLOB:
             String nClob = "";
-            NCLOB nClobVal = (oracle.sql.NCLOB)((OracleResultSet)resultSet).getObject(columnIndex);
+            NClob nClobVal = (NClob)((OracleResultSet)resultSet).getObject(columnIndex);
             if (!resultSet.wasNull()) {
-                Reader in = nClobVal.getCharacterStream(  ); 
-                int length = (int)nClobVal.length(); 
-                char[] buffer = new char[1024]; 
-                while ((length = in.read(buffer)) != -1) { 
-                    nClob += String.valueOf(buffer).substring(0,length);
-                } 
-                in.close( ); 
-                in = null; 
+            	nClob = SQLConversionTools.readNClob(nClobVal);
             }
             xbaseObject = this.hasMemo() 
                           ? nClob 
@@ -605,16 +589,9 @@ public class DBaseWriter {
             break;
             case OracleTypes.CLOB:
                 String sClob = "";
-                CLOB clobVal = ((OracleResultSet)resultSet).getCLOB(columnIndex);
+                Clob clobVal = (Clob)((OracleResultSet)resultSet).getObject(columnIndex);
                 if (!resultSet.wasNull()) {
-                    Reader in = clobVal.getCharacterStream(  ); 
-                    int length = (int)clobVal.length(); 
-                    char[] buffer = new char[1024]; 
-                    while ((length = in.read(buffer)) != -1) { 
-                        sClob += String.valueOf(buffer).substring(0,length);
-                    } 
-                    in.close( ); 
-                    in = null; 
+                   sClob = SQLConversionTools.readClob(clobVal);
                 }
                 xbaseObject = this.hasMemo() 
                               ? sClob 

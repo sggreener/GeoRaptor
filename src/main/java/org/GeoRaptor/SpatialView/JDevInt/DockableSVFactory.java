@@ -18,9 +18,8 @@ public final class DockableSVFactory
 
     private DockableSV _myDockable;
 
-	@SuppressWarnings("deprecation")
 	public DockableSVFactory() {
-        final DockStation dockStation = DockStation.getDockStation();
+        //final DockStation dockStation = DockStation.getDockStation();
         //dockStation.registerDockableFactory(DockableSVFactory.FAMILY, this);
     }
 

@@ -26,15 +26,11 @@ import java.sql.Struct;
 
 import java.util.*;
 
-import oracle.jdbc.OracleArray;
-
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.util.Assert;
 
-
-import oracle.jdbc.OracleConnection;
-import oracle.sql.*;
+import java.sql.Connection;
 
 /**
  * Translates a JTS Geometry into an Oracle STRUCT representing an <code>MDSYS.SDO_GEOMETRY</code> object. 
@@ -82,7 +78,7 @@ public class OraWriter
 	/**
 	 * A connection providing access to the required type definitions
 	 */
-	private OracleConnection connection;
+	private Connection connection;
 	/**
 	 * The maximum output dimension to write
 	 */
@@ -128,7 +124,7 @@ public class OraWriter
    * @param con a valid Oracle connection
    * @deprecated use {@link #OraWriter()} instead
    */
-  public OraWriter(OracleConnection con)
+  public OraWriter(Connection con)
   {
     this.connection = con;
   }
@@ -147,7 +143,7 @@ public class OraWriter
 	 * @param outputDimension the coordinate dimension to use for the output
 	 * @deprecated use {@link #OraWriter(int)} instead
 	 */
-	public OraWriter(OracleConnection con, int outputDimension)
+	public OraWriter(Connection con, int outputDimension)
 	{
 		this.connection = con;
 		this.outputDimension = outputDimension;
@@ -265,7 +261,7 @@ public class OraWriter
    * @throws SQLException if an encoding error was encountered
    */
   public Struct write(Geometry geom, 
-                      OracleConnection connection) 
+                      Connection connection) 
   throws SQLException
   {
     // this line may be problematic ... for v9i and later need to revisit.
@@ -278,8 +274,8 @@ public class OraWriter
 
     OraGeom oraGeom = createOraGeom(geom);
     
-    NUMBER    SDO_GTYPE = new NUMBER(oraGeom.gType);
-    NUMBER     SDO_SRID = oraGeom.srid == OraGeom.SRID_NULL ? null : new NUMBER(oraGeom.srid);
+    int       SDO_GTYPE = oraGeom.gType;
+    int        SDO_SRID = oraGeom.srid == OraGeom.SRID_NULL ? null : oraGeom.srid;
     Struct    SDO_POINT = null;
     Array SDO_ELEM_INFO = null;
     Array SDO_ORDINATES = null;
@@ -295,8 +291,8 @@ public class OraWriter
       SDO_POINT = OraUtil.toStruct(data, OraGeom.TYPE_POINT_TYPE, connection);
     }
     
-    OracleArray SDO_ELEM_INFO_ARRAY = (OracleArray)SDO_ELEM_INFO;    
-    OracleArray  SDO_ORDINATE_ARRAY = (OracleArray)SDO_ORDINATES;            
+    Array SDO_ELEM_INFO_ARRAY = (Array)SDO_ELEM_INFO;    
+    Array  SDO_ORDINATE_ARRAY = (Array)SDO_ORDINATES;            
 
     Object sdoGeometryComponents[] = new Object[] { 
         SDO_GTYPE, 
@@ -329,7 +325,7 @@ public class OraWriter
 	  return oraGeom.toString();
   }
   
-    private Struct createEmptySDOGeometry(OracleConnection connection) throws SQLException {
+    private Struct createEmptySDOGeometry(Connection connection) throws SQLException {
            return OraUtil.toStruct(new Object[5], OraGeom.TYPE_GEOMETRY, connection);
     }
 
@@ -346,7 +342,7 @@ public class OraWriter
     int          gtype = gType(geom);
     int           srid = this.srid == OraGeom.SRID_NULL ? geom.getSRID() : this.srid;
     double[]     point = null;
-    int     elemInfo[] = null;
+    int[]     elemInfo = null;
     double[] ordinates = null;
     
     // if geometry ordinate data should be represented by SDO_ORDINATES array
@@ -355,10 +351,10 @@ public class OraWriter
     }
     else {
       int dim = dimension(geom);
-      List elemTriplets = new ArrayList();
+      List<int[]> elemTriplets = new ArrayList<int[]>();
       List<Geometry> ordGeoms = new ArrayList<Geometry>();
       int lastOrdOffset = writeElement(geom, dim, 1, elemTriplets, ordGeoms);
-      elemInfo = flattenTriplets(elemTriplets);
+      elemInfo  = flattenTriplets(elemTriplets);
       ordinates = writeGeometryOrdinates(elemTriplets, ordGeoms, lastOrdOffset - 1, dim);
     }
     
@@ -403,7 +399,7 @@ public class OraWriter
    * @param ordGeoms
    * @return the final startingOffset
    */
-  private int writeElement(Geometry geom, int dim, int offset, List elemTriplets, List<Geometry> ordGeoms)
+  private int writeElement(Geometry geom, int dim, int offset, List<int[]> elemTriplets, List<Geometry> ordGeoms)
   {
     int interp;
     int geomType = OraGeom.geomType(geom);
@@ -411,9 +407,10 @@ public class OraWriter
     case org.locationtech.jts.io.oracle.OraGeom.GEOM_TYPE.POINT:
       // full point encoding - optimized one has been done earlier if possible
       Point point = (Point) geom;
-      elemTriplets.add(triplet(offset, 
-    		                   org.locationtech.jts.io.oracle.OraGeom.ETYPE.POINT, 
-    		                   org.locationtech.jts.io.oracle.OraGeom.INTERP.POINT));
+      elemTriplets.add(
+          triplet(offset, 
+    		      org.locationtech.jts.io.oracle.OraGeom.ETYPE.POINT, 
+    		      org.locationtech.jts.io.oracle.OraGeom.INTERP.POINT));
       ordGeoms.add(point);
       return offset + dim;
       
@@ -465,9 +462,12 @@ public class OraWriter
       int holes = polygon.getNumInteriorRing();
       for (int i = 0; i < holes; i++) {
         ring = polygon.getInteriorRingN(i);
-        elemTriplets.add(triplet(offset, 
-        		                 org.locationtech.jts.io.oracle.OraGeom.ETYPE.POLYGON_INTERIOR, 
-        		                 org.locationtech.jts.io.oracle.OraGeom.INTERP.POLYGON));
+        elemTriplets.add(
+            triplet(offset, 
+        	        org.locationtech.jts.io.oracle.OraGeom.ETYPE.POLYGON_INTERIOR, 
+        	        org.locationtech.jts.io.oracle.OraGeom.INTERP.POLYGON
+        	)
+        );
         ordGeoms.add(ring);
         offset += dim * ring.getNumPoints();
       }
@@ -502,12 +502,12 @@ public class OraWriter
     return new int[] { sOffset, etype, interp };
   }
   
-  private int[] flattenTriplets(List elemTriplets)
+  private int[] flattenTriplets(List<int[]> elemTriplets)
   {
-    int[] elemInfo = new int[3 * elemTriplets.size()];
+	  int[] elemInfo = new int[3 * elemTriplets.size()];
     int eiIndex = 0;
     for (int i = 0; i < elemTriplets.size(); i++) {
-      int[] triplet = (int[]) elemTriplets.get(i);
+      int[] triplet = elemTriplets.get(i);
       for (int ii = 0; ii < 3; ii++) {
         elemInfo[eiIndex++] = triplet[ii];
       }
@@ -527,7 +527,7 @@ public class OraWriter
    * @param dim
    * @return the final ordinate array
    */
-  private double[] writeGeometryOrdinates(List elemTriplets, List<Geometry> ordGeoms, int ordSize, int dim)
+  private double[] writeGeometryOrdinates(List<?> elemTriplets, List<Geometry> ordGeoms, int ordSize, int dim)
   {
     double[] ords = new double[ordSize];
     int ordIndex = 0;
@@ -565,7 +565,7 @@ public class OraWriter
           ordIndex = writeOrdsOriented(((LineString) geom).getCoordinateSequence(), dim, ords, ordIndex, true);
         }
         break;
-        
+
       case org.locationtech.jts.io.oracle.OraGeom.ETYPE.POLYGON_INTERIOR:
         ordIndex = writeOrdsOriented(((LineString) geom).getCoordinateSequence(), dim, ords, ordIndex, false);
         break;
@@ -591,7 +591,7 @@ public class OraWriter
   {
     Coordinate[] coords = seq.toCoordinateArray();
     //TODO: add method to CGAlgorithms to compute isCCW for CoordinateSequences
-    boolean isCCW = CGAlgorithms.isCCW(coords);
+    boolean isCCW = Orientation.isCCW(coords);
     if (isCCW != isWriteCCW) {
       return writeOrdsReverse(seq, dim, ordData, ordIndex);
     }

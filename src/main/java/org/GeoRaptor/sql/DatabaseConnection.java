@@ -3,7 +3,7 @@ package org.GeoRaptor.sql;
 import java.io.UnsupportedEncodingException;
 
 import java.net.URLDecoder;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.Properties;
@@ -78,12 +78,12 @@ public class DatabaseConnection {
         return prettyName;
     }
 
-    public OracleConnection getConnection() {
-        OracleConnection conn = null;
+    public Connection getConnection() {
+        Connection conn = null;
         if (Strings.isEmpty(this.connectionName) )
             return conn;
         try {
-            conn = (OracleConnection)Connections.getInstance().getConnection(this.connectionName,true);
+            conn = Connections.getInstance().getConnection(this.connectionName,true);
         } catch (DBException e) {
             LOGGER.error("Problem getting connection (" + this.connectionName + ") of " + e.toString());
         }
@@ -92,8 +92,8 @@ public class DatabaseConnection {
     
     public String getUserName() {
         try {
-            OracleConnection conn = this.getConnection();
-            return conn.getUserName();
+            Connection conn = this.getConnection();
+            return conn.getSchema();
         } catch (SQLException e) {
             return "";
         }
@@ -101,8 +101,8 @@ public class DatabaseConnection {
 
     public String getCurrentSchema() {
         try {
-            OracleConnection conn = this.getConnection();
-            return ( conn!=null ) ? conn.getCurrentSchema() : "";
+            Connection conn = this.getConnection();
+            return ( conn!=null ) ? conn.getSchema() : "";
         } catch (SQLException e) {
             return "";
         }
@@ -156,10 +156,10 @@ public class DatabaseConnection {
     LOGGER.debug("reOpen");
         // Try and reopen
         this.close();
-        OracleConnection conn;
+        Connection conn;
         try {
         	LOGGER.debug("reOpen - trying " + this.connectionName);
-            conn = (OracleConnection)Connections.getInstance().getConnection(this.connectionName);
+            conn = Connections.getInstance().getConnection(this.connectionName);
             return this.checkConnection(conn);
         } catch (DBException e) {
         	LOGGER.debug("reOpen exception " + e.toString());
@@ -172,13 +172,13 @@ public class DatabaseConnection {
         return c;
     }
     
-    public boolean checkConnection(OracleConnection _conn) {
+	public boolean checkConnection(Connection _conn) {
 LOGGER.debug("checkConnection _conn = " + (_conn==null?"null":"not null"));
         if ( _conn == null )
             return false;
         try {
-LOGGER.debug("_conn.pingDatabase()=" + _conn.pingDatabase());
-            if ( _conn.pingDatabase() !=  OracleConnection.DATABASE_OK ) {
+LOGGER.debug("_conn.isValid()=" + _conn.isValid(0));
+            if ( _conn.isValid(0) ) {
                 return false;
             }
         }

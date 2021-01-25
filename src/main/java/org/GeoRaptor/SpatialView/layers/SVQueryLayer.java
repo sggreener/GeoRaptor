@@ -6,8 +6,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Struct;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,15 +24,11 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
-
+import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
@@ -50,7 +49,6 @@ import org.geotools.util.logging.Logger;
 
 import org.w3c.dom.Node;
 
-@SuppressWarnings("deprecation")
 public class SVQueryLayer 
 extends SVSpatialLayer 
 {
@@ -184,7 +182,6 @@ extends SVSpatialLayer
     {
         // If filter geometry buffered? 
         //
-//  try { String s = null; s.length(); } catch (Exception e) { e.printStackTrace(); }
         String bufferClause = "?";
         if (this.isBuffered()) 
         {
@@ -257,12 +254,12 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
         return qSql;
     }
 
-    protected OraclePreparedStatement setParameters(String          _sql, 
-                                                    Envelope _mbr) 
+    protected PreparedStatement setParameters(String _sql, 
+                                            Envelope _mbr) 
     {
-        OraclePreparedStatement pStatement = null;
-        int                 stmtParamIndex = 1;
-        String                      params = "";
+        PreparedStatement pStatement = null;
+        int           stmtParamIndex = 1;
+        String                params = "";
         try 
         {
             pStatement = super.setParameters(_sql,_mbr);
@@ -273,17 +270,17 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
             // Now set up parameters for this layer
             //
             stmtParamIndex = super.isSTGeometry() ? 2 : 3; // This is UGLY and hardcoded! I need to know what parameters are set by super.setParameters()
-            OracleConnection conn = super.getConnection();
+            Connection conn = super.getConnection();
             if (super.hasIndex()) 
             {
                 // Use SDO_RELATE, SDO_EQUAL etc.
                 // Only SDO_RELATE has third parameter
                 //
-                pStatement.setSTRUCT(stmtParamIndex++,
-                                     (STRUCT)JGeometry.storeJS(conn,this.getGeometry()));
+            	pStatement.setObject(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()),java.sql.Types.STRUCT);
+                //pStatement.setStruct(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()));
                 params += "\n? = " +
-                    SDO_GEOMETRY.convertGeometryForClipboard(
-                    		       (STRUCT)JGeometry.storeJS(conn,this.getGeometry()),conn);
+                    SDO_GEOMETRY.getGeometryAsString(
+                    		       (Struct)JGeometry.storeJS(conn,this.getGeometry()),conn);
 
                 if (this.isBuffered()) {
                     /**
@@ -313,11 +310,10 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                 pStatement.setString(stmtParamIndex++,"'" + this.getRelationshipMask() + "'" );
                 params += "\n? = mask=" + this.getRelationshipMask();
 
-                pStatement.setSTRUCT(stmtParamIndex++,
-                             (STRUCT)JGeometry.storeJS(conn,this.getGeometry()));
+                pStatement.setObject(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()),java.sql.Types.STRUCT);
                 params += "\n? = " +
-                    SDO_GEOMETRY.convertGeometryForClipboard(
-                         (STRUCT)JGeometry.storeJS(conn,this.getGeometry()),conn);
+                    SDO_GEOMETRY.getGeometryAsString(
+                         (Struct)JGeometry.storeJS(conn,this.getGeometry()),conn);
                 if (this.isBuffered()) {
                     /**
                      * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- previous
@@ -357,7 +353,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
         LOGGER.debug("QueryLayer.drawLayer(" + _mbr.toString());
-        OracleConnection conn = null;
+        Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
@@ -379,7 +375,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
 
         // Set up parameters for host layer 
         //
-        OraclePreparedStatement pStatement = null;
+        PreparedStatement pStatement = null;
         pStatement = this.setParameters(qSql,_mbr);
         if (pStatement==null) {
             return false;
@@ -454,8 +450,8 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
      */
     public ArrayList<QueryRow> getCache(Envelope _mbr)
     {
-        OraclePreparedStatement pStatement = null;
-        OracleConnection conn = null;
+        PreparedStatement pStatement = null;
+        Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
@@ -494,13 +490,13 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
         // ****************** Execute the query ************************
         //
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); // list of return rows
-        STRUCT            retSTRUCT = null;
-        OracleResultSet         ors = null;
+        Struct            retStruct = null;
+        ResultSet               ors = null;
         String                rowID = null;
         try 
         {
-            ors = (OracleResultSet)pStatement.executeQuery();
-            ors.setFetchDirection(OracleResultSet.FETCH_FORWARD);
+            ors = (ResultSet)pStatement.executeQuery();
+            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
@@ -523,7 +519,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                         continue;
                     }
                     if (columnName.equalsIgnoreCase(super.getGeoColumn())) {
-                        retSTRUCT = (oracle.sql.STRUCT)ors.getObject(col);
+                        retStruct = (java.sql.Struct)ors.getObject(col);
                         if (ors.wasNull()) {
                             break; // process next row
                         }
@@ -538,10 +534,12 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                                       value = "NULL";
                                   } else {
                                       if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
-                                          rowID = ors.getROWID(col).stringValue(); 
+                                          rowID = ((OracleResultSet)ors).getROWID(col).stringValue(); 
                                           value = rowID;
                                       } else {
-                                          value = SQLConversionTools.convertToString(this.getConnection(), ors, col);
+                                          value = SQLConversionTools.convertToString((OracleConnection)this.getConnection(), 
+                                        		                                     (OracleResultSet)ors, 
+                                        		                                     col);
                                           if (value == null)
                                               value = "NULL";
                                       }
@@ -553,7 +551,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                           }
                     }
                 }
-                retList.add(new QueryRow(rowID, calValueMap, retSTRUCT));
+                retList.add(new QueryRow(rowID, calValueMap, retStruct));
             }
             ors.close();
             pStatement.close();

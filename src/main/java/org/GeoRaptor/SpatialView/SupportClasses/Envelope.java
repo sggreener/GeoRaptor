@@ -29,6 +29,7 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.tools.Coordinate;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -153,7 +154,7 @@ implements Comparable<Object>
         //
         int dims = _geo.getDimensions();
         if ( _geo.isOrientedPoint() || _geo.isOrientedMultiPoint() ) {
-            this.setMBR(SDO_GEOMETRY.getOrientedPointMBR(_geo));
+            this.setMBR(JGeom.getOrientedPointMBR(_geo));
         } else {
             // getMBR() doesn't seem to return measures in MBR if of type 3302 etc
             //
@@ -177,7 +178,7 @@ implements Comparable<Object>
                 return;
             }
             if ( mbr.length < 4 || Double.isInfinite(mbr[0]) || Double.isNaN(mbr[0]) ) {
-                this.setMBR(SDO_GEOMETRY.getOrdinatesMBR(_geo));
+                this.setMBR(JGeom.getOrdinatesMBR(_geo));
             }
             if ( mbr.length < 4 ) {
                 return;

@@ -26,8 +26,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
@@ -477,8 +475,8 @@ LOGGER.debug("*** Removing " + _layerName);
     this.SRIDType = _SRIDType;
   }
 
-  public OracleConnection getConnection() {
-      OracleConnection c = null;
+  public Connection getConnection() {
+      Connection c = null;
       try {
           if ( this.getLayerCount()!=0 ) {
               c = this.getActiveLayer().getConnection();

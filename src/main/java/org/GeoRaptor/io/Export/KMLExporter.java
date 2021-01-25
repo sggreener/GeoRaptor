@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.util.LinkedHashMap;
 
 import javax.sql.RowSetMetaData;
@@ -17,9 +18,7 @@ import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 
 import oracle.spatial.util.KML2;
-import oracle.sql.STRUCT;
 
-@SuppressWarnings("deprecation")
 public class KMLExporter implements IExporter 
 {
 
@@ -171,7 +170,7 @@ public class KMLExporter implements IExporter
     throws SQLException
     {
         String kmlText = "";
-        STRUCT stValue = null;
+        Struct stValue = null;
         try {
             // Mappable column?
             //
@@ -180,7 +179,7 @@ public class KMLExporter implements IExporter
                 if ( _columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) )
                 {
                     kmlText = "";
-                    stValue = (STRUCT)_object;
+                    stValue = (Struct)_object;
                     if ( stValue == null ) {
                         LOGGER.warn("NULL Geometry: No KML written for row " + (row+1));
                         return;

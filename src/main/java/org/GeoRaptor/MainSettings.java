@@ -11,12 +11,14 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.GeoRaptor.SpatialView.SpatialViewSettings;
+import org.GeoRaptor.tools.PropertiesManager;
 //import org.GeoRaptor.SpatialView.SpatialViewSettings;
 //import org.GeoRaptor.SpatialView.SpatialViewSettings;
 //import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 //import org.GeoRaptor.tools.Tools;
-
+import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 
 import org.w3c.dom.Document;
@@ -39,10 +41,11 @@ public class MainSettings {
 	/**
 	 * Properties File Manager
 	 **/
-	private static final String propertiesFile = "org.GeoRaptor.resource.Res";
-	//protected PropertiesManager propertyManager;
+	//private static final String propertiesFile = "org/GeoRaptor/Resource";
+	private static final String propertiesFile = "org/GeoRaptor/Resource";
+	protected PropertiesManager propertyManager;
 
-	//protected static SpatialViewSettings spatialViewS;
+    protected static SpatialViewSettings spatialViewS;
 	protected static MainSettings classInstance;
 	protected static Preferences mainPrefs;
 	/**
@@ -67,11 +70,11 @@ public class MainSettings {
 		MainSettings.mainPrefs = Preferences.getInstance(prefs);
 		// Get localisation file
 		//
-//		this.propertyManager = new PropertiesManager(MainSettings.propertiesFile);
-//		MainSettings.MENU_ITEM = this.propertyManager.getMsg("MENU_ITEM");
-//		MainSettings.EXTENSION_NAME = this.propertyManager.getMsg("EXTENSION_NAME");
-//		MainSettings.XML_VERSION_MESSAGE = this.propertyManager.getMsg("XML_VERSION_MESSAGE");
-//		MainSettings.VERSION = Tools.getVersion();
+		this.propertyManager = new PropertiesManager(MainSettings.propertiesFile);
+		MainSettings.MENU_ITEM = this.propertyManager.getMsg("MENU_ITEM");
+		MainSettings.EXTENSION_NAME = this.propertyManager.getMsg("EXTENSION_NAME");
+		MainSettings.XML_VERSION_MESSAGE = this.propertyManager.getMsg("XML_VERSION_MESSAGE");
+		MainSettings.VERSION = Tools.getVersion();
 	}
 
 	/**
@@ -99,6 +102,7 @@ public class MainSettings {
 			oracle.ide.config.Preferences prefs = oracle.ide.config.Preferences.getPreferences();
 			MainSettings.mainPrefs = Preferences.getInstance(prefs);
 		}
+System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"null":"not null"));
 		return MainSettings.mainPrefs;
 	}
 

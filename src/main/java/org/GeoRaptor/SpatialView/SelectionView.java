@@ -9,7 +9,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,8 +32,6 @@ import oracle.jdbc.OracleConnection;
 
 import oracle.spatial.geometry.JGeometry;
 
-import oracle.sql.STRUCT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
@@ -55,7 +53,6 @@ import org.GeoRaptor.tools.Tools;
  *          Modified to make work on unselected coordinates AND refresh immediately all points created
  *          Note: This does not use any of the code in getDrawTools() when it should do.
  **/
-@SuppressWarnings("deprecation")
 public class SelectionView 
 extends JPanel
 {
@@ -266,14 +263,14 @@ extends JPanel
             // Process one underneath mouse click?
             Point i = geoPopupMenu.getLocation();
             int row = this.geoTable.rowAtPoint(i);
-            STRUCT geomStruct = (STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue);
+            Struct geomStruct = (Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue);
             displayString = String.format(formatString,
                                           columnName,
                                           (columnName.equalsIgnoreCase("NO ATTRIBUTES")?"":attTableModel.getValueAt(row,0)),
                               SDO_GEOMETRY.getDimension(geomStruct,2) /* Dimensions */,
                               SDO_GEOMETRY.getNumberCoordinates(geomStruct));
         } else if ( rows.length == 1 ) {
-            STRUCT geomStruct = (STRUCT)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue);
+            Struct geomStruct = (Struct)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue);
             displayString = String.format(formatString,
                                           columnName,
                                           (columnName.equalsIgnoreCase("NO ATTRIBUTES")?"":attTableModel.getValueAt(rows[0],0)),
@@ -282,7 +279,7 @@ extends JPanel
         } else if ( rows.length > 1 ) {
             for (int i=0; i<rows.length; i++) {
                 QueryRow qr = (QueryRow)geoTableModel.getRow(i);
-                STRUCT geomStruct = qr.getGeoValue();
+                Struct geomStruct = qr.getGeoValue();
                 displayString = String.format(formatString,
                                               attTableModel.getValueAt(i,0)==null?""+i:attTableModel.getValueAt(i,0)  /* Feature */,
                                   SDO_GEOMETRY.getDimension(geomStruct,2) /* Dimensions */,
@@ -321,13 +318,13 @@ extends JPanel
             Point i = geoPopupMenu.getLocation();
             int row = this.geoTable.rowAtPoint(i);
             this.svPanel.showGeometry(null,
-                                      (STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue), null,
-                                      SDO_GEOMETRY.getGeoMBR((STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue)),
+                                      (Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue), null,
+                                      SDO_GEOMETRY.getGeoMBR((Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue)),
                                       false,false,false);
           } else if ( rows.length == 1 ) {
               this.svPanel.showGeometry(null,
-                                        (STRUCT)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue),null,
-                                      SDO_GEOMETRY.getGeoMBR((STRUCT)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue)),
+                                        (Struct)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue),null,
+                                      SDO_GEOMETRY.getGeoMBR((Struct)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue)),
                                         false,false,false);
           } else if ( rows.length > 1 ) {
               List<QueryRow> geoSet = new ArrayList<QueryRow>(); 
@@ -342,7 +339,7 @@ extends JPanel
     
     private void copyToClipboard() 
     {
-        STRUCT geoStruct = null;
+        Struct geoStruct = null;
         StringBuffer sBuffer = new StringBuffer();
       
         int rows[] = geoTable.getSelectedRows();
@@ -353,9 +350,9 @@ extends JPanel
             if ( row == -1 )
                 sBuffer.append("");
             else {
-                geoStruct = (STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue);
+                geoStruct = (Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue);
                 sBuffer.append((geoStruct==null
-                           ? "" : SDO_GEOMETRY.convertGeometryForClipboard(geoStruct)));
+                           ? "" : SDO_GEOMETRY.getGeometryAsString(geoStruct)));
             }
         } else if ( rows.length >= 1 ) {
             int viewRow = -1;
@@ -364,10 +361,10 @@ extends JPanel
                 if ( this.geoTable.getSelectedRowCount() != 0 ) {
                     viewRow = rows[row];
                 }
-                geoStruct = (STRUCT)geoTableModel.getValueAt(viewRow,GeoTableModel.GeoValue);
+                geoStruct = (Struct)geoTableModel.getValueAt(viewRow,GeoTableModel.GeoValue);
                 sBuffer.append("\n" +
                                (geoStruct==null
-                               ? "" : SDO_GEOMETRY.convertGeometryForClipboard(geoStruct)));
+                               ? "" : SDO_GEOMETRY.getGeometryAsString(geoStruct)));
             }
         }
         if ( sBuffer.length() > 0 ) {
@@ -380,7 +377,7 @@ extends JPanel
     @SuppressWarnings("unused")
 	private void measureShape()
     {
-        STRUCT geoStruct = null;
+        Struct geoStruct = null;
         
         int[] rows = this.geoTable.getSelectedRows();
         int viewRow = -1;
@@ -538,13 +535,13 @@ extends JPanel
           int row = this.geoTable.rowAtPoint(i);
           if ( row != -1 ) 
               this.svPanel.showGeometry(null,
-                                        (STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue),null,
-                                          SDO_GEOMETRY.getGeoMBR((STRUCT)geoTableModel.getValueAt(row,GeoTableModel.GeoValue)),
+                                        (Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue),null,
+                                          SDO_GEOMETRY.getGeoMBR((Struct)geoTableModel.getValueAt(row,GeoTableModel.GeoValue)),
                                         _highlight,_zoom,false);
         } else if ( rows.length == 1 ) {
             this.svPanel.showGeometry(null,
-                                      (STRUCT)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue),null,
-                                      SDO_GEOMETRY.getGeoMBR((STRUCT)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue)),
+                                      (Struct)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue),null,
+                                      SDO_GEOMETRY.getGeoMBR((Struct)geoTableModel.getValueAt(rows[0],GeoTableModel.GeoValue)),
                                       _highlight,_zoom,false);
         } else if ( rows.length > 1 ) {
             List<QueryRow> geoSet = new ArrayList<QueryRow>();
@@ -577,7 +574,7 @@ extends JPanel
                                             GeoRaptorPrefs.getPreviewImageHeight());
         if (row != -1 ) {
             modelRow = geoTable.convertRowIndexToModel(row);
-            lblGeom = sr.getPreview((STRUCT)geoTableModel.getValueAt(modelRow,GeoTableModel.GeoValue), 
+            lblGeom = sr.getPreview((Struct)geoTableModel.getValueAt(modelRow,GeoTableModel.GeoValue), 
                                       imageSize);
         } else if ( rows.length > 1 ) {
             List<JGeometry> geoSet = new ArrayList<JGeometry>(rows.length);
@@ -646,13 +643,13 @@ extends JPanel
     }
     
     @SuppressWarnings("unused")
-	private JGeometry convertGeometry(STRUCT _stGeom)
+	private JGeometry convertGeometry(Struct _stGeom)
     {
         if ( _stGeom == null )
             return null;
         JGeometry geom;
         try {
-            geom = JGeometry.load(_stGeom);
+            geom = JGeometry.loadJS(_stGeom);
             if ( geom == null )
                 return null;
             double[] mbr = geom.getMBR();

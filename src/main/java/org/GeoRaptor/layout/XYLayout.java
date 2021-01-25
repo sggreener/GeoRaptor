@@ -15,11 +15,14 @@ import java.util.Hashtable;
  * @version 10 Oct 2019
  *
  */
-public class XYLayout implements LayoutManager2, Serializable {
+public class XYLayout 
+  implements LayoutManager2, 
+             Serializable 
+  {
 	private static final long serialVersionUID = 200L;
 	int width;
 	int height;
-	Hashtable info = new Hashtable();
+	Hashtable<Component, Object> info = new Hashtable<Component, Object>();
 	static final XYConstraints defaultConstraints = new XYConstraints();
 
 	public XYLayout() {

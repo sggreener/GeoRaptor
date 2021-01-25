@@ -5,17 +5,15 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseEvent;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import java.lang.reflect.Method;
-
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-
+import java.sql.Struct;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -23,7 +21,6 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import javax.sql.RowSetMetaData;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -32,64 +29,57 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import oracle.dbtools.raptor.controls.grid.ResultSetTable;
-import oracle.dbtools.raptor.controls.grid.ResultSetTableModel;
-import oracle.dbtools.raptor.controls.grid.contextmenu.GridContextMenuItem;
-import oracle.dbtools.raptor.proxy.ProxyRegistry;
-import oracle.dbtools.raptor.utils.Connections;
-
-import oracle.ide.Context;
-import oracle.ide.Ide;
-import oracle.ide.controller.ContextMenu;
-import oracle.ide.controller.IdeAction;
-import oracle.ide.dialogs.ProgressBar;
-
-import oracle.javatools.db.DBException;
-
-import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleTypes;
-import oracle.jdbc.driver.OracleConnection;
-
-import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.ARRAY;
-import oracle.sql.Datum;
-import oracle.sql.NUMBER;
-import oracle.sql.STRUCT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
-import org.GeoRaptor.Preferences;
+import org.GeoRaptor.SpatialView.SpatialView;
+import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
 import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
-import org.GeoRaptor.SpatialView.SpatialView;
-import org.GeoRaptor.SpatialView.SpatialViewPanel;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.Preview;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
-import org.GeoRaptor.io.Export.ui.ExporterDialog;
 import org.GeoRaptor.io.Export.GMLExporter;
 import org.GeoRaptor.io.Export.IExporter;
 import org.GeoRaptor.io.Export.KMLExporter;
 import org.GeoRaptor.io.Export.SHPExporter;
 import org.GeoRaptor.io.Export.TABExporter;
+import org.GeoRaptor.io.Export.ui.ExporterDialog;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.GeometryProperties;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.io.oracle.OraUtil;
+
+import oracle.dbtools.raptor.controls.grid.ResultSetTable;
+import oracle.dbtools.raptor.controls.grid.ResultSetTableModel;
+import oracle.dbtools.raptor.controls.grid.contextmenu.GridContextMenuItem;
+import oracle.dbtools.raptor.proxy.ProxyRegistry;
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.ide.Context;
+import oracle.ide.Ide;
+import oracle.ide.controller.ContextMenu;
+import oracle.ide.controller.IdeAction;
+import oracle.ide.dialogs.ProgressBar;
+import oracle.javatools.db.DBException;
+import oracle.jdbc.OracleResultSetMetaData;
+import oracle.jdbc.OracleTypes;
+import oracle.jdbc.driver.OracleConnection;
+import oracle.spatial.geometry.JGeometry;
+import oracle.sql.NUMBER;
 
 public class RenderResultSet 
      extends GridContextMenuItem 
@@ -117,7 +107,8 @@ public class RenderResultSet
     private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.Grid.gridcontextmenu";
     protected PropertiesManager propertyManager;
 
-    private RenderTool renderTool;
+    @SuppressWarnings("unused")
+	private RenderTool renderTool;
 
     /**
      * For access to preferences
@@ -468,7 +459,7 @@ public class RenderResultSet
                 for (int rCol=1;rCol<=this.meta.getColumnCount();rCol++) {
                     try {
                         if ( this.meta.getColumnLabel(rCol).equalsIgnoreCase(columnName) ) {
-                            if (this.meta.getColumnType(rCol) != OracleTypes.STRUCT 
+                            if (this.meta.getColumnType(rCol) != Types.STRUCT
                                 && 
                                 Tools.isSupportedType(this.meta.getColumnType(rCol),
                                                       this.meta.getColumnTypeName(rCol))
@@ -534,15 +525,15 @@ public class RenderResultSet
             int modelRow    = _table.convertRowIndexToModel(clickRow);
             int modelColumn = _table.convertColumnIndexToModel(clickColumn);
             Object obj  = _table.getModel().getValueAt(modelRow, modelColumn);
-            STRUCT struct = null;
-            ARRAY array = null;
-            if (obj instanceof STRUCT) {
+            Struct Struct = null;
+            Array array = null;
+            if (obj instanceof Struct) {
                 try {
-                    struct = (STRUCT)obj;
-                    if ( struct.getSQLTypeName().indexOf("MDSYS.ST_")==0 ||
-                         struct.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_GEOMETRY) ||
-                         struct.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_POINT_TYPE) ||
-                         struct.getSQLTypeName().equals(Constants.TAG_MDSYS_VERTEX_TYPE) )  
+                    Struct = (Struct)obj;
+                    if ( Struct.getSQLTypeName().indexOf("MDSYS.ST_")==0 ||
+                         Struct.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_GEOMETRY) ||
+                         Struct.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_POINT_TYPE) ||
+                         Struct.getSQLTypeName().equals(Constants.TAG_MDSYS_VERTEX_TYPE) )  
                     {
                         // Return true for this clicked geometry column if:
                         // 1. No selection exists
@@ -557,12 +548,12 @@ public class RenderResultSet
                         }
                     }
                 } catch (SQLException e) {
-                    LOGGER.error("SQL error examining STRUCT column " + _table.getModel().getColumnName(modelColumn) + " (" + e.toString() + ")");
+                    LOGGER.error("SQL error examining Struct column " + _table.getModel().getColumnName(modelColumn) + " (" + e.toString() + ")");
                 }
-            } else if (obj instanceof ARRAY){
+            } else if (obj instanceof Array){
                 try {
-                    array = (ARRAY)obj;
-                    if ( array.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
+                    array = (Array)obj;
+                    if ( array.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
                     {
                         // Return true for this clicked geometry column if:
                         // 1. No selection exists
@@ -615,7 +606,7 @@ public class RenderResultSet
         int dimColumn = -1;
         try 
         {
-            ARRAY dimArray = null;
+            Array dimArray = null;
             // We still haven't found the dimArray column
             // Grab first on of right type if exists
             //
@@ -647,7 +638,7 @@ public class RenderResultSet
                                 if (dimArray == null ) {
                                     break;
                                 }
-                                if ( dimArray.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
+                                if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
                                     return viewCol;
                                 }
                             }
@@ -706,7 +697,7 @@ public class RenderResultSet
         int mappableColumn = -1;
         try 
         {
-            STRUCT geo = null;
+            Struct geo = null;
             // We still haven't found the geometry column
             // Grab first on of right type if exists
             //
@@ -732,7 +723,7 @@ public class RenderResultSet
                         if ( this.meta.getColumnLabel(rCol).equalsIgnoreCase(columnName) ) {
                             // Is it an SDO_GEOMETRY?
                             //
-                            if (this.meta.getColumnType(rCol) == OracleTypes.STRUCT ) {
+                            if (this.meta.getColumnType(rCol) == Types.STRUCT ) {
                                 geo = findStructValue(viewCol);
                                 if (geo == null ) {
                                     break;
@@ -922,7 +913,7 @@ public class RenderResultSet
     private GeometryProperties getGeometryProperties() 
     {
         GeometryProperties geomMetadata = new GeometryProperties();
-        STRUCT stGeom = null;
+        Struct stGeom = null;
 
         try {
             int FULL_GTYPE = 2000;
@@ -951,8 +942,8 @@ public class RenderResultSet
                     viewRow   = rows[row];
                 }
                 Object obj = this._table.getValueAt(viewRow,this.clickColumn);
-                if ( obj != null && obj instanceof STRUCT ) {
-                    stGeom = (STRUCT)obj;
+                if ( obj != null && obj instanceof Struct ) {
+                    stGeom = (Struct)obj;
                     if ( stGeom != null ) {
                         if ( stGeom.getSQLTypeName().indexOf("MDSYS.ST_")==0 ) {
                             stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
@@ -1198,7 +1189,6 @@ public class RenderResultSet
                                             Constants.GEORAPTOR,
                                             JOptionPane.ERROR_MESSAGE);
           } else {
-              java.util.Date endTime = new java.util.Date();
               long timeDiff = ( System.currentTimeMillis() - startTime );
               String processingTime = Tools.milliseconds2Time(timeDiff);
               work.showExportStats(processingTime);
@@ -1212,24 +1202,6 @@ public class RenderResultSet
         return ;
     }
     
-    private boolean isSQLDeveloper30(ResultSetTableModel _rstm) {
-        boolean ret = false;
-        Class cl = _rstm.getClass();
-        // If 3.0 then rstm.getResultSetMetaData();
-        // If 2.1 then rstm.getResultSet().getMetaData();
-        Method[] methods = cl.getDeclaredMethods();
-        for (Method m : methods) {
-          String name = m.getName();
-          if ( !Strings.isEmpty(name) ) {
-              if ( name.equals("getResultSetMetaData") )
-                  return true;
-          }
-          // Class retType = m.getReturnType();
-          // Class[] paramTypes = m.getParameterTypes();
-        }
-        return ret;
-    }
-
     public List<JGeometry> getGeoSetFromResultSet() 
     {
         List<JGeometry> geoSet = null;
@@ -1267,8 +1239,8 @@ public class RenderResultSet
             geoSet = new ArrayList<JGeometry>(rowsToProcess);
             String        columnName = "";
             String         classname = "";
-            String    structTypeName = "";
-            STRUCT            stGeom = null;
+            String    StructTypeName = "";
+            Struct            stGeom = null;
             JGeometry          jGeom = null;  
             int           FULL_GTYPE = 2001;
             int                 SRID = Constants.SRID_NULL;
@@ -1293,41 +1265,41 @@ public class RenderResultSet
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if ( ! classname.equals("oracle.sql.STRUCT") ) 
+                        if ( ! classname.equals("java.sql.Struct") ) 
                             continue;
-                        stGeom = (STRUCT)this._table.getValueAt(viewRow,viewCol);
+                        stGeom = (Struct)this._table.getValueAt(viewRow,viewCol);
                         if ( stGeom == null ) {
                             continue; // Can't render a null geometry so skip it  
                         }
                         // If an ST_ geometry then extract its sdo_geometry
-                        structTypeName = stGeom.getSQLTypeName();
-                        if ( structTypeName.indexOf("MDSYS.ST_")==0 ) {
+                        StructTypeName = stGeom.getSQLTypeName();
+                        if ( StructTypeName.indexOf("MDSYS.ST_")==0 ) {
                             stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
-                            structTypeName = stGeom.getSQLTypeName();
+                            StructTypeName = stGeom.getSQLTypeName();
                         } 
-                        if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
+                        if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
                             FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
                             SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
                             geometryType = SDO_GEOMETRY.discoverGeometryType(FULL_GTYPE,geometryType);
-                            jGeom        = JGeometry.load(stGeom);
+                            jGeom        = JGeometry.loadJS(stGeom);
                         } else {
-                            if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
-                                Datum data[] = stGeom.getOracleAttributes();
-                                double x = ((NUMBER)data[0]).doubleValue();
-                                double y = ((NUMBER)data[1]).doubleValue();
+                            if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
+                                Object data[] = stGeom.getAttributes();
+                                double x = OraUtil.toDouble(data[0],Double.NaN);
+                                double y = OraUtil.toDouble(data[1],Double.NaN);
                                 double z = (data[2] != null)
-                                            ? ((NUMBER)data[2]).doubleValue() 
+                                            ? OraUtil.toDouble(data[2],Double.NaN) 
                                             : (data[3] != null) 
-                                              ? ((NUMBER)data[3]).doubleValue() 
+                                              ? OraUtil.toDouble(data[3],Double.NaN) 
                                               : Double.NaN;
-                                double m = (data[2] != null && data[3] != null) ? ((NUMBER)data[3]).doubleValue() : Double.NaN;
+                                double m = (data[2] != null && data[3] != null) ? OraUtil.toDouble(data[3],Double.NaN) : Double.NaN;
                                 jGeom = (Double.isNaN(z) && Double.isNaN(m))
                                         ? new JGeometry(x,y,SRID)
                                         : (Double.isNaN(m)
                                           ? new JGeometry(x,y,z,SRID)
                                           : new JGeometry(x,y,z,m,SRID));
-                            } else if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
-                                double[] ords = SDO_GEOMETRY.asDoubleArray(stGeom,Double.NaN);
+                            } else if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
+                                double[] ords = OraUtil.toDoubleArray(stGeom,Double.NaN);
                                 jGeom = Double.isNaN(ords[2])
                                     ? new JGeometry(ords[0],ords[1],        SRID)
                                     : new JGeometry(ords[0],ords[1],ords[2],SRID);
@@ -1440,7 +1412,7 @@ public class RenderResultSet
             String columnName = "";
             String  classname = "";
             String   typeName = "";
-            ARRAY     diminfo = null;
+            Array     diminfo = null;
             for (int row=0; row < rowsToProcess; row++) 
             {
                 me = new MetadataEntry();
@@ -1468,9 +1440,9 @@ public class RenderResultSet
                             //
                             if ( columnName.equalsIgnoreCase("DIMINFO") && 
                                  classname.equals("oracle.sql.ARRAY") ) {
-                                diminfo = (ARRAY)this._table.getValueAt(viewRow,viewCol);
+                                diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
                                 if ( diminfo != null ) {
-                                    typeName = diminfo.getSQLTypeName();
+                                    typeName = diminfo.getBaseTypeName();
                                     if ( typeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
                                         me.add(diminfo);
                                     } 
@@ -1562,7 +1534,7 @@ public class RenderResultSet
             String  columnName = "";
             String   classname = "";
             String    typeName = "";
-            ARRAY      diminfo = null;
+            Array      diminfo = null;
             MetadataEntry   me = null;
             String SRID_marker = "-9999";
             int           SRID = Constants.SRID_NULL;   
@@ -1589,10 +1561,10 @@ public class RenderResultSet
                         // Note: DIMINFO may appear before SRID or vice versa
                         //
                         if ( columnName.equalsIgnoreCase("DIMINFO") && 
-                             classname.equals("oracle.sql.ARRAY") ) {
-                            diminfo = (ARRAY)this._table.getValueAt(viewRow,viewCol);
+                             classname.equals("java.sql.Array") ) {   
+                            diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
                             if ( diminfo != null ) {
-                                typeName = diminfo.getSQLTypeName();
+                                typeName = diminfo.getBaseTypeName();
                                 if ( ! typeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
                                     diminfo = null;
                                 } 
@@ -1601,11 +1573,7 @@ public class RenderResultSet
                             Object obj = this._table.getValueAt(viewRow,viewCol);
                             if ( obj instanceof oracle.sql.NUMBER ) {
                                 NUMBER num = (NUMBER)obj;
-                                if ( num==null ) {
-                                    SRID = Constants.SRID_NULL;
-                                } else {
-                                    SRID = num.intValue();
-                                }
+                                SRID = (num==null) ? Constants.SRID_NULL : num.intValue();
                             }
                         }
                     } catch (SQLException sqle) {
@@ -1659,7 +1627,7 @@ public class RenderResultSet
         while (iter.hasNext() ) {
             try {
                 clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) +
-                    SDO_GEOMETRY.convertGeometryForClipboard(JGeometry.store(iter.next(),conn),conn);
+                    SDO_GEOMETRY.getGeometryAsString(JGeometry.storeJS(iter.next(),conn),conn);
             } catch (SQLException e) {
                 LOGGER.error("Conversion of JGeometry to clipboard produced error: " + e.getMessage());
             }
@@ -1747,8 +1715,7 @@ public class RenderResultSet
             //
             makeVisible();
 
-            STRUCT                      stGeom = null;
-            JGeometry                       jGeom = null;  
+            Struct                         stGeom = null;
             int                        FULL_GTYPE = 2001;
             int                              SRID = Constants.SRID_NULL;
             MetadataEntry                      me = null;
@@ -1771,9 +1738,7 @@ public class RenderResultSet
                     viewRow   = rows[row];
                 }
                 try {
-                    stGeom = null; 
-                        jGeom = null;
-                    stGeom = (STRUCT)this._table.getValueAt(viewRow,mappableColumn);
+                    stGeom = (Struct)this._table.getValueAt(viewRow,mappableColumn);
                     if ( stGeom == null ) {
                         continue; 
                     }
@@ -1895,10 +1860,10 @@ public class RenderResultSet
             String                          rowID = "";
             String                     columnName = "";
             String                      classname = "";
-            String                 structTypeName = "";
-            STRUCT                         stGeom = null;
+            String                 StructTypeName = "";
+            Struct                         stGeom = null;
             JGeometry                       jGeom = null;  
-            STRUCT              nonMappableStruct = null; 
+            Struct              nonMappableStruct = null; 
             int                        FULL_GTYPE = 2001;
             int                              SRID = Constants.SRID_NULL;
             MetadataEntry                      me = null;
@@ -1927,11 +1892,11 @@ public class RenderResultSet
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if (classname.equals("oracle.sql.STRUCT") ) 
+                        if (classname.equals("oracle.sql.Struct") ) 
                         {
                           if ( viewCol == mappableColumn ) 
                           {
-                              stGeom = (STRUCT)this._table.getValueAt(viewRow,viewCol);
+                              stGeom = (Struct)this._table.getValueAt(viewRow,viewCol);
                               if ( stGeom == null ) {
                                   break; // Can't render a null geometry so skip whole record 
                               }
@@ -1939,25 +1904,25 @@ public class RenderResultSet
                               if ( stGeom.getSQLTypeName().indexOf("MDSYS.ST_")==0 ) {
                                   stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
                               } 
-                              structTypeName = stGeom.getSQLTypeName();
-                              if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
+                              StructTypeName = stGeom.getSQLTypeName();
+                              if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
                                   FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
                                   SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
                                   geometryType = SDO_GEOMETRY.discoverGeometryType(FULL_GTYPE,geometryType);
-                                  jGeom        = JGeometry.load(stGeom);
+                                  jGeom        = JGeometry.loadJS(stGeom);
                               } else {
                                   if (row==0) {
                                       SRID         = mainPrefs.getSRIDAsInteger(); 
                                       geometryType = Constants.GEOMETRY_TYPES.POINT;                                  
                                   }
-                                  if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
-                                      Datum data[] = stGeom.getOracleAttributes();
-                                      double x = ((NUMBER)data[0]).doubleValue();
-                                      double y = ((NUMBER)data[1]).doubleValue();
+                                  if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
+                                      Object data[] = stGeom.getAttributes();
+                                      double x = OraUtil.toDouble(data[0],Double.NaN);
+                                      double y = OraUtil.toDouble(data[1],Double.NaN);
                                       double z = (data[2] != null)
-                                                  ? ((NUMBER)data[2]).doubleValue() 
+                                                  ? OraUtil.toDouble(data[2],Double.NaN) 
                                                   : (data[3] != null) 
-                                                    ? ((NUMBER)data[3]).doubleValue() 
+                                                    ? OraUtil.toDouble(data[3],Double.NaN) 
                                                     : Double.NaN;
                                       double m = (data[2] != null && data[3] != null) ? ((NUMBER)data[3]).doubleValue() : Double.NaN;
                                       jGeom = (Double.isNaN(z) && Double.isNaN(m))
@@ -1965,8 +1930,8 @@ public class RenderResultSet
                                               : (Double.isNaN(m)
                                                 ? new JGeometry(x,y,z,SRID)
                                                 : new JGeometry(x,y,z,m,SRID));
-                                  } else if ( structTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
-                                      double[] ords = SDO_GEOMETRY.asDoubleArray(stGeom,Double.NaN);
+                                  } else if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
+                                      double[] ords = OraUtil.toDoubleArray(stGeom,Double.NaN);
                                       jGeom = Double.isNaN(ords[2])
                                               ? new JGeometry(ords[0],ords[1],        SRID)
                                               : new JGeometry(ords[0],ords[1],ords[2],SRID);
@@ -1979,7 +1944,7 @@ public class RenderResultSet
                               if ( me == null )
                               {
                                   try {
-                                      // Now we have a STRUCT we can get its SRID and create the layer
+                                      // Now we have a Struct we can get its SRID and create the layer
                                       me = new MetadataEntry(this.getUserName(),
                                                              layerName,
                                                              mappableColumnName,
@@ -2004,7 +1969,7 @@ public class RenderResultSet
                                   }
                               }
                           } else {
-                            nonMappableStruct = (STRUCT)this._table.getValueAt(viewRow,viewCol);
+                            nonMappableStruct = (Struct)this._table.getValueAt(viewRow,viewCol);
                             if ( nonMappableStruct != null && 
                                  RenderTool.isSupported(nonMappableStruct) ) 
                             {
@@ -2141,8 +2106,7 @@ public class RenderResultSet
             String                          rowID = "";
             String                     columnName = "";
             String                      classname = "";
-            String                 structTypeName = "";
-            ARRAY                         diminfo = null;
+            Array                         diminfo = null;
             JGeometry                       jGeom = null; 
             int                              SRID = Constants.SRID_NULL;
             MetadataEntry                      me = null;
@@ -2187,12 +2151,12 @@ public class RenderResultSet
                              classname.equals("oracle.sql.ARRAY") )
                         {
                             LOGGER.debug("viewCol == mappableCol - viewCol " + viewCol + " == " + mappableColumn);
-                            diminfo = (ARRAY)this._table.getValueAt(viewRow,viewCol);
-                            if ( diminfo.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
+                            diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
+                            if ( diminfo.getBaseTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
                             {
                                 if ( viewCol == mappableColumn ) {
                                    if ( diminfo != null ) {
-                                       jGeom = SDO_GEOMETRY.getGeometry(diminfo,SRID);
+                                       jGeom = JGeom.getDimArrayAsJGeometry(diminfo,SRID);
                                     }
                                 } else {
                                     jGeom = null;
@@ -2205,7 +2169,7 @@ public class RenderResultSet
                             {
                                 try 
                                 {
-                                    // Now we have a STRUCT we can get its SRID and create the layer
+                                    // Now we have a Struct we can get its SRID and create the layer
                                     me = new MetadataEntry(this.getUserName(),
                                                            layerName,
                                                            mappableColumnName,
@@ -2285,11 +2249,11 @@ public class RenderResultSet
         return true;
     }
 
-    private STRUCT findStructValue(int _viewCol) 
+    private Struct findStructValue(int _viewCol) 
     {
-        // Get non-null value for STRUCT so we can check its actual database type name (ie SDO_GEOMETRY not just STRUCT
+        // Get non-null value for Struct so we can check its actual database type name (ie SDO_GEOMETRY not just Struct
         //
-        STRUCT geo = null;
+    	Struct geo = null;
         if ( this.rst == null )
           return null;
         
@@ -2306,21 +2270,21 @@ public class RenderResultSet
               viewRow   = rows[row];
           }
           if (  this._table.getValueAt(0,_viewCol)!=null ) {
-              geo = ((STRUCT)this._table.getValueAt(viewRow,_viewCol));
+              geo = ((Struct)this._table.getValueAt(viewRow,_viewCol));
               break;
           }
         }
         return geo;
     }
 
-    private ARRAY findDimInfoValue(int _viewCol) 
+    private Array findDimInfoValue(int _viewCol) 
     {
         if ( this.rst == null ) {
             return null;
         }
         // Get non-null value for ARRAY so we can check its actual database type name (ie DIMINFO not just ARRAY)
         //
-        ARRAY diminfo = null;
+        Array diminfo = null;
         int rowsToProcess = this.rst.getSelectedRowCount()!=0
                           ? this.rst.getSelectedRowCount()
                           : ( _table.getLoadedRowCount() != 0
@@ -2335,7 +2299,7 @@ public class RenderResultSet
                 viewRow = this.rst.convertRowIndexToModel(viewRow);
             }
             if ( this._table.getValueAt(0,_viewCol)!=null ) {
-                diminfo = ((ARRAY)this._table.getValueAt(viewRow,_viewCol));
+                diminfo = ((Array)this._table.getValueAt(viewRow,_viewCol));
                 break;
             }
         }
@@ -2409,7 +2373,8 @@ public class RenderResultSet
       protected ProgressBar                                  progressBar = null;
       protected String                                      errorMessage = "";
       private   Constants.EXPORT_TYPE                         exportType = Constants.EXPORT_TYPE.GML;
-      private   String                                  attributeFlavour = "";
+      @SuppressWarnings("unused")
+	  private   String                                  attributeFlavour = "";
       private   LinkedHashMap<Integer,RowSetMetaData>     exportMetadata = null;
       private   String                                      characterSet = "UTF-8";
       private   ExporterDialog                                   options = null;
@@ -2542,7 +2507,7 @@ public class RenderResultSet
               geoExporter.setExportMetadata(this.exportMetadata);
         
               geoExporter.start(this.characterSet);
-              STRUCT stGeom = null;
+              Struct stGeom = null;
               for (int row=0; row < rowsToProcess; row++)
               {
                   viewRow = row;
@@ -2554,7 +2519,7 @@ public class RenderResultSet
                   // or is of right type.
                   // If null or wrong type, skip row
                   //
-                  stGeom = (STRUCT)_table.getValueAt(viewRow,mappableColumn);
+                  stGeom = (Struct)_table.getValueAt(viewRow,mappableColumn);
                   if ( stGeom==null ) {
                       if ( this.options.isSkipNullGeometry() ) { 
                           setSkipStatistics(ShapeType.NULL,false);
@@ -2595,7 +2560,7 @@ public class RenderResultSet
                           if (viewCol == this.mappableColumn ) 
                           {
                               JGeometry jGeo = null;
-                              stGeom = (STRUCT)_table.getValueAt(viewRow,viewCol);
+                              stGeom = (Struct)_table.getValueAt(viewRow,viewCol);
                               if (stGeom == null ) {
                                   if ( ! options.isSkipNullGeometry() ) {
                                       // Must want to write NULL geometry\
@@ -2622,18 +2587,13 @@ public class RenderResultSet
                                   }
                               } else if ( saveStructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
                                   columnMetadata.setColumnTypeName(1,Constants.TAG_MDSYS_SDO_GEOMETRY);
-                                  if (stGeom == null ) {
-                                      // Must want to write NULL geometry
-                                      geoExporter.printColumn(stGeom, columnMetadata);
-                                      continue;
-                                  }
-                                  Datum data[] = stGeom.getOracleAttributes();
-                                  double x = ((NUMBER)data[0]).doubleValue();
-                                  double y = ((NUMBER)data[1]).doubleValue();
+                                  Object data[] = stGeom.getAttributes();
+                                  double x = OraUtil.toDouble(data[0], Double.NaN);
+                                  double y = OraUtil.toDouble(data[1], Double.NaN);
                                   double z = (data[2] != null)
-                                              ? ((NUMBER)data[2]).doubleValue() 
+                                              ? OraUtil.toDouble(data[2],Double.NaN) 
                                               : (data[3] != null) 
-                                                ? ((NUMBER)data[3]).doubleValue() 
+                                                ? OraUtil.toDouble(data[3],Double.NaN) 
                                                 : Double.NaN;
                                   double m = (data[2] != null && data[3] != null) ? ((NUMBER)data[3]).doubleValue() : Double.NaN;
                                   jGeo = (Double.isNaN(z) && Double.isNaN(m))
@@ -2641,19 +2601,14 @@ public class RenderResultSet
                                          : Double.isNaN(m)
                                            ? new JGeometry(x,y,z,this.options.getSRID())
                                            : new JGeometry(x,y,z,m,this.options.getSRID());
-                                  stGeom = JGeometry.store(jGeo, this.conn);                                                                
+                                  stGeom = JGeometry.storeJS(jGeo, this.conn);                                                                
                               } else if ( saveStructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
                                   columnMetadata.setColumnTypeName(1,Constants.TAG_MDSYS_SDO_GEOMETRY);
-                                  if (stGeom == null ) {
-                                      // Must want to write NULL geometry
-                                      geoExporter.printColumn(stGeom, columnMetadata);
-                                      continue;
-                                  }
-                                  double[] ords = SDO_GEOMETRY.asDoubleArray(stGeom,Double.NaN);
+                                  double[] ords = OraUtil.toDoubleArray(stGeom,Double.NaN);
                                   jGeo = Double.isNaN(ords[2])
                                          ? new JGeometry(ords[0],ords[1],        this.options.getSRID())
                                          : new JGeometry(ords[0],ords[1],ords[2],this.options.getSRID());
-                                  stGeom = JGeometry.store(jGeo, this.conn);
+                                  stGeom = JGeometry.storeJS(jGeo, this.conn);
                               }
                               geoExporter.printColumn(stGeom, columnMetadata);
                               // May have been changed so swap it back for processing of next row

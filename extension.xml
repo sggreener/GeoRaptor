@@ -2,10 +2,8 @@
 	esdk-version="2.0" xmlns="http://jcp.org/jsr/198/extension-manifest"
 	rsbundle-class="org.GeoRaptor.Resources">
 	<name rskey="EXTENSION_NAME" />
-	<owner rskey="EXTENSION_OWNER" />
 
-	<!-- features may be used to enable/disable extensions without uninstalling 
-		them -->
+<!-- features may be used to enable/disable extensions without uninstalling them -->
 	<feature id="org.GeoRaptor"
 		xmlns="http://xmlns.oracle.com/ide/extension">
 		<category-id>db-category</category-id>
@@ -253,8 +251,7 @@
 			<gallery>
 				<item>
 					<name>org.GeoRaptor.MenuViewController</name>
-					<description>Oracle Spatial extension for Oracle SQL Developer
-					</description>
+					<description>Oracle Spatial extension for Oracle SQL Developer</description>
 					<help>Oracle Spatial extension for Oracle SQL Developer</help>
 					<category>General</category>
 					<folder>GeoRaptor</folder>

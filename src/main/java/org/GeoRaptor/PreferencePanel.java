@@ -36,17 +36,13 @@ import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
+import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.layout.VerticalFlowLayout;
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
-
-import org.GeoRaptor.Preferences;
-import org.GeoRaptor.PreferencePanel;
-import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
-import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
 
 import oracle.ide.panels.DefaultTraversablePanel;
 import oracle.ide.panels.TraversableContext;
@@ -60,7 +56,12 @@ import oracle.ide.panels.TraversalException;
  *
  */
 public class PreferencePanel extends DefaultTraversablePanel {
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.PreferencesPanel");
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -552446836266587072L;
+
+	// private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.PreferencesPanel");
 
 	private static PreferencePanel classInstance;
 	private Preferences prefs = null;
@@ -90,11 +91,13 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JPanel pnlSpatialView = new JPanel();
 
 	private JLabel lblNewLayerPosition = new JLabel();
-	private JComboBox cmbNewLayerPosition = new JComboBox(new DefaultComboBoxModel(new String[] {
-			Constants.layerPositionType.TOP.toString(), Constants.layerPositionType.BOTTOM.toString() }));
+	private JComboBox<String> cmbNewLayerPosition = new JComboBox<>(new String[] {
+			                                                 Constants.layerPositionType.TOP.toString(), 
+			                                                 Constants.layerPositionType.BOTTOM.toString() });
 	private JLabel lblTOCPosition = new JLabel();
-	private JComboBox cmbTOCPosition = new JComboBox(
-			new DefaultComboBoxModel(new String[] { JSplitPane.LEFT.toUpperCase(), JSplitPane.RIGHT.toUpperCase() }));
+	private JComboBox<String> cmbTOCPosition = new JComboBox<>(new String[] { 
+                                                             JSplitPane.LEFT.toUpperCase(), 
+                                                             JSplitPane.RIGHT.toUpperCase() });
 
 	private JCheckBox cbDrawQueryGeometry = new JCheckBox();
 	private JCheckBox cbSQLSchemaPrefix = new JCheckBox();
@@ -127,14 +130,14 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private XYLayout xYObjectTextLayout = new XYLayout();
 	private JCheckBox cbColourSdoGeometry = new JCheckBox();
 	private JLabel lblSdoGeometryBracketing = new JLabel();
-	private JComboBox cmbSdoGeometryBracket = new JComboBox(Constants.getBracketTypeCombo());
-	private JComboBox cmbSdoGeometryVisualFormat = new JComboBox(Constants.getRenderTypeCombo());
+	private JComboBox<String> cmbSdoGeometryBracket      = new JComboBox<>(Constants.getBracketTypes());
+	private JComboBox<String> cmbSdoGeometryVisualFormat = new JComboBox<>(Constants.getRenderTypes());
 	private JCheckBox cbSdoGeomCoordNumbering = new JCheckBox();
 	private JCheckBox cbSdoGeometryFormat = new JCheckBox();
 	private JLabel lblSdoGeometryVisualFormat = new JLabel();
 	private JCheckBox cbColourDimInfo = new JCheckBox();
 
-	private ButtonGroup bgSelection = new ButtonGroup();
+	//private ButtonGroup bgSelection = new ButtonGroup();
 
 	private JCheckBox cbGroupingSeparator = new JCheckBox();
 
@@ -190,8 +193,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 	// Fourth tab - Defaults
 	//
-	private JPanel pnlDefaults = new JPanel();
-	private XYLayout xYLayoutDefaults = new XYLayout();
+	//private JPanel pnlDefaults = new JPanel();
+	//private XYLayout xYLayoutDefaults = new XYLayout();
 	private JPanel pnlImportExport = new JPanel();
 	private XYLayout xYLayoutImportExport = new XYLayout();
 	private JPanel pnlNullValueSubstitution = new JPanel();
@@ -215,7 +218,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JRadioButton rbLast10 = new JRadioButton();
 
 	/*************************************
-	 * Internationalisation Strings
+	 * Internationalization Strings
 	 **/
 
 	protected String sTpMiscellaneous = "Miscellaneous";
@@ -302,18 +305,18 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JPanel pnlPreviewImage = new JPanel();
 	private XYLayout xyPreviewImage = new XYLayout();
 
-	private JComboBox cmbPreviewVertexMark = new JComboBox();
+	private JComboBox<String> cmbPreviewVertexMark = new JComboBox<String>();
 	private JLabel lblVertexMarker = new JLabel();
 	private JLabel lblWidthHeightPixels = new JLabel();
 	private JLabel lblComma = new JLabel();
 	private JSlider sldrVertexMarkSize = new JSlider();
 	private JLabel lblMarkerSize = new JLabel();
-	private JComboBox cmbShapePolygonOrientation = new JComboBox(
-			new DefaultComboBoxModel(new String[] { Constants.SHAPE_POLYGON_ORIENTATION.ORACLE.toString(),
+	private JComboBox<Object> cmbShapePolygonOrientation = new JComboBox<Object>(
+			new DefaultComboBoxModel<Object>(new String[] { Constants.SHAPE_POLYGON_ORIENTATION.ORACLE.toString(),
 					Constants.SHAPE_POLYGON_ORIENTATION.INVERSE.toString(),
 					Constants.SHAPE_POLYGON_ORIENTATION.CLOCKWISE.toString(),
 					Constants.SHAPE_POLYGON_ORIENTATION.ANTICLOCKWISE.toString() }));
-	private JLabel jLabel1 = new JLabel();
+	private JLabel lblShapePolygonOrientation = new JLabel();
 
 	public PreferencePanel() {
 		super();
@@ -543,7 +546,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 						throw new NumberFormatException(Resources.getString("QUERY_DIGITS"));
 					}
 					// This will throw an exception if the value is not an integer
-					int size = Integer.parseInt(textField.getText());
+					Integer.parseInt(textField.getText());
 				} catch (NumberFormatException e) {
 					Toolkit.getDefaultToolkit().beep();
 					JOptionPane.showMessageDialog(null, e.getMessage(), MainSettings.EXTENSION_NAME,
@@ -1317,7 +1320,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		pnlColumnShorten.add(rbLast10, new XYConstraints(200, 16, 95, 20));
 		bgColumnShorten.add(rbBegin10);
 		bgColumnShorten.add(rbLast10);
-		pnlImportExport.add(jLabel1, new XYConstraints(13, 258, 146, 14));
+		pnlImportExport.add(lblShapePolygonOrientation, new XYConstraints(13, 258, 146, 14));
 		pnlImportExport.add(cmbShapePolygonOrientation, new XYConstraints(173, 253, 135, 20));
 		pnlImportExport.add(pnlColumnShorten, new XYConstraints(5, 185, 310, 65));
 		pnlImportExport.add(pnlNullValueSubstitution, new XYConstraints(5, 5, 310, 175));
@@ -1334,8 +1337,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		lblMarkerSize.setText("Vertex Marker Size (points):");
 		lblMarkerSize.setHorizontalAlignment(SwingConstants.TRAILING);
 		lblMarkerSize.setHorizontalTextPosition(SwingConstants.RIGHT);
-		jLabel1.setText("Shapefile Polygon Orientation:");
-		jLabel1.setLabelFor(cmbShapePolygonOrientation);
+		lblShapePolygonOrientation.setText("Shapefile Polygon Orientation:");
+		lblShapePolygonOrientation.setLabelFor(cmbShapePolygonOrientation);
 	}
 
 	private void btnSRID_actionPerformed(ActionEvent e) {
@@ -1345,15 +1348,15 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		srid = Strings.isEmpty(this.tfSRID.getText()) ? Constants.NULL : this.tfSRID.getText().trim();
 		// Pass SRID to SRIDPanel
 		//
-//		SRIDPanel sp = SRIDPanel.getInstance();
-//		boolean status = sp.initialise(null/* SRIDPanel will find its own connection */, srid);
-//		if (status == true) {
-//			sp.setLocationRelativeTo(this);
-//			sp.setVisible(true);
-//			if (!sp.formCancelled()) {
-//				tfSRID.setText(sp.getSRID());
-//			}
-//		}
+		SRIDPanel sp = SRIDPanel.getInstance();
+		boolean status = sp.initialise(null/* SRIDPanel will find its own connection */, srid);
+		if (status == true) {
+			sp.setLocationRelativeTo(this);
+			sp.setVisible(true);
+			if (!sp.formCancelled()) {
+				tfSRID.setText(sp.getSRID());
+			}
+		}
 	}
 
 	private void cmbSdoGeometryBracketType_actionPerformed(ActionEvent e) {

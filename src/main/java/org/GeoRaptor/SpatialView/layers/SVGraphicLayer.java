@@ -4,7 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
-
-import oracle.jdbc.OracleConnection;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -30,6 +28,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
@@ -86,7 +85,7 @@ public class SVGraphicLayer extends SVSpatialLayer
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
         LOGGER.debug("drawing graphic layer " + this.getLayerName());
-        OracleConnection conn = null;
+        Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
@@ -162,7 +161,7 @@ public class SVGraphicLayer extends SVSpatialLayer
                     continue;
                 }
                 // Display geometry only if overlaps display MBR
-                if ((_mbr.isSet() && _mbr.overlaps(SDO_GEOMETRY.getGeoMBR(geo))) || _mbr.isNull()) 
+                if ((_mbr.isSet() && _mbr.overlaps(JGeom.getGeoMBR(geo))) || _mbr.isNull()) 
                 {
                     numFeats++;
                     // Draw the geometry using current (probably default) display settings

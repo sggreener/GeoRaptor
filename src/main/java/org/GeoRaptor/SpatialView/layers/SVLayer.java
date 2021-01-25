@@ -14,8 +14,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
@@ -43,7 +41,8 @@ public class SVLayer {
 
 	public static final String CLASS_NAME = Constants.KEY_SVLAYER;
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVLayer");
-	private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVLayer";
+	//private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVLayer";
+	private static final String propertiesFile = "org/GeoRaptor/SpatialView/resource/SVLayer";
 	protected PropertiesManager propertyManager = null; // Properties File Manager
 	protected SpatialView spatialView = null; // reference to main class for common operations (show error message, etc)
 	protected String connName = ""; // Name of the connection in Raptor project
@@ -62,7 +61,7 @@ public class SVLayer {
 		this.spatialView = _spatialView;
 		this.mbr = new Envelope(this.getDefaultPrecision());
 		this.setSRIDType(Constants.SRID_TYPE.UNKNOWN);
-		this.propertyManager = new PropertiesManager(SVLayer.propertiesFile);
+		this.propertyManager = new PropertiesManager(propertiesFile);
 	}
 
 	public SVLayer(SpatialView _spatialView, MetadataEntry _me) {
@@ -390,7 +389,7 @@ public class SVLayer {
 		return false;
 	}
 
-	public OracleConnection getConnection() throws IllegalStateException {
+	public Connection getConnection() throws IllegalStateException {
 		if (Strings.isEmpty(this.connName)) {
 			return DatabaseConnections.getInstance().getActiveConnection();
 		} else {

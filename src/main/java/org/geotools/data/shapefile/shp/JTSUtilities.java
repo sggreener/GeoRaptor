@@ -18,7 +18,8 @@
  */
 package org.geotools.data.shapefile.shp;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Geometry;
@@ -39,7 +40,6 @@ import org.locationtech.jts.geom.impl.CoordinateArraySequence;
  */
 public class JTSUtilities {
     
-  static final CGAlgorithms cga = new CGAlgorithms();
   static final GeometryFactory factory = new GeometryFactory();
   
   private JTSUtilities() {
@@ -180,7 +180,7 @@ public class JTSUtilities {
 
     coords = p.getExteriorRing().getCoordinates();
     
-    if(CGAlgorithms.isCCW(coords)) {
+    if(Orientation.isCCW(coords)) {
       outer = reverseRing((LinearRing) p.getExteriorRing());
     } else {
       outer = (LinearRing) p.getExteriorRing();
@@ -189,7 +189,7 @@ public class JTSUtilities {
     for(int t = 0,tt = p.getNumInteriorRing(); t < tt; t++) {
       coords = p.getInteriorRingN(t).getCoordinates();
       
-      if(!(CGAlgorithms.isCCW(coords))) {
+      if(!(Orientation.isCCW(coords))) {
         holes[t] = reverseRing((LinearRing) p.getInteriorRingN(t));
       } else {
         holes[t] = (LinearRing) p.getInteriorRingN(t);

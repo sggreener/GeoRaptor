@@ -14,6 +14,10 @@ import java.io.Serializable;
  *Temporary Layout file for preference
  */
 public class VerticalFlowLayout extends FlowLayout implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7332661577610145050L;
 	public static final int TOP = 0;
 	public static final int MIDDLE = 1;
 	public static final int BOTTOM = 2;

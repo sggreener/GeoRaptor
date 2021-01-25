@@ -1,16 +1,14 @@
 package org.GeoRaptor.SpatialView.SupportClasses;
 
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import oracle.jdbc.OracleConnection;
+import java.sql.Connection;
 
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -21,7 +19,6 @@ import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
 /**
  * Result row for "queryByPos" function
  */
-@SuppressWarnings("deprecation")
 public class QueryRow {
 
     protected SpatialRenderer              sRenderer = null;
@@ -41,13 +38,13 @@ public class QueryRow {
     /**
      * Selected SDO_GEOMETRY column
      */
-    protected    STRUCT    geoValue = null;
+    protected    Struct    geoValue = null;
     protected JGeometry       jGeom = null;
     protected    String geoRenderer = null;  // Selected SDO_GEOMETRY column in (possibly coloured) display string form.
 
-    public QueryRow(                       String _rowID, 
+    public QueryRow(String _rowID, 
                     LinkedHashMap<String, Object> _attData, 
-                                           STRUCT _geoValue) 
+                    Struct _geoValue) 
     {
         this.rowID           = _rowID;
         this.attData         = _attData;
@@ -60,7 +57,7 @@ public class QueryRow {
     public QueryRow(String                        _rowID, 
                     LinkedHashMap<String, Object> _attData, 
                                         JGeometry _geoValue,
-                                 OracleConnection _conn) 
+                                       Connection _conn) 
     throws Exception 
     {
         this.rowID           = _rowID;
@@ -93,12 +90,12 @@ public class QueryRow {
                : new LinkedHashMap<String,Object>(this.attData);      
     }
 
-    public void setJGeom(JGeometry _geoValue,
-                         OracleConnection _conn) {
+    public void setJGeom(JGeometry  _geoValue,
+                         Connection _conn) {
       this.jGeom = _geoValue;
       try {
           if ( this.jGeom != null && _conn != null ) {
-              this.geoValue = (STRUCT) JGeometry.storeJS(_conn, _geoValue);
+              this.geoValue = (Struct) JGeometry.storeJS(_conn, _geoValue);
               if ( _geoValue != null ) {
                   // Cache as row is created
                   this.currentRenderType = this.mainPreferences.getVisualFormat();
@@ -117,20 +114,20 @@ public class QueryRow {
         if ( this.geoValue == null )
             return null;
         try {
-            this.jGeom = JGeometry.load(this.geoValue);
+            this.jGeom = JGeometry.loadJS(this.geoValue);
         } catch (SQLException e) {
             this.jGeom = null;
         }
         return this.jGeom;
     }
     
-    public void setGeoValue(STRUCT _geoValue) {
+    public void setGeoValue(Struct _geoValue) {
         this.geoValue = _geoValue;
         try {
             if ( _geoValue != null ) {
                 try {
                     if ( _geoValue != null ) {
-                        this.jGeom = JGeometry.load(this.geoValue);
+                        this.jGeom = JGeometry.loadJS(this.geoValue);
                     }
                 } catch (Exception e) {
                     this.jGeom = null;
@@ -146,14 +143,14 @@ public class QueryRow {
         }
     }
 
-    public STRUCT getGeoValue() {
+    public Struct getGeoValue() {
         return this.geoValue;
     }
     
     public String getGeoConstructor() {
       try {
           if ( this.geoValue != null )
-              return RenderTool.renderSTRUCTAsPlainText(this.geoValue,Constants.bracketType.NONE, Constants.MAX_PRECISION);
+              return RenderTool.renderStructAsPlainText(this.geoValue,Constants.bracketType.NONE, Constants.MAX_PRECISION);
       } catch (Exception e) {
           return null;
       }

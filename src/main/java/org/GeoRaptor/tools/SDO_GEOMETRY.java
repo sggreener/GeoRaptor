@@ -1,51 +1,37 @@
 package org.GeoRaptor.tools;
 
 
+import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Struct;
+import java.text.DecimalFormat;
+import java.util.StringTokenizer;
+
+import org.GeoRaptor.Constants;
+import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Preferences;
+import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.sql.DatabaseConnections;
+import org.geotools.data.shapefile.shp.ShapeType;
+import org.geotools.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.oracle.OraReader;
-
-import java.awt.geom.Point2D;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import java.text.DecimalFormat;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import oracle.jdbc.OracleConnection;
+import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
 import oracle.spatial.util.GML2;
 import oracle.spatial.util.GML3;
+import oracle.spatial.util.GeometryExceptionWithContext;
 import oracle.spatial.util.KML2;
 import oracle.spatial.util.WKT;
 
-import oracle.sql.ARRAY;
-import oracle.sql.Datum;
-import oracle.sql.NUMBER;
-import oracle.sql.STRUCT;
-import oracle.sql.StructDescriptor;
-
-import org.GeoRaptor.Constants;
-import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.Messages;
-import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
-import org.GeoRaptor.sql.DatabaseConnections;
-
-import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
-
-
-@SuppressWarnings("deprecation")
 public class SDO_GEOMETRY 
 {    
 
@@ -57,7 +43,7 @@ public class SDO_GEOMETRY
     /**
      * For access to preferences
      */
-    protected static Preferences geoRaptorPreferences;
+    protected static Preferences geoRaptorPreferences = null;
 
     private static int defaultGTYPE = 0;
     private static int defaultDimension = 2;
@@ -84,81 +70,19 @@ public class SDO_GEOMETRY
         return ret;
     } 
     
-    public static JGeometry getGeometry(ARRAY _dimArray,
-                                        int   _srid)
-    throws SQLException
-    {
-        if ( _dimArray == null ) {
-            return null;
-        }
-        ARRAY dimArray =  _dimArray;
-        if ( dimArray.getDescriptor().getSQLName().getName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
-        {
-            @SuppressWarnings("unused")
-			String DIM_NAME = "";
-            double SDO_LB   = Double.MAX_VALUE;
-            double SDO_UB   = Double.MAX_VALUE;
-            @SuppressWarnings("unused")
-			double SDO_TOL  = Double.MAX_VALUE;
-            double minX = 0.0, minY = 0.0, maxX = 0.0, maxY = 0.0;
-            
-            Datum[] objs = dimArray.getOracleArray();
-            for (int i =0; i < objs.length; i++) {
-            	
-                STRUCT dimElement = (STRUCT)objs[i];
-            	
-                Datum data[] = dimElement.getOracleAttributes();
-                DIM_NAME = data[0].stringValue();
-                SDO_LB   = data[1].doubleValue();
-                SDO_UB   = data[2].doubleValue();
-                SDO_TOL  = data[3].doubleValue();
-                if ( i==0 ) {
-                    minX = SDO_LB;
-                    maxX = SDO_UB;
-                } else if ( i==1 ) {
-                    minY = SDO_LB;
-                    maxY = SDO_UB;                    
-                }
-            }
-            return new JGeometry(minX,minY,maxX,maxY,_srid>0?_srid:Constants.NULL_SRID);
-        }
-        return null;
-    }
-
-    public static JGeometry rectangle2Polygon2D(JGeometry _rectangle) {
-        // We only map in 2D so don't worry about loss of other dimensions (yet)
-        double[] LL = _rectangle.getFirstPoint();
-        double[] UR = _rectangle.getLastPoint();
-        int[] elemInfo = {1,1003,1};
-        double[] ordArray = {LL[0],LL[1],
-                             UR[0],LL[1],
-                             UR[0],UR[1],
-                             LL[0],UR[1],
-                             LL[0],LL[1]};
-        return new JGeometry(2003,_rectangle.getSRID(),elemInfo,ordArray);
-    }
-
-    public static Point2D getLabelPoint(JGeometry _geo) {
-        if ( _geo.getLabelPoint()!=null )
-            return _geo.getLabelPoint();
-        else {
-            double[] points = _geo.getFirstPoint();
-            return new Point2D.Double(points[0],points[1]); // Only need X and Y ordinate
-        } 
-    }
 
     public static boolean hasMeasure(int _fullGType) {
         return ((_fullGType/100) % 10) == 0 ? (_fullGType > 4000 ? true : false) : true;
     }
 
-	public static boolean hasMeasure(STRUCT _struct) {
+	public static boolean hasMeasure(Struct _struct) {
         try {
             if ( _struct == null ||
                  ( _struct.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) == false &&
                    _struct.getSQLTypeName().indexOf("MDSYS.ST_")==-1) ) {
                 return false;
             }
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
@@ -179,7 +103,7 @@ public class SDO_GEOMETRY
         }
     }  
   
-	public static boolean hasZ(STRUCT _struct) {
+	public static boolean hasZ(Struct _struct) {
         try {
             if ( _struct == null ||
                  ( _struct.getSQLTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) == false &&
@@ -187,7 +111,7 @@ public class SDO_GEOMETRY
                 return false;
             }
             @SuppressWarnings("unused")
-			STRUCT stGeom = _struct;
+			Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
@@ -195,6 +119,45 @@ public class SDO_GEOMETRY
             return hasZ(SDO_GEOMETRY.getFullGType(_struct,2000));
         } catch (SQLException sqle) {
           return false;
+        }
+    }
+
+    /**
+     * @param _struct
+     * @author Simon Greener, April 4th 2010
+     * @return
+     */
+    // note Tested 15th August
+    public static double[] getVertexType(Struct _struct) 
+    {
+        if (_struct == null) {
+            return null;
+        }
+        try {
+            Struct stGeom = _struct;
+            String sqlTypeName = _struct.getSQLTypeName();
+            if ( ! sqlTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE)) {
+              return null;
+            }
+            Object[] data = stGeom.getAttributes();
+            BigDecimal x = (BigDecimal)data[0];
+            BigDecimal y = (BigDecimal)data[1];
+            BigDecimal z = (BigDecimal)data[2];
+            BigDecimal w = (BigDecimal)data[3];
+            return (w == null ) 
+                ? new double[] { 
+                   x!=null ? x.doubleValue() : null, 
+                   y!=null ? y.doubleValue() : null, 
+                   z!=null ? z.doubleValue() : null
+                }
+                : new double[] { 
+                   x!=null ? x.doubleValue() : null, 
+                   y!=null ? y.doubleValue() : null, 
+                   z!=null ? z.doubleValue() : null, 
+                   w!=null ? w.doubleValue() : null
+                };
+        } catch (SQLException sqle) {
+            return null;
         }
     }
 
@@ -235,6 +198,23 @@ public class SDO_GEOMETRY
         }
     }
 
+    public static String getGeometryType(int _gtype) 
+    {
+        switch (_gtype) 
+        {
+            case 1 : return Constants.GEOMETRY_TYPES.POINT.toString();
+            case 2 : return Constants.GEOMETRY_TYPES.LINE.toString(); 
+            case 3 : return Constants.GEOMETRY_TYPES.POLYGON.toString(); 
+            case 4 : return Constants.GEOMETRY_TYPES.COLLECTION.toString();
+            case 5 : return Constants.GEOMETRY_TYPES.MULTIPOINT.toString();
+            case 6 : return Constants.GEOMETRY_TYPES.MULTILINE.toString();
+            case 7 : return Constants.GEOMETRY_TYPES.MULTIPOLYGON.toString();
+            case 8 : return Constants.GEOMETRY_TYPES.SOLID.toString();
+           default : break;
+        };
+        return Constants.GEOMETRY_TYPES.UNKNOWN.toString() + "(" + _gtype + ")"; 
+    }
+
     public static Constants.GEOMETRY_TYPES discoverGeometryType( int                      _fullGType,
                                                                  Constants.GEOMETRY_TYPES _existingGType) 
     {   
@@ -245,9 +225,9 @@ public class SDO_GEOMETRY
            fullGType += 2000;
        } 
        gType = fullGType % 10;
-         
-         Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
-         switch (gType) {
+
+       Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
+       switch (gType) {
           case JGeometry.GTYPE_COLLECTION    : geometryType = Constants.GEOMETRY_TYPES.COLLECTION;   break;
           case JGeometry.GTYPE_POINT         : geometryType = Constants.GEOMETRY_TYPES.POINT;        break;
           case JGeometry.GTYPE_MULTIPOINT    : geometryType = Constants.GEOMETRY_TYPES.MULTIPOINT;   break;
@@ -258,75 +238,22 @@ public class SDO_GEOMETRY
           case J3D_Geometry.GTYPE_SOLID      : geometryType = Constants.GEOMETRY_TYPES.SOLID;        break;
           case J3D_Geometry.GTYPE_MULTISOLID : geometryType = Constants.GEOMETRY_TYPES.MULTISOLID;   break;
           default: LOGGER.warn("(SDO_Geometry.discoverGeometryType) Unsupported Geometry Type: " + gType );
-        }
-        // Now do comparison
-        if ( _existingGType == Constants.GEOMETRY_TYPES.UNKNOWN )
-            return geometryType;
-        if ( _existingGType == geometryType )                                // POINT.equal.POINT etc
-            return geometryType;
-        if ( _existingGType == Constants.GEOMETRY_TYPES.COLLECTION )
-            return Constants.GEOMETRY_TYPES.COLLECTION;
-        if ( geometryType.toString().contains(_existingGType.toString()) )   // MULTIPOINT.contains.POINT etc
-            return geometryType;
-        if ( _existingGType.toString().contains(geometryType.toString()) )   // MULTIPOINT.contains.POINT etc
-            return _existingGType;
-        else 
-            return Constants.GEOMETRY_TYPES.COLLECTION;                      // MULTIPOINT and LINE etc 
+       }
+       // Now do comparison
+       if ( _existingGType == Constants.GEOMETRY_TYPES.UNKNOWN )
+           return geometryType;
+       if ( _existingGType == geometryType )                                // POINT.equal.POINT etc
+           return geometryType;
+       if ( _existingGType == Constants.GEOMETRY_TYPES.COLLECTION )
+           return Constants.GEOMETRY_TYPES.COLLECTION;
+       if ( geometryType.toString().contains(_existingGType.toString()) )   // MULTIPOINT.contains.POINT etc
+           return geometryType;
+       if ( _existingGType.toString().contains(geometryType.toString()) )   // MULTIPOINT.contains.POINT etc
+           return _existingGType;
+       else 
+           return Constants.GEOMETRY_TYPES.COLLECTION;                      // MULTIPOINT and LINE etc 
      }
-    
-    /**
-     * @method getOrientedPointMBR
-     * @description MBR of oriented point has to be manually calculated from manipulation of sdo_ordinate_array
-     * @param _geo
-     * @return
-     * @method @method
-     * @author @author Simon Greener, June 2010
-     */
-    public static Envelope getOrientedPointMBR(JGeometry _geo) 
-    {
-        // Single oriented point uses sdo_ordinate array just as oriented multi point does
-        //
-        double points[] = _geo.getOrdinatesArray();
-        int dim = _geo.getDimensions();
-        int coord = 1;
-        Envelope mbr = new Envelope(Constants.MAX_PRECISION);
-        Point2D point = null;
-        for ( int i = 0; i < points.length; i += dim ) {
-            if ( coord%dim == 1 ) // Save first point for use with its oriented point
-                point = new Point2D.Double(points[i], points[i + 1]);
-            else /* oriented */ {
-                // Calculate oriented point position
-                // and then calc MBR of the pair and union its MBR
-                //
-                mbr.setMaxMBR(point.getX(),
-                              point.getY(),
-                              point.getX() + points[i],
-                              point.getY() + points[i+1]);
-            }
-            coord++;
-        }
-        return mbr;
-    }
 
-    public static Envelope getOrdinatesMBR(JGeometry _geo) 
-    {
-        if ( _geo.isOrientedPoint() || _geo.isOrientedMultiPoint() ) {
-            return getOrientedPointMBR(_geo);
-        }
-        
-        // get ordinates
-        //
-        double points[] = _geo.getOrdinatesArray();
-        if ( points==null || points.length==0 )
-            return null;
-        int dim         = _geo.getDimensions();
-        Envelope mbr = new Envelope(Constants.MAX_PRECISION);
-        for ( int i = 0; i < points.length; i += dim ) {
-            mbr.setMaxMBR(points[i],points[i+1],
-                          points[i],points[i+1]);
-        }
-        return mbr;
-    }
 
     /**
      * Get MBR for select Geometry object
@@ -337,78 +264,19 @@ public class SDO_GEOMETRY
      *          Corrected MBR to reflect 3D etc objects
      *          getMBR does not honour oriented Points so constructed getOrientedPointMBR
      */
-	public static Envelope getGeoMBR(STRUCT _struct) 
+	public static Envelope getGeoMBR(Struct _struct) 
     {
         if (_struct == null) return null;
         try {
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            JGeometry geo = JGeometry.load(stGeom);
-            return getGeoMBR(geo);
+            return getGeoMBR(stGeom);
         } catch (SQLException sqle) {
            return null;
         }
-    }
-
-    public static Envelope getGeoMBR(JGeometry _geo) 
-    {
-        if (_geo == null) return null;
-        
-        // getMBR returns:
-        // a double array containing the minX,minY, maxX,maxY value of the MBR for 2D or
-        // a double array containing the minX,minY,minZ maxX,maxY, maxZ value of the MBR for 3D
-        //
-        int dims = _geo.getDimensions();
-        if ( _geo.isOrientedPoint() || _geo.isOrientedMultiPoint() ) {
-            return getOrientedPointMBR(_geo);
-        } else {
-            // getMBR() doesn't seem to return measures in MBR if of type 3302 etc
-            //
-            if ( _geo.getLRMDimension()==dims )
-                dims = 2;
-            double[] mbr = null;
-            try {
-                // getMBR() Gets the MBR of this geometry. When a JSDOGeoemtry is first instantiated from a 
-                // db geometry STRUCT, no MBR is computed. The MBR exists only after the first call to this method. 
-                // The MBR will be recalcuated only when the geoemtry's structure has been modified.
-                //
-                mbr = _geo.getMBR();
-            } catch (Exception e) {
-                try {
-                  mbr = _geo.getMBR();
-                } catch (Exception e2) {
-                  mbr = null; 
-                }
-            }
-            if ( mbr == null )
-                return null;
-            if ( mbr.length < 4 || Double.isInfinite(mbr[0]) || Double.isNaN(mbr[0]) )
-                return getOrdinatesMBR(_geo);
-            if ( mbr.length < 4 )
-                return null;
-            switch ( dims ) {
-                case 4  : return new Envelope(mbr[0], mbr[1], mbr[2], mbr[3]);
-                case 3  : return new Envelope(mbr[0], mbr[1], mbr[3], mbr[4]);
-                case 2  : 
-                default : return new Envelope(mbr[0], mbr[1], mbr[2], mbr[3]); 
-            }
-        }
-
-    }
-
-    public static Envelope getGeoMBR(List<JGeometry> _geomSet) 
-    {
-        if (_geomSet == null || _geomSet.size() == 0) return null;
-        
-        Envelope mbr = new Envelope(Constants.MAX_PRECISION);
-        Iterator<JGeometry> iter = _geomSet.iterator();
-        while (iter.hasNext()) {
-            mbr.setMaxMBR(SDO_GEOMETRY.getGeoMBR(iter.next()));
-        }
-        return mbr;
     }
 
     public static double[] validateRectangle(int _dim,
@@ -441,7 +309,7 @@ public class SDO_GEOMETRY
     
     /**
      * Copy definition of SDO_GEOMETRY object to clipboard 
-     * @param colValue STRUCT cell value
+     * @param colValue Struct cell value
      * Otherwise copy value to SQL Developer log window
      * @author Simon Greener, October 18th 2010
      *          Moved from SpatialRendererMouseListener and made function.
@@ -449,22 +317,21 @@ public class SDO_GEOMETRY
      *          Moved from RenderResultset
     */
      
-	public static String convertGeometryForClipboard(STRUCT _struct) 
+	public static String getGeometryAsString(Struct _struct) 
      {
          // We need a connection for when some conversions require one.
          //       
          Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-         return convertGeometryForClipboard(_struct, localConnection);
-     }
+         return getGeometryAsString(_struct, localConnection);
+     }    
     
-    
-	public static String convertGeometryForClipboard(STRUCT     _struct, 
-                                                     Connection _conn) 
+	public static String getGeometryAsString(Struct     _struct, 
+                                             Connection _conn) 
     {
         if ( _struct==null ) {
             return "";
         }
-        OracleConnection localConnection = (OracleConnection)_conn;
+        Connection localConnection = _conn;
         if ( localConnection == null ) {
             localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
         }
@@ -473,10 +340,10 @@ public class SDO_GEOMETRY
         // get geometry structure
         String clipText = "";
         try {
-			STRUCT stGeom = _struct;
+			Struct structGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+                structGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
             Constants.renderType visualType = geoRaptorPreferences.getVisualFormat();
 
@@ -494,8 +361,10 @@ public class SDO_GEOMETRY
 
             if ( visualType != Constants.renderType.SDO_GEOMETRY ) {
                 // If sdo_geometry object is 3D then certain renders cannot occur
-                Datum data[] = stGeom.getOracleAttributes();
-                if ( (int)(((NUMBER)data[0]).intValue() / 1000 ) >= 3)
+                Object[] data = (Object[])structGeom.getAttributes();
+                int gtype = OraUtil.toInteger(data[0],Integer.MAX_VALUE);
+
+                if ( ( gtype / 1000 ) >= 3 )
                 {
                     if ( visualType == Constants.renderType.WKT ||
                          visualType == Constants.renderType.KML ) 
@@ -509,25 +378,28 @@ public class SDO_GEOMETRY
             switch ( visualType )
             {
                 case SDO_GEOMETRY:
-                    clipText = RenderTool.renderSTRUCTAsPlainText(stGeom,Constants.bracketType.NONE,Constants.MAX_PRECISION);
+                    clipText = RenderTool.renderStructAsPlainText(
+                                                structGeom,
+                                                Constants.bracketType.NONE,
+                                                Constants.MAX_PRECISION);
                     break;
                 case WKT  :
                 case KML2 :
                 case GML2 :
                 case GML3 : 
-                  if ( visualType == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(stGeom) ) {
+                  if ( visualType == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(structGeom) ) {
                       WKT w = new WKT();
-                      clipText = new String(w.fromSTRUCT(stGeom));
+                      clipText = new String(w.fromStruct(structGeom));
                   } else {
                       switch (visualType) {
                       case KML2 : KML2.setConnection(localConnection);
-                                  clipText = KML2.to_KMLGeometry(stGeom);
+                                  clipText = KML2.to_KMLGeometry(structGeom);
                                   break;
                       case GML2 : GML2.setConnection(localConnection);
-                                  clipText = GML2.to_GMLGeometry(stGeom);
+                                  clipText = GML2.to_GMLGeometry(structGeom);
                                   break;
                       case GML3 : GML3.setConnection(localConnection);
-                                  clipText = GML3.to_GML3Geometry(stGeom);
+                                  clipText = GML3.to_GML3Geometry(structGeom);
                                   break;
 					default:
 						break;
@@ -543,33 +415,8 @@ public class SDO_GEOMETRY
         return clipText;
     }
 
-    
-    public static STRUCT setFullGType(STRUCT _struct, int _gType) 
-    {
-        if (_struct == null)
-            return _struct;
-        try {
-            Datum data[] = _struct.getOracleAttributes();
-            if (data == null) return _struct;
-            Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-            if ( localConnection==null )
-                return _struct;
-            NUMBER SDO_GTYPE = new NUMBER( _gType );            
-            Datum attributes[] = new Datum[]{
-                      SDO_GTYPE,
-                      data[1],
-                      data[2],
-                      data[3],
-                      data[4]
-                  };
-            return toSTRUCT( localConnection, attributes, Constants.TAG_MDSYS_SDO_GEOMETRY );      
-        } catch (SQLException sqle) {
-            return _struct;
-        }
-    }
-
-    
-    public static int getFullGType(STRUCT _struct,
+        
+    public static int getFullGType(Struct _struct,
                                    int    _nullValue) 
     {
       // Note Returning null for null sdo_geometry structure
@@ -578,35 +425,35 @@ public class SDO_GEOMETRY
         }
       try {
           String sqlTypeName = _struct.getSQLTypeName();
-          Datum data[] = _struct.getOracleAttributes();
+          Object[] data = (Object[])_struct.getAttributes();
           if (sqlTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
               return (data[2] != null) ? ( data[3] != null ? 4001 : 3001 ) : 2001;
           } else if ( sqlTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
-              double[] ords = SDO_GEOMETRY.asDoubleArray(_struct,Double.NaN);
+              double[] ords = OraUtil.toDoubleArray(_struct,Double.NaN);
               return Double.isNaN(ords[2]) ? 2001 : 3001;
           } 
           // Else ST_ or SDO_
-          STRUCT stGeom = _struct;
-          if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-              stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
-          } 
-          data = stGeom.getOracleAttributes();
-          Datum datum = data[0];
-          if (datum == null) {
+          Struct stGeom = _struct;
+          if ( sqlTypeName == Constants.TAG_MDSYS_ST_GEOMETRY)
+            	stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+
+          //if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {stGeom = SDO_GEOMETRY.getSdoFromST(_struct);} 
+          BigDecimal bigDec = ((BigDecimal)(stGeom.getAttributes())[0]);
+          if (bigDec == null) {
               return _nullValue;
           }
-          return ((NUMBER)datum).intValue();
+          return bigDec.intValue();
       } catch (SQLException sqle) {
           return _nullValue;
       }
     }
     
     
-    public static int getGType(STRUCT _struct) {
+    public static int getGType(Struct _struct) {
       return getGType(_struct,defaultGTYPE);
     }
     
-    public static int getGType(STRUCT _struct,
+    public static int getGType(Struct _struct,
                                int    _nullValue) 
     {
         if (_struct == null) {
@@ -616,7 +463,7 @@ public class SDO_GEOMETRY
     }
 
     
-    public static int getMeasureDimension(STRUCT _struct) 
+    public static int getMeasureDimension(Struct _struct) 
     {
         // Note Returning null for null sdo_geometry structure
         if (_struct == null) {
@@ -631,7 +478,7 @@ public class SDO_GEOMETRY
     }
 
     
-    public static int getDimension(STRUCT _struct,
+    public static int getDimension(Struct _struct,
                                    int    _nullValue) 
     {
         if (_struct == null) {
@@ -641,72 +488,98 @@ public class SDO_GEOMETRY
     }
 
     
-    public static int getSRID(STRUCT _struct) {
+    public static int getSRID(Struct _struct) {
       return getSRID(_struct,Constants.SRID_NULL);
     }
     
     
-    public static int getSRID(STRUCT _struct,
+    public static int getSRID(Struct _struct,
                               int    _nullValue) 
     {
         if (_struct == null) {
             return _nullValue;
         }
         try {
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            Datum data[] = stGeom.getOracleAttributes();
-            return asInteger(data[1], _nullValue);
+            Object[] data = (Object[])stGeom.getAttributes();
+            return OraUtil.toInteger(data[1], _nullValue);
         } catch (SQLException sqle) {
             return _nullValue;
         }
     }
 
-    
-    public static STRUCT setSRID(STRUCT _struct, 
+    /**
+     * ******************************************************* 
+     * Some Struct construction methods. 
+     * */
+
+    public static Struct setSRID(Struct _struct, 
                                  int    _SRID) 
     {
         if (_struct == null) {
             return _struct;
         }
         try {
-            Datum data[] = _struct.getOracleAttributes();
-            if (data == null) return _struct;
+        	int sdo_gtype  = SDO_GEOMETRY.getFullGType(_struct, 0);
+        	JGeometry geom = JGeometry.loadJS(_struct);
+        	JGeometry newGeom = null;
+        	double[] sdoPoint = geom.getLabelPointXYZ();
+        	Coordinate coord = Double.isNaN(sdoPoint[0])
+        			           ? new Coordinate(Double.NaN,Double.NaN,Double.NaN)
+        			           : new Coordinate(sdoPoint[0],sdoPoint[1],sdoPoint[2]);
+        	newGeom = new JGeometry(
+        	               /* int gtype */          sdo_gtype,
+        	               /* int srid */           _SRID < 0 ? 0 : _SRID,
+        	               /* double x */           Double.isNaN(coord.x) ? null : coord.x,
+        	               /* double y */           Double.isNaN(coord.x) ? null : coord.y,
+        	               /* double z */           Double.isNaN(coord.x) ? null : coord.z,
+        	               /* int[] elemInfo */     geom.getElemInfo(),
+        	               /* double[] ordinates */ geom.getOrdinatesArray()
+        	          );
             Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-            if ( localConnection==null ) return _struct;
-            NUMBER SDO_SRID = _SRID == Constants.SRID_NULL ? null : new NUMBER( _SRID );            
-            Datum attributes[] = new Datum[]{
-                      data[0],
-                      SDO_SRID,
-                      data[2],
-                      data[3],
-                      data[4]
-                  };
-            return toSTRUCT( localConnection, attributes, Constants.TAG_MDSYS_SDO_GEOMETRY );      
-        } catch (SQLException sqle) {
+            return JGeometry.storeJS(newGeom,localConnection);      
+        } catch (Exception e) {
             return _struct;
         }
     }
     
-    /** Conveience method for STRUCT construction. */
-    
-    private static STRUCT toSTRUCT( Connection _conn,
-                                    Datum      _attributes[], 
-                                    String     _dataType )
-            throws SQLException
+    public static Struct setFullGType(Struct _struct, int _gType) 
     {
-        if( _dataType.startsWith("*.")){
-            _dataType = "DRA."+_dataType.substring(2);
+        if (_struct == null) {
+            return _struct;
         }
-        StructDescriptor descriptor = StructDescriptor.createDescriptor( _dataType, _conn );
-        return new STRUCT( descriptor, _conn, _attributes );
+        try {
+            Object[] data = (Object[])_struct.getAttributes();
+            if (data == null) return _struct;
+            Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
+            if ( localConnection==null ) {
+                return _struct;
+            }
+            Object[] attributes = new Object[]{
+            		  _gType,
+                      data[1],
+                      data[2],
+                      data[3],
+                      data[4]
+                  };
+            return localConnection.createStruct(Constants.TAG_MDSYS_SDO_GEOMETRY,
+            		                            (Object[])attributes ); 
+        } catch (SQLException sqle) {
+            return _struct;
+        }
     }
 
+
+    /**
+     * *********************************************** 
+     * Convenience methods for Struct construction. 
+     **/
     
-    public static STRUCT getSdoFromST(STRUCT _struct) 
+    public static Struct getSdoFromST(Struct _struct) 
     {
         if (_struct == null) {
             return null;
@@ -714,9 +587,9 @@ public class SDO_GEOMETRY
         try {
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                Datum data[] = _struct.getOracleAttributes();
+                Object[] data = (Object[])_struct.getAttributes();
                 if (data == null) return _struct;
-                return (STRUCT)data[0];
+                return (Struct)data[0];
             } else {
                 return _struct;
             }
@@ -726,120 +599,143 @@ public class SDO_GEOMETRY
         }
     }
 
-    
-    public static double[] getSdoPoint(STRUCT _struct) {
-      return getSdoPoint(_struct,Double.NaN);
+    public static boolean hasSdoPoint(Struct _struct) {
+        return getSdoPoint(_struct,Double.NaN) == null ? false : true;
     }
-    
-    
-    public static double[] getSdoPoint(STRUCT _struct,
+
+    public static double[] getSdoPoint(Struct _struct,
                                        double _nullValue) 
     {
         if (_struct == null)
             return null;
         try {
-            STRUCT stGeom = _struct;
+            Struct geoStruct   = _struct;
+            Struct sdoPoint    = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
-            } 
-            Datum data[] = stGeom.getOracleAttributes();
-            return asDoubleArray((STRUCT)data[2], _nullValue);
+            	geoStruct = SDO_GEOMETRY.getSdoFromST(_struct);
+                sqlTypeName = geoStruct.getSQLTypeName();
+            }
+            if ( sqlTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY))
+            {
+                Object[] data = (Object[])geoStruct.getAttributes();
+                sdoPoint = (Struct)data[2];
+                if ( sdoPoint == null )
+                    return null;
+                sqlTypeName = sdoPoint.getSQLTypeName();
+            }
+            if ( ! sqlTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) )
+               return null;
+            return OraUtil.toDoubleArray(sdoPoint, _nullValue);
         } catch (SQLException sqle) {
             return null;
         }
     }
 
-    
-    public static int[] getSdoElemInfo(STRUCT _struct) {
-      return getSdoElemInfo(_struct,0);
+    public static boolean hasElemInfoArray(Struct _struct) 
+    {
+    	if (_struct == null) {
+            return false;
+        }
+        try {
+            Struct stGeom = _struct;
+            String sqlTypeName = _struct.getSQLTypeName();
+            if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
+                stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+            } 
+            Object[] data = (Object[])stGeom.getAttributes();
+            return (data[3]==null) ? false : true;
+        } catch (SQLException sqle) {
+          return false;
+        }
     }
-    
-    public static int[] getSdoElemInfo(STRUCT _struct,
+        
+    public static int[] getSdoElemInfo(Struct _struct,
                                        int    _nullValue) 
     {
         if (_struct == null) {
             return null;
         }
         try {
-            STRUCT stGeom = _struct;
+            Struct      stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            Datum data[] = stGeom.getOracleAttributes();
-            return asIntArray((ARRAY)data[3], _nullValue);
+            Object[] data = (Object[])stGeom.getAttributes();
+            return OraUtil.toIntArray((Array)data[3], _nullValue);
         } catch (SQLException sqle) {
             return null;
         }
     }
 
-    public static int getNumberCoordinates(STRUCT _struct) 
+    public static boolean hasOrdinateArray(Struct _struct) 
+    {
+    	if (_struct == null) {
+            return false;
+        }
+        try {
+            Struct stGeom = _struct;
+            String sqlTypeName = _struct.getSQLTypeName();
+            if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
+                stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+            } 
+            Object[] data = (Object[])stGeom.getAttributes();
+            return (data[4]==null) ? false : true;
+        } catch (SQLException sqle) {
+          return false;
+        }
+    }
+        
+    public static int getNumberCoordinates(Struct _struct) 
     {
         if (_struct == null) {
             return 0;
         }
-        try {
-            STRUCT stGeom = _struct;
-            String sqlTypeName = _struct.getSQLTypeName();
-            if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
-            } 
-            Datum data[] = stGeom.getOracleAttributes();
-          if (data[2]!=null && data[4]==null) {
-                return 1;
-            }
-            return asDoubleArray((ARRAY)data[4], Double.NaN).length / 
-                   getDimension(_struct, 2);
-      } catch (SQLException sqle) {
-          return -1;
-      }
+        return getNumberOrdinates(_struct) / getDimension(_struct, 2);
     }
 
-    
-    public static int getNumberOrdinates(STRUCT _struct) {
+    public static int getNumberOrdinates(Struct _struct) 
+    {
         if (_struct == null) {
             return -1;
         }
         try {
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            Datum data[] = stGeom.getOracleAttributes();
+            Object[] data = (Object[])stGeom.getAttributes();
             if (data[2]!=null && data[4]==null) {
                 // it is a point encoded in sdo_point_type
-                STRUCT sdoPoint = (STRUCT)data[2];
-                double[] ords = asDoubleArray(sdoPoint,Double.NaN);
+                Struct sdoPoint = (Struct)data[2];
+                double[] ords = OraUtil.toDoubleArray(sdoPoint,Double.NaN);
                 return Double.isNaN(ords[2]) ? 2 : 3;
             }
-            return asDoubleArray((ARRAY)data[4], Double.NaN).length;
+            Array   dblOArray = (Array)data[4];
+            Object[] dblArray = (Object[])dblOArray.getArray();
+        	return dblArray.length;
+            // return OraUtil.toDoubleArray((Array)data[4], Double.NaN).length;
       } catch (SQLException sqle) {
           return -1;
       }
     }
     
-    
-    public static double[] getSdoOrdinates(STRUCT _struct) {
-      return getSdoOrdinates(_struct,Double.NaN);
-    }
-    
-    
-    public static double[] getSdoOrdinates(STRUCT _struct,
+    public static double[] getSdoOrdinates(Struct _struct,
                                            double _nullValue) 
     {
         if (_struct == null) {
             return null;
         }
         try {
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            Datum data[] = stGeom.getOracleAttributes();
-            return asDoubleArray((ARRAY)data[4], _nullValue);
+            Object[] data = (Object[])stGeom.getAttributes();
+            return OraUtil.toDoubleArray((Array)data[4], _nullValue);
         } catch (SQLException sqle) {
             return null;
         }
@@ -867,9 +763,9 @@ public class SDO_GEOMETRY
         while ( dst.hasMoreTokens() ) 
         {
             tok = dst.nextToken();
-            if (tok.contains("SDO_ELEM_INFO_ARRAY")) {
+            if (tok.contains("SDO_ELEM_INFO_Array")) {
                 if ( _foldOrds > 0 ) output += "\n";
-            } if (tok.contains("SDO_ORDINATE_ARRAY") ) {
+            } if (tok.contains("SDO_ORDINATE_Array") ) {
                 if ( _foldOrds > 0 ) output += "\n";
                 valueConversion = true;
                 sdoOrdinateArray = true;
@@ -925,8 +821,7 @@ public class SDO_GEOMETRY
         return output.replace(",)",")").replace(",\n)",")");
     }
 
-    
-    public static boolean isPoint(STRUCT _struct) {
+    public static boolean isPoint(Struct _struct) {
         if ( _struct == null ) {
             return false;
         }
@@ -934,129 +829,63 @@ public class SDO_GEOMETRY
     }
     
     /**
-     * @function isRectangle
-     * @precis JGeometry.isRectangle does not work in all cases
-     * @param _geo
-     * @return
-     * @author Simon Greener, April 4th 2010
-     */
-    public static boolean isRectangle(JGeometry _geo) {
-        if (_geo == null)
-            return false;
-  
-        if (_geo.isPoint() )
-            return false;
-        
-        if (_geo.isRectangle())
-            return true;
-  
-        int[] eia = _geo.getElemInfo();
-        for (int i = 0; i < (eia.length / 3); i++) {
-            if ((eia[(i * 3) + 1] == 1003 || eia[(i * 3) + 1] == 2003) &&
-                eia[(i * 3) + 2] == 3) {
-                return true;
-            }
-        }
-        return false;
-    }
-  
-    /**
      * @function hasArc
-     * @precis JGeometry.hasCompoundArc/isCircle, are wrapped in a new function
-     *         like isRectangle
-     * @param _geo
-     * @return
-     * @author Simon Greener, April 4th 2010
-     */
-    public static boolean hasArc(JGeometry _geo) {
-        if (_geo == null)
-            return false;
-  
-        if (_geo.isPoint() )
-            return false;
-        
-        if (_geo.hasCircularArcs() || _geo.isCircle())
-            return true;
-  
-        int[] eia = _geo.getElemInfo();
-        for (int i = 1; i < (eia.length / 3); i = (i * 3) + 1) {
-            if ((eia[i] == 1005 || eia[i] == 2005 || eia[i] == 4) ||
-                (eia[i] == 2 && eia[i + 1] == 2)) {
-                return true;
-            }
-        }
-        return false;
-    }
-  
-    /**
-     * @function hasArc
-     * @precis wrapper over hasArc(JGeometry)
      * @param _struct
      * @return
      * @author Simon Greener, January 12th 2011
      */
     
-    public static boolean hasArc(STRUCT _struct) {
-      if (_struct == null) return false;
+    public static boolean hasArc(Struct _struct) 
+    {
+      if (_struct == null) 
+    	  return false;
       try {
-          STRUCT stGeom = _struct;
+          Struct stGeom = _struct;
           String sqlTypeName = _struct.getSQLTypeName();
           if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
               stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
           } 
-          JGeometry geo = JGeometry.load(stGeom);
-          return hasArc(geo);
+
+          if (SDO_GEOMETRY.getGType(stGeom,-1) == 1  )
+              return false;
+          
+          int[] eia = SDO_GEOMETRY.getSdoElemInfo(stGeom,-1);
+          if ( eia == null )
+        	  return false;
+          
+          for (int i = 1; 
+        		   i < (eia.length / 3); 
+        		   i = (i * 3) + 1) 
+          {
+              if (  (eia[i] == 4 || eia[i] == 1005 || eia[i] == 2005 ) 
+                   ||
+                   ((eia[i] == 1003 || eia[i] == 2003) && (eia[i+1] == 2 || eia[i+1] == 4))
+                   ||
+                    (eia[i] == 2 && eia[i + 1] == 2)) {
+                  return true;
+              }
+          }
+          return false;
       } catch (SQLException sqle) {
         return false;
       }
     }
   
-    /**
-     * @function printGType
-     * @param _gtype
-     * @param _hasArc
-     * @author Simon Greener, April 2010
-     *          Useful function for debugging JGeometries
-     */
-    public static String printGType(int _gtype, boolean _hasArc) {
-        String compound = _hasArc ? "(C)" : "";
-        switch (_gtype) {
-        case JGeometry.GTYPE_COLLECTION:
-            return "COLLECTION" + compound;
-        case JGeometry.GTYPE_CURVE:
-            return "CURVE" + compound;
-        case JGeometry.GTYPE_MULTICURVE:
-            return "MULTICURVE" + compound;
-        case JGeometry.GTYPE_MULTIPOINT:
-            return "MULTIPOINT";
-        case JGeometry.GTYPE_MULTIPOLYGON:
-            return "MULTIPOLYGON" + compound;
-        case JGeometry.GTYPE_POINT:
-            return "POINT";
-        case JGeometry.GTYPE_POLYGON:
-            return "POLYGON" + compound;
-        }
-        return "UNKNOWN";
-    }
-
-    
-    public static double getLength(STRUCT _struct, int _precision) {
+    public static double getLength(Struct _struct, int _precision) {
         Geometry g = asJTSGeometry(_struct,_precision);
         if (g==null)
             return Double.NaN;
         return g.getLength();
     }
 
-    
-    public static double getArea(STRUCT _struct, int _precision) {
+    public static double getArea(Struct _struct, int _precision) {
         Geometry g = asJTSGeometry(_struct,_precision);
         if (g==null)
             return Double.NaN;
         return g.getArea();
     }
     
-    
-    public static Geometry asJTSGeometry(STRUCT _struct, int _precision) 
+	public static Geometry asJTSGeometry(Struct _struct, int _precision) 
     {
         Geometry geom = null;
         
@@ -1070,12 +899,12 @@ public class SDO_GEOMETRY
         // Skip whole record IFF this geometry is for the SHP file and is NULL
         //
         try {
-            STRUCT stGeom = _struct;
+            Struct stGeom = _struct;
             String sqlTypeName = _struct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            geom = converter.read(stGeom);
+            geom = converter.read((java.sql.Struct)stGeom);
             if (geom == null) {
                 return null;   
             }
@@ -1092,142 +921,16 @@ public class SDO_GEOMETRY
         return geom;
     }
 
-    /**
-     * @function printOrdArray
-     * @param _geo
-     * @author Simon Greener, April 2010
-     *          Useful function for debugging ordArrays
-     */
-    public static void printOrdArray(JGeometry _geo) 
-    {
-        if (_geo == null || _geo.getOrdinatesArray()==null )
-            return;      
-        double[] _points = _geo.getOrdinatesArray();
-        int dim = _geo.getDimensions();
-        for (int corrCount = 0; corrCount <= (_points.length - 2 * dim);
-             corrCount = corrCount + dim) {
-            Messages.log("[" + corrCount + "](" + _points[corrCount] + "," +
-                         _points[corrCount + 1] +
-                         ((dim >= 3) ? "," + _points[corrCount + dim] +
-                          ((dim == 4) ? "," + _points[corrCount + dim + 1] :
-                           ")") : ")"));
-        }
+    public static String getWKT(Struct _geom) { 
+    	WKT w = new WKT();
+    	try {
+			return new String(w.fromStruct(_geom));
+		} catch (SQLException | GeometryExceptionWithContext e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return null;
     }
-  
-    /**
-     * @function printElemInfo
-     * @param _eia
-     * @author Simon Greener, April 2010
-     *          Useful function for printing ElemInfo arrays
-     */
-    public static void printElemInfo(int[] _eia) 
-    {
-        if (_eia == null )
-            return;
-        Messages.log("_eia.length = " + _eia.length);
-        for (int i = 0; i < (_eia.length / 3); i++) {
-            Messages.log("(" + _eia[(i * 3)] + "," + _eia[(i * 3) + 1] + "," +
-                         _eia[(i * 3) + 2] + ")");
-        }
-    }
-  
-    /**
-     * @function gType
-     * @param _geom
-     * @author Simon Greener, April 2010
-     *          Useful function for creating SDO_GEOMETRY SDO_GTYPEs numbers
-     *          as JGeometry class does not do this.
-     */
-    public static int gType(JGeometry _geom) 
-    {
-        if (_geom == null )
-            return 0;
-        return ((_geom.getDimensions() * 1000) +
-                ((_geom.isLRSGeometry() && _geom.getDimensions() == 3) ? 300 :
-                 ((_geom.isLRSGeometry() && _geom.getDimensions() == 4) ? 400 :
-                  0)) + _geom.getType());
-    }
-    
-    /** ======================================================================================== **/
-    
-    /** @description: These functions present an Oracle Datum (STRUCT) as appropriate Java types
-     * @author     : Simon Greener - March 2010 - From JTS
-     **/
-    
-    public static int[] asIntArray(ARRAY array, int DEFAULT) throws SQLException {
-        if (array == null)
-            return null;
-        if (DEFAULT == 0)
-            return array.getIntArray();
-  
-        return asIntArray(array.getOracleArray(), DEFAULT);
-    }
-  
-    /** Presents Datum[] as a int[] */
-    
-    public static int[] asIntArray(Datum[] data,
-                                   final int DEFAULT) throws SQLException {
-        if (data == null)
-            return null;
-        int array[] = new int[data.length];
-        for (int i = 0; i < data.length; i++) {
-            array[i] = asInteger(data[i], DEFAULT);
-        }
-        return array;
-    }
-  
-    /** Presents datum as an int */
-    public static int asInteger(Datum datum,
-                                final int DEFAULT) throws SQLException {
-        if (datum == null)
-            return DEFAULT;
-        return ((NUMBER)datum).intValue();
-    }
-  
-    /** Presents datum as a double */
-    public static double asDouble(Datum datum,
-                                  final double DEFAULT) throws SQLException {
-        if (datum == null)
-            return DEFAULT;
-        return ((NUMBER)datum).doubleValue();
-    }
-  
-    /** Presents struct as a double[] */
-    
-    public static double[] asDoubleArray(STRUCT struct,
-                                         final double DEFAULT)
-    throws SQLException {
-        if (struct == null)
-            return null;
-        return asDoubleArray(struct.getOracleAttributes(), DEFAULT);
-    }
-  
-    /** Presents array as a double[] */
-    
-    public static double[] asDoubleArray(ARRAY array,
-                                         final double DEFAULT) 
-    throws SQLException {
-        if (array == null)
-            return null;
-        if (DEFAULT == 0)
-            return array.getDoubleArray();
-  
-        return asDoubleArray(array.getOracleArray(), DEFAULT);
-    }
-  
-    /** Presents Datum[] as a double[] */
-    public static double[] asDoubleArray(Datum[] data,
-                                         final double DEFAULT) 
-    throws SQLException {
-        if (data == null)
-            return null;
-        double array[] = new double[data.length];
-        for (int i = 0; i < data.length; i++) {
-            array[i] = asDouble(data[i], DEFAULT);
-        }
-        return array;
-    }
-    /** End of Oracle Datum (STRUCT) / Java type conversion functions
-    */
 
+  
 }

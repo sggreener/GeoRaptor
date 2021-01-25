@@ -1,6 +1,36 @@
 package org.GeoRaptor.io.Export;
 
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Struct;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+
+import javax.sql.RowSetMetaData;
+
+import org.GeoRaptor.Constants;
+import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Messages;
+import org.GeoRaptor.Preferences;
+import org.GeoRaptor.SpatialView.SpatialView;
+import org.GeoRaptor.SpatialView.SpatialViewPanel;
+import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
+import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
+import org.GeoRaptor.tools.FileUtils;
+import org.GeoRaptor.tools.GeometryProperties;
+import org.GeoRaptor.tools.Strings;
+import org.geotools.data.shapefile.shp.ShapeType;
+import org.geotools.data.shapefile.shp.ShapefileException;
+import org.geotools.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -9,42 +39,7 @@ import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.oracle.OraReader;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-
-import javax.sql.RowSetMetaData;
-
-import oracle.sql.STRUCT;
-
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
-import org.GeoRaptor.Constants;
-import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.Messages;
-import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.SpatialView;
-import org.GeoRaptor.SpatialView.SpatialViewPanel;
-import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
-import org.GeoRaptor.tools.FileUtils;
-import org.GeoRaptor.tools.GeometryProperties;
-import org.GeoRaptor.tools.Strings;
-
-import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.data.shapefile.shp.ShapefileException;
-import org.geotools.util.logging.Logger;
-
+import org.xBaseJ.xBaseJException;
 import org.xBaseJ.fields.CharField;
 import org.xBaseJ.fields.DateField;
 import org.xBaseJ.fields.Field;
@@ -52,7 +47,6 @@ import org.xBaseJ.fields.LogicalField;
 import org.xBaseJ.fields.MemoField;
 import org.xBaseJ.fields.NumField;
 import org.xBaseJ.fields.PictureField;
-import org.xBaseJ.xBaseJException;
 
 
 @SuppressWarnings("deprecation")
@@ -164,7 +158,7 @@ public class SHPExporter implements IExporter {
         return this.row;
     }
 
-    private Geometry Struct2Geometry( STRUCT _shape ) {
+    private Geometry Struct2Geometry( Struct _shape ) {
         // Convert Struct to Geometry object
         // PrecisionModel is assigned during conversion
         //
@@ -247,12 +241,12 @@ public class SHPExporter implements IExporter {
     }
         
     @SuppressWarnings("unused")
-	private void add(STRUCT _shape) 
+	private void add(Struct _shape) 
     {
         this.setGeom(Struct2Geometry(_shape));
     }
   
-    private void addToGeomSet(STRUCT _shape) 
+    private void addToGeomSet(Struct _shape) 
     {
         Geometry jGeom = Struct2Geometry(_shape);
         if ( jGeom == null ) {
@@ -349,7 +343,7 @@ public class SHPExporter implements IExporter {
             { 
                 if ( _columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) )
                 {
-                    this.addToGeomSet((STRUCT)_object);
+                    this.addToGeomSet((Struct)_object);
                     return;
                 }
             } 

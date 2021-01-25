@@ -1,6 +1,5 @@
 package org.GeoRaptor.SpatialView.layers;
 
-
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -21,10 +20,12 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 
+import java.sql.Connection;
+
 import java.io.IOException;
 
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.text.AttributedString;
 import java.text.DecimalFormat;
 
@@ -36,13 +37,9 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import oracle.jdbc.OracleConnection;
-
 import oracle.spatial.geometry.ElementExtractor;
 import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.STRUCT;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Messages;
@@ -53,8 +50,8 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.Coordinate;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
-import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
@@ -69,7 +66,7 @@ public class SVSpatialLayerDraw {
      * Reference to main class
      */
     protected SVSpatialLayer layer;
-    private OracleConnection layerConnection = null;
+    private Connection layerConnection = null;
     
     private Graphics2D graphics2D;
 
@@ -426,10 +423,10 @@ public class SVSpatialLayerDraw {
     
 	public Point2D.Double ST_Centroid(JGeometry _geom)
     {
-        STRUCT stGeom = null;
+        Struct stGeom = null;
         try
         {
-            stGeom = (STRUCT) JGeometry.storeJS(this.layerConnection,_geom);
+            stGeom = JGeometry.storeJS(this.layerConnection,_geom);
             if ( stGeom == null ) {
                 return null;
             }
@@ -911,7 +908,7 @@ public class SVSpatialLayerDraw {
                         JGeometry jgeom = null;
                         jgeom = new JGeometry(gType,element.getSRID(),element.getElemInfo(),element.getOrdinatesArray());
                         if ( jgeom.isRectangle() ) {
-                            jgeom = SDO_GEOMETRY.rectangle2Polygon2D(jgeom);
+                            jgeom = JGeom.rectangle2Polygon2D(jgeom);
                         }
                         markElement(jgeom,false);
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON ||
@@ -953,7 +950,7 @@ public class SVSpatialLayerDraw {
                                 // What about isCircle()?
                                 //
                                 if ( geom.isRectangle() ) {
-                                    geom = SDO_GEOMETRY.rectangle2Polygon2D(geom);
+                                    geom = JGeom.rectangle2Polygon2D(geom);
                                 }
                                 markElement(geom,(inner_outer[0]==2));
                                 // Get inner rings 2003

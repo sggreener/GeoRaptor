@@ -1,51 +1,47 @@
 package org.GeoRaptor.sql;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-
 import java.math.BigDecimal;
-
+import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-
 import java.text.DecimalFormat;
 
-import oracle.dbtools.raptor.datatypes.oracle.plsql.BOOLEAN;
+import org.GeoRaptor.Constants;
+import org.GeoRaptor.Preferences;
+import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
+import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.Strings;
+import org.GeoRaptor.tools.Tools;
+import org.geotools.util.logging.Logger;
 
-import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OracleResultSet;
+import oracle.dbtools.raptor.datatypes.oracle.plsql.BOOLEAN;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
-
 import oracle.sql.BINARY_DOUBLE;
 import oracle.sql.BINARY_FLOAT;
 import oracle.sql.CHAR;
-import oracle.sql.CLOB;
 import oracle.sql.DATE;
 import oracle.sql.INTERVALDS;
 import oracle.sql.INTERVALYM;
-import oracle.sql.NCLOB;
 import oracle.sql.NUMBER;
 import oracle.sql.ROWID;
 import oracle.sql.TIMESTAMP;
 import oracle.sql.TIMESTAMPLTZ;
 import oracle.sql.TIMESTAMPTZ;
 
-import org.GeoRaptor.Constants;
-import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
-import org.GeoRaptor.tools.Strings;
-import org.GeoRaptor.tools.Tools;
 
-import org.geotools.util.logging.Logger;
-
-
-@SuppressWarnings("deprecation")
 public class SQLConversionTools {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.SQLConversionTools");
@@ -54,146 +50,200 @@ public class SQLConversionTools {
         super();
     }
     
-    public static String convertToString(OracleConnection _conn,
-                                         OracleResultSet  _ors,
-                                         int              _col) 
-    {
-        // Null checks    
-        if ( _ors == null ) {
-            return null;
-        }
-        String value = "";
-        try {
-            if (_ors.wasNull()) {
-                return null;
-            }
-            
-            OracleResultSetMetaData meta = (OracleResultSetMetaData)_ors.getMetaData();
-            OracleConnection conn = (_conn == null) ? DatabaseConnections.getInstance().getAnyOpenConnection() : _conn;
-/**
-System.out.println("convertToString(conn,obj,col) - " + 
-                   meta.getColumnLabel(_col) + "," + 
-                   meta.getColumnDisplaySize(_col) + "," + 
-                   meta.getColumnType(_col) + "/" + 
-                   meta.getColumnTypeName(_col) + ",("+
-                   meta.getPrecision(_col)+ "," +meta.getScale(_col) +")");
-**/ 
-          DecimalFormat df = Tools.getDecimalFormatter(meta.getScale(_col)==0?-1:meta.getScale(_col), false);
-          Reader in = null;
-          CHAR CharString = null;
-          df = Tools.getDecimalFormatter(meta.getScale(_col)==0?-1:meta.getScale(_col), false);
-          switch ( meta.getColumnType(_col)) {
-              case Types.ROWID       : value = _ors.getROWID(_col).stringValue(); break;
-              
-              // CHAR values retain the same same representation as they have in the database, so there can be no loss of information through conversion. 
-              case OracleTypes.NCHAR    : 
-              case OracleTypes.NVARCHAR : value = _ors.getNString(_col); break;
-              case Types.CHAR           : 
-              case Types.VARCHAR        : CharString = _ors.getCHAR(_col);
-                                          value = CharString.stringValue();
-                                          break;
-              
-              case Types.BOOLEAN     : value = _ors.getObject(_col).toString(); break; 
-              case OracleTypes.BFILE :
-              case OracleTypes.RAW   :
-              case Types.BLOB        : break;
-              
-              case Types.NCLOB :
-                  NClob nClob = _ors.getNClob(_col);
-                  in = nClob.getCharacterStream(  );
-                try {
-                    value = "";
-                    int length = -1;
-                    char[] buffer = new char[1024];
-                    while ((length = in.read(buffer)) != -1) {
-                        value += String.valueOf(buffer).substring(0,length);
-                    }
-                    in.close( ); 
-                    in = null; 
-                    value = (nClob.length()<=1000?value:value.substring(0,1000)) + " ... ";
-                 } catch (IOException e) {
-                    value = null;
-                 }
-                 break;
-                case Types.CLOB  :
-                   CLOB sClob = _ors.getCLOB(_col);
-                   in = sClob.getCharacterStream();
-                  try {
-                      value = "";
-                      int length = -1;
-                      char[] buffer = new char[1024];
-                      while ((length = in.read(buffer)) != -1) {
-                          value += String.valueOf(buffer).substring(0,length);
-                      }
-                      in.close( ); 
-                      in = null; 
-                      value= (sClob.length()<=1000?value:value.substring(0,1000)) + " ... ";
-                   } catch (IOException e) {
-                      value = null;
-                   }
-                   break;
-          
-            case Types.TINYINT      : /* Integer data from 0 through 255. Storage size is 1 byte. */
-            case Types.SMALLINT     : /* Integer data from -2^15 (-32,768) through 2^15 - 1 (32,767). Storage size is 2 bytes. */
-            case Types.BIGINT       : /* Integer (whole number) data from -2^63 (-9,223,372,036,854,775,808) through 2^63-1 (9,223,372,036,854,775,807). Storage size is 8 bytes. */
-            case Types.INTEGER      : /* Integer (whole number) data from -2^31 (-2,147,483,648) through 2^31 - 1 (2,147,483,647). Storage size is 4 bytes. The SQL-92 synonym for int is integer. */
-            case Types.FLOAT        : 
-            case Types.DOUBLE       : 
-            case Types.DECIMAL      : 
-            case OracleTypes.NUMBER : value = _ors.getNUMBER(_col).stringValue();  break;
-          
-            case OracleTypes.BINARY_DOUBLE : BINARY_DOUBLE bdbl = new BINARY_DOUBLE(_ors.getOracleObject(_col).getBytes()); 
-                                             value = df.format(new Double(bdbl.stringValue()));
-                                             break;
-            case OracleTypes.BINARY_FLOAT  : BINARY_FLOAT  bflt = (BINARY_FLOAT)_ors.getOracleObject(_col);  
-                                             value = df.format(new Float(bflt.stringValue())); 
-                                             break; 
-            case OracleTypes.TIMESTAMPTZ   : value = _ors.getTIMESTAMPTZ(_col).stringValue(conn); break;
-            case OracleTypes.TIMESTAMPLTZ  : value = _ors.getTIMESTAMPLTZ(_col).stringValue(conn);  break;
-            case OracleTypes.INTERVALYM    : value = _ors.getINTERVALYM(_col).stringValue();   break;
-            case OracleTypes.INTERVALDS    : value = _ors.getINTERVALDS(_col).stringValue();   break;
-           
-            case OracleTypes.DATE          : value = _ors.getDATE(_col).stringValue();  
-                                             break;
-            case OracleTypes.TIMESTAMP     :
-              if ( meta.getColumnTypeName(_col).equalsIgnoreCase("DATE") ) {
-                DATE d = _ors.getDATE(_col); 
-                try {
-                    value = d.stringValue();
-                } catch (Exception e) {
-                    value = d.stringValue();
-                }
-              } else {
-                  value = _ors.getTIMESTAMP(_col).stringValue();
-              }
-              break;
-            case Types.TIME                : value = _ors.getTime(_col).toString(); break;
-            
-            case OracleTypes.STRUCT : 
-              
-              SpatialRenderer renderer = SpatialRenderer.getInstance();
-              if ( meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ||
-                   meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ||
-                   meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
-                  value = renderer.renderGeoObject(_ors.getOracleObject(_col),false);
-              }
-              break;
-            
-            default : LOGGER.warn("Not handled: " + 
-                                  meta.getColumnLabel(_col) + "," + 
-                                  meta.getColumnType(_col) + "," +
-                                  meta.getColumnTypeName(_col) + "," + 
-                                  meta.getPrecision(_col) + "," + 
-                                  meta.getScale(_col));
-                      value = null;
-          }
-      } catch (Exception e) {
-          value = null;
-      }
-      return value;
-  }
+    public static String readClob(Clob _clob)
+    {		
+		try {
+			Reader         rdr = _clob.getCharacterStream();
+	    	StringBuilder   sb = new StringBuilder();
+	        BufferedReader  br = new BufferedReader(rdr);
+	        String line;
+	        while(null != (line = br.readLine())) {
+	            sb.append(line);
+	        }
+	        br.close();
+			rdr.close();
+	        return (sb.length() <= Integer.MAX_VALUE ? sb.toString() : sb.substring(0, Integer.MAX_VALUE));
+	    } catch (SQLException e) {
+	        // handle this exception
+	    	return null;
+	    } catch (IOException e) {
+	        // handle this exception
+	    	return null;
+	    }
+    }
 
-  public static String convertToString(OracleConnection       _conn,
+    public static String readNClob(NClob _nClob)
+    {
+		try {
+			Reader         rdr = _nClob.getCharacterStream();
+	    	StringBuilder   sb = new StringBuilder();
+	        BufferedReader  br = new BufferedReader(rdr);
+	        String line;
+	        while(null != (line = br.readLine())) {
+	            sb.append(line);
+	        }
+	        br.close();
+			rdr.close();
+	        return (sb.length() <= Integer.MAX_VALUE ? sb.toString() : sb.substring(0, Integer.MAX_VALUE));
+	    } catch (SQLException e) {
+	        // handle this exception
+	    	return null;
+	    } catch (IOException e) {
+	        // handle this exception
+	    	return null;
+	    }
+	}
+
+	public static String convertToString(Connection _conn, ResultSet _rSet, int _col) 
+	{
+		if (_conn == null || _rSet == null) {
+			return "<NULL>";
+		}
+		String value = "";
+		try {
+			//if (_ors.wasNull()) {return "<NULL>";}
+			ResultSetMetaData meta = (ResultSetMetaData) _rSet.getMetaData();
+			Connection conn = _conn;
+
+            /*System.out.println("convertToString(conn,obj,col) - " +
+             * meta.getColumnLabel(_col) + "," + meta.getColumnDisplaySize(_col) + "," +
+             * meta.getColumnType(_col)  + "/" + meta.getColumnTypeName(_col) + "("+
+             * meta.getPrecision(_col)   + "," + meta.getScale(_col) +")");*/
+
+            DecimalFormat df = Tools.getDecimalFormatter(meta.getScale(_col)==0?-1:meta.getScale(_col));
+            
+			switch (meta.getColumnType(_col)) {
+
+			case Types.ROWID:    value = _rSet.getRowId(_col).toString(); break;
+			case Types.NVARCHAR:
+			case Types.NCHAR:    value = _rSet.getNString(_col); break;
+			case Types.CHAR: 
+			case Types.BIT :
+			case Types.VARCHAR:  value = (String)_rSet.getString(_col); break;
+			case Types.BOOLEAN:  value = Boolean.valueOf(_rSet.getBoolean(_col)).toString(); break;
+			case Types.NCLOB:    value = readNClob(_rSet.getNClob(_col)); break;
+			case Types.CLOB:     value = readClob(_rSet.getClob(_col));   break;
+			case Types.TINYINT: 
+			case Types.SMALLINT:
+			case Types.INTEGER:  Integer intValue = _rSet.getInt(_col);   value = String.valueOf(intValue);  break;
+			case Types.BIGINT:      Long longValue = _rSet.getLong(_col); value = String.valueOf(longValue); break;
+            case OracleTypes.BINARY_DOUBLE:
+            case OracleTypes.BINARY_FLOAT:
+    			//case OracleTypes.BINARY_DOUBLE: BINARY_DOUBLE bdbl = new BINARY_DOUBLE(_ors.getOracleObject(_col).getBytes()); value = df.format(new Double(bdbl.stringValue())); break;				
+    			//case OracleTypes.BINARY_FLOAT: BINARY_FLOAT bflt = (BINARY_FLOAT) _ors.getOracleObject(_col); value = df.format(new Float(bflt.stringValue())); break;
+			case Types.FLOAT:
+			case Types.DOUBLE:
+			case Types.DECIMAL:
+			case OracleTypes.NUMBER:
+				BigDecimal bd = (BigDecimal)_rSet.getObject(_col);
+				value = ( meta.getScale(_col)==0 ) ? bd.toBigInteger().toString() : df.format(Double.valueOf(bd.doubleValue())); break;
+			case OracleTypes.TIMESTAMPTZ:  value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPTZ(_col).stringValue(conn); break;
+			case OracleTypes.TIMESTAMPLTZ: value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPLTZ(_col).stringValue(conn); break;
+			case OracleTypes.INTERVALYM:   value = ((oracle.jdbc.OracleResultSet)_rSet).getINTERVALYM(_col).stringValue(); break;
+			case OracleTypes.INTERVALDS:   value = ((oracle.jdbc.OracleResultSet)_rSet).getINTERVALDS(_col).stringValue(); break;
+			case Types.DATE:
+			case Types.TIMESTAMP:          value = (meta.getColumnTypeName(_col).equalsIgnoreCase("DATE")) ? String.valueOf(_rSet.getDate(_col)) : String.valueOf(_rSet.getTimestamp(_col)); break;				
+			case Types.TIME:               value = String.valueOf(_rSet.getTime(_col)); break;
+			case OracleTypes.STRUCT:
+				//SpatialRenderer renderer = SpatialRenderer.getInstance();
+				if (meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY)
+						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE)
+						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE)) {
+					value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col),_conn);
+				    // renderer.renderGeoObject(_ors.getOracleObject(_col), false);
+				}
+				break;
+			case OracleTypes.BFILE:
+			case OracleTypes.RAW:
+			case Types.BLOB:
+			default:
+				System.out.print(": Data Type Not Handled");
+				value = null;
+			}
+			
+		} catch (Exception e) {
+			System.out.println(e.toString());
+			value = null;
+		}
+		return value;
+	}
+
+	public static Object convertToObject(Connection _conn, ResultSet _rSet, int _col) 
+	{
+		if (_conn == null || _rSet == null) {
+			return "<NULL>";
+		}
+		Object value = null;
+		try {
+			ResultSetMetaData meta = (ResultSetMetaData) _rSet.getMetaData();
+
+            /*System.out.println("convertToString(conn,obj,col) - " +
+             * meta.getColumnLabel(_col) + "," + meta.getColumnDisplaySize(_col) + "," +
+             * meta.getColumnType(_col)  + "/" + meta.getColumnTypeName(_col) + "("+
+             * meta.getPrecision(_col)   + "," + meta.getScale(_col) +")");*/
+
+			switch (meta.getColumnType(_col)) {
+
+			case Types.ROWID:   value = _rSet.getRowId(_col); break;
+			case Types.NVARCHAR:
+			case Types.NCHAR:   value = _rSet.getNString(_col); break;			
+			case Types.CHAR:
+			case Types.VARCHAR: value = (String)_rSet.getString(_col); break;
+			case Types.BOOLEAN: value = _rSet.getBoolean(_col); break;
+			case Types.NCLOB:   value = readNClob(_rSet.getNClob(_col)); break;
+			case Types.CLOB:    value = readClob(_rSet.getClob(_col));   break;
+			case Types.TINYINT: 
+			case Types.SMALLINT:
+			case Types.INTEGER: value = _rSet.getInt(_col); break;
+			case Types.BIGINT:  value = _rSet.getLong(_col); break;
+            case OracleTypes.BINARY_DOUBLE:
+            case OracleTypes.BINARY_FLOAT:
+    			//case OracleTypes.BINARY_DOUBLE: BINARY_DOUBLE bdbl = new BINARY_DOUBLE(_ors.getOracleObject(_col).getBytes()); value = df.format(new Double(bdbl.stringValue())); break;				
+    			//case OracleTypes.BINARY_FLOAT:  BINARY_FLOAT bflt = (BINARY_FLOAT) _ors.getOracleObject(_col); value = df.format(new Float(bflt.stringValue())); break;
+			case Types.FLOAT:
+			case Types.DOUBLE:
+			case Types.DECIMAL:
+			case OracleTypes.NUMBER:
+				BigDecimal bd = (BigDecimal)_rSet.getObject(_col);
+                value = ( meta.getScale(_col)==0 ) ? bd.toBigInteger() : Double.valueOf(bd.doubleValue());
+				break;
+			case OracleTypes.TIMESTAMPTZ:  value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPTZ(_col); break;
+			case OracleTypes.TIMESTAMPLTZ: value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPLTZ(_col); break;
+			case OracleTypes.INTERVALYM:   value = ((oracle.jdbc.OracleResultSet)_rSet).getINTERVALYM(_col); break;
+			case OracleTypes.INTERVALDS:   value = ((oracle.jdbc.OracleResultSet)_rSet).getINTERVALDS(_col); break;
+			case Types.DATE:
+			case Types.TIMESTAMP:          value = (meta.getColumnTypeName(_col).equalsIgnoreCase("DATE")) ? _rSet.getDate(_col) : _rSet.getTimestamp(_col); break;
+			case Types.TIME:               value = _rSet.getTime(_col); break;
+
+			case OracleTypes.STRUCT:
+				//SpatialRenderer renderer = SpatialRenderer.getInstance();
+				if ( meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY)
+                  || meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE)
+                  || meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE)) {
+                  value = _rSet.getObject(_col);
+				  //value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col),_conn);
+				  // renderer.renderGeoObject(_ors.getOracleObject(_col), false);
+				}
+				break;
+
+			case Types.BLOB:
+			case OracleTypes.BFILE:
+			case OracleTypes.RAW:
+			default:
+				System.out.print(": Data Type Not Handled");
+				value = null;
+			}
+			
+		} catch (Exception e) {
+			System.out.println(e.toString());
+			value = null;
+		}
+		return value;
+	}
+
+	// #####################################################################################
+	
+  public static String convertToString(Connection             _conn,
                                        Object                 _object,
                                        OraRowSetMetaDataImpl  _meta) 
   {
@@ -224,7 +274,7 @@ System.out.println("convertToString(conn,obj,col) - " +
           //
           DecimalFormat df = Tools.getDecimalFormatter(dataTypeScale==0?-1:dataTypeScale, false);
           Reader in = null;
-          OracleConnection conn = (_conn == null) ? DatabaseConnections.getInstance().getAnyOpenConnection()  : _conn;
+          Connection conn = (_conn == null) ? DatabaseConnections.getInstance().getAnyOpenConnection()  : _conn;
           switch (columnType) 
           {
             case Types.ROWID       : return ((ROWID)_object).stringValue(); 
@@ -233,34 +283,8 @@ System.out.println("convertToString(conn,obj,col) - " +
             case OracleTypes.RAW   :
             case Types.BLOB        : return "";
     
-            case Types.NCLOB : in = ((NCLOB)_object).getCharacterStream(  );
-            try {
-                String nClob = "";
-                int length = (int)((NCLOB)_object).length();
-                char[] buffer = new char[1024];
-                while ((length = in.read(buffer)) != -1) {
-                    nClob += String.valueOf(buffer).substring(0,length);
-                }
-                in.close( ); 
-                in = null; 
-                return (nClob.length()<=1000?nClob:nClob.substring(0,1000)) + " ... ";
-             } catch (IOException e) {
-                return "";
-             }
-            case Types.CLOB  : in = ((CLOB)_object).getCharacterStream(  );
-              try {
-                  String sClob = "";
-                  int length = (int)((CLOB)_object).length();
-                  char[] buffer = new char[1024];
-                  while ((length = in.read(buffer)) != -1) {
-                      sClob += String.valueOf(buffer).substring(0,length);
-                  }
-                  in.close( ); 
-                  in = null; 
-                  return (sClob.length()<=1000?sClob:sClob.substring(0,1000)) + " ... ";
-               } catch (IOException e) {
-                  return "";
-               }
+			case Types.NCLOB       : return readNClob((NClob)_object);
+			case Types.CLOB        : return readClob((Clob)_object);
             case Types.NCHAR    : 
             case Types.CHAR     : CHAR ch = (CHAR)_object;
                                   return ch.getString(); 
@@ -336,14 +360,19 @@ System.out.println("convertToString(conn,obj,col) - " +
        }
     }
 
-    public static String convertToString(OracleConnection _conn,
-                                         String           _column,
-                                         Object           _object) 
+    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  
+    /* @ToDo: Remove or update to Connection
+     * 
+     */
+    public static String convertToString(Connection _conn,
+                                         String     _column,
+                                         Object     _object) 
     {
         if ( _object==null ) { return ""; }
         try 
         {
-            OracleConnection conn = (_conn == null) 
+            Connection conn = (_conn == null) 
                 ? DatabaseConnections.getInstance().getAnyOpenConnection() 
                 : _conn;
             if ( _object instanceof oracle.sql.NUMBER ) {
@@ -357,20 +386,8 @@ System.out.println("convertToString(conn,obj,col) - " +
                 return num.stringValue();
             } else if (_object instanceof oracle.sql.ROWID ) {
                 return ((ROWID)_object).stringValue();
-            } else if (_object instanceof oracle.sql.CLOB) { 
-                String sClob = "";
-                Reader in = ((CLOB)_object).getCharacterStream(  );
-                int length = (int)((CLOB)_object).length();
-                char[] buffer = new char[1024];
-                try {
-                    while ((length = in.read(buffer)) != -1) {
-                        sClob += String.valueOf(buffer).substring(0,length);
-                    }
-                } catch (IOException e) {
-                }
-                try {in.close( ); } catch (IOException e) {}
-                in = null; 
-                return (sClob.length()<=1000?sClob:sClob.substring(0,1000)) + " ... ";
+            } else if (_object instanceof Clob) { 
+                return readClob((Clob)_object);
             } else if (_object instanceof oracle.sql.CHAR) {
                 return ((CHAR)_object).stringValue();
             } else if (_object instanceof oracle.sql.DATE || _object instanceof Date ) {
@@ -470,14 +487,15 @@ System.out.println("convertToString(conn,obj,col) - " +
      * @return true if the column type is defined, otherwise false.
      */
     public static boolean isSupportedType(int    columnType,
-                                          String columnTypeName) {
+                                          String columnTypeName) 
+    {
             return (columnType == OracleTypes.ROWID ||
                     columnType == Types.CHAR      || columnType == Types.NCHAR ||  
                     columnType == Types.CLOB      || columnType == Types.NCLOB ||
                     columnType == Types.VARCHAR   || columnType == Types.NVARCHAR ||  
                     columnType == Types.SMALLINT  || columnType == Types.TINYINT ||
                     columnType == Types.INTEGER   || columnType == Types.BIGINT ||  
-                    columnType == Types.NUMERIC /* OracleTypes.NUMBER */ ||
+                    columnType == Types.NUMERIC   || /* OracleTypes.NUMBER is same as Type.NUMERIC */ 
                     columnType == Types.FLOAT     || columnType == OracleTypes.BINARY_FLOAT ||
                     columnType == Types.DOUBLE    || columnType == OracleTypes.BINARY_DOUBLE ||
                     columnType == Types.DATE      || columnType == Types.TIME      ||
@@ -600,4 +618,5 @@ System.out.println("convertToString(conn,obj,col) - " +
         return _default;
     }
     
+
 }

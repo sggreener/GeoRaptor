@@ -27,7 +27,7 @@ import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.locationtech.jts.algorithm.CGAlgorithms;
+import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
@@ -418,8 +418,7 @@ public class OraReader
           // test orientation of Ring to see if it is
           // an interior (hole) ring
           LinearRing ring = readLinearRing(oraGeom, i);
-          // TODO: use the coordSeq directly (requires new CGAlgorithms method)
-          boolean isHole = ! CGAlgorithms.isCCW(ring.getCoordinates());
+          boolean isHole = ! Orientation.isCCW(ring.getCoordinates());
           // if not a hole, exit
           if (! isHole)
             break;

@@ -2,8 +2,6 @@ package org.GeoRaptor.tools;
 
 import java.awt.geom.Point2D;
 
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
-
 
 /**
  * Support methods for SVSpatialLayer class
@@ -14,25 +12,6 @@ public class COGO {
      */
     protected String lineSeparator;
 
-    /**
-     * Reference to main class
-     */
-    protected SVSpatialLayer sPanel;
-
-    /**
-     * If we have HTML output, do we still writing coordinates.
-     */
-    protected boolean stillWriteHTMLtoOutput;
-
-    /**
-     * current length of HTML output
-     */
-    protected int currentOutputLengths;
-
-    public COGO(SVSpatialLayer _sPanel) {
-        this.sPanel = _sPanel;
-        this.lineSeparator = System.getProperty("line.separator");
-    }
 
     /**
      * @method computeAngle

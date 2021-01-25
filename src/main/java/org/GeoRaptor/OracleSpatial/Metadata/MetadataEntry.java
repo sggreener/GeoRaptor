@@ -2,9 +2,9 @@ package org.GeoRaptor.OracleSpatial.Metadata;
 
 import java.io.IOException;
 import java.io.StringReader;
-
+import java.sql.Array;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +18,6 @@ import javax.xml.xpath.XPathFactory;
 
 import oracle.spatial.geometry.JGeometry;
 
-import oracle.sql.ARRAY;
-import oracle.sql.Datum;
-import oracle.sql.STRUCT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
@@ -29,7 +25,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
-
+import org.locationtech.jts.io.oracle.OraUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -38,7 +34,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 
-@SuppressWarnings("deprecation")
 public class MetadataEntry 
 {    
 
@@ -64,7 +59,7 @@ public class MetadataEntry
 
     public MetadataEntry() {
         this(null,null,null,null);
-        this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+        this.setPreferences();
     }
 
     public MetadataEntry(String _schemaName, 
@@ -79,7 +74,7 @@ public class MetadataEntry
         this.orphan     = false;
         this.missing    = false;        
         this.rows       = new ArrayList<MetadataRow>(this.intialCapacity);
-        this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+        this.setPreferences();
     }
 
     public MetadataEntry(MetadataEntry _me) 
@@ -100,14 +95,14 @@ public class MetadataEntry
                        _me.getEntry(i).getTol()); 
           }
         }
-        this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+        this.setPreferences();
     }
 
     public MetadataEntry(Node _node) 
     {
         this(null,null,null,null); 
         this.fromXMLNode(_node);
-        this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+        this.setPreferences();
     }
 
     public MetadataEntry(String _XML) 
@@ -123,7 +118,7 @@ public class MetadataEntry
             doc = db.parse(new InputSource(new StringReader(_XML)));
             XPath xpath = XPathFactory.newInstance().newXPath();
             this.fromXMLNode((Node)xpath.evaluate("Metadata/MetadataEntry",doc,XPathConstants.NODE));
-            this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+            this.setPreferences();
         } catch (XPathExpressionException xe) {
             System.out.println("XPathExpressionException " + xe.toString());
         } catch (ParserConfigurationException pe) {
@@ -135,6 +130,15 @@ public class MetadataEntry
         }
       }
 
+    private void setPreferences() {
+        try {
+            this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+          }
+          catch (Exception e) {
+          	System.out.println("MetadataEntry failed to Set Main Settings");
+          }    	
+    }
+    
     private void fromXMLNode(Node _node) 
     {
       if ( _node == null || _node.getNodeName().equals("MetadataEntry")==false) {
@@ -171,8 +175,7 @@ public class MetadataEntry
         this.columnName = _columnName;
         this.setSRID(_SRID);
         this.orphan     = false;
-        this.missing    = false;        
-
+        this.missing    = false;
     }
 
     public boolean isNull() {
@@ -268,27 +271,34 @@ public class MetadataEntry
         this.rows.add(mr);
     }
 
-    public void add(ARRAY _dimArray)
+    public void add(Array _dimArray)
     throws SQLException
     {
         if ( _dimArray == null ) {
             return;
         }
-        ARRAY dimArray =  _dimArray;
-        if ( dimArray.getDescriptor().getSQLName().getName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
+        Array dimArray =  _dimArray;
+        Object[]  objs = (Object[])dimArray.getArray();
+        int   rowCount = objs.length;
+        if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) 
+             ||
+        	 ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) 
+               &&
+               rowCount > 1
+             )
+           )
         {
             String DIM_NAME = "";
             double SDO_LB   = Double.MAX_VALUE;
             double SDO_UB   = Double.MAX_VALUE;
             double SDO_TOL  = Double.MAX_VALUE;
-            Datum[]    objs = dimArray.getOracleArray();
-            for (int i =0; i < objs.length; i++) {
-                STRUCT dimElement = (STRUCT)objs[i];
-                Datum data[] = dimElement.getOracleAttributes();
-                DIM_NAME = data[0].stringValue();
-                SDO_LB   = data[1].doubleValue();
-                SDO_UB   = data[2].doubleValue();
-                SDO_TOL  = data[3].doubleValue();
+            for (int i =0; i < rowCount; i++) {
+                Struct dimElement = (Struct)objs[i];
+                Object data[] = (Object[])dimElement.getAttributes();
+                DIM_NAME = (String)data[0];
+                SDO_LB   = OraUtil.toDouble(data[1],Double.NaN);
+                SDO_UB   = OraUtil.toDouble(data[2],Double.NaN);
+                SDO_TOL  = OraUtil.toDouble(data[3],Double.NaN);
                 MetadataRow mr = new MetadataRow(DIM_NAME,SDO_LB,SDO_UB,SDO_TOL);
                 this.rows.add(mr);
             }
@@ -453,19 +463,42 @@ public class MetadataEntry
         }
         MetadataRow mrX = this.rows.get(0);
         MetadataRow mrY = this.rows.get(1);
-        String sdo_gtype = "2003";
         MetadataRow mrZ = null;
+        MetadataRow mrM = null;
+        String sdo_gtype = "2003";
         if ( this.rows.size() > 2 ) {
-            mrZ = this.rows.get(2);
-            sdo_gtype = "3003";
+        	if ( this.rows.get(2).getDimName().equalsIgnoreCase("Z") ) {
+        		mrZ = this.rows.get(2);
+                sdo_gtype = "3003";
+        	} else {
+        		mrM = this.rows.get(2);
+                sdo_gtype = "3303";
+        	}
+        } 
+        if ( this.rows.size() > 3 ) {
+          mrM = this.rows.get(3);
+          sdo_gtype = "4403";
         }
-        LOGGER.debug("MetadataEntry.toSdoGeometry(): sdo_gtype="+sdo_gtype+" getSRID="+this.getSRID());
-        return "SDO_GEOMETRY(" + 
+//      LOGGER.debug("MetadataEntry.toSdoGeometry(): sdo_gtype="+sdo_gtype+" getSRID="+this.getSRID());
+        String sdoGeometry = (this.geoRaptorPreferences.getPrefixWithMDSYS() ? Constants.TAG_MDSYS_SDO_GEOMETRY : Constants.TAG_SDO_GEOMETRY) +
                              sdo_gtype + "," +
-                             this.getSRID() + ",NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(" +
-                             mrX.getSdoLB() + "," + mrY.getSdoLB() + (mrZ==null ? "": ","+mrZ.getSdoLB()) + "," +
-                             mrX.getSdoUB() + "," + mrY.getSdoUB() + (mrZ==null ? "": ","+mrZ.getSdoUB()) +
-                             "))";
+                             this.getSRID() + 
+                             ",NULL," +
+                             (this.geoRaptorPreferences.getPrefixWithMDSYS() ? Constants.TAG_MDSYS_SDO_ELEM_ARRAY : Constants.TAG_SDO_ELEM_ARRAY) +
+                             "(1,1003,3)," +
+                             (this.geoRaptorPreferences.getPrefixWithMDSYS() ? Constants.TAG_MDSYS_SDO_ORD_ARRAY : Constants.TAG_SDO_ORD_ARRAY) +
+                             "("; 
+        if ( this.rows.size() == 2 ) {
+          sdoGeometry += mrX.getSdoLB() + "," + mrY.getSdoLB() + "," + 
+                         mrX.getSdoUB() + "," + mrY.getSdoUB() + "))";
+        } else if (this.rows.size() == 3 ) {
+          sdoGeometry += mrX.getSdoLB() + "," + mrY.getSdoLB() + "," + mrZ.getSdoLB() + "," + 
+                         mrX.getSdoUB() + "," + mrY.getSdoUB() + "," + mrZ.getSdoUB() + "))";
+        } if ( this.rows.size() == 4 ) { 
+          sdoGeometry += mrX.getSdoLB() + "," + mrY.getSdoLB() + "," + mrZ.getSdoLB() + "," + mrM.getSdoLB() + "," + 
+                         mrX.getSdoUB() + "," + mrY.getSdoUB() + "," + mrZ.getSdoUB() + "," + mrM.getSdoUB() + "))";
+        }
+        return sdoGeometry;
     }
 
     public String toString() 

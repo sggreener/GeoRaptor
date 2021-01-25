@@ -9,10 +9,10 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
-
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -30,22 +30,20 @@ import oracle.spatial.util.GML3;
 import oracle.spatial.util.KML2;
 import oracle.spatial.util.WKT;
 
-import oracle.sql.ARRAY;
-import oracle.sql.STRUCT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.io.oracle.OraUtil;
 
 
-@SuppressWarnings("deprecation")
 public class SpatialRenderer 
   implements ICellRenderer {
 
@@ -147,12 +145,12 @@ public class SpatialRenderer
         Dimension imageSize = new Dimension(table.getRowHeight(),table.getRowHeight());
         try {
             String sqlTypeName = "";
-            if ( value instanceof STRUCT ) {
-                sqlTypeName = ((STRUCT)value).getSQLTypeName();
+            if ( value instanceof Struct ) {
+                sqlTypeName = ((Struct)value).getSQLTypeName();
                 if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ||
                      sqlTypeName.equals(Constants.TAG_MDSYS_SDO_GEOMETRY) ) 
                 {
-                    retLabel = this.getSdoRenderLabel((STRUCT)value,true,imageSize);
+                    retLabel = this.getSdoRenderLabel((Struct)value,true,imageSize);
                     // Because getSdoRenderLabel returns new JLabel
                     retLabel.setOpaque(true);
                     retLabel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
@@ -171,7 +169,7 @@ public class SpatialRenderer
         return retLabel;
     }
 
-    public JLabel getSdoRenderLabel(STRUCT    _geoStruct,
+    public JLabel getSdoRenderLabel(Struct    _geoStruct,
                                     boolean   _colourText,
                                     Dimension _imageSize )
     { 
@@ -214,16 +212,17 @@ public class SpatialRenderer
         return RenderTool.htmlWrap(_html);
     }
     
-    public JLabel getPreview(STRUCT    _geoStruct, 
+    public JLabel getPreview(Struct    _geoStruct, 
                              Dimension _imageSize)
     {
         if ( _geoStruct == null ) return new JLabel(Constants.NULL);
         String sqlTypeName = "";
         try { sqlTypeName = _geoStruct.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("getPreview: Failed to get sqlTypeName of Struct");  return new JLabel(Constants.NULL);}
-        STRUCT stGeom = ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
+        Struct stGeom = ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) 
+                        ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
                         : _geoStruct;
         JGeometry geom = null;
-        try { geom = JGeometry.load(stGeom); } catch (SQLException e) { geom = null; }
+        try { geom = JGeometry.loadJS(stGeom); } catch (SQLException e) { geom = null; }
         if ( geom == null ) {
             LOGGER.error("Failed to get convert STRUCT to JGeometry");
             return new JLabel(this.renderGeoObject(stGeom,true));
@@ -232,7 +231,7 @@ public class SpatialRenderer
     }
 
     public JLabel getPreview(JGeometry _geom, 
-                               Dimension _imageSize)
+                             Dimension _imageSize)
     {
         return getPreview(_geom,null,_imageSize);
     }
@@ -272,7 +271,7 @@ public class SpatialRenderer
         }
         
         JLabel retLabel = new JLabel();
-        Envelope mbr = SDO_GEOMETRY.getGeoMBR(geoSet);
+        Envelope mbr = JGeom.getGeoMBR(geoSet);
         if (mbr == null) {
             LOGGER.error("Failed to get geometry(s) MBR");
             return retLabel;
@@ -409,7 +408,7 @@ public class SpatialRenderer
         return retLabel;
     }
   
-    public JLabel getIcon(STRUCT    _geoStruct, 
+    public JLabel getIcon(Struct    _geoStruct, 
                           Dimension _imageSize)
     {
         JLabel retLabel = new JLabel();
@@ -417,13 +416,13 @@ public class SpatialRenderer
         if ( _geoStruct==null ) {
             return retLabel;
         }
-        STRUCT _gStruct = _geoStruct;
+        Struct _gStruct = _geoStruct;
         Constants.GEOMETRY_TYPES geomType = Constants.GEOMETRY_TYPES.UNKNOWN;
         int gtype = -1; 
         try {
             String sqlTypeName = _gStruct.getSQLTypeName();
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                STRUCT stGeom = SDO_GEOMETRY.getSdoFromST(_gStruct);
+                Struct stGeom = SDO_GEOMETRY.getSdoFromST(_gStruct);
                 gtype = SDO_GEOMETRY.getGType(stGeom,-1);
             } else if ( sqlTypeName.equals(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
                 gtype = SDO_GEOMETRY.getGType(_gStruct,-1);
@@ -493,8 +492,8 @@ public class SpatialRenderer
         {
             // is this really geometry / vertex type column?
               boolean colourSDOGeomElems = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
-              if ( _value instanceof oracle.sql.STRUCT ) {
-                STRUCT stValue = (STRUCT)_value;
+              if ( _value instanceof java.sql.Struct) {
+                Struct stValue = (Struct)_value;
                 sqlTypeName = stValue.getSQLTypeName();
                 if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                     clipText =  this.renderSdoGeometry(stValue,colourSDOGeomElems);
@@ -503,26 +502,26 @@ public class SpatialRenderer
                 } else if ( sqlTypeName.equals(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
                     clipText = RenderTool.renderVertexType(stValue,colourSDOGeomElems);
                 } else if ( sqlTypeName.equals(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
-                    clipText = RenderTool.renderSdoPoint(SDO_GEOMETRY.asDoubleArray(stValue,Double.NaN),
+                    clipText = RenderTool.renderSdoPoint(OraUtil.toDoubleArray(stValue,Double.NaN),
                                                          colourSDOGeomElems,
                                                          colourSDOGeomElems,
                                                          Constants.MAX_PRECISION);
                 }
-            } else if (_value instanceof oracle.sql.ARRAY) {
-                ARRAY aryValue = (ARRAY)_value;
-                sqlTypeName =  aryValue.getSQLTypeName();
+            } else if (_value instanceof java.sql.Array) {
+                Array aryValue = (Array)_value;
+                sqlTypeName =  aryValue.getBaseTypeName();
                 if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_DIMARRAY)) {
                     clipText = RenderTool.renderDimArray(aryValue,
                                                          _allowColouring 
                                                          ? this.GeoRaptorPrefs.isColourDimInfo() 
                                                          : false);
                 } else if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_ELEM_ARRAY)) {
-                    clipText = RenderTool.renderElemInfoArray(SDO_GEOMETRY.asIntArray(aryValue,Integer.MIN_VALUE),
+                    clipText = RenderTool.renderElemInfoArray(OraUtil.toIntArray(aryValue,Integer.MIN_VALUE),
                                                               colourSDOGeomElems,
                                                               colourSDOGeomElems, /* wrap with HTML */
                                                               this.GeoRaptorPrefs.getSdoGeometryBracketType());
                 } else if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_ORD_ARRAY)) {
-                    clipText = RenderTool.renderSdoOrdinates(SDO_GEOMETRY.asDoubleArray(aryValue,Double.NaN),
+                    clipText = RenderTool.renderSdoOrdinates(OraUtil.toDoubleArray(aryValue,Double.NaN),
                                                              colourSDOGeomElems,
                                                              colourSDOGeomElems, /* wrap with HTML */
                                                              0,  /* We don't know its dimensionality to let function know to simply render the ordinates as is */
@@ -548,7 +547,7 @@ public class SpatialRenderer
      * @method @method
      * @history @history
      */
-    public String renderSdoGeometry(STRUCT  _colValue, 
+    public String renderSdoGeometry(Struct  _colValue, 
                                     boolean _allowColouring) 
     {
         String clipText = "";
@@ -557,9 +556,9 @@ public class SpatialRenderer
         }
         String sqlTypeName;
         try { sqlTypeName = _colValue.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("renderSdoGeometry: Failed to get sqlTypeName of Struct:\n"+e.toString()); return ""; }
-        STRUCT stValue = _colValue;
+        Struct stValue = _colValue;
         
-        boolean colourSDOGeomElems                  = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
+        boolean colourSDOGeomElems = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
 
         Constants.geometrySourceType geomSourceType = this.GeoRaptorPrefs.isSdoGeometryProcessingFormat()
                                                       ? Constants.geometrySourceType.SDO_GEOMETRY
@@ -568,9 +567,9 @@ public class SpatialRenderer
         if (  geomSourceType == Constants.geometrySourceType.JGEOMETRY ) {
             try {
                 if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                   jGeo = JGeometry.load(SDO_GEOMETRY.getSdoFromST(_colValue));
+                   jGeo = JGeometry.loadJS(SDO_GEOMETRY.getSdoFromST(_colValue));
                 } else {
-                   jGeo = JGeometry.load(stValue);
+                   jGeo = JGeometry.loadJS(stValue);
                 }
             } catch (SQLException e) {
                 // Since we want to render even bad geometries, switch to STRUCT based processing.
@@ -613,7 +612,7 @@ public class SpatialRenderer
             case SDO_GEOMETRY:
                 if ( colourSDOGeomElems  ) {
                     clipText = ( geomSourceType == Constants.geometrySourceType.SDO_GEOMETRY )
-                               ? RenderTool.renderSTRUCTAsHTML(stValue,
+                               ? RenderTool.renderStructAsHTML(stValue,
                                                                this.GeoRaptorPrefs.getSdoGeometryBracketType(),
                                                                this.GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
                                                                Constants.MAX_PRECISION)
@@ -624,7 +623,7 @@ public class SpatialRenderer
                                                                  Constants.MAX_PRECISION);
                   } else {
                     clipText = ( geomSourceType == Constants.geometrySourceType.SDO_GEOMETRY )
-                             ? RenderTool.renderSTRUCTAsPlainText(stValue,this.GeoRaptorPrefs.getSdoGeometryBracketType(),Constants.MAX_PRECISION)
+                             ? RenderTool.renderStructAsPlainText(stValue,this.GeoRaptorPrefs.getSdoGeometryBracketType(),Constants.MAX_PRECISION)
                              : RenderTool.renderGeometryAsPlainText(jGeo, sqlTypeName, this.GeoRaptorPrefs.getSdoGeometryBracketType(),Constants.MAX_PRECISION);
                   }
                   break;
@@ -635,7 +634,7 @@ public class SpatialRenderer
                 if ( visualFormat == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(stValue) ) {
                     visualFormat = Constants.renderType.WKT;
                     WKT w = new WKT();
-                    clipText = new String(w.fromSTRUCT(stValue));
+                    clipText = new String(w.fromStruct(stValue));
                 } else {
                     switch (visualFormat) {
                     case KML2 : KML2.setConnection(this.dbConnection);
@@ -660,12 +659,12 @@ public class SpatialRenderer
               {
                   if ( colourSDOGeomElems ) 
                   { 
-                      clipText = RenderTool.renderSTRUCTAsHTML(stValue,
+                      clipText = RenderTool.renderStructAsHTML(stValue,
                                                                GeoRaptorPrefs.getSdoGeometryBracketType(),
                                                                GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
                                                                Constants.MAX_PRECISION);
                   } else {
-                      clipText = RenderTool.renderSTRUCTAsPlainText(stValue,
+                      clipText = RenderTool.renderStructAsPlainText(stValue,
                                                                     this.GeoRaptorPrefs.getSdoGeometryBracketType(),
                                                                     Constants.MAX_PRECISION);
                   }

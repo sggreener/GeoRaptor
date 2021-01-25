@@ -89,7 +89,7 @@ public class MultiPointHandler implements ShapeHandler {
   
   private Object createNull() {
     Coordinate[] c = null;
-    return geometryFactory.createMultiPoint(c);
+    return geometryFactory.createMultiPointFromCoords(c);
   }
   
   public Object read(ByteBuffer buffer, ShapeType type) {
@@ -117,7 +117,7 @@ public class MultiPointHandler implements ShapeHandler {
       }
     }
     
-    return geometryFactory.createMultiPoint(coords);
+    return geometryFactory.createMultiPointFromCoords(coords);
   }
   
   public void write(ByteBuffer buffer, Object geometry) {
