@@ -168,7 +168,7 @@
 				<site idref="db_nav" />
 				<menu>
 					<section xmlns="http://jcp.org/jsr/198/extension-manifest"
-						id="CONTEXT_MENU_SECTION_ID" weight="0.1">
+						id="CONTEXT_MENU_SECTION_ID" weight="10.0f">
 						<menu id="CONTEXT_SUBMENU_ID" weight="2.0f">
 							<label>GeoRaptor</label>
 							<section id="CONTEXT_SUBMENU_SECTION_ID" weight="10.0f">
