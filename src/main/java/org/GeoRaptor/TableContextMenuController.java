@@ -6,15 +6,13 @@ import java.sql.SQLException;
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
-import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.tools.Strings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;
@@ -73,6 +71,7 @@ public class TableContextMenuController implements Controller
         String selectedSchemaName = dbo.getSchemaName();
         String selectedObjectName = dbo.getObjectName();
         String selectedColumnName = dbo.getChildName();
+        String selectedObjectType = dbo.getObjectFolderType(); // SGG
         
 		int cmdId = action.getCommandId();
 		
@@ -83,14 +82,14 @@ public class TableContextMenuController implements Controller
                 JOptionPane.showMessageDialog(null, "MySQL support not yet Implemented");
             } else {
 
-			  show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
+			  //show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
               // Add Object to spatial view
-              SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+			  SpatialViewPanel svp = SpatialViewPanel.getInstance();
               SpatialViewPanel.LayerReturnCode lrc;
               lrc = svp.addNewSpatialLayer(selectedSchemaName,
                                            selectedObjectName,
                                            selectedColumnName,
-                                           dbo.getObjectFolderType(),
+                                           selectedObjectType,
                                            activeConnectionName,
                                            conn,
                                            (cmdId == ADD_TO_MAP)?false:true);
@@ -107,8 +106,9 @@ public class TableContextMenuController implements Controller
                            connectionUserName);
               } else if ( lrc == SpatialViewPanel.LayerReturnCode.Success ) {
                 // show Spatial View (maybe window is not open)
-                ControlerSV.showSpatialView();
-                svp.redraw();  // Because we are opening the window again, force a redraw
+                svp.show();
+              } else if ( lrc == SpatialViewPanel.LayerReturnCode.Fail ) {           	  
+                show("SpatialViewPanel jfailed to load");
               }
             }
             
@@ -138,7 +138,7 @@ public class TableContextMenuController implements Controller
 			
 		}else if (cmdId == MANAGE_METADATA) {
 			
-			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
+			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             Metadata(conn, 
                     selectedSchemaName,
                     selectedObjectName,
@@ -147,7 +147,7 @@ public class TableContextMenuController implements Controller
             
 		}else if (cmdId == DROP_METADATA) {
 			
-			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
+			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             ManageSpatialIndex.getInstance().dropIndex(conn, 
                     selectedSchemaName, 
                     selectedObjectName, 
@@ -157,7 +157,7 @@ public class TableContextMenuController implements Controller
 			
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
 			
-			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
+			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             String title = GENERAL_ERROR;
             int message = JOptionPane.ERROR_MESSAGE;
             try 
@@ -190,8 +190,8 @@ public class TableContextMenuController implements Controller
 
 		} else if (cmdId == VALIDATE_GEOMETRY || cmdId == VALIDATE_COLUMN) {
 			
-//			ValidateSDOGeometryEmpty vs = new ValidateSDOGeometryEmpty();
-//			vs.setVisible(true);
+			ValidateSDOGeometry vs = new ValidateSDOGeometry();
+			vs.setVisible(true);
 			
 			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
 		

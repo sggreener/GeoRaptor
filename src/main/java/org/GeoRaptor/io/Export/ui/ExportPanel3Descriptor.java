@@ -31,8 +31,6 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.wizard.WizardPanelDescriptor;
 import org.geotools.util.logging.Logger;
 
-import oracle.jdbc.OracleConnection;
-
 
 public class ExportPanel3Descriptor 
      extends WizardPanelDescriptor 
@@ -156,7 +154,7 @@ public class ExportPanel3Descriptor
         // Allows user to select SRID from SRIDPanel class
         String srid = String.valueOf(this.ePanel3.getSRID());
         SRIDPanel sp = SRIDPanel.getInstance();
-        boolean status = sp.initialise((OracleConnection)this.conn,srid);
+        boolean status = sp.initialise(this.conn,srid);
         if (status == true) {
             sp.setLocationRelativeTo(this.ePanel3);
             sp.setVisible(true);

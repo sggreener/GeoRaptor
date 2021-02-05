@@ -153,6 +153,15 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.snippet.jar</systemPath>
 		</dependency>
+		
+		<dependency>
+			<groupId>oracle</groupId>
+			<artifactId>dbtools.common.ddl.DDLFormatConfig</artifactId>
+			<version>12.2.0</version>
+			<scope>system</scope>
+			<systemPath>${sqldev.basedir}/sqldeveloper/lib/dbtools-data.jar</systemPath>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.locationtech.jts</groupId>
 			<artifactId>jts-core</artifactId>
@@ -246,7 +255,7 @@
 						<configuration>
 							<urls>
 								<url>
-									file:///${project.basedir}/src/main/resources/org/GeoRaptor/Resources.properties
+									file:///${project.basedir}/src/main/resources/org/GeoRaptor/Project.properties
 								</url>
 							</urls>
 						</configuration>
@@ -400,7 +409,9 @@
 						<Embed-Directory>lib</Embed-Directory>
 						<Embed-Transitive>true</Embed-Transitive>
 						<Embed-Dependency>sdoapi|sdoutl;scope=system,*;scope=compile|runtime</Embed-Dependency>
+						<!-- 
 						<_removeheaders>Ignore-Package,Include-Resource,Private-Package,Embed-Dependency,*_ICON,*_LABEL,*_TITLE</_removeheaders>
+						-->
 					</instructions>
 				</configuration>
 			</plugin>
@@ -493,8 +504,8 @@
 		</license>
 	</licenses>
 	<organization>
-		<name>GeoRaptor Development Team at SourceForge</name>
-		<url>>http://georaptor.sourceforge.net</url>
+		<name>GeoRaptor Development Team</name>
+		<url>>https://github.com/sggreener/GeoRaptor</url>
 	</organization>
 	<developers>
 		<developer>

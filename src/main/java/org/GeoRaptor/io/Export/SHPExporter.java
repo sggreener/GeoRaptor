@@ -23,7 +23,6 @@ import org.GeoRaptor.Messages;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.GeometryProperties;
@@ -275,10 +274,10 @@ public class SHPExporter implements IExporter {
             }
             // Create required sdo_geometry to shape conversion functions
             //
-            SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
-            SpatialView sView = svp.getActiveView();
-            this.geomFactory   = new GeometryFactory(new PrecisionModel(sView.getPrecision(false)));
-            this.geomConverter = new OraReader(this.geomFactory);
+            SpatialViewPanel svp = SpatialViewPanel.getInstance();
+            SpatialView    sView = svp.getActiveView();
+            this.geomFactory     = new GeometryFactory(new PrecisionModel(sView.getPrecision(false)));
+            this.geomConverter   = new OraReader(this.geomFactory);
 
             if (Strings.isEmpty(SHPFilename) ) {
                 throw new Exception("Shape filename not set");

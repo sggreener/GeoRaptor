@@ -1,23 +1,17 @@
 package org.GeoRaptor.sql;
 
 import java.io.UnsupportedEncodingException;
-
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import java.util.Properties;
 
-import oracle.dbtools.raptor.utils.Connections;
-
-import oracle.javatools.db.DBException;
-
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
+
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.javatools.db.DBException;
 
 public class DatabaseConnection {
 

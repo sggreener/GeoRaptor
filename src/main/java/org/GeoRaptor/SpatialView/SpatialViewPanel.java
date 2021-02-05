@@ -44,6 +44,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -65,12 +66,12 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.GeoRaptor.AboutDialog;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
-import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.MyImageSelection;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
@@ -111,9 +112,6 @@ extends JPanel
 
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.SpatialViewPanel");
 
-    @SuppressWarnings("unused")
-	private ClassLoader cl = null;
-
     /** 
      * Handle to Preferences File 
      **/
@@ -133,13 +131,16 @@ extends JPanel
      */
     protected SelectionView         attDataView;
     protected ViewOperationListener voListener;
+    protected JFrame                viewFrame;
 
     /**
      * When loading from XML we don't want the maps to be refreshed changing their MBRs
      * 
      */
     protected boolean loading = false;
-    
+
+	protected static SpatialViewPanel classInstance;
+
     /** 
      * The Active View
      **/
@@ -177,13 +178,21 @@ extends JPanel
     private String    STATUS_RECTANGLE_CIRCLE_START = null;
     private JLabel                         lblScale = new JLabel();
 
+	/**
+	 * Get instance of SpatialViewPanel class
+	 */
+	public static SpatialViewPanel getInstance() {
+		if (SpatialViewPanel.classInstance == null) {
+			SpatialViewPanel.classInstance = new SpatialViewPanel();
+		}
+		return SpatialViewPanel.classInstance;
+	}
+
     public SpatialViewPanel() 
     {
         super();
         try 
         {
-            this.cl = this.getClass().getClassLoader();
-
             // Get handle to preferences
             //
             this.SVPanelPreferences = MainSettings.getInstance().getPreferences();
@@ -258,6 +267,7 @@ extends JPanel
             // progress console is on false at startup
             setProgressBar(false, null, -1, -1);
       
+            SpatialViewPanel.classInstance = this;
         } catch (NullPointerException npe) {
             System.out.println("Caught Null Pointer Exception in SpatialViewPanel()");
             npe.printStackTrace();
@@ -267,6 +277,19 @@ extends JPanel
         this.viewLayerTree.expandAll();
     }
 
+    public void show()
+    {
+    	if ( this.viewFrame == null ) {
+    		this.viewFrame = new JFrame(Constants.GEORAPTOR);
+    		this.viewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    		this.viewFrame.setSize(400, 300);
+    	}
+        this.viewFrame.setVisible(true);
+        this.viewFrame.add(this);
+        this.viewFrame.pack();
+        this.viewFrame.setVisible(true);
+    	this.redraw(); 
+    }
     /** 
      * Icons
      */
@@ -942,7 +965,7 @@ extends JPanel
     private void copyImageButton() {
         // copy image to clipboard
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        MyImageSelection myI = new MyImageSelection(activeView.getMapPanel().getBiImage());
+        MyImageSelection myI = new MyImageSelection(this.activeView.getMapPanel().getBiImage());
         clipboard.setContents(myI, myI);
         this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
     }
@@ -971,7 +994,6 @@ extends JPanel
 
     protected void btnQueryByPoint() 
     {
-LOGGER.debug("btnQueryByPoint: start");
         if (this.voListener.getSpatialViewOpr() == ViewOperationListener.VIEW_OPERATION.QUERY) {
             this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
             // clean copy of background image
@@ -982,7 +1004,6 @@ LOGGER.debug("btnQueryByPoint: start");
             // Not needed now Query mouse is tracked with circle
             // this.activeView.getMapPanel().createBufferImage();
         } 
-LOGGER.debug("btnQueryByPoint: finish");
     }
 
     public void createMeasureCombo(ViewOperationListener.VIEW_OPERATION _measureOperation) 
@@ -1013,7 +1034,8 @@ LOGGER.debug("btnQueryByPoint: finish");
     }
 
     protected void btnShowAbout() {
-        ControlerSV.showAboutBox();        
+        AboutDialog ad = new AboutDialog(null,true);
+        ad.setVisible(true);
     }
 
     /** ----------------------------------------------------------------
@@ -1092,8 +1114,11 @@ LOGGER.debug("btnQueryByPoint: finish");
         } else {
             this.lblMessages.setForeground(Color.BLACK);
         }
+        if ( this.activeView == null )
+        	this.activeView = this.viewLayerTree.getActiveView();
+        String viewName = this.activeView.getViewName();
         this.lblMessages.setText(Strings.isEmpty(_message) 
-                                 ? this.activeView.getViewName() 
+                                 ? viewName 
                                  : _message);
     }
     
@@ -1333,7 +1358,6 @@ LOGGER.debug("btnQueryByPoint: finish");
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                      mEntry.getObjectName(), 
                                                      mEntry.getColumnName());
-System.out.println(mEntry.toString());
         LOGGER.info("layerName from mEntry is " + layerName);
 
         // layer gtype discovery
@@ -1348,7 +1372,6 @@ System.out.println(mEntry.toString());
                                                                   mEntry.getColumnName(),
                                                                   0, /* samplePercentage */
                                                                   1  /* sampleRows */ );
-System.out.println(layerGeometryType);
             if (Strings.isEmpty(layerGeometryType)) {
                 LOGGER.error("getLayerGeometryType for " + layerName + " returned null");
             }
@@ -1362,9 +1385,6 @@ System.out.println(layerGeometryType);
         // We have enough information to create a valid layer
         // Need to construct using _objectType ????
         //
-System.out.println(this.activeView == null ? "activeView is null":this.activeView.toString());
-System.out.println(layerName);
-
         SVSpatialLayer layer = new SVSpatialLayer(this.activeView,  // Use activeView temporarily
                                                   layerName, 
                                                   SVPanelPreferences.isSchemaPrefix()
@@ -1966,7 +1986,6 @@ System.out.println(layerName);
         if ( propertiesLayer.getConnection()==null ) {
             propertiesLayer.setConnection(mappingView.getConnectionName());
         }
-LOGGER.debug("propertiesLayer = " + (propertiesLayer!=null?propertiesLayer.getLayerName():"null"));
 
         // Temporary layer with only those layer properties so that our changed 
         // rendering (se selection) won't affect original layer
@@ -2056,7 +2075,6 @@ LOGGER.debug("propertiesLayer = " + (propertiesLayer!=null?propertiesLayer.getLa
         if ( zoom ) {
             // Redraw all layers in view then draw geometries
             mappingView.setMBR(mbr);
-LOGGER.debug("setMBR - is world2Screen? " + (mappingView.getMapPanel().getWorldToScreenTransform()==null?"null":"ok"));
             mappingView.getMapPanel().getAfterLayerDrawList().add(shadeAfterClass);
             mappingView.getMapPanel().setRedrawBIOnly(MapPanel.REDRAW_BI.IMAGE_SIZE_CHANGE);
             mappingView.getMapPanel().refreshAll();

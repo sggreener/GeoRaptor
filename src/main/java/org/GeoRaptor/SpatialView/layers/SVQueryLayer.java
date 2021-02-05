@@ -537,9 +537,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                                           rowID = ((OracleResultSet)ors).getROWID(col).stringValue(); 
                                           value = rowID;
                                       } else {
-                                          value = SQLConversionTools.convertToString((OracleConnection)this.getConnection(), 
-                                        		                                     (OracleResultSet)ors, 
-                                        		                                     col);
+                                          value = SQLConversionTools.convertToString(this.getConnection(),ors,col);                                          
                                           if (value == null)
                                               value = "NULL";
                                       }

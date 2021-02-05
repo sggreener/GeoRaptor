@@ -12,7 +12,6 @@ import java.util.StringTokenizer;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.geotools.data.shapefile.shp.ShapeType;
@@ -21,6 +20,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
@@ -932,5 +932,24 @@ public class SDO_GEOMETRY
     	return null;
     }
 
-  
+    public static Struct toSdoGeometry(Connection _conn,
+    		                           int        _SDO_GTYPE,
+    		                           int        _SDO_SRID,
+    		                           double[]   _SDO_POINT,
+    		                           int[]      _SDO_ELEM_INFO_ARRAY,
+                                       double[]   _SDO_ORDINATE_ARRAY)
+    throws SQLException
+    {
+    	Object sdoGeometryComponents[] = new Object[] { 
+                _SDO_GTYPE, 
+                _SDO_SRID, 
+                _SDO_POINT, 
+                _SDO_ELEM_INFO_ARRAY,
+                _SDO_ORDINATE_ARRAY
+                };
+        return OraUtil.toStruct(sdoGeometryComponents, OraGeom.TYPE_GEOMETRY, _conn);
+    }
+    
+
+
 }

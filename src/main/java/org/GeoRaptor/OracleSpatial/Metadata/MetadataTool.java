@@ -18,9 +18,9 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;

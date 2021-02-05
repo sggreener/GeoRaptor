@@ -44,11 +44,13 @@ public class ExporterWizard {
                                                  _schemaName,
                                                  _objectName,
                                                  geometryColumn);
-        this.exporterWriter.setAttributeColumns(MetadataTool.getColumnsAndTypes(this.exporterWriter.getConn(),
+        this.exporterWriter.setAttributeColumns(MetadataTool.getColumnsAndTypes(
+                                                  _conn,
                                                   this.exporterWriter.getSchemaName(),
                                                   this.exporterWriter.getObjectName(),
                                                   true,
-                                                  true));
+                                                  true)
+                                                );
     }
     
     public String checkGeometryColumn(Connection _conn,

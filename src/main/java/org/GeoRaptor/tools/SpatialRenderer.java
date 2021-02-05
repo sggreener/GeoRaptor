@@ -1,4 +1,4 @@
-package org.GeoRaptor.SpatialView.JDevInt;
+package org.GeoRaptor.tools;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -36,10 +36,6 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnections;
-import org.GeoRaptor.tools.JGeom;
-import org.GeoRaptor.tools.SDO_GEOMETRY;
-import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
 import org.locationtech.jts.io.oracle.OraUtil;
 

@@ -1466,7 +1466,7 @@ System.out.println("In ManageSpatialIndex.getInstance()");
 			// Test what we have been given
 			// Should get back same as what we supply ... except if NULL
 			//
-//			getColumnValue = MetadataTool.getGeometryColumn(_conn, _schemaName, _tableName, _columnName);
+			getColumnValue = MetadataTool.getGeometryColumn(_conn, _schemaName, _tableName, _columnName);
 			if (Strings.isEmpty(getColumnValue)) {
 				// There is no geometry column in this table
 				//

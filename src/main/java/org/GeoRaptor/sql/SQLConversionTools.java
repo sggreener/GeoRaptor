@@ -20,8 +20,8 @@ import java.text.DecimalFormat;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;

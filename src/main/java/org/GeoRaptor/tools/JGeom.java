@@ -2,6 +2,7 @@ package org.GeoRaptor.tools;
 
 import java.awt.geom.Point2D;
 import java.sql.Array;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.Iterator;
@@ -9,6 +10,7 @@ import java.util.List;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.spatial.geometry.JGeometry;
@@ -28,8 +30,50 @@ public class JGeom {
                (_jGeom.getLRMDimension() * 100) + 
                 _jGeom.getType();
     }
+
+    public static Struct fromGeometry(JGeometry _geom, 
+                                     Connection _conn) 
+    throws Exception 
+    {
+    	java.lang.Object[] descriptors;
+        descriptors = JGeometry.getOracleDescriptorsStr(); 
+        return JGeometry.storeJS(_geom,_conn,descriptors);
+/*
+    	return JGeometry.storeJS(_conn,_geom);
+        int SDO_GTYPE = 0;
+        try {
+        	SDO_GTYPE = ((_geom.getDimensions() * 1000) + 
+                     ((_geom.isLRSGeometry() && _geom.getDimensions()==3) ? 300 
+                   : ((_geom.isLRSGeometry() && _geom.getDimensions()==4) ? 400
+                   : 0)) + _geom.getType());
+        } catch (Exception e) {
+        	SDO_GTYPE = 0;
+        }
+        int SDO_SRID                = Constants.SRID_NULL; try { SDO_SRID  = _geom.getSRID(); } catch (Exception e) { SDO_SRID = Constants.SRID_NULL; }
+        double[] SDO_POINT          = null;                try { SDO_POINT = _geom.getLabelPointXYZ()==null? _geom.getPoint() : _geom.getLabelPointXYZ(); } catch (Exception e) { }
+        int[] SDO_ELEM_INFO_ARRAY   = null;                try { SDO_ELEM_INFO_ARRAY = _geom.getElemInfo();       } catch (Exception e) { }
+        double[] SDO_ORDINATE_ARRAY = null;                try { SDO_ORDINATE_ARRAY  = _geom.getOrdinatesArray(); } catch (Exception e) { }
+        return SDO_GEOMETRY.toSdoGeometry (
+        		  _conn,
+        		  SDO_GTYPE,
+                  SDO_SRID,
+                  SDO_POINT,
+                  SDO_ELEM_INFO_ARRAY,
+                  SDO_ORDINATE_ARRAY);
+*/
+    }
+
+	public static JGeometry fromEnvelope(Envelope _mbr,
+                                         int      _sourceSRID)    
+    {
+    	int srid = _sourceSRID == Constants.SRID_NULL ? 0 : _sourceSRID; 
+    	JGeometry jGeom = new JGeometry(_mbr.getMinX(),_mbr.getMinY(),
+    									_mbr.getMaxX(),_mbr.getMaxY(),
+    									srid);
+    	return jGeom; 
+    }
     
-    public static JGeometry rectangle2Polygon2D(JGeometry _rectangle) {
+    public static JGeometry fromEnvelope(JGeometry _rectangle) {
         // We only map in 2D so don't worry about loss of other dimensions (yet)
         double[] LL = _rectangle.getFirstPoint();
         double[] UR = _rectangle.getLastPoint();
