@@ -21,7 +21,6 @@ import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
 
-
 public class DatabaseConnections {
 
     private static final Logger                      LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnections");
@@ -149,10 +148,10 @@ public class DatabaseConnections {
     
     public Connection getConnection(String  _connName)
     {
-        //LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
+LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
         DatabaseConnection dbConn = this.findConnectionByName(_connName);
         if ( dbConn == null ) {
-            //LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
+LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
             return null;
         }
         return dbConn.getConnection();

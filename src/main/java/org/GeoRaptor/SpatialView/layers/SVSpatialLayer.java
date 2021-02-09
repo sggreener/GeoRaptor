@@ -62,11 +62,13 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import oracle.jdbc.driver.OracleConnection;
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.dbtools.raptor.utils.DBObject;
 import oracle.jdbc.OracleDriver;
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
-import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
 
 
@@ -749,19 +751,20 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     {
     	Struct sGeom = null;
         try {
-            //Connection conn = null;
-            oracle.jdbc.OracleConnection conn = (oracle.jdbc.OracleConnection) new OracleDriver().defaultConnection();
-//conn = super.getConnection();
-            // Can't get ordinary Connection to create SDO Geometry Struct so cast. 
-//conn = (OracleConnection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "codesys", "c0d3mg5");
-            // JGeometry codes NULL srid from value 0 not -1
+            Connection conn = null;
+        	conn = super.getConnection();
+// If I use the connection I get an error when constructing the Struct from the JGeometry
+// Yet the following works
+conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12","codesys","c0d3mg5");
             JGeometry jGeom = JGeom.fromEnvelope(_mbr,_sourceSRID);
+System.out.println(JGeom.toString(jGeom));
             if (_project && _sourceSRID != 0 && _destinationSRID!=0 && _sourceSRID!=_destinationSRID) {
               sGeom = MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID);
             } else {
               sGeom = JGeom.fromGeometry(jGeom,conn);
             }
         } catch (Exception e) {
+System.out.println(e.getMessage());
             LOGGER.warning(super.propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
             sGeom = null;
         }
@@ -968,7 +971,6 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     }
 
     public void setMBRRecalculation(boolean _recalc) {
-LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         this.calculateMBR = _recalc;
     }
 
@@ -1044,7 +1046,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
             LOGGER.debug("SVSpatialLayer.setParameters(): this.getPrefreences().isLogSearchStats() = " + this.getPreferences().isLogSearchStats() );
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info("\n" + _sql + "\n" + 
-                            String.format("?=%s\n?=%s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
+                            String.format("?=%s\n?=%s", 
+                                          SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                           spatialFilterClause));
             }
         } catch (SQLException sqle) {
@@ -1055,7 +1058,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
             Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
                                                                sqle.getMessage()),
                                   _sql + "\n" +
-                                  String.format("? %s\n? %s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
+                                  String.format("? %s\n? %s", 
+                                                SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                                 spatialFilterClause));
         } 
         LOGGER.debug("returning pStatement");

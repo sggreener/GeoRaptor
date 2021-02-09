@@ -320,7 +320,7 @@
 					<replacements>
 						<replacement>
 							<token>#EXTENSION_VERSION#</token>
-							<value>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${buildNumber}</value>
+							<value>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}${buildNumber}</value>
 						</replacement>
 						<replacement>
 							<token>#EXTENSION_SHORT_VERSION#</token>

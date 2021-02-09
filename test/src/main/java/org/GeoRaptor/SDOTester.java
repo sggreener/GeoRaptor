@@ -38,6 +38,7 @@ import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.jdbc.OracleTypes;
+import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
 import oracle.dbtools.raptor.utils.Connections;
 
@@ -92,8 +93,9 @@ public class SDOTester
         Struct s;
         s = JGeom.fromGeometry(jGeom,conn);
         
-        System.out.println(
-        		RenderTool.renderStructAsPlainText(s, Constants.bracketType.NONE, 3) );
+        System.out.println(RenderTool.renderStructAsPlainText(s, 
+                                                              Constants.bracketType.NONE, 
+                                                              3));
         
 	}
 

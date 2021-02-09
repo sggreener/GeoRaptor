@@ -1366,6 +1366,7 @@ extends JPanel
         try {
             // 0 Percentage means no sampling. 
             // 1 means first one found ie ROWNUM < 2
+System.out.printl("getLayerGeometryType("+mEntry.getSchemaName()+","+mEntry.getObjectName()+","+mEntry.getColumnName()+")");
             layerGeometryType = MetadataTool.getLayerGeometryType(_conn,
                                                                   mEntry.getSchemaName(), 
                                                                   mEntry.getObjectName(), 
@@ -1373,7 +1374,7 @@ extends JPanel
                                                                   0, /* samplePercentage */
                                                                   1  /* sampleRows */ );
             if (Strings.isEmpty(layerGeometryType)) {
-                LOGGER.error("getLayerGeometryType for " + layerName + " returned null");
+                LOGGER.error("getLayerGeometryType for " + layerName + " returned null: table empty?");
             }
         } catch (Exception e) {
             Toolkit.getDefaultToolkit().beep();

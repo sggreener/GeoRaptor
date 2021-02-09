@@ -14,6 +14,7 @@ import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.spatial.geometry.JGeometry;
+import oracle.sql.StructDescriptor;
 
 public class JGeom {
 
@@ -35,11 +36,10 @@ public class JGeom {
                                      Connection _conn) 
     throws Exception 
     {
-    	java.lang.Object[] descriptors;
-        descriptors = JGeometry.getOracleDescriptorsStr(); 
-        return JGeometry.storeJS(_geom,_conn,descriptors);
+        Struct st = JGeometry.storeJS(_geom,_conn);
+        return st;
+
 /*
-    	return JGeometry.storeJS(_conn,_geom);
         int SDO_GTYPE = 0;
         try {
         	SDO_GTYPE = ((_geom.getDimensions() * 1000) + 
@@ -49,10 +49,30 @@ public class JGeom {
         } catch (Exception e) {
         	SDO_GTYPE = 0;
         }
-        int SDO_SRID                = Constants.SRID_NULL; try { SDO_SRID  = _geom.getSRID(); } catch (Exception e) { SDO_SRID = Constants.SRID_NULL; }
-        double[] SDO_POINT          = null;                try { SDO_POINT = _geom.getLabelPointXYZ()==null? _geom.getPoint() : _geom.getLabelPointXYZ(); } catch (Exception e) { }
-        int[] SDO_ELEM_INFO_ARRAY   = null;                try { SDO_ELEM_INFO_ARRAY = _geom.getElemInfo();       } catch (Exception e) { }
-        double[] SDO_ORDINATE_ARRAY = null;                try { SDO_ORDINATE_ARRAY  = _geom.getOrdinatesArray(); } catch (Exception e) { }
+        int SDO_SRID              = Constants.SRID_NULL; 
+        try { SDO_SRID  = _geom.getSRID(); } catch (Exception e) { SDO_SRID = Constants.SRID_NULL; }
+        
+        double[] SDO_POINT        = null;                
+        try { SDO_POINT = _geom.getLabelPointXYZ()==null? _geom.getPoint() : _geom.getLabelPointXYZ(); } catch (Exception e) { }
+        
+        int[] SDO_ELEM_INFO_ARRAY = null;
+        try { SDO_ELEM_INFO_ARRAY = _geom.getElemInfo();        } catch (Exception e) { }
+        
+        double[] SDO_ORDINATE_ARRAY = null;
+        try { SDO_ORDINATE_ARRAY    = _geom.getOrdinatesArray(); } catch (Exception e) { }
+        
+        descriptors = new Object[5] ;
+        descriptors[0] = SDO_GTYPE;
+        descriptors[1] = SDO_SRID;
+        descriptors[2] = SDO_POINT;
+        descriptors[3] = SDO_ELEM_INFO_ARRAY;
+        descriptors[4] = SDO_ORDINATE_ARRAY;
+
+        Struct st = _conn.createStruct("MDSYS.SDO_GEOMETRY", descriptors);
+System.out.println("fromGeometry - End. st is " + st.getSQLTypeName() + " " + (st==null?"null":"not null"));
+
+        return st;
+/*
         return SDO_GEOMETRY.toSdoGeometry (
         		  _conn,
         		  SDO_GTYPE,
@@ -322,4 +342,8 @@ public class JGeom {
 		return null;
 	}
 
+	public static String toString(JGeometry _jGeom)
+	{
+		return RenderTool.renderGeometryAsPlainText(_jGeom,"MDSYS.SDO_GEOMETRY",Constants.bracketType.NONE,12);
+	}
 }

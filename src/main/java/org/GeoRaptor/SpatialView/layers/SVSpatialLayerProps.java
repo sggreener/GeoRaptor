@@ -50,12 +50,12 @@ public class SVSpatialLayerProps extends JDialog {
 
 	private static final long serialVersionUID = 8121341328541147361L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps");
+	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SVSpatialLayerProps");
     
     /**
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVSpatialLayerProps";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.SVSpatialLayerProps";
     //protected ErrorDialogHandler errorDialogHandler;
     protected PropertiesManager propertyManager = null;
 
@@ -119,9 +119,9 @@ public class SVSpatialLayerProps extends JDialog {
     // ########################## CONSTRUCTORS ########################################
 
     /** Creates new form SVSpatialLayerProps */
-    public SVSpatialLayerProps(Frame parent, String title, boolean modal) {
+    public SVSpatialLayerProps(Frame parent, String title, boolean modal) 
+    {
         super(parent, title, modal);
-
         try {
             // Get the one reference to GeoRaptor's preferences
             //

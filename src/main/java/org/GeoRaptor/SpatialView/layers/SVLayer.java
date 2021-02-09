@@ -43,7 +43,6 @@ public class SVLayer {
 	
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVLayer");
 	
-	//private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVLayer";
 	private static final String propertiesFile = "org/GeoRaptor/SpatialView/SVLayer";
 	
 	protected PropertiesManager propertyManager = null; // Properties File Manager
@@ -406,9 +405,10 @@ public class SVLayer {
 		return false;
 	}
 
-	public Connection getConnection() throws IllegalStateException {
+	public Connection getConnection() throws IllegalStateException 
+	{
 		if (Strings.isEmpty(this.connName)) {
-			return DatabaseConnections.getInstance().getActiveConnection();
+			return DatabaseConnections.getInstance().getAnyOpenConnection();
 		} else {
 			return DatabaseConnections.getInstance().getConnection(this.connName);
 		}

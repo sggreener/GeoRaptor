@@ -1,0 +1,37 @@
+﻿<?xml version = '1.0' encoding = 'UTF-8'?>
+<snippets>
+  <group category="GeoRaptor" language="PLSQL">
+    <snippet name="Create spatial index">
+      <code>
+        <![CDATA[CREATE INDEX states_idx ON demo_states(geom) INDEXTYPE IS MDSYS.SPATIAL_INDEX;]]>
+      </code>
+    </snippet>
+    <snippet name="Validate using tolerance">
+      <code>
+        <![CDATA[SELECT s.state, SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT(s.geom, 0.005) FROM demo_states s WHERE s.state = 'California';]]>
+      </code>
+    </snippet>
+    <snippet name="Calculate MBR">
+      <code>
+        <![CDATA[SELECT SDO_GEOM.SDO_MBR(s.geom, m.diminfo) 
+	  FROM demo_states s, user_sdo_geom_metadata m
+	  WHERE m.table_name = 'DEMO_STATES' AND m.column_name = 'GEOM' 
+	  AND s.state = 'California';]]>
+      </code>
+    </snippet>
+    <snippet name="Objects within distance">
+          <code>
+            <![CDATA[SELECT c.city FROM demo_cities c WHERE SDO_WITHIN_DISTANCE(c.location,
+                MDSYS.SDO_GEOMETRY(2001,8265,MDSYS.SDO_POINT_TYPE(-118.411201,34.112101,null),null,null),
+                'distance=10') = 'TRUE';]]>
+          </code>
+    </snippet> 
+    <snippet name="Transform co-ordinate system of geometry column">
+              <code>
+                <![CDATA[EXECUTE SDO_CS.TRANSFORM_LAYER('DEMO_CITIES','LOCATION','DEMO_CITIES_8199',8199);]]>
+              </code>
+    </snippet>
+    </group>
+</snippets>
+
+

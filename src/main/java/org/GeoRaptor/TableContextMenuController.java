@@ -60,12 +60,12 @@ public class TableContextMenuController implements Controller
         //
     	DBObject                dbo = new DBObject(context.getNode());
         Connection             conn = dbo.getDatabase().getConnection();
+
         String activeConnectionName = dbo.getConnectionName();
+        String   connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
         String       connectionType = dbo.getConnectionType();
         boolean             isMySQL = "MySQL".equals(connectionType);
 
-        String connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
-        
         // Get object that has been selected in this connection
         //
         String selectedSchemaName = dbo.getSchemaName();
