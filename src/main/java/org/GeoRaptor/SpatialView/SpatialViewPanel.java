@@ -1366,7 +1366,7 @@ extends JPanel
         try {
             // 0 Percentage means no sampling. 
             // 1 means first one found ie ROWNUM < 2
-System.out.printl("getLayerGeometryType("+mEntry.getSchemaName()+","+mEntry.getObjectName()+","+mEntry.getColumnName()+")");
+System.out.println("getLayerGeometryType("+mEntry.getSchemaName()+","+mEntry.getObjectName()+","+mEntry.getColumnName()+")");
             layerGeometryType = MetadataTool.getLayerGeometryType(_conn,
                                                                   mEntry.getSchemaName(), 
                                                                   mEntry.getObjectName(), 

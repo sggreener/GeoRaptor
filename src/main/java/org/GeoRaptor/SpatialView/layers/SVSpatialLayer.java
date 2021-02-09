@@ -751,14 +751,21 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     {
     	Struct sGeom = null;
         try {
-            Connection conn = null;
-        	conn = super.getConnection();
-// If I use the connection I get an error when constructing the Struct from the JGeometry
-// Yet the following works
-conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12","codesys","c0d3mg5");
             JGeometry jGeom = JGeom.fromEnvelope(_mbr,_sourceSRID);
 System.out.println(JGeom.toString(jGeom));
+            
+            // Now convert JGeometry to Struct
+            //
+            Connection conn = null;
+        	conn = super.getConnection();
+/* If I use the connection I get an error when constructing the Struct from the JGeometry
+   Yet it works if I create a new connection
+  */
+conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12","codesys","c0d3mg5");
+
             if (_project && _sourceSRID != 0 && _destinationSRID!=0 && _sourceSRID!=_destinationSRID) {
+              // Create a projected because SRID of search geometry is different from SRID of layer.
+              //
               sGeom = MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID);
             } else {
               sGeom = JGeom.fromGeometry(jGeom,conn);
