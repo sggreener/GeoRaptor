@@ -1242,7 +1242,6 @@ public class RenderResultSet
             int                 SRID = Constants.SRID_NULL;
             try { SRID = mainPrefs.getSRIDAsInteger(); } catch (Exception e) { LOGGER.warn("(getGeoSetFromResultSet) getSRID Error: " + e.getMessage()); }
             Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
-
             for (int row=0; row < rowsToProcess; row++) 
             {
                 stGeom = null; 
@@ -1257,11 +1256,11 @@ public class RenderResultSet
                     if ( this.rst.getSelectedColumnCount() > 0 ) {
                         viewCol   = columns[col];
                     }
-                    classname = this._table.getColumnClass(viewCol).getName();
+                    classname = this._table.getColumnClass(viewCol).getSimpleName();
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if ( ! classname.equals("java.sql.Struct") ) 
+                        if ( ! classname.equalsIgnoreCase("STRUCT") ) 
                             continue;
                         stGeom = (Struct)this._table.getValueAt(viewRow,viewCol);
                         if ( stGeom == null ) {
@@ -1315,7 +1314,7 @@ public class RenderResultSet
     
     public void displayImageOfSelectedGeometries() {
         final List<JGeometry> geoSet = this.getGeoSetFromResultSet();
-        if (geoSet == null ) {
+        if (geoSet == null || geoSet.size()==0) {
             return;
         }
         final Dimension imageSize = new Dimension(this.mainPrefs.getPreviewImageWidth(),
@@ -1346,25 +1345,43 @@ public class RenderResultSet
     
     private boolean copyMBRToClipboard() 
     {
+        Connection conn = this.getConnection();
+        if ( conn==null ) {
+          throw new IllegalArgumentException("Could not access database connection of Query.");
+        }
+        
         List<JGeometry> geoSet = this.getGeoSetFromResultSet();
         if (geoSet == null || geoSet.size()==0 ) {
             return false;
         }
         Envelope mbr = new Envelope(Constants.MAX_PRECISION);
         String srid = null;
+        int   iSrid = Constants.SRID_NULL;
         Iterator<JGeometry> iter = geoSet.iterator();
         while (iter.hasNext() ) {
             JGeometry jGeom = iter.next();
             if (Strings.isEmpty(srid) ) {
-                srid = jGeom.getSRID()<1?"NULL":""+jGeom.getSRID();
+            	iSrid = jGeom.getSRID();
+                srid = iSrid<1?"NULL":String.valueOf(iSrid);
             }
-            mbr.setMaxMBR(iter.next().getMBR());
+            mbr.setMaxMBR(jGeom.getMBR());
         }
-        if ( mbr.isNull() )
+        if ( mbr.isNull() ) {
             return false;
+        }
+        
+    	Struct st;
+    	String clipboardText = null;
+		try {
+			st = JGeom.fromGeometry(mbr.toJGeometry(iSrid),conn);
+	        clipboardText = SDO_GEOMETRY.getGeometryAsString(st,conn);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+	        return false;        
+		}
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        SpatialViewPanel svp = SpatialViewPanel.getInstance();
-        StringSelection ss = new StringSelection(mbr.toSdoGeometry(srid,svp.getActiveView().getPrecision(false)));
+        StringSelection  ss = new StringSelection(clipboardText);
         clipboard.setContents(ss, ss);
         Toolkit.getDefaultToolkit().beep();
         return true;        
@@ -1618,12 +1635,15 @@ public class RenderResultSet
         if (geoSet == null || geoSet.size()==0 ) {
             return false;
         }
+        
         String clipboardText = ""; 
         Iterator<JGeometry> iter = geoSet.iterator();
         while (iter.hasNext() ) {
             try {
-                clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) +
-                    SDO_GEOMETRY.getGeometryAsString(JGeometry.storeJS(iter.next(),conn),conn);
+            	Struct st = JGeometry.storeJS(iter.next(),conn);
+                clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) 
+                		          +
+                                  SDO_GEOMETRY.getGeometryAsString(st,conn);
             } catch (SQLException e) {
                 LOGGER.error("Conversion of JGeometry to clipboard produced error: " + e.getMessage());
             }
@@ -1631,8 +1651,9 @@ public class RenderResultSet
         if (Strings.isEmpty(clipboardText) ) {
             return false;
         }
+        
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        StringSelection ss = new StringSelection(clipboardText);
+        StringSelection  ss = new StringSelection(clipboardText);
         clipboard.setContents(ss, ss);
         Toolkit.getDefaultToolkit().beep();
         return true;
@@ -1716,7 +1737,7 @@ public class RenderResultSet
             int                              SRID = Constants.SRID_NULL;
             MetadataEntry                      me = null;
             SVWorksheetLayer      sWorksheetLayer = null;
-            Envelope              layerMBR = new Envelope(Constants.MAX_PRECISION);
+            Envelope                     layerMBR = new Envelope(Constants.MAX_PRECISION);
             Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
 
             me = new MetadataEntry(schemaName,
@@ -1738,9 +1759,9 @@ public class RenderResultSet
                     if ( stGeom == null ) {
                         continue; 
                     }
-                    FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
+                    FULL_GTYPE   = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
                     geometryType = SDO_GEOMETRY.discoverGeometryType(FULL_GTYPE,geometryType);
-                    SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
+                    SRID         = SDO_GEOMETRY.getSRID(stGeom,SRID);
                     layerMBR.setMaxMBR(SDO_GEOMETRY.getGeoMBR(stGeom));
                     if ( viewRow == 0 ) {
                         me.setSRID((SRID==Constants.SRID_NULL || SRID==0) ? "NULL"  : String.valueOf(SRID));
@@ -1754,7 +1775,7 @@ public class RenderResultSet
                 // Need to compute mbr
                 throw new IllegalArgumentException("Cannot create starting MBR from result set, so is not mappable.");
             }
-            LOGGER.debug(me.toString());
+            LOGGER.debug("RenderResultSet MetadataEntry=" + me.toString());
             // Create WorksheetLayer from known information
             SpatialView sView = svp.getMostSuitableView(SRID);
             sWorksheetLayer = new SVWorksheetLayer(sView,
@@ -1823,6 +1844,7 @@ public class RenderResultSet
             mappableColumnName =  this._table.getColumnName(mappableColumn);
   
             int colsToProcess = this.rst.getSelectedColumnCount()==0 ? this._table.getColumnCount() : this.rst.getSelectedColumnCount();
+            
             // For rows, we have to include what rows are actually loaded into the JTable as we can only
             // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
             // the table will be corrupted as data conversion of column data types will fail
@@ -1884,11 +1906,11 @@ public class RenderResultSet
                     if ( this.rst.getSelectedColumnCount() > 0 ) {
                         viewCol   = columns[col];
                     }
-                    classname  = this._table.getColumnClass(viewCol).getName();
+                    classname  = this._table.getColumnClass(viewCol).getSimpleName();
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if (classname.equals("oracle.sql.Struct") ) 
+                        if (classname.equalsIgnoreCase("STRUCT") ) 
                         {
                           if ( viewCol == mappableColumn ) 
                           {

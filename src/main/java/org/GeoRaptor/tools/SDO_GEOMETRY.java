@@ -273,7 +273,8 @@ public class SDO_GEOMETRY
             if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            return getGeoMBR(stGeom);
+            JGeometry geo = JGeometry.loadJS(stGeom);
+            return JGeom.getGeoMBR(geo);
         } catch (SQLException sqle) {
            return null;
         }

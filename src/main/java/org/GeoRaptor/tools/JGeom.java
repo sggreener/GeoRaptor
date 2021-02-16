@@ -36,6 +36,7 @@ public class JGeom {
                                      Connection _conn) 
     throws Exception 
     {
+System.out.println("fromGeometry.StoreJS");
         Struct st = JGeometry.storeJS(_geom,_conn);
         return st;
 

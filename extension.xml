@@ -244,6 +244,7 @@
 			<addins>
 				<addin>org.GeoRaptor.PreferenceAddin</addin>
 				<addin>org.GeoRaptor.Menu</addin>
+                <addin>org.GeoRaptor.OracleSpatial.Grid.SpatialColRendererAddin</addin>
 			</addins>
 			<gallery>
 				<item>
