@@ -29,7 +29,6 @@ import javax.swing.text.StyleConstants;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SupportClasses.DiscoverGeometryType;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
@@ -41,6 +40,7 @@ import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
@@ -50,12 +50,12 @@ public class SVSpatialLayerProps extends JDialog {
 
 	private static final long serialVersionUID = 8121341328541147361L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps");
+	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SVSpatialLayerProps");
     
     /**
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVSpatialLayerProps";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.SVSpatialLayerProps";
     //protected ErrorDialogHandler errorDialogHandler;
     protected PropertiesManager propertyManager = null;
 
@@ -119,9 +119,9 @@ public class SVSpatialLayerProps extends JDialog {
     // ########################## CONSTRUCTORS ########################################
 
     /** Creates new form SVSpatialLayerProps */
-    public SVSpatialLayerProps(Frame parent, String title, boolean modal) {
+    public SVSpatialLayerProps(Frame parent, String title, boolean modal) 
+    {
         super(parent, title, modal);
-
         try {
             // Get the one reference to GeoRaptor's preferences
             //

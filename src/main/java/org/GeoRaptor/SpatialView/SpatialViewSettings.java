@@ -15,7 +15,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
@@ -44,7 +43,7 @@ final public class SpatialViewSettings {
      */
     public void loadXML(Node _node) 
     {
-        SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+        SpatialViewPanel svp = SpatialViewPanel.getInstance();
         svp.setLoading(true);
         
         // Regardless as to what happens interactively, we insert from bottom because then
@@ -198,14 +197,14 @@ final public class SpatialViewSettings {
    */
   public String toXML() 
   {
-      SpatialViewPanel svPanel = DockableSV.getSpatialViewPanel();
-      String SVPanelXML = "<SpatialPanel><ActiveView>" + svPanel.getActiveView().getViewName() + "</ActiveView><Views>";
+      SpatialViewPanel svp = SpatialViewPanel.getInstance();
+      String    SVPanelXML = "<SpatialPanel><ActiveView>" + svp.getActiveView().getViewName() + "</ActiveView><Views>";
       // Save all views under the SpatialViewPanel
       //
-      Iterator<String> it = svPanel.getViews().keySet().iterator();
+      Iterator<String> it = svp.getViews().keySet().iterator();
       SpatialView itView = null;
       while (it.hasNext()) {
-          itView = svPanel.getViews().get(it.next());
+          itView = svp.getViews().get(it.next());
           SVPanelXML += "<View>" + itView.toXML(false) + "<Layers>";
 
           Iterator<String> layerNamesIter = itView.getLayerList().keySet().iterator();

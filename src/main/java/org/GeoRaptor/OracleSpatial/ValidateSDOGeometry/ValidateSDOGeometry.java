@@ -91,9 +91,6 @@ import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
@@ -111,6 +108,7 @@ import org.GeoRaptor.tools.ErrorDialogHandler;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.TableSortIndicator;
@@ -230,7 +228,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             return;
         }
         setPropertyStrings();
-        this.svp = DockableSV.getSpatialViewPanel();
+        //this.svp = DockableSV.getSpatialViewPanel();
+        this.svp = SpatialViewPanel.getInstance();
         this.vtModel = new ValidationTableModel(  );
         this.vtModel.addTableModelListener(new TableModelListener() {
             public void tableChanged(TableModelEvent e) {
@@ -1697,9 +1696,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     }
     
     public void makeVisible() {
-        if ( ! ControlerSV.isSpatialViewVisible() ) {
-            ControlerSV.showSpatialView();
-        }
+        this.svp.show();
     }
 
     public void drawResult(boolean _context, 
@@ -1866,7 +1863,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                     if ( element != null ) {
                         // DEBUG LOGGER.info("element is " + element.getType());
                         if ( element.isRectangle() ) {
-                            element = JGeom.rectangle2Polygon2D(element);
+                            element = JGeom.fromEnvelope(element);
                         }
                     }
                 } else if ( tok.startsWith("Rings") ) { 

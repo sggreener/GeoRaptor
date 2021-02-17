@@ -45,8 +45,7 @@ public class SpatialQueryReview extends JDialog {
     /**
      * Properties File Manager
      **/
-    private static final String propertiesFile =
-        "org.GeoRaptor.SpatialView.resource.SpatialQueryReview";
+    private static final String propertiesFile = "org.GeoRaptor.SpatialView.SpatialQueryReview";
     protected PropertiesManager propertyManager;
 
     /**

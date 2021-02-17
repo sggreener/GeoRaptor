@@ -53,11 +53,11 @@ import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Messages;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 

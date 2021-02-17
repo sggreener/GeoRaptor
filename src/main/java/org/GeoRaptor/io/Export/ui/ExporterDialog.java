@@ -37,8 +37,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import oracle.jdbc.OracleConnection;
-
 import oracle.jdeveloper.layout.VerticalFlowLayout;
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
@@ -557,7 +555,7 @@ public class ExporterDialog extends JDialog
       // Pass SRID to SRIDPanel
       //
       SRIDPanel sp = SRIDPanel.getInstance();
-      boolean status = sp.initialise((OracleConnection)this.conn,srid);
+      boolean status = sp.initialise(this.conn,srid);
       if (status == true) {
           sp.setLocationRelativeTo(this);
           sp.setVisible(true);

@@ -65,7 +65,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 	private static PreferencePanel classInstance;
 	private Preferences prefs = null;
-	protected ResourceBundle rBundle = ResourceBundle.getBundle("org.GeoRaptor.resource.PreferencesPanel",
+	protected ResourceBundle rBundle = ResourceBundle.getBundle("org.GeoRaptor.PreferencesPanel",
 			Locale.getDefault());
 
 	private InputVerifier verifyTableCountLimit = null;

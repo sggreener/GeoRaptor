@@ -21,7 +21,7 @@ import oracle.jdbc.OracleTypes;
  */
 public class Preferences extends HashStructureAdapter {
 
-	private static final String DATA_KEY = "org.GeoRaptor.GeoPreferences";
+	private static final String DATA_KEY = "org.GeoRaptor.Preferences";
 
 	private Preferences(final HashStructure hash) {
 		super(hash);
@@ -32,7 +32,6 @@ public class Preferences extends HashStructureAdapter {
     }
 	
 	public static Preferences getInstance(final PropertyStorage prefs) {
-System.out.println("Preferences = " + Preferences.DATA_KEY);
 		return new Preferences(HashStructureAdapter.findOrCreate(prefs, Preferences.DATA_KEY));
 	}
 
@@ -649,9 +648,9 @@ System.out.println("Preferences = " + Preferences.DATA_KEY);
         }
     }
 
-//    public String getSpatialLayerXML( ) {
-//        return _hash.getString(Constants.KEY_LAYERS,Constants.VAL_SPATIAL_LAYER_XML);
-//    }
+    public String getSpatialLayerXML( ) {
+        return _hash.getString(Constants.KEY_LAYERS,Constants.VAL_SPATIAL_LAYER_XML);
+    }
 
     public void setColourSdoGeomElements(boolean _colourSDOGeometry) {
         synchronized (_hash) {

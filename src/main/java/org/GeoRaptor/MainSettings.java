@@ -13,18 +13,12 @@ import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.SpatialView.SpatialViewSettings;
 import org.GeoRaptor.tools.PropertiesManager;
-//import org.GeoRaptor.SpatialView.SpatialViewSettings;
-//import org.GeoRaptor.SpatialView.SpatialViewSettings;
-//import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-//import org.GeoRaptor.tools.Tools;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -41,8 +35,7 @@ public class MainSettings {
 	/**
 	 * Properties File Manager
 	 **/
-	//private static final String propertiesFile = "org/GeoRaptor/Resource";
-	private static final String propertiesFile = "org/GeoRaptor/Resource";
+	private static final String propertiesFile = "org.GeoRaptor.Resources";
 	protected PropertiesManager propertyManager;
 
     protected static SpatialViewSettings spatialViewS;
@@ -74,7 +67,7 @@ public class MainSettings {
 		MainSettings.MENU_ITEM = this.propertyManager.getMsg("MENU_ITEM");
 		MainSettings.EXTENSION_NAME = this.propertyManager.getMsg("EXTENSION_NAME");
 		MainSettings.XML_VERSION_MESSAGE = this.propertyManager.getMsg("XML_VERSION_MESSAGE");
-		MainSettings.VERSION = Tools.getVersion();
+		MainSettings.VERSION = "1.0.0"; //Tools.getVersion();
 	}
 
 	/**
@@ -90,19 +83,18 @@ public class MainSettings {
 	/**
 	 * Get instance of SpatialViewSettings class
 	 */
-//	public static SpatialViewSettings getSpatialViewSettingsInstance() {
-//		if (MainSettings.spatialViewS == null) {
-//			MainSettings.spatialViewS = new SpatialViewSettings();
-//		}
-//		return MainSettings.spatialViewS;
-//	}
+	public static SpatialViewSettings getSpatialViewSettingsInstance() {
+		if (MainSettings.spatialViewS == null) {
+			MainSettings.spatialViewS = new SpatialViewSettings();
+		}
+		return MainSettings.spatialViewS;
+	}
 
 	public Preferences getPreferences() {
 		if (MainSettings.mainPrefs == null) {
 			oracle.ide.config.Preferences prefs = oracle.ide.config.Preferences.getPreferences();
 			MainSettings.mainPrefs = Preferences.getInstance(prefs);
 		}
-System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"null":"not null"));
 		return MainSettings.mainPrefs;
 	}
 
@@ -111,9 +103,9 @@ System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"
 	 * automatically
 	 */
 	public void save() {
-//		String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><GeoRaptor><Version>" + MainSettings.VERSION
-//				+ "</Version>" + MainSettings.getSpatialViewSettingsInstance().toXML() + "</GeoRaptor>";
-//		MainSettings.mainPrefs.setSpatialLayerXML(xmlString);
+		String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><GeoRaptor><Version>" + MainSettings.VERSION
+				+ "</Version>" + MainSettings.getSpatialViewSettingsInstance().toXML() + "</GeoRaptor>";
+		MainSettings.mainPrefs.setSpatialLayerXML(xmlString);
 	}
 
 	/**
@@ -127,17 +119,17 @@ System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"
 		// The original formatted Spatial View stuff is XML and is stored as one
 		// preference
 		//
-//		String svpXML = MainSettings.mainPrefs.getSpatialLayerXML();
-//		if (Strings.isEmpty(svpXML)) {
-//			svpXML = Constants.VAL_SPATIAL_LAYER_XML; // default
-//		}
+		String svpXML = MainSettings.mainPrefs.getSpatialLayerXML();
+		if (Strings.isEmpty(svpXML)) {
+			svpXML = Constants.VAL_SPATIAL_LAYER_XML; // default
+		}
 		try {
 			Document doc = null;
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			dbf.setNamespaceAware(false);
 			dbf.setValidating(false);
 			DocumentBuilder db = dbf.newDocumentBuilder();
-//			doc = db.parse(new InputSource(new StringReader(svpXML)));
+			doc = db.parse(new InputSource(new StringReader(svpXML)));
 			XPath xpath = XPathFactory.newInstance().newXPath();
 			// Extract Version
 			//
@@ -145,14 +137,14 @@ System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"
 			if (Strings.isEmpty(version)) {
 				System.err.println("GeoRaptor Version not found: continuing.");
 			} else {
-//				if (!version.equalsIgnoreCase(MainSettings.VERSION)) {
-//					System.err
-//							.println(this.propertyManager.getMsg("XML_VERSION_MESSAGE", version, MainSettings.VERSION));
-//				}
+				if (!version.equalsIgnoreCase(MainSettings.VERSION)) {
+					System.err
+							.println(this.propertyManager.getMsg("XML_VERSION_MESSAGE", version, MainSettings.VERSION));
+				}
 			}
 			Node panelNode = (Node) xpath.evaluate("/GeoRaptor/SpatialPanel", doc, XPathConstants.NODE);
 			// load data for Spatial View
-//			MainSettings.getSpatialViewSettingsInstance().loadXML(panelNode.cloneNode(true));
+			MainSettings.getSpatialViewSettingsInstance().loadXML(panelNode.cloneNode(true));
 		} catch (XPathExpressionException e) {
 			LOGGER.error("MainSettings.XPathExpressionException = " + e.getMessage());
 			e.getStackTrace();
@@ -160,13 +152,13 @@ System.out.println("MainSettings.mainPrefs = " + (MainSettings.mainPrefs==null?"
 			LOGGER.error("MainSettings.ParserConfigurationException = " + e.getMessage());
 			e.getStackTrace();
 		} 
-//		catch (SAXException e) {
-//			LOGGER.error("MainSettings.SAXException = " + e.getMessage());
-//			e.getStackTrace();
-//		} catch (IOException e) {
-//			LOGGER.error("MainSettings.IOException = " + e.getMessage());
-//			e.getStackTrace();
-//		}
+		catch (SAXException e) {
+			LOGGER.error("MainSettings.SAXException = " + e.getMessage());
+			e.getStackTrace();
+		} catch (IOException e) {
+			LOGGER.error("MainSettings.IOException = " + e.getMessage());
+			e.getStackTrace();
+		}
 	}
 
 	protected void loadPreferences() {

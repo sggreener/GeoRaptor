@@ -5,13 +5,14 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,6 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,39 +38,38 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OraclePreparedStatement;
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleTypes;
-
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
-import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SpatialView;
-import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import oracle.jdbc.driver.OracleConnection;
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.dbtools.raptor.utils.DBObject;
+import oracle.jdbc.OracleDriver;
+import oracle.jdbc.OraclePreparedStatement;
+import oracle.jdbc.OracleResultSetMetaData;
+import oracle.jdbc.OracleTypes;
+import oracle.spatial.geometry.JGeometry;
 
 
 /**
@@ -273,9 +272,7 @@ public class SVSpatialLayer
     }
 
     private void initialise() {
-System.out.println("gettin preferences");
         this.preferences = MainSettings.getInstance().getPreferences();
-System.out.println("getFetchSize=" + String.valueOf(preferences.getFetchSize()));
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
     }
@@ -747,26 +744,37 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     }
     
     private Struct getSearchFilterGeometry(Envelope _mbr,
-                                           boolean         _project,
-                                           int             _sourceSRID,
-                                           int             _destinationSRID) 
+                                           boolean  _project,
+                                           int      _sourceSRID,
+                                           int      _destinationSRID) 
     throws SQLException 
     {
-    	Struct filterGeom = null;
+    	Struct sGeom = null;
         try {
+            JGeometry jGeom = JGeom.fromEnvelope(_mbr,_sourceSRID);
+            
+            // Now convert JGeometry to Struct
+            //
             Connection conn = null;
-            conn = super.getConnection();
-            // JGeometry codes NULL srid from value 0 not -1
-            int srid = _sourceSRID == Constants.SRID_NULL ? 0 : _sourceSRID; 
-            JGeometry jGeom = new JGeometry(_mbr.getMinX(),_mbr.getMinY(),_mbr.getMaxX(),_mbr.getMaxY(),srid);
-            filterGeom = _project 
-            		     ? MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID) 
-                         : (Struct) JGeometry.storeJS(conn,jGeom);
+        	conn = super.getConnection();
+/* If I use the connection I get an error when constructing the Struct from the JGeometry
+   Yet it works if I create a new connection
+  */
+//conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12","codesys","c0d3mg5");
+
+            if (_project && _sourceSRID != 0 && _destinationSRID!=0 && _sourceSRID!=_destinationSRID) {
+              // Create a projected because SRID of search geometry is different from SRID of layer.
+              //
+              sGeom = MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID);
+            } else {
+              sGeom = JGeom.fromGeometry(jGeom,conn);
+            }
         } catch (Exception e) {
-            LOGGER.warning(propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
-            filterGeom = null;
+System.out.println(e.getMessage());
+            LOGGER.warning(super.propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
+            sGeom = null;
         }
-        return filterGeom;
+        return sGeom;
     }
     
     private static boolean columnExists(String _sql, String _column) 
@@ -969,7 +977,6 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     }
 
     public void setMBRRecalculation(boolean _recalc) {
-LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
         this.calculateMBR = _recalc;
     }
 
@@ -1011,7 +1018,8 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                                ? this.getSRIDAsInteger()
                                : this.spatialView.getSRIDAsInteger()
                               );
-            pStatement = (OraclePreparedStatement)super.getConnection().prepareStatement(_sql);
+
+            pStatement = super.getConnection().prepareStatement(_sql);
             
             // Filter Geom is always expressed in terms of the layer's SRID
             //
@@ -1038,12 +1046,14 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                         LOGGER.debug("SVSpatialLayer.setParameters(): spatialFilterClause parameter " + (stmtParamIndex-1) + " to " + spatialFilterClause);
                     }
                 }
+LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                 pStatement.setString(stmtParamIndex++, spatialFilterClause);
             }
             LOGGER.debug("SVSpatialLayer.setParameters(): this.getPrefreences().isLogSearchStats() = " + this.getPreferences().isLogSearchStats() );
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info("\n" + _sql + "\n" + 
-                            String.format("?=%s\n?=%s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
+                            String.format("?=%s\n?=%s", 
+                                          SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                           spatialFilterClause));
             }
         } catch (SQLException sqle) {
@@ -1054,7 +1064,8 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
                                                                sqle.getMessage()),
                                   _sql + "\n" +
-                                  String.format("? %s\n? %s", SDO_GEOMETRY.getGeometryAsString(filterGeom),
+                                  String.format("? %s\n? %s", 
+                                                SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                                 spatialFilterClause));
         } 
         LOGGER.debug("returning pStatement");
@@ -1162,13 +1173,13 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
             drawTools.setGraphics2D(_g2);
             executeStart = System.currentTimeMillis();
             ors = _pStatement.executeQuery();
-            ors.setFetchDirection(OracleResultSet.FETCH_FORWARD);
+            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
             executeTime = ( System.currentTimeMillis() - executeStart );
             while ((ors.next()) &&
                    (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
             {
-                /// reading a geometry from database                
+                /// reading a geometry from database       
                 sqlTypeName = ((java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
                 if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
                     geomPickler = ors.getBytes(super.getGeoColumn().replace("\"",""));
@@ -1748,25 +1759,27 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                 //
                 pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
                 JGeometry searchJPoint = new JGeometry(_worldPoint.getX(),_worldPoint.getY(),querySRID);
-                searchPoint = project ? MetadataTool.projectJGeometry(conn,searchJPoint,this.getSRIDAsInteger()) 
-                              : (Struct) JGeometry.storeJS(conn,  searchJPoint);               
+                searchPoint = project 
+                		      ? MetadataTool.projectJGeometry(conn,searchJPoint,this.getSRIDAsInteger()) 
+                              : (Struct) JGeometry.storeJS((OracleConnection)conn,  searchJPoint);
+// SGG
                 JGeometry distanceJPoint = new JGeometry(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
                                                          _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0),
                                                          querySRID);
-                distancePoint = project ? MetadataTool.projectJGeometry(conn,distanceJPoint,this.getSRIDAsInteger()) 
-                                : (Struct) JGeometry.storeJS(conn,  distanceJPoint);
+                distancePoint = project 
+                                ? MetadataTool.projectJGeometry(conn,distanceJPoint,this.getSRIDAsInteger()) 
+                                : (Struct) JGeometry.storeJS((OracleConnection)conn,  distanceJPoint);
                 // SDO_Filter geometry has same SRID as layer
                 Envelope mbr = new Envelope(_worldPoint.getX() - (numSearchPixels*pixelSize.getX()/1.9),
                                                           _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
                                                           _worldPoint.getX() + (numSearchPixels*pixelSize.getX()/1.9),
                                                           _worldPoint.getY() + (numSearchPixels*pixelSize.getY()/1.9));
                 JGeometry searchJMBR = new JGeometry(mbr.getMinX(),mbr.getMinY(),mbr.getMaxX(),mbr.getMaxY(),this.getSRIDAsInteger());
-                searchMBR = (Struct) JGeometry.storeJS(conn,searchJMBR);
+                searchMBR = (Struct) JGeometry.storeJS((OracleConnection)conn,searchJMBR);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Failed to create search SDO_GEOMETRY objects " + e.getMessage());
                 return null;
             }
-
 
             // Create statement
             //
@@ -1858,14 +1871,14 @@ LOGGER.debug("setMBRRecalculation(" + _recalc + ")");
                     columnTypeName = rSetM.getColumnTypeName(col);
                     if (columnTypeName.equals("LONG")) {
                         // LONGs will kill the SQL stream and we can't use them anyway
-                        System.out.println("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
+                        LOGGER.info("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
                         continue;
                     }
                     if (columnName.equalsIgnoreCase(geoColumn)) {
                         retSTRUCT = (java.sql.Struct)ors.getObject(col);
                         if (ors.wasNull() || retSTRUCT==null) {
                             break; // process next row
-                        }                        
+                        }              
                         String sqlTypeName = retSTRUCT.getSQLTypeName();
                         // If ST_GEOMETRY, extract SDO_GEOMETRY
                         if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {

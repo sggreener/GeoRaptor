@@ -1,6 +1,6 @@
 <extension id="org.GeoRaptor" version="#EXTENSION_VERSION#"
 	esdk-version="2.0" xmlns="http://jcp.org/jsr/198/extension-manifest"
-	rsbundle-class="org.GeoRaptor.Resources">
+	rsbundle-class="org.GeoRaptor.Project">
 	<name rskey="EXTENSION_NAME" />
 
 <!-- features may be used to enable/disable extensions without uninstalling them -->
@@ -168,7 +168,7 @@
 				<site idref="db_nav" />
 				<menu>
 					<section xmlns="http://jcp.org/jsr/198/extension-manifest"
-						id="CONTEXT_MENU_SECTION_ID" weight="0.1">
+						id="CONTEXT_MENU_SECTION_ID" weight="10.0f">
 						<menu id="CONTEXT_SUBMENU_ID" weight="2.0f">
 							<label>GeoRaptor</label>
 							<section id="CONTEXT_SUBMENU_SECTION_ID" weight="10.0f">
@@ -229,7 +229,7 @@
 			<!-- preference -->
 			<settings-ui-hook>
 				<page id="PREFERENCES_PAGE_ID" parent-idref="/preferences">
-					<label>${PREFERENCES_TITEL}</label>
+					<label>${PREFERENCES_TITLE}</label>
 					<traversable-class>org.GeoRaptor.PreferencePanel</traversable-class>
 				</page>
 			</settings-ui-hook>
@@ -244,9 +244,7 @@
 			<addins>
 				<addin>org.GeoRaptor.PreferenceAddin</addin>
 				<addin>org.GeoRaptor.Menu</addin>
-				<!-- <addin>org.GeoRaptor.SpatialView.JDevInt.AnAddinSV</addin> <addin>org.GeoRaptor.Snippets.GeoRaptorSnippetsAddin</addin> 
-					<addin>org.GeoRaptor.SpatialView.JDevInt.SpatialColRendererAddin</addin> -->
-				<!-- <addin>org.GeoRaptor.Menu</addin> -->
+                <addin>org.GeoRaptor.OracleSpatial.Grid.SpatialColRendererAddin</addin>
 			</addins>
 			<gallery>
 				<item>

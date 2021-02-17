@@ -5,8 +5,8 @@ import java.sql.Struct;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
+import org.GeoRaptor.tools.RenderTool;
+import org.GeoRaptor.tools.SpatialRenderer;
 
 public class TableRow {
 

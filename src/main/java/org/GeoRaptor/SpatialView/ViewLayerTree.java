@@ -1762,7 +1762,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
                         // Get Layer MBR 
                         mbr = fLayerNode.getSpatialLayer().getMBR();
                     }
-                    // Create JGeometry from MBR
+LOGGER.debug("ViewLayerTree: Create JGeometry from MBR");
                     JGeometry geom = new JGeometry(mbr.getMinX(), 
                                                    mbr.getMinY(), 
                                                    mbr.getMaxX(), 
@@ -1770,7 +1770,8 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
                                                    fLayerNode.getSpatialLayer().getSRIDAsInteger());
 					Struct stGeom;
                     try {
-                        stGeom = (Struct) JGeometry.storeJS(geom,fLayerNode.getSpatialLayer().getConnection());
+                    	Connection conn = fLayerNode.getSpatialLayer().getConnection();
+                        stGeom = (Struct) JGeometry.storeJS(geom,conn);
                         svp.showGeometry(fLayerNode.getSpatialLayer(),stGeom, null, SDO_GEOMETRY.getGeoMBR(stGeom), true, true, false);
                         /* ??? */ sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
                     } catch (Exception f) {

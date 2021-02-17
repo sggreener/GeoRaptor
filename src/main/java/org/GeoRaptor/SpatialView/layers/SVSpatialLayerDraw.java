@@ -43,7 +43,6 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Messages;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -52,6 +51,7 @@ import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.Coordinate;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
@@ -908,7 +908,7 @@ public class SVSpatialLayerDraw {
                         JGeometry jgeom = null;
                         jgeom = new JGeometry(gType,element.getSRID(),element.getElemInfo(),element.getOrdinatesArray());
                         if ( jgeom.isRectangle() ) {
-                            jgeom = JGeom.rectangle2Polygon2D(jgeom);
+                            jgeom = JGeom.fromEnvelope(jgeom);
                         }
                         markElement(jgeom,false);
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON ||
@@ -950,7 +950,7 @@ public class SVSpatialLayerDraw {
                                 // What about isCircle()?
                                 //
                                 if ( geom.isRectangle() ) {
-                                    geom = JGeom.rectangle2Polygon2D(geom);
+                                    geom = JGeom.fromEnvelope(geom);
                                 }
                                 markElement(geom,(inner_outer[0]==2));
                                 // Get inner rings 2003

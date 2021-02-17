@@ -36,10 +36,6 @@ import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
-import org.GeoRaptor.SpatialView.JDevInt.ControlerSV;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.Preview;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
@@ -57,7 +53,9 @@ import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.data.shapefile.shp.ShapeType;
@@ -77,7 +75,6 @@ import oracle.ide.dialogs.ProgressBar;
 import oracle.javatools.db.DBException;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
-import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
 import oracle.sql.NUMBER;
 
@@ -211,9 +208,8 @@ public class RenderResultSet
      }
 
     public void makeVisible() {
-        if ( ! ControlerSV.isSpatialViewVisible() ) {
-            ControlerSV.showSpatialView();
-        }
+        SpatialViewPanel svp = SpatialViewPanel.getInstance();
+        svp.show();
     }
     
     private void initAction() 
@@ -925,7 +921,7 @@ public class RenderResultSet
                                   : _table.getRowCount() );
             // Only examine up to 500 rows.
             //
-            SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+            SpatialViewPanel svp = SpatialViewPanel.getInstance();
             geomMetadata.setSRID(svp.getActiveView().getSRIDAsInteger());
             geomMetadata.setGeometryType(Constants.GEOMETRY_TYPES.UNKNOWN);
 
@@ -1035,7 +1031,7 @@ public class RenderResultSet
     }
     
     private String getUserName() {
-        OracleConnection conn = (OracleConnection)this.getConnection();
+        Connection conn = this.getConnection();
         if ( conn==null ) {
             return "";
         }
@@ -1057,7 +1053,7 @@ public class RenderResultSet
           if ( this._table == null ) {
               throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
           }
-          OracleConnection conn = (OracleConnection)this.getConnection();
+          Connection conn = this.getConnection();
           if ( conn==null ) {
             throw new IllegalArgumentException("Could not access database connection of Query.");
           }
@@ -1246,7 +1242,6 @@ public class RenderResultSet
             int                 SRID = Constants.SRID_NULL;
             try { SRID = mainPrefs.getSRIDAsInteger(); } catch (Exception e) { LOGGER.warn("(getGeoSetFromResultSet) getSRID Error: " + e.getMessage()); }
             Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
-
             for (int row=0; row < rowsToProcess; row++) 
             {
                 stGeom = null; 
@@ -1261,11 +1256,11 @@ public class RenderResultSet
                     if ( this.rst.getSelectedColumnCount() > 0 ) {
                         viewCol   = columns[col];
                     }
-                    classname = this._table.getColumnClass(viewCol).getName();
+                    classname = this._table.getColumnClass(viewCol).getSimpleName();
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if ( ! classname.equals("java.sql.Struct") ) 
+                        if ( ! classname.equalsIgnoreCase("STRUCT") ) 
                             continue;
                         stGeom = (Struct)this._table.getValueAt(viewRow,viewCol);
                         if ( stGeom == null ) {
@@ -1319,13 +1314,13 @@ public class RenderResultSet
     
     public void displayImageOfSelectedGeometries() {
         final List<JGeometry> geoSet = this.getGeoSetFromResultSet();
-        if (geoSet == null ) {
+        if (geoSet == null || geoSet.size()==0) {
             return;
         }
         final Dimension imageSize = new Dimension(this.mainPrefs.getPreviewImageWidth(),
                                                   this.mainPrefs.getPreviewImageHeight());
-        final OracleConnection conn = (OracleConnection)this.getConnection();
-        final SpatialViewPanel  svp = DockableSV.getSpatialViewPanel();
+        final Connection conn = this.getConnection();
+        SpatialViewPanel        svp = SpatialViewPanel.getInstance();
         SwingUtilities.invokeLater(new Runnable() {
            public void run() {
                JFrame frame = new JFrame(Constants.GEORAPTOR + 
@@ -1350,25 +1345,43 @@ public class RenderResultSet
     
     private boolean copyMBRToClipboard() 
     {
+        Connection conn = this.getConnection();
+        if ( conn==null ) {
+          throw new IllegalArgumentException("Could not access database connection of Query.");
+        }
+        
         List<JGeometry> geoSet = this.getGeoSetFromResultSet();
         if (geoSet == null || geoSet.size()==0 ) {
             return false;
         }
         Envelope mbr = new Envelope(Constants.MAX_PRECISION);
         String srid = null;
+        int   iSrid = Constants.SRID_NULL;
         Iterator<JGeometry> iter = geoSet.iterator();
         while (iter.hasNext() ) {
             JGeometry jGeom = iter.next();
             if (Strings.isEmpty(srid) ) {
-                srid = jGeom.getSRID()<1?"NULL":""+jGeom.getSRID();
+            	iSrid = jGeom.getSRID();
+                srid = iSrid<1?"NULL":String.valueOf(iSrid);
             }
-            mbr.setMaxMBR(iter.next().getMBR());
+            mbr.setMaxMBR(jGeom.getMBR());
         }
-        if ( mbr.isNull() )
+        if ( mbr.isNull() ) {
             return false;
+        }
+        
+    	Struct st;
+    	String clipboardText = null;
+		try {
+			st = JGeom.fromGeometry(mbr.toJGeometry(iSrid),conn);
+	        clipboardText = SDO_GEOMETRY.getGeometryAsString(st,conn);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+	        return false;        
+		}
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
-        StringSelection ss = new StringSelection(mbr.toSdoGeometry(srid,svp.getActiveView().getPrecision(false)));
+        StringSelection  ss = new StringSelection(clipboardText);
         clipboard.setContents(ss, ss);
         Toolkit.getDefaultToolkit().beep();
         return true;        
@@ -1378,7 +1391,7 @@ public class RenderResultSet
     {
         // This function can only be called if table_name,column_name,diminfo and srid columns exist in resultset....
         // LOGGER.info("Not yet implemented.");
-        OracleConnection conn = (OracleConnection)this.getConnection();
+        Connection conn = this.getConnection();
         if ( conn==null ) {
           throw new IllegalArgumentException("Could not access database connection of Query.");
         }
@@ -1494,7 +1507,7 @@ public class RenderResultSet
     
     private boolean copyDimInfoToClipboard(DiminfoCopyType _copyType) 
     {
-        OracleConnection conn = (OracleConnection)this.getConnection();
+        Connection conn = this.getConnection();
         if ( conn==null ) {
           throw new IllegalArgumentException("copyDimInfoToClipboard: Could not access queries database connection.");
         }
@@ -1613,7 +1626,7 @@ public class RenderResultSet
     
     private boolean copyToClipboard() 
     {
-        OracleConnection conn = (OracleConnection)this.getConnection();
+        Connection conn = this.getConnection();
         if ( conn==null ) {
           throw new IllegalArgumentException("Could not access database connection of Query.");
         }
@@ -1622,12 +1635,15 @@ public class RenderResultSet
         if (geoSet == null || geoSet.size()==0 ) {
             return false;
         }
+        
         String clipboardText = ""; 
         Iterator<JGeometry> iter = geoSet.iterator();
         while (iter.hasNext() ) {
             try {
-                clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) +
-                    SDO_GEOMETRY.getGeometryAsString(JGeometry.storeJS(iter.next(),conn),conn);
+            	Struct st = JGeometry.storeJS(iter.next(),conn);
+                clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) 
+                		          +
+                                  SDO_GEOMETRY.getGeometryAsString(st,conn);
             } catch (SQLException e) {
                 LOGGER.error("Conversion of JGeometry to clipboard produced error: " + e.getMessage());
             }
@@ -1635,8 +1651,9 @@ public class RenderResultSet
         if (Strings.isEmpty(clipboardText) ) {
             return false;
         }
+        
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        StringSelection ss = new StringSelection(clipboardText);
+        StringSelection  ss = new StringSelection(clipboardText);
         clipboard.setContents(ss, ss);
         Toolkit.getDefaultToolkit().beep();
         return true;
@@ -1655,7 +1672,7 @@ public class RenderResultSet
             if ( this._table == null ) {
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
             }
-            SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+            SpatialViewPanel svp = SpatialViewPanel.getInstance();
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
@@ -1720,7 +1737,7 @@ public class RenderResultSet
             int                              SRID = Constants.SRID_NULL;
             MetadataEntry                      me = null;
             SVWorksheetLayer      sWorksheetLayer = null;
-            Envelope              layerMBR = new Envelope(Constants.MAX_PRECISION);
+            Envelope                     layerMBR = new Envelope(Constants.MAX_PRECISION);
             Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
 
             me = new MetadataEntry(schemaName,
@@ -1742,9 +1759,9 @@ public class RenderResultSet
                     if ( stGeom == null ) {
                         continue; 
                     }
-                    FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
+                    FULL_GTYPE   = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
                     geometryType = SDO_GEOMETRY.discoverGeometryType(FULL_GTYPE,geometryType);
-                    SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
+                    SRID         = SDO_GEOMETRY.getSRID(stGeom,SRID);
                     layerMBR.setMaxMBR(SDO_GEOMETRY.getGeoMBR(stGeom));
                     if ( viewRow == 0 ) {
                         me.setSRID((SRID==Constants.SRID_NULL || SRID==0) ? "NULL"  : String.valueOf(SRID));
@@ -1758,7 +1775,7 @@ public class RenderResultSet
                 // Need to compute mbr
                 throw new IllegalArgumentException("Cannot create starting MBR from result set, so is not mappable.");
             }
-            LOGGER.debug(me.toString());
+            LOGGER.debug("RenderResultSet MetadataEntry=" + me.toString());
             // Create WorksheetLayer from known information
             SpatialView sView = svp.getMostSuitableView(SRID);
             sWorksheetLayer = new SVWorksheetLayer(sView,
@@ -1800,12 +1817,12 @@ public class RenderResultSet
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
             }
             
-            OracleConnection conn = (OracleConnection)this.getConnection();
+            Connection conn = this.getConnection();
             if ( conn==null ) {
               throw new IllegalArgumentException("Could not access database connection of Query.");
             }
 
-            SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+            SpatialViewPanel svp = SpatialViewPanel.getInstance();
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
@@ -1827,6 +1844,7 @@ public class RenderResultSet
             mappableColumnName =  this._table.getColumnName(mappableColumn);
   
             int colsToProcess = this.rst.getSelectedColumnCount()==0 ? this._table.getColumnCount() : this.rst.getSelectedColumnCount();
+            
             // For rows, we have to include what rows are actually loaded into the JTable as we can only
             // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
             // the table will be corrupted as data conversion of column data types will fail
@@ -1888,11 +1906,11 @@ public class RenderResultSet
                     if ( this.rst.getSelectedColumnCount() > 0 ) {
                         viewCol   = columns[col];
                     }
-                    classname  = this._table.getColumnClass(viewCol).getName();
+                    classname  = this._table.getColumnClass(viewCol).getSimpleName();
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if (classname.equals("oracle.sql.Struct") ) 
+                        if (classname.equalsIgnoreCase("STRUCT") ) 
                         {
                           if ( viewCol == mappableColumn ) 
                           {
@@ -2052,12 +2070,12 @@ public class RenderResultSet
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
             }
             
-            OracleConnection conn = (OracleConnection)this.getConnection();
+            Connection conn = this.getConnection();
             if ( conn==null ) {
               throw new IllegalArgumentException("Could not access database connection of Query.");
             }
 
-            SpatialViewPanel svp = DockableSV.getSpatialViewPanel();
+            SpatialViewPanel svp = SpatialViewPanel.getInstance();
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
@@ -2624,7 +2642,7 @@ public class RenderResultSet
                           }
 
                           if ( Tools.isSupportedType(columnMetadata.getColumnType(1),columnMetadata.getColumnTypeName(1)) ) {
-                              geoExporter.printColumn(SQLConversionTools.convertToString((OracleConnection)this.conn,
+                              geoExporter.printColumn(SQLConversionTools.convertToString(this.conn,
                                                                                          _table.getValueAt(viewRow,viewCol),
                                                                                          columnMetadata),
                                                       columnMetadata);

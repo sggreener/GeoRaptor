@@ -1,23 +1,17 @@
 package org.GeoRaptor.sql;
 
 import java.io.UnsupportedEncodingException;
-
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import java.util.Properties;
 
-import oracle.dbtools.raptor.utils.Connections;
-
-import oracle.javatools.db.DBException;
-
-import oracle.jdbc.OracleConnection;
-
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
+
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.javatools.db.DBException;
 
 public class DatabaseConnection {
 
@@ -173,11 +167,11 @@ public class DatabaseConnection {
     }
     
 	public boolean checkConnection(Connection _conn) {
-LOGGER.debug("checkConnection _conn = " + (_conn==null?"null":"not null"));
+		LOGGER.debug("checkConnection _conn = " + (_conn==null?"null":"not null"));
         if ( _conn == null )
             return false;
         try {
-LOGGER.debug("_conn.isValid()=" + _conn.isValid(0));
+        	LOGGER.debug("_conn.isValid()=" + _conn.isValid(0));
             if ( _conn.isValid(0) ) {
                 return false;
             }
