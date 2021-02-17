@@ -35,13 +35,13 @@ import oracle.spatial.geometry.JGeometry;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
@@ -763,7 +763,7 @@ class AttribTableModel extends DefaultTableModel
             } else if ( value instanceof String ) {
                 return (String)value;
             } else  {
-                return SQLConversionTools.convertToString((OracleConnection)this.adv.svPanel.activeView.getConnection(),
+                return SQLConversionTools.convertToString(this.adv.svPanel.activeView.getConnection(),
                                                           this.getColumnName(column), 
                                                           value);
             }

@@ -20,7 +20,7 @@ import org.w3c.dom.Node;
 
 public class Styling {
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging
+	private static final Logger LOGGER = org.geotools.util.logging.Logging 
 			.getLogger("org.GeoRaptor.SpatialView.layers.Styling");
 
 	public static enum STYLING_TYPE {

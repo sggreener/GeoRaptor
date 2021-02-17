@@ -26,7 +26,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
-import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OracleResultSet;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleStatement;
@@ -701,7 +700,7 @@ public class ExporterWriter
                                                                 : Preferences.getInstance().getNullDate(),
                                                                 rsMD); // This gives us yyyy-MM-DD as required by dBase etc.
                                     } else {
-                                        columnValue = SQLConversionTools.convertToString((OracleConnection)conn,rSet,col);
+                                        columnValue = SQLConversionTools.convertToString(conn,rSet,col);
                                         if ( columnValue == null ) {
                                             if ((getExportType().compareTo(Constants.EXPORT_TYPE.SHP)==0 ||
                                                  getExportType().compareTo(Constants.EXPORT_TYPE.TAB)==0 ) ) {

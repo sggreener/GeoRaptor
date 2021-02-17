@@ -4,7 +4,6 @@ import oracle.ide.log.LogManager;
 import oracle.ide.log.LogPage;
 
 import org.GeoRaptor.tools.Strings;
-//import org.GeoRaptor.tools.Tools;
 
 public class Messages {
     public Messages() {

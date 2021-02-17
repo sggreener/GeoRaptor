@@ -1,4 +1,4 @@
-package org.GeoRaptor.io;
+package org.GeoRaptor.tools;
 
 import org.GeoRaptor.Constants;
 

@@ -23,9 +23,11 @@ import java.util.ResourceBundle;
 
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.io.PrintGeometry;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.JGeom;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Tools;
 import org.locationtech.jts.geom.Geometry;
@@ -36,7 +38,9 @@ import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.jdbc.OracleTypes;
+import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
+import oracle.dbtools.raptor.utils.Connections;
 
 public class SDOTester
 {
@@ -63,7 +67,8 @@ public class SDOTester
               case 10: getLayerGType(); 
               }
               */
-            testBundle();
+            //testBundle();
+            testJMbr(new Envelope(0,0,10,10));
 //            getLayerGType(); 
             System.out.println("Finished");
         }
@@ -72,8 +77,29 @@ public class SDOTester
             e.printStackTrace();
         }
     }
-    
-	private static void TestMetadata() {
+
+	public static void testJMbr(Envelope _mbr)
+	throws SQLException, Exception
+	{
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+        System.out.println(_mbr.toString());
+        JGeometry jGeom = JGeom.fromEnvelope(_mbr,8307);
+        
+        System.out.println(RenderTool.renderGeometryAsPlainText(jGeom, 
+                        		                                "MDSYS.SDO_GEOMETRY", 
+                        		                                Constants.bracketType.NONE, 
+                        		                                3));
+
+        Struct s;
+        s = JGeom.fromGeometry(jGeom,conn);
+        
+        System.out.println(RenderTool.renderStructAsPlainText(s, 
+                                                              Constants.bracketType.NONE, 
+                                                              3));
+        
+	}
+
+	public static void TestMetadata() {
         System.out.println("<TestMetadata>");
 		MetadataEntry me = new MetadataEntry();
 		me.setEntry("Schema","Object","Column",null);
@@ -840,7 +866,7 @@ public class SDOTester
 	
 	public static void testBundle()
 	{
-		 final String FILENAME = "/org/GeoRaptor/Resources";
+		 final String FILENAME = "org.GeoRaptor.Resources";
 
 System.out.println("Opening " + FILENAME);
 

@@ -18,9 +18,9 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
@@ -1613,7 +1613,8 @@ public class MetadataTool {
 
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         try {
-			pStatement.setObject(1,JGeometry.storeJS(_conn,_jGeom));
+        	Struct st = JGeometry.storeJS(_conn,_jGeom);
+			pStatement.setObject(1,st);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -2177,7 +2178,7 @@ public class MetadataTool {
       ps.setFetchDirection(ResultSet.FETCH_FORWARD);
       ResultSet rSet = ps.executeQuery();
       if (!rSet.isBeforeFirst() ) {    
-    	  refSysKind = null;
+    	  refSysKind = Constants.SRID_TYPE.UNKNOWN.toString();
       } else if (rSet.next()) {
         refSysKind = rSet.getString(1); if ( rSet.wasNull() ) refSysKind = Constants.SRID_TYPE.UNKNOWN.toString();
       }

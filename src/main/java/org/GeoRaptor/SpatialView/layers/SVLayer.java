@@ -43,7 +43,7 @@ public class SVLayer {
 	
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVLayer");
 	
-	private static final String propertiesFile = "org/GeoRaptor/SpatialView/resource/SVLayer";
+	private static final String propertiesFile = "org/GeoRaptor/SpatialView/SVLayer";
 	
 	protected PropertiesManager propertyManager = null; // Properties File Manager
 	
@@ -61,8 +61,9 @@ public class SVLayer {
 	
 	protected Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
 	
-	protected Constants.SRID_TYPE SRIDType = Constants.SRID_TYPE.UNKNOWN; // property describing whether layer is
-																			// geodetic or not
+	// property describing whether layer is geodetic or not
+	protected Constants.SRID_TYPE SRIDType = Constants.SRID_TYPE.UNKNOWN;
+	
 	protected Envelope mbr = null; // Layer MBR: Is different from mEntry's extent.
 									// The latter forms the initial extent of the layer but this
 									// could change as a user initiates MBR recalculation.
@@ -150,8 +151,13 @@ public class SVLayer {
 	public String toXML() {
 		return String.format(
 				"<SVLayer><Metadata>%s</Metadata><GeometryType>%s</GeometryType><SridType>%s</SridType>%s<Precision>%s</Precision><ConnName>%s</ConnName><isSTGeometry>%s</isSTGeometry></SVLayer>",
-				this.mEntry.toXML(), this.geometryType.toString(), this.SRIDType.toString(), this.mbr.toXML(),
-				this.precision, this.connName, String.valueOf(this.isSTGeometry));
+				this.mEntry.toXML(), 
+				this.geometryType.toString(), 
+				this.SRIDType.toString(), 
+				this.mbr.toXML(),
+				this.precision, 
+				this.connName, 
+				String.valueOf(this.isSTGeometry));
 	}
 
 	public boolean equals(Object obj) {
@@ -399,7 +405,8 @@ public class SVLayer {
 		return false;
 	}
 
-	public Connection getConnection() throws IllegalStateException {
+	public Connection getConnection() throws IllegalStateException 
+	{
 		if (Strings.isEmpty(this.connName)) {
 			return DatabaseConnections.getInstance().getActiveConnection();
 		} else {

@@ -2,14 +2,11 @@ package org.GeoRaptor.sql;
 
 import java.sql.Connection;
 
-import java.sql.SQLException;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import javax.swing.JComboBox;
 
-import oracle.dbtools.raptor.config.DBConfig;
 import oracle.dbtools.raptor.connections.ConnectionEvent;
 import oracle.dbtools.raptor.connections.ConnectionListener;
 import oracle.dbtools.raptor.utils.Connections;
@@ -17,14 +14,12 @@ import oracle.dbtools.raptor.utils.Connections;
 import oracle.javatools.db.DBException;
 
 import org.GeoRaptor.Messages;
-import org.GeoRaptor.SpatialView.JDevInt.DockableSV;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.tools.Strings;
 
 import org.geotools.util.logging.Logger;
-
 
 public class DatabaseConnections {
 
@@ -39,7 +34,7 @@ public class DatabaseConnections {
         this.setConnections(true);
         Connections.getInstance().addConnectionListener(new ConnectionListener() {
 
-            private void addSQLConnection(ConnectionEvent evt) {
+             private void addSQLConnection(ConnectionEvent evt) {
                 Connection conn = null;
                 try {
                     conn = Connections.getInstance().getConnection(evt.getConnectionName());
@@ -74,7 +69,7 @@ public class DatabaseConnections {
              addSQLConnection(evt);
              // Change layers that have oldName to newName
              //
-             SpatialViewPanel svPanel = DockableSV.getSpatialViewPanel();
+             SpatialViewPanel svPanel = SpatialViewPanel.getInstance();             
              Iterator<String> it = svPanel.getViews().keySet().iterator();
              SpatialView itView = null;
              while (it.hasNext()) {
@@ -153,10 +148,10 @@ public class DatabaseConnections {
     
     public Connection getConnection(String  _connName)
     {
-        //LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
+LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
         DatabaseConnection dbConn = this.findConnectionByName(_connName);
         if ( dbConn == null ) {
-            //LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
+LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
             return null;
         }
         return dbConn.getConnection();

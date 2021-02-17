@@ -32,7 +32,7 @@ import org.locationtech.jts.geom.Polygon;
  * @author Martin Davis
  *
  */
-class OraGeom
+public class OraGeom
 {
     public static final int NULL_DIMENSION = -1;	
     

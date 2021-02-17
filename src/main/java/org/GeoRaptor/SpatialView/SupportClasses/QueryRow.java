@@ -13,8 +13,8 @@ import oracle.spatial.geometry.JGeometry;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.JDevInt.RenderTool;
-import org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer;
+import org.GeoRaptor.tools.RenderTool;
+import org.GeoRaptor.tools.SpatialRenderer;
 
 /**
  * Result row for "queryByPos" function

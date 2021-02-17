@@ -1,5 +1,5 @@
 
-package org.GeoRaptor.SpatialView.JDevInt;
+package org.GeoRaptor.tools;
 
 import java.sql.Array;
 import java.sql.SQLException;
@@ -17,10 +17,6 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.tools.SDO_GEOMETRY;
-
-import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 import org.locationtech.jts.io.oracle.OraUtil;
 

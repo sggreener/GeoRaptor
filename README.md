@@ -1,1 +1,1 @@
-# GeoRaptor19.1
+# GeoRaptor for SQL Developer
