@@ -46,6 +46,15 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/lib/dbtools-common.jar</systemPath>
 		</dependency>
+		
+		<dependency>
+			<groupId>oracle</groupId>
+			<artifactId>oracle.dbtools-data</artifactId>
+			<version>12.2.0</version>
+			<scope>system</scope>
+			<systemPath>${sqldev.basedir}/sqldeveloper/lib/dbtools-data.jar</systemPath>
+		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>oracle.ide</artifactId>
