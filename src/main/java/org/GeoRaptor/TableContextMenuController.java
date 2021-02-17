@@ -65,32 +65,22 @@ public class TableContextMenuController implements Controller
         Connection             conn = dbo.getDatabase().getConnection();
 
         String activeConnectionName = dbo.getConnectionName();
-<<<<<<< HEAD
 System.out.println("activeConnectionName="+activeConnectionName);
-=======
-        String   connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
->>>>>>> c1f26cb3807e438ae0356028cebdeffeb9981631
         String       connectionType = dbo.getConnectionType();
 System.out.println("connectionType="+connectionType);
         boolean             isMySQL = "MySQL".equals(connectionType);
 
-<<<<<<< HEAD
         // Get connection information  
-=======
         // Get object that has been selected in this connection
->>>>>>> c1f26cb3807e438ae0356028cebdeffeb9981631
         //
         String selectedSchemaName = dbo.getSchemaName();
         String selectedObjectName = dbo.getObjectName();
         String selectedColumnName = dbo.getChildName();
-<<<<<<< HEAD
         String connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
 System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selectedObjectName+"/"+selectedColumnName+"/"+connectionUserName);
 
-=======
         String selectedObjectType = dbo.getObjectFolderType(); // SGG
         
->>>>>>> c1f26cb3807e438ae0356028cebdeffeb9981631
 		int cmdId = action.getCommandId();
 		
 		if (cmdId == ZOOM_TO_MAP || cmdId == ADD_TO_MAP) 
