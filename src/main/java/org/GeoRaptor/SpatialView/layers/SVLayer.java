@@ -408,7 +408,7 @@ public class SVLayer {
 	public Connection getConnection() throws IllegalStateException 
 	{
 		if (Strings.isEmpty(this.connName)) {
-			return DatabaseConnections.getInstance().getAnyOpenConnection();
+			return DatabaseConnections.getInstance().getActiveConnection();
 		} else {
 			return DatabaseConnections.getInstance().getConnection(this.connName);
 		}

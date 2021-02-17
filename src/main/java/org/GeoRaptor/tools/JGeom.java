@@ -13,7 +13,11 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraUtil;
 
+import oracle.jdbc.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
+import oracle.sql.ARRAY;
+import oracle.sql.NUMBER;
+import oracle.sql.STRUCT;
 import oracle.sql.StructDescriptor;
 
 public class JGeom {
@@ -36,10 +40,10 @@ public class JGeom {
                                      Connection _conn) 
     throws Exception 
     {
-System.out.println("fromGeometry.StoreJS");
+System.out.println("fromGeometry");
+//This fails with "Fail to convert to internal representation"
         Struct st = JGeometry.storeJS(_geom,_conn);
         return st;
-
 /*
         int SDO_GTYPE = 0;
         try {
@@ -62,7 +66,7 @@ System.out.println("fromGeometry.StoreJS");
         double[] SDO_ORDINATE_ARRAY = null;
         try { SDO_ORDINATE_ARRAY    = _geom.getOrdinatesArray(); } catch (Exception e) { }
         
-        descriptors = new Object[5] ;
+        Object[] descriptors = new Object[5] ;
         descriptors[0] = SDO_GTYPE;
         descriptors[1] = SDO_SRID;
         descriptors[2] = SDO_POINT;
@@ -70,10 +74,9 @@ System.out.println("fromGeometry.StoreJS");
         descriptors[4] = SDO_ORDINATE_ARRAY;
 
         Struct st = _conn.createStruct("MDSYS.SDO_GEOMETRY", descriptors);
-System.out.println("fromGeometry - End. st is " + st.getSQLTypeName() + " " + (st==null?"null":"not null"));
 
         return st;
-/*
+        
         return SDO_GEOMETRY.toSdoGeometry (
         		  _conn,
         		  SDO_GTYPE,

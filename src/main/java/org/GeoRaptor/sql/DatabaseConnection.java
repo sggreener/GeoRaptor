@@ -167,11 +167,11 @@ public class DatabaseConnection {
     }
     
 	public boolean checkConnection(Connection _conn) {
-LOGGER.debug("checkConnection _conn = " + (_conn==null?"null":"not null"));
+		LOGGER.debug("checkConnection _conn = " + (_conn==null?"null":"not null"));
         if ( _conn == null )
             return false;
         try {
-LOGGER.debug("_conn.isValid()=" + _conn.isValid(0));
+        	LOGGER.debug("_conn.isValid()=" + _conn.isValid(0));
             if ( _conn.isValid(0) ) {
                 return false;
             }

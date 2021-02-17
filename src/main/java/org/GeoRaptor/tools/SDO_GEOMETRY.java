@@ -541,8 +541,8 @@ public class SDO_GEOMETRY
         	               /* int[] elemInfo */     geom.getElemInfo(),
         	               /* double[] ordinates */ geom.getOrdinatesArray()
         	          );
-            Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-            return JGeometry.storeJS(newGeom,localConnection);      
+            Connection localConnection = DatabaseConnections.getInstance().getActiveConnection();
+            return JGeometry.storeJS(newGeom,localConnection);
         } catch (Exception e) {
             return _struct;
         }
