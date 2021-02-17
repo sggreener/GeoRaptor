@@ -1219,6 +1219,7 @@ LOGGER.debug("btnQueryByPoint: finish");
         String columnName = null;
         try 
         {
+            // ****************************
             // Get all geo columns in the object
             //
             List<String> geoColumns;
@@ -1242,10 +1243,11 @@ LOGGER.debug("btnQueryByPoint: finish");
                                             JOptionPane.ERROR_MESSAGE);
               return LayerReturnCode.Fail;
             }
-            if ( geoColumns ==null || geoColumns.size()==0) {
+            if ( geoColumns==null || geoColumns.size()==0) {
                 throw new Exception("No geometry columns exist in " + Strings.append(_schemaName, _objectName, "."));
             } 
             
+            // **************************************************************
             // If supplied name is empty we need to ask for the column to map
             //
             if (Strings.isEmpty(_columnName) ) { 
@@ -1291,6 +1293,7 @@ LOGGER.debug("btnQueryByPoint: finish");
           return LayerReturnCode.Fail;
         }
         
+        // ****************************
         // Now get new layer's metadata
         //
         String schemaTableColumn =
@@ -1333,9 +1336,9 @@ LOGGER.debug("btnQueryByPoint: finish");
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                      mEntry.getObjectName(), 
                                                      mEntry.getColumnName());
-System.out.println(mEntry.toString());
         LOGGER.info("layerName from mEntry is " + layerName);
 
+        // ****************************
         // layer gtype discovery
         //
         String layerGeometryType = "";
@@ -1348,7 +1351,6 @@ System.out.println(mEntry.toString());
                                                                   mEntry.getColumnName(),
                                                                   0, /* samplePercentage */
                                                                   1  /* sampleRows */ );
-System.out.println(layerGeometryType);
             if (Strings.isEmpty(layerGeometryType)) {
                 LOGGER.error("getLayerGeometryType for " + layerName + " returned null");
             }
@@ -1362,9 +1364,6 @@ System.out.println(layerGeometryType);
         // We have enough information to create a valid layer
         // Need to construct using _objectType ????
         //
-System.out.println(this.activeView == null ? "activeView is null":this.activeView.toString());
-System.out.println(layerName);
-
         SVSpatialLayer layer = new SVSpatialLayer(this.activeView,  // Use activeView temporarily
                                                   layerName, 
                                                   SVPanelPreferences.isSchemaPrefix()
@@ -1381,10 +1380,11 @@ System.out.println(layerName);
         }
         LOGGER.info(layer.getVisibleName() + "'s mbr is " + layer.getMBR());
 
+        // ****************************
         // Set layer properties
         // 
-        layer.setConnectionName(_connectionName);
-        layer.setGeometryType(layerGeometryType); LOGGER.info("connection set to " + _connectionName);
+        layer.setConnectionName(_connectionName); LOGGER.info("Connection Name set to " + _connectionName);
+        layer.setGeometryType(layerGeometryType); 
         layer.setSRIDType();                      LOGGER.info("layer srid type is " + layer.getSRIDType().toString());
         if ( layer.getSRIDType().toString().startsWith("GEO") ) {
             layer.setPrecision(Constants.MAX_PRECISION);

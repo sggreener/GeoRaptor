@@ -40,17 +40,27 @@ import org.xml.sax.SAXException;
 public class SVLayer {
 
 	public static final String CLASS_NAME = Constants.KEY_SVLAYER;
+	
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVLayer");
-	//private static final String propertiesFile = "org.GeoRaptor.SpatialView.resource.SVLayer";
+	
 	private static final String propertiesFile = "org/GeoRaptor/SpatialView/resource/SVLayer";
+	
 	protected PropertiesManager propertyManager = null; // Properties File Manager
+	
 	protected SpatialView spatialView = null; // reference to main class for common operations (show error message, etc)
+	
 	protected String connName = ""; // Name of the connection in Raptor project
+	
 	protected MetadataEntry mEntry = null; // MetadataEntry for this table/column object
+	
 	private final int defaultPrecision = 3;
+	
 	private int precision = defaultPrecision;
+	
 	private boolean isSTGeometry = false;
+	
 	protected Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
+	
 	protected Constants.SRID_TYPE SRIDType = Constants.SRID_TYPE.UNKNOWN; // property describing whether layer is
 																			// geodetic or not
 	protected Envelope mbr = null; // Layer MBR: Is different from mEntry's extent.

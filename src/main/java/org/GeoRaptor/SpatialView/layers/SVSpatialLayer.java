@@ -273,9 +273,7 @@ public class SVSpatialLayer
     }
 
     private void initialise() {
-System.out.println("gettin preferences");
         this.preferences = MainSettings.getInstance().getPreferences();
-System.out.println("getFetchSize=" + String.valueOf(preferences.getFetchSize()));
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
     }
