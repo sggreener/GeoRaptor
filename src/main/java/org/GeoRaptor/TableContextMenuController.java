@@ -1,5 +1,6 @@
 package org.GeoRaptor;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -7,12 +8,13 @@ import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
+import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;
@@ -20,6 +22,7 @@ import oracle.ide.Context;
 import oracle.ide.Ide;
 import oracle.ide.controller.Controller;
 import oracle.ide.controller.IdeAction;
+import oracle.sql.ArrayDescriptor;
 
 /**
  * @author Bessie Gong Email: sadbessie@gmail.com
@@ -52,32 +55,24 @@ public class TableContextMenuController implements Controller
 	@Override
 	public boolean handleEvent(IdeAction action, Context context) 
 	{
-        //final String connectionName = getConnectionName(getURL(context));
-        //DatabaseConnection dc = new org.GeoRaptor.sql.DatabaseConnection(connectionName);
-        //final Connection conn = dc.getConnection(); //Connections.getInstance().getConnection(connectionName);
         
-        // Get connection and name of user that made the connection
-        //
     	DBObject                dbo = new DBObject(context.getNode());
 
-        // Get Connection information we need to store.
+        // Get Connection information 
         //
         Connection             conn = dbo.getDatabase().getConnection();
 
         String activeConnectionName = dbo.getConnectionName();
-System.out.println("activeConnectionName="+activeConnectionName);
         String       connectionType = dbo.getConnectionType();
-System.out.println("connectionType="+connectionType);
         boolean             isMySQL = "MySQL".equals(connectionType);
 
-        // Get connection information  
+        // Get connection information
         // Get object that has been selected in this connection
         //
         String selectedSchemaName = dbo.getSchemaName();
         String selectedObjectName = dbo.getObjectName();
-        String selectedColumnName = dbo.getChildName();
+        String selectedColumnName = dbo.getChildName(); // Column name if column node selected, null if table node selected.
         String connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
-System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selectedObjectName+"/"+selectedColumnName+"/"+connectionUserName);
 
         String selectedObjectType = dbo.getObjectFolderType(); // SGG
         
@@ -116,7 +111,7 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                 // show Spatial View (maybe window is not open)
                 svp.show();
               } else if ( lrc == SpatialViewPanel.LayerReturnCode.Fail ) {           	  
-                show("SpatialViewPanel jfailed to load");
+                show("SpatialViewPanel failed to load");
               }
             }
             
@@ -144,7 +139,7 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                     true
             );
 			
-		}else if (cmdId == MANAGE_METADATA) {
+		} else if (cmdId == MANAGE_METADATA) {
 			
 			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             Metadata(conn, 
@@ -153,7 +148,7 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                     selectedColumnName,
                     connectionUserName);
             
-		}else if (cmdId == DROP_METADATA) {
+		} else if (cmdId == DROP_METADATA) {
 			
 			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             ManageSpatialIndex.getInstance().dropIndex(conn, 
@@ -166,8 +161,6 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
 			
 			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
-            String title = GENERAL_ERROR;
-            int message = JOptionPane.ERROR_MESSAGE;
             try 
             {
                 ExporterWizard ew = new ExporterWizard("Export to ...",
@@ -180,20 +173,8 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                     ew.show();
                 }
 
-            } catch (SQLException sqle) {
-                JOptionPane.showMessageDialog(null,
-                                              "SQLException: " + sqle.getMessage(),
-                                              GENERAL_ERROR,
-                                              JOptionPane.ERROR_MESSAGE);
-                
-            } catch (IllegalArgumentException iae) {
-                JOptionPane.showMessageDialog(null,
-                                              iae.getMessage(),
-                                              GENERAL_ERROR,
-                                              JOptionPane.ERROR_MESSAGE);
-                
             } catch (Exception _e) {
-                JOptionPane.showMessageDialog(null, _e.getMessage(), title, message);
+                JOptionPane.showMessageDialog(null, _e.getMessage(), GENERAL_ERROR, JOptionPane.ERROR_MESSAGE);
             }
 
 		} else if (cmdId == VALIDATE_GEOMETRY || cmdId == VALIDATE_COLUMN) {
@@ -218,7 +199,7 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                                               GENERAL_ERROR,
                                               JOptionPane.ERROR_MESSAGE);
             }
- 		}else if (cmdId == IMPORT_SHAPEFILE) {
+ 		} else if (cmdId == IMPORT_SHAPEFILE) {
 			ShapefileLoad.getInstance().initialise();
 		}
 		return true;
@@ -236,11 +217,9 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
                           String     selectedColumnName,
                           String     connectionUserName) 
     {
-    	String title = GENERAL_ERROR;
-    	int message = JOptionPane.ERROR_MESSAGE;
     	try 
     	{
-    		if ( selectedSchemaName.equalsIgnoreCase(connectionUserName) || MetadataTool.checkCrossSchemaDMLPermissions(conn)) 
+    		if ( selectedSchemaName.equalsIgnoreCase(connectionUserName) || Queries.checkCrossSchemaDMLPermissions(conn)) 
     		{
     			MetadataPanel mp = MetadataPanel.getInstance();
     			boolean status =  mp.initialise(
@@ -254,27 +233,18 @@ System.out.println("schema/object/column/user=" + selectedSchemaName+"/"+selecte
     			}
     		}
     		else {
-    			title = MainSettings.EXTENSION_NAME;
-    			message = JOptionPane.INFORMATION_MESSAGE;
-    			throw new Exception("Cannot execute cross-schema metadata inserts, updates or deletes.\n" +
+    			throw new Exception(
+                        "Cannot execute cross-schema metadata inserts, updates or deletes.\n" +
     					"Unless you: \n" +
     					"Grant Delete On Mdsys.SDO_GEOM_METADATA_TABLE To Public (or " + connectionUserName + ")");
     		}
     		
     	} catch (SQLException sqle) {
-    		JOptionPane.showMessageDialog(null,
-                            	"SQLException: " + sqle.getMessage(),
-                            	GENERAL_ERROR,
-                            	JOptionPane.ERROR_MESSAGE);
-
+    		JOptionPane.showMessageDialog(null,sqle.getMessage(),GENERAL_ERROR,JOptionPane.ERROR_MESSAGE);
     	} catch (IllegalArgumentException iae) {
-    		JOptionPane.showMessageDialog(null,
-                            	iae.getMessage(),
-                            	GENERAL_ERROR,
-                            	JOptionPane.ERROR_MESSAGE);
-
+    		JOptionPane.showMessageDialog(null,iae.getMessage(),GENERAL_ERROR,JOptionPane.ERROR_MESSAGE);
     	} catch (Exception _e) {
-    		JOptionPane.showMessageDialog(null, _e.getMessage(), title, message);
+    		JOptionPane.showMessageDialog(null, _e.getMessage(), MainSettings.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
     	}
     }
 

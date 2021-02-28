@@ -1,6 +1,7 @@
 package org.GeoRaptor.tools;
 
 import java.awt.geom.Point2D;
+import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -10,12 +11,15 @@ import java.util.List;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.sql.Queries;
 import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.jdbc.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
 import oracle.sql.ARRAY;
+import oracle.sql.ArrayDescriptor;
+import oracle.sql.Datum;
 import oracle.sql.NUMBER;
 import oracle.sql.STRUCT;
 import oracle.sql.StructDescriptor;
@@ -36,55 +40,74 @@ public class JGeom {
                 _jGeom.getType();
     }
 
-    public static Struct fromGeometry(JGeometry _geom, 
-                                     Connection _conn) 
+    public static Struct toStruct(JGeometry _geom, 
+                                 Connection _conn) 
     throws Exception 
     {
-System.out.println("fromGeometry");
-//This fails with "Fail to convert to internal representation"
-        Struct st = JGeometry.storeJS(_geom,_conn);
-        return st;
-/*
-        int SDO_GTYPE = 0;
+      Struct stGeom = null;
+      String sdo_geometry = null;
+	  sdo_geometry = RenderTool.renderGeometryAsPlainText(_geom, Constants.TAG_MDSYS_SDO_GEOMETRY, Constants.bracketType.NONE,12);
+      stGeom = Queries.getSdoGeometry(_conn,sdo_geometry);
+      // stGeom = JGeom.fromGeometry(_geom,_conn);
+      return stGeom;
+    }
+    
+    @SuppressWarnings("deprecation")
+	public static Struct fromGeomElements(JGeometry _geom, 
+                                         Connection _conn)
+    throws Exception
+    {
+    	BigDecimal SDO_GTYPE = BigDecimal.valueOf(0);
         try {
-        	SDO_GTYPE = ((_geom.getDimensions() * 1000) + 
+        	int sdo_gtype = ((_geom.getDimensions() * 1000) + 
                      ((_geom.isLRSGeometry() && _geom.getDimensions()==3) ? 300 
                    : ((_geom.isLRSGeometry() && _geom.getDimensions()==4) ? 400
                    : 0)) + _geom.getType());
+        	SDO_GTYPE = BigDecimal.valueOf(sdo_gtype);
         } catch (Exception e) {
-        	SDO_GTYPE = 0;
+        	SDO_GTYPE = BigDecimal.valueOf(0);
         }
-        int SDO_SRID              = Constants.SRID_NULL; 
-        try { SDO_SRID  = _geom.getSRID(); } catch (Exception e) { SDO_SRID = Constants.SRID_NULL; }
         
-        double[] SDO_POINT        = null;                
-        try { SDO_POINT = _geom.getLabelPointXYZ()==null? _geom.getPoint() : _geom.getLabelPointXYZ(); } catch (Exception e) { }
+        int sdo_srid = 0;
+        try { sdo_srid = _geom.getSRID(); } catch (Exception e) { sdo_srid = Constants.SRID_NULL; }
+        BigDecimal SDO_SRID = BigDecimal.valueOf(sdo_srid);
         
-        int[] SDO_ELEM_INFO_ARRAY = null;
-        try { SDO_ELEM_INFO_ARRAY = _geom.getElemInfo();        } catch (Exception e) { }
+        double[] sdo_point = null;                
+        try { 
+        	sdo_point = _geom.getLabelPointXYZ()==null 
+        			  ? _geom.getPoint() 
+                      : _geom.getLabelPointXYZ(); 
+        } catch (Exception e) { }
+        StructDescriptor sdo_point_descriptor = StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_POINT_TYPE,_conn);
+        Datum sdo_point_data[] = new Datum[] {
+            OraUtil.toNUMBER(sdo_point[0]),
+            OraUtil.toNUMBER(sdo_point[1]), 
+            OraUtil.toNUMBER(sdo_point[2])
+        };
+        STRUCT SDO_POINT = new STRUCT(sdo_point_descriptor, _conn, sdo_point_data);
         
-        double[] SDO_ORDINATE_ARRAY = null;
-        try { SDO_ORDINATE_ARRAY    = _geom.getOrdinatesArray(); } catch (Exception e) { }
+        int[] iSDO_ELEM_INFO_ARRAY = null;
+        try { iSDO_ELEM_INFO_ARRAY = _geom.getElemInfo(); } catch (Exception e) { }
+        ArrayDescriptor sdo_elem_info_array_descriptor = ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ELEM_ARRAY,_conn);
+        ARRAY SDO_ELEM_INFO_ARRAY = new ARRAY(sdo_elem_info_array_descriptor, _conn, iSDO_ELEM_INFO_ARRAY);
         
-        Object[] descriptors = new Object[5] ;
-        descriptors[0] = SDO_GTYPE;
-        descriptors[1] = SDO_SRID;
-        descriptors[2] = SDO_POINT;
-        descriptors[3] = SDO_ELEM_INFO_ARRAY;
-        descriptors[4] = SDO_ORDINATE_ARRAY;
+        double[] dSDO_ORDINATE_ARRAY = null;
+        try { dSDO_ORDINATE_ARRAY    = _geom.getOrdinatesArray(); } catch (Exception e) { }
+        ArrayDescriptor sdo_ordinate_array_descriptor = ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ORD_ARRAY,_conn);
+        ARRAY SDO_ORDINATE_ARRAY = new ARRAY(sdo_ordinate_array_descriptor, _conn, dSDO_ORDINATE_ARRAY);
 
-        Struct st = _conn.createStruct("MDSYS.SDO_GEOMETRY", descriptors);
-
-        return st;
-        
-        return SDO_GEOMETRY.toSdoGeometry (
-        		  _conn,
-        		  SDO_GTYPE,
-                  SDO_SRID,
+        // SDO_GEOMETRY
+        Datum sdo_geometry_data[] = new Datum[] {
+        		  new NUMBER(SDO_GTYPE),
+                  new NUMBER(SDO_SRID),
                   SDO_POINT,
                   SDO_ELEM_INFO_ARRAY,
-                  SDO_ORDINATE_ARRAY);
-*/
+                  SDO_ORDINATE_ARRAY
+        };
+        StructDescriptor sdo_geometry_descriptor = StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_GEOMETRY,_conn);
+        Struct stGeom = null;
+        stGeom = new STRUCT(sdo_geometry_descriptor, _conn, sdo_geometry_data);
+        return stGeom;
     }
 
 	public static JGeometry fromEnvelope(Envelope _mbr,

@@ -4097,7 +4097,14 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
     private void btnCopyQueryGeometryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCopyQueryGeometryActionPerformed
         if ( this.layer instanceof SVQueryLayer ) {
             SVQueryLayer qLayer = (SVQueryLayer)this.layer;
-            Tools.doClipboardCopy(RenderTool.renderGeometryAsPlainText(qLayer.getGeometry(),Constants.TAG_MDSYS_SDO_GEOMETRY,Constants.bracketType.NONE,qLayer.getPrecision()));
+            Tools.doClipboardCopy(
+                    RenderTool.renderGeometryAsPlainText(
+                               qLayer.getGeometry(),
+                               Constants.TAG_MDSYS_SDO_GEOMETRY,
+                               Constants.bracketType.NONE,
+                               qLayer.getPrecision()
+                    )
+            );
         } else {
             LOGGER.warn(this.layer.getVisibleName() + " is not a query layer");
         }

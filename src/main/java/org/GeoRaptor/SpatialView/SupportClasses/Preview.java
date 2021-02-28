@@ -36,7 +36,7 @@ import javax.swing.text.StyleConstants;
 
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -192,7 +192,7 @@ implements ComponentListener
         if (SRID != -1) {
             try {
                 String dRefSysKind;
-                dRefSysKind = MetadataTool.getSRIDRefSysKind(_conn, String.valueOf(SRID));
+                dRefSysKind = Queries.getSRIDRefSysKind(_conn, String.valueOf(SRID));
                 this.isGeodetic = dRefSysKind.startsWith("GEO");
             } catch (SQLException e) {
                 this.isGeodetic = false;

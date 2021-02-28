@@ -21,7 +21,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 
 import java.sql.Connection;
-
+import java.sql.DriverManager;
 import java.io.IOException;
 
 import java.sql.SQLException;
@@ -426,7 +426,9 @@ public class SVSpatialLayerDraw {
         Struct stGeom = null;
         try
         {
-            stGeom = JGeometry.storeJS(this.layerConnection,_geom);
+        	Connection conn = this.layerConnection;
+            //stGeom = JGeometry.storeJS(conn,_geom);
+            stGeom = JGeom.toStruct(_geom,conn);
             if ( stGeom == null ) {
                 return null;
             }

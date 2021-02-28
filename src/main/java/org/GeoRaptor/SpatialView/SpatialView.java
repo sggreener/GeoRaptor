@@ -28,7 +28,6 @@ import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
@@ -36,6 +35,7 @@ import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -565,7 +565,7 @@ LOGGER.debug("*** Removing " + _layerName);
           Connection c = this.getConnection();
           if ( c == null )  // There is no connection available. Perhaps we are starting up? 
               return;
-          String SRIDUOM = MetadataTool.getSRIDBaseUnitOfMeasure(c,this.getSRID());
+          String SRIDUOM = Queries.getSRIDBaseUnitOfMeasure(c,this.getSRID());
           if (Strings.isEmpty(SRIDUOM)) { 
               this.SRIDBaseUnitType = "M";
               this.distanceUnitType = "M";

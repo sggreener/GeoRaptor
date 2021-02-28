@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 
@@ -92,7 +93,7 @@ public class RetrieveDimElementThread implements Runnable {
             String isGeographic = "ISGEOGRAPHIC";
             String sSRID = "SRID";
             // If geometry is ST_ geometry we need to reference the internal sdo_geometry
-            boolean isSTGeom = MetadataTool.isSTGeometry(dbConn,
+            boolean isSTGeom = Queries.isSTGeometry(dbConn,
                                                          getMetadataEntry().getSchemaName(),
                                                          getMetadataEntry().getObjectName(),
                                                          getMetadataEntry().getColumnName());

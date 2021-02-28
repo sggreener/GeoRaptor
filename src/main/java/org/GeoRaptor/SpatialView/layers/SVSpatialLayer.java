@@ -42,11 +42,12 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
+import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
@@ -514,7 +515,7 @@ public class SVSpatialLayer
     public void setObjectType(String _objectType) {
         if (Strings.isEmpty(_objectType) ) {
             try {
-                this.objectType = Constants.OBJECT_TYPES.valueOf(MetadataTool.getObjectType(super.getConnection(),
+                this.objectType = Constants.OBJECT_TYPES.valueOf(Queries.getObjectType(super.getConnection(),
                                                                                             mEntry.getSchemaName(),
                                                                                             mEntry.getObjectName()));
             } catch (SQLException e) {
@@ -547,7 +548,7 @@ public class SVSpatialLayer
             LOGGER.debug("SVSpatialLayer(" + 
                          this.getLayerNameAndConnectionName() + 
                          ").setIndex.isSpatiallyIndexed()");
-            this.indexExists = MetadataTool.isSpatiallyIndexed(conn,
+            this.indexExists = Queries.isSpatiallyIndexed(conn,
                                                                super.getSchemaName(),
                                                                super.getObjectName(),
                                                                super.getGeoColumn(),
@@ -599,12 +600,12 @@ public class SVSpatialLayer
             this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
         {
             try {
-                lMBR.setMBR(MetadataTool.getExtentFromRTree(conn,
-                                                            this.getSchemaName(),
-                                                            this.getObjectName(),
-                                                            this.getGeoColumn(),
-                                                            this.getSRID(),
-                                                            String.valueOf(_targetSRID))); 
+                lMBR.setMBR(Queries.getExtentFromRTree(conn,
+                                                       this.getSchemaName(),
+                                                       this.getObjectName(),
+                                                       this.getGeoColumn(),
+                                                       this.getSRID(),
+                                                       String.valueOf(_targetSRID))); 
                 LOGGER.debug("SVSpatialLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
                 if ( lMBR.isSet() ) {
                     super.setMBR(lMBR);
@@ -620,7 +621,7 @@ public class SVSpatialLayer
         //
         boolean hasMetadata = false;
         try {
-            hasMetadata = MetadataTool.hasGeomMetadataEntry(conn,
+            hasMetadata = Queries.hasGeomMetadataEntry(conn,
                                                             this.getSchemaName(),
                                                             this.getObjectName(),
                                                             this.getGeoColumn());
@@ -628,7 +629,7 @@ public class SVSpatialLayer
             if ( hasMetadata ) {
                 try 
                 {
-                    lMBR = MetadataTool.getExtentFromDimInfo(conn, 
+                    lMBR = Queries.getExtentFromDimInfo(conn, 
                                                              this.getSchemaName(),
                                                              this.getObjectName(), 
                                                              this.getGeoColumn(),
@@ -654,11 +655,11 @@ public class SVSpatialLayer
         //
         try 
         {
-            lMBR = MetadataTool.getExtentFromSample(conn, 
-                                                    this.getSchemaName(),
-                                                    this.getObjectName(), 
-                                                    this.getGeoColumn(),
-                                                    Constants.VAL_MBR_SAMPLE_LIMIT);
+            lMBR = Queries.getExtentFromSample(conn, 
+                                               this.getSchemaName(),
+                                               this.getObjectName(), 
+                                               this.getGeoColumn(),
+                                               Constants.VAL_MBR_SAMPLE_LIMIT);
             if ( lMBR.isSet() ) {
                 super.setMBR(lMBR);
                 if (multiTry) {
@@ -691,10 +692,10 @@ public class SVSpatialLayer
         //
         String columns = "";
         try {
-          columns = MetadataTool.getColumns(super.getConnection(),
-                                            super.getSchemaName(),
-                                            super.getObjectName(),
-                                            true /* _supportedDataTypes */ );
+          columns = Queries.getColumns(super.getConnection(),
+                                       super.getSchemaName(),
+                                       super.getObjectName(),
+                                       true /* _supportedDataTypes */ );
         } catch (IllegalStateException ise) {
             return null;
         } catch (SQLException sqle) {
@@ -751,27 +752,10 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     {
     	Struct sGeom = null;
         try {
-            JGeometry jGeom = JGeom.fromEnvelope(_mbr,_sourceSRID);
-            
-            // Now convert JGeometry to Struct
-            //
-            Connection conn = null;
-        	conn = super.getConnection();
-/* If I use the connection I get an error when constructing the Struct from the JGeometry
-   Yet it works if I create a new connection
-  */
-//conn = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12","codesys","c0d3mg5");
-
-            if (_project && _sourceSRID != 0 && _destinationSRID!=0 && _sourceSRID!=_destinationSRID) {
-              // Create a projected because SRID of search geometry is different from SRID of layer.
-              //
-              sGeom = MetadataTool.projectJGeometry(conn, jGeom, _destinationSRID);
-            } else {
-              sGeom = JGeom.fromGeometry(jGeom,conn);
-            }
+            Connection conn = super.getConnection();
+            sGeom = Queries.projectEnvelope(conn,_mbr,_sourceSRID,_destinationSRID);
         } catch (Exception e) {
-System.out.println(e.getMessage());
-            LOGGER.warning(super.propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
+            LOGGER.error(super.propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
             sGeom = null;
         }
         return sGeom;
@@ -1346,7 +1330,7 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
             Connection conn = super.getConnection();
             String layerSql = this.getSQL();
             if (Strings.isEmpty(layerSql)) {
-                return new LinkedHashMap<String, String>(MetadataTool.getColumnsAndTypes(conn,
+                return new LinkedHashMap<String, String>(Queries.getColumnsAndTypes(conn,
                                                                                          this.getSchemaName(),
                                                                                          this.getObjectName(),
                                                                                          _onlyNumbersDatesAndStrings,
@@ -1591,7 +1575,7 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
         String sql = "";
         String spatialIndexName;
         try {
-            spatialIndexName = MetadataTool.getSpatialIndexName(this.getConnection(), 
+            spatialIndexName = Queries.getSpatialIndexName(this.getConnection(), 
                                                                 super.getSchemaName(), 
                                                                 super.getObjectName(), 
                                                                 super.getGeoColumn());
@@ -1758,24 +1742,16 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                 // Note: first point of line denoting search distance is the passed in point (world units)
                 //
                 pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
-                JGeometry searchJPoint = new JGeometry(_worldPoint.getX(),_worldPoint.getY(),querySRID);
-                searchPoint = project 
-                		      ? MetadataTool.projectJGeometry(conn,searchJPoint,this.getSRIDAsInteger()) 
-                              : (Struct) JGeometry.storeJS((OracleConnection)conn,  searchJPoint);
-// SGG
-                JGeometry distanceJPoint = new JGeometry(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
-                                                         _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0),
-                                                         querySRID);
-                distancePoint = project 
-                                ? MetadataTool.projectJGeometry(conn,distanceJPoint,this.getSRIDAsInteger()) 
-                                : (Struct) JGeometry.storeJS((OracleConnection)conn,  distanceJPoint);
+                searchPoint = Queries.projectSdoPoint(conn,_worldPoint,this.getSRIDAsInteger(),querySRID);
+                Point2D distancePoint2D = new Point2D.Double(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
+                                                           _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0));
+                distancePoint = Queries.projectSdoPoint(conn,distancePoint2D,this.getSRIDAsInteger(),querySRID);
                 // SDO_Filter geometry has same SRID as layer
                 Envelope mbr = new Envelope(_worldPoint.getX() - (numSearchPixels*pixelSize.getX()/1.9),
-                                                          _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
-                                                          _worldPoint.getX() + (numSearchPixels*pixelSize.getX()/1.9),
-                                                          _worldPoint.getY() + (numSearchPixels*pixelSize.getY()/1.9));
-                JGeometry searchJMBR = new JGeometry(mbr.getMinX(),mbr.getMinY(),mbr.getMaxX(),mbr.getMaxY(),this.getSRIDAsInteger());
-                searchMBR = (Struct) JGeometry.storeJS((OracleConnection)conn,searchJMBR);
+                                            _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
+                                            _worldPoint.getX() + (numSearchPixels*pixelSize.getX()/1.9),
+                                            _worldPoint.getY() + (numSearchPixels*pixelSize.getY()/1.9));
+                searchMBR = Queries.projectEnvelope(conn,mbr,this.getSRIDAsInteger(), Constants.SRID_NULL); 
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null, "Failed to create search SDO_GEOMETRY objects " + e.getMessage());
                 return null;

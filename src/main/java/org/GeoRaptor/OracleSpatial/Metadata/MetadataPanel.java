@@ -55,6 +55,7 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
@@ -1385,7 +1386,7 @@ public class MetadataPanel extends javax.swing.JDialog {
          //
          this.objectType = "";
          try {
-             this.objectType = MetadataTool.getObjectType(this.conn, this.schemaName, this.objectName);
+             this.objectType = Queries.getObjectType(this.conn, this.schemaName, this.objectName);
          } catch (Exception e /* SQLException sqle and IllegalArgumentException */ ) {
              JOptionPane.showMessageDialog(null,
                                            propertyManager.getMsg("ERROR_MESSAGE_OBJECT_TYPE_NOT_FOUND",
@@ -1417,7 +1418,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         
         // 1. Geometry column checks....
         //
-        List<String>tableGeometryColumns = new ArrayList<String>(MetadataTool.validateColumnName(this.conn,
+        List<String>tableGeometryColumns = new ArrayList<String>(Queries.validateColumnName(this.conn,
                                                                                                  this.schemaName,
                                                                                                  _objectName,
                                                                                                  _columnName));
@@ -1440,7 +1441,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         //
         this.objectType = "";
         try {
-            this.objectType = MetadataTool.getObjectType(this.conn, this.schemaName, this.objectName);
+            this.objectType = Queries.getObjectType(this.conn, this.schemaName, this.objectName);
         } catch (Exception e /* SQLException sqle and IllegalArgumentException */ ) {
             JOptionPane.showMessageDialog(null,
                                           propertyManager.getMsg("ERROR_MESSAGE_OBJECT_TYPE_NOT_FOUND",
@@ -1602,7 +1603,7 @@ public class MetadataPanel extends javax.swing.JDialog {
                                              srid,
                                              DimInfo);
             } else {
-                if (MetadataTool.checkCrossSchemaDMLPermissions(this.conn) )
+                if (Queries.checkCrossSchemaDMLPermissions(this.conn) )
                     sql = sdoGeomMetadataTableSQL(this.schemaName,
                                                   this.objectName,
                                                   targetColumn,
@@ -1648,7 +1649,7 @@ public class MetadataPanel extends javax.swing.JDialog {
     {
         String sql = null;
 
-        if (MetadataTool.hasGeomMetadataEntry(this.conn,_schemaName,_objectName,_columnName) ) 
+        if (Queries.hasGeomMetadataEntry(this.conn,_schemaName,_objectName,_columnName) ) 
             sql = "UPDATE user_sdo_geom_metadata usgm \n " +
                   "   SET usgm.SRID = " + _srid + ", \n" +
                   "       usgm.DimInfo = " + _DimInfo + "\n" +
@@ -1773,7 +1774,7 @@ public class MetadataPanel extends javax.swing.JDialog {
                 sql = getSchemaDeleteSQL(_mEntry.getObjectName(), 
                                          _mEntry.getColumnName());
             else {
-                if (MetadataTool.checkCrossSchemaDMLPermissions(this.conn) )
+                if (Queries.checkCrossSchemaDMLPermissions(this.conn) )
                     sql = getCrossSchemaDeleteSQL(_mEntry.getSchemaName(),
                                                   _mEntry.getObjectName(),
                                                   _mEntry.getColumnName());
@@ -2012,7 +2013,7 @@ public class MetadataPanel extends javax.swing.JDialog {
             this.clearModel();
             try {
                 LinkedHashMap<String, MetadataEntry> 
-                metaEntries = MetadataTool.getMetadata(_conn, 
+                metaEntries = Queries.getMetadata(_conn, 
                                              _schemaName,
                                              _objectName,
                                              _columnName,
@@ -2274,7 +2275,7 @@ public class MetadataPanel extends javax.swing.JDialog {
                     try 
                     {
                         LinkedHashMap<String, MetadataEntry> mEntries;
-                        mEntries = MetadataTool.getMetadata(this.conn,
+                        mEntries = Queries.getMetadata(this.conn,
                                                             this.schemaName,
                                                             null,
                                                             null,

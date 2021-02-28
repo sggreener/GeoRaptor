@@ -36,7 +36,7 @@ import org.GeoRaptor.layout.XYLayout;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.GeometryProperties;
@@ -360,7 +360,7 @@ public class ExporterWriter
       public void setSRID() {
         this.SRID = Constants.NULL_SRID;
         try {
-            SRID = MetadataTool.getLayerSRID(this.getConn(), 
+            SRID = Queries.getLayerSRID(this.getConn(), 
                                              this.getSchemaName(), 
                                              this.getObjectName(),
                                              this.getColumnName());
@@ -530,7 +530,7 @@ public class ExporterWriter
                 try {
                     lblStatus.setText(propertyManager.getMsg("CALCULATING_ROWCOUNT_START"));
                     errorMessage = null;
-                    this.totalRowCount = MetadataTool.getRowCount(getConn(),
+                    this.totalRowCount = Queries.getRowCount(getConn(),
                                                                   getSchemaName(),
                                                                   getObjectName(),
                                                                   null);

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,6 +40,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -276,11 +278,11 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                 // Use SDO_RELATE, SDO_EQUAL etc.
                 // Only SDO_RELATE has third parameter
                 //
-            	pStatement.setObject(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()),java.sql.Types.STRUCT);
-                //pStatement.setStruct(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()));
-                params += "\n? = " +
-                    SDO_GEOMETRY.getGeometryAsString(
-                    		       (Struct)JGeometry.storeJS(conn,this.getGeometry()),conn);
+            	Struct stGeom = null;
+            	//stGeom = (Struct)JGeometry.storeJS(conn,this.getGeometry());
+                stGeom = JGeom.toStruct(this.getGeometry(),conn);
+            	pStatement.setObject(stmtParamIndex++,stGeom,java.sql.Types.STRUCT);
+                params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
 
                 if (this.isBuffered()) {
                     /**
@@ -309,11 +311,9 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                 //
                 pStatement.setString(stmtParamIndex++,"'" + this.getRelationshipMask() + "'" );
                 params += "\n? = mask=" + this.getRelationshipMask();
-
-                pStatement.setObject(stmtParamIndex++,(Struct)JGeometry.storeJS(conn,this.getGeometry()),java.sql.Types.STRUCT);
-                params += "\n? = " +
-                    SDO_GEOMETRY.getGeometryAsString(
-                         (Struct)JGeometry.storeJS(conn,this.getGeometry()),conn);
+                Struct stGeom = (Struct)JGeometry.storeJS(conn,this.getGeometry());
+                pStatement.setObject(stmtParamIndex++,stGeom,java.sql.Types.STRUCT);
+                params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
                 if (this.isBuffered()) {
                     /**
                      * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- previous

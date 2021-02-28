@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -43,10 +44,10 @@ import org.GeoRaptor.Messages;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
@@ -1033,7 +1034,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		// by getting SDO_GEOM_METADATA for the supplied parameters.
 		//
 		try {
-			LinkedHashMap<String, MetadataEntry> metaEntries = MetadataTool.getMetadata(conn, _schemaName, _objectName,
+			LinkedHashMap<String, MetadataEntry> metaEntries = Queries.getMetadata(conn, _schemaName, _objectName,
 					_columnName, false);
 			if (metaEntries.size() == 0) {
 				throw new Exception("No metadata for " + Strings.objectString(_schemaName, _objectName, _columnName));
@@ -1118,7 +1119,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.dbf_typ = shptm.getColumnPosition(columns.DBF_DATA_TYPE);
 
 		try {
-			this.shptm.loadOraAttributes(MetadataTool.getColumnsAndTypes(conn, this.mEntry.getSchemaName(),
+			this.shptm.loadOraAttributes(Queries.getColumnsAndTypes(conn, this.mEntry.getSchemaName(),
 					this.mEntry.getObjectName(), true, true));
 		} catch (SQLException e) {
 			this.setAlwaysOnTop(false);
@@ -2053,7 +2054,11 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		 *              loaded, or for which no value exists in the oracle table as
 		 *              column may come from another table.
 		 */
-		private void loadShapefile(String _shapefileName, String _idName, boolean _fidProcessing) {
+		private void loadShapefile(
+				String _shapefileName, 
+				String _idName, 
+				boolean _fidProcessing) 
+		{
 			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 
 			DBFReaderJGeom dbfr = null;
@@ -2147,14 +2152,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			colsToStore++;
 			if (shpFileType == 5 || shpFileType == 15 || shpFileType == 25) {
 				params += "MDSYS.SDO_MIGRATE.TO_CURRENT(?," + Constants.TAG_MDSYS_SDO_DIMARRAY + "("
-						+ MetadataTool.createDimElement("X", "0", "1", String.valueOf(this.migrateTolerance)) + ","
-						+ MetadataTool.createDimElement("Y", "0", "1", String.valueOf(this.migrateTolerance))
+						+ Queries.createDimElement("X", "0", "1", String.valueOf(this.migrateTolerance)) + ","
+						+ Queries.createDimElement("Y", "0", "1", String.valueOf(this.migrateTolerance))
 						+ ((shpFileType == 15)
-								? "," + MetadataTool.createDimElement("Z", "0", "1",
+								? "," + Queries.createDimElement("Z", "0", "1",
 										String.valueOf(this.migrateTolerance))
 								: "")
 						+ ((shpFileType == 25) ? ","
-								+ MetadataTool.createDimElement("M", "0", "1", String.valueOf(this.migrateTolerance))
+								+ Queries.createDimElement("M", "0", "1", String.valueOf(this.migrateTolerance))
 								: "")
 						+ "))";
 			} else {

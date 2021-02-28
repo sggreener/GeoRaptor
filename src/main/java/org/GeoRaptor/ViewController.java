@@ -89,12 +89,8 @@ public class ViewController implements Controller {
 			}
 		} else if (cmdId == ABOUT_GEORAPTOR) {
 			//AboutDialog.getInstance().setVisible(true);
-System.out.println("ViewController about georaptor");
             AboutDialog ad = new AboutDialog(null,true);
-System.out.println(ad.getTitle());
-            ad.setVisible(true);
-System.out.println("Visible");
-            
+            ad.setVisible(true);            
 		}
 		return true;
 	}

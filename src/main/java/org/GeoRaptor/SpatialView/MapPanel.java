@@ -37,6 +37,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DecimalFormat;
@@ -74,7 +75,6 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
@@ -87,7 +87,9 @@ import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SpatialQueryReview;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
@@ -761,7 +763,7 @@ public class MapPanel
                                                          dFormat.format(dMeasures[1]).replace(String.valueOf(dFormat.getDecimalFormatSymbols().getGroupingSeparator()),""),
                                                          Strings.TitleCase(Tools.getViewUnits(spatialView,ViewOperationListener.VIEW_OPERATION.MEASURE_DISTANCE).replace("_"," ")));
                 }            
-                spatialView.getSVPanel().setMessage(finalMessage,false);
+                spatialView.getSVPanel().setMessage(finalMessage,true);
             }
         });
     }
@@ -1279,7 +1281,7 @@ public class MapPanel
                       // Create new MBR window
                       //
                       Envelope mbr = new Envelope(this.startWorld,
-                                                                ScreenToWorld(this.currentScreen));
+                                                  ScreenToWorld(this.currentScreen));
                     
                       this.getBiG2D().setColor(this.getFeatureColour());
                       Composite oldAlpha = this.getBiG2D().getComposite();
@@ -1643,7 +1645,7 @@ public class MapPanel
 
 									public void actionPerformed(ActionEvent e) {
                                         try {
-                                            Point2D pPoint = MetadataTool.projectPoint(spatialView.getActiveLayer().getConnection(), mPoint, spatialView.getSRIDAsInteger(), 4326);
+                                            Point2D pPoint = Queries.projectPoint(spatialView.getActiveLayer().getConnection(), mPoint, spatialView.getSRIDAsInteger(), 4326);
                                             JGeometry jGeom = new JGeometry(pPoint.getX(),pPoint.getY(),4326);
                                             String sGeom = RenderTool.renderGeometryAsPlainText(jGeom,Constants.TAG_MDSYS_SDO_GEOMETRY,Constants.bracketType.NONE,8);
                                             Tools.doClipboardCopy(sGeom);
@@ -2215,11 +2217,11 @@ public class MapPanel
         conn = spatialView.getActiveLayer().getConnection();
         Struct stGeom = null;
         try {
-            stGeom = JGeometry.storeJS(conn,_geometry);
+//          stGeom = JGeometry.storeJS(conn,_geometry);
         } catch (Exception e) {
             return;
         }
-        final String geometry = SDO_GEOMETRY.getGeometryAsString(stGeom,conn);
+        final String geometry = SDO_GEOMETRY.getGeometryAsString(stGeom);
         SwingUtilities.invokeLater(new Runnable() {
               public void run() {
                   final ViewLayerTree         vlt = spatialView.getSVPanel().getViewLayerTree();
@@ -2285,19 +2287,21 @@ public class MapPanel
         conn = spatialView.getActiveLayer().getConnection();
         Struct stGeom = null;
         try {
-            stGeom = JGeometry.storeJS(conn,_geometry);
+            //JGeometry.storeJS(conn,_geometry);
+            stGeom = JGeom.toStruct(_geometry,conn);
         } catch (Exception e) {
+        	LOGGER.error("Failed to convert JGeometry to SDO_GEOMETRY ("+e.getLocalizedMessage()+")");
             return null;
         }
         String returnVal = "";
         JFrame frame = new JFrame ();
-        ShapeReviewDialog cd = new ShapeReviewDialog(frame, SDO_GEOMETRY.getGeometryAsString(stGeom,conn));
-        cd.pack();
-        cd.setVisible(true);
-        if ( ! cd.isCancelled() ) 
+        ShapeReviewDialog srd = new ShapeReviewDialog(frame, SDO_GEOMETRY.getGeometryAsString(stGeom));
+        srd.pack();
+        srd.setVisible(true);
+        if ( ! srd.isCancelled() ) 
         {
-            Tools.doClipboardCopy(cd.getFinalText());
-            returnVal = cd.getFinalText();
+            Tools.doClipboardCopy(srd.getFinalText());
+            returnVal = srd.getFinalText();
         } else /* Cancel */ {
             returnVal = null;
         }

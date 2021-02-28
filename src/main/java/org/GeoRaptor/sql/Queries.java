@@ -1,13 +1,15 @@
-package org.GeoRaptor.OracleSpatial.Metadata;
+package org.GeoRaptor.sql;
 
 import java.awt.geom.Point2D;
 import java.sql.Array;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Struct;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,7 +20,9 @@ import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
@@ -34,7 +38,7 @@ import org.geotools.util.logging.Logger;
  **/
 
 @SuppressWarnings("deprecation")
-public class MetadataTool {
+public class Queries {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.MetadataTool");
 
@@ -44,7 +48,7 @@ public class MetadataTool {
     protected static PropertiesManager propertyManager;
     private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel";
     
-    public MetadataTool() {
+    public Queries() {
     }
 
     /**
@@ -1534,11 +1538,23 @@ public class MetadataTool {
         st.close();   st = null;
         return sdo_index_name;
     }
-    
-    public static Struct projectFilterGeometry(Connection      _conn,
-                                               Envelope         _mbr,
-                                               int       _sourceSRID,
-                                               int  _destinationSRID) 
+
+    /**
+     * projectFilterGeometry
+     * Creates projected optimized rectangle geometry from _mbr.
+     * Modifed to allow for building unprojected optimized rectangle 
+     * @param _conn
+     * @param _mbr
+     * @param _sourceSRID
+     * @param _destinationSRID
+     * @return
+     * @throws SQLException
+     * @throws IllegalArgumentException
+     */
+    public static Struct projectEnvelope(Connection _conn,
+                                          Envelope  _mbr,
+                                                int _sourceSRID,
+                                                int _destinationSRID) 
     throws SQLException, 
            IllegalArgumentException
     {
@@ -1551,32 +1567,68 @@ public class MetadataTool {
         if ( _mbr == null)
             throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
                                                                       propertyManager.getMsg("MBR")));
-        if (_sourceSRID == _destinationSRID || 
-            _sourceSRID == Constants.SRID_NULL || 
-            _destinationSRID == Constants.SRID_NULL ) {
-            return null;
-        }
         
-        String sql = "SELECT MDSYS.SDO_CS.TRANSFORM( \n" +
+        String sql = null;
+        if (_sourceSRID      == Constants.SRID_NULL ) { 
+          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,NULL,NULL,\n" +
+                           "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
+                           "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+                   " FROM DUAL";
+            LOGGER.logSQL(sql + 
+                    "\n? = " + _mbr.getMinX() +
+                    "\n? = " + _mbr.getMinY() +
+                    "\n? = " + _mbr.getMaxX() +
+                    "\n? = " + _mbr.getMaxY());
+        } else if (_destinationSRID == Constants.SRID_NULL ||
+     	           _sourceSRID      == _destinationSRID )  {
+          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
+                       "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
+                       "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+                " FROM DUAL";
+          LOGGER.logSQL(sql + 
+             "\n? = " + _sourceSRID +
+             "\n? = " + _mbr.getMinX() +
+             "\n? = " + _mbr.getMinY() +
+             "\n? = " + _mbr.getMaxX() +
+             "\n? = " + _mbr.getMaxY());
+
+        } else { 
+          sql = "SELECT MDSYS.SDO_CS.TRANSFORM( \n" +
                             "MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
                             "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
                             "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)),?) as rect " +
-                     "  FROM DUAL";
+               "  FROM DUAL";
+          LOGGER.logSQL(sql + 
+                  "\n? = " + _sourceSRID +
+                  "\n? = " + _mbr.getMinX() +
+                  "\n? = " + _mbr.getMinY() +
+                  "\n? = " + _mbr.getMaxX() +
+                  "\n? = " + _mbr.getMaxY() +
+                  "\n? = " + _destinationSRID);
+        }
 
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
-        pStatement.setInt(1,_sourceSRID);
-        pStatement.setDouble(2,_mbr.getMinX());
-        pStatement.setDouble(3,_mbr.getMinY());
-        pStatement.setDouble(4,_mbr.getMaxX());
-        pStatement.setDouble(5,_mbr.getMaxY());
-        pStatement.setInt(6,_destinationSRID);
-        LOGGER.logSQL(sql + 
-                      "\n? = " + _sourceSRID +
-                      "\n? = " + _mbr.getMinX() +
-                      "\n? = " + _mbr.getMinY() +
-                      "\n? = " + _mbr.getMaxX() +
-                      "\n? = " + _mbr.getMaxY() +
-                      "\n? = " + _destinationSRID);
+        
+        if (_sourceSRID == Constants.SRID_NULL ) { 
+            pStatement.setDouble(1,_mbr.getMinX());
+            pStatement.setDouble(2,_mbr.getMinY());
+            pStatement.setDouble(3,_mbr.getMaxX());
+            pStatement.setDouble(4,_mbr.getMaxY());
+        } else if (_destinationSRID == Constants.SRID_NULL ||
+     	           _sourceSRID      == _destinationSRID )  {
+            pStatement.setInt   (1,_sourceSRID);
+            pStatement.setDouble(2,_mbr.getMinX());
+            pStatement.setDouble(3,_mbr.getMinY());
+            pStatement.setDouble(4,_mbr.getMaxX());
+            pStatement.setDouble(5,_mbr.getMaxY());
+        } else { 
+            pStatement.setInt   (1,_sourceSRID);
+            pStatement.setDouble(2,_mbr.getMinX());
+            pStatement.setDouble(3,_mbr.getMinY());
+            pStatement.setDouble(4,_mbr.getMaxX());
+            pStatement.setDouble(5,_mbr.getMaxY());
+            pStatement.setInt   (6,_destinationSRID);
+        }        
         ResultSet rSet = pStatement.executeQuery();
         Struct retGeom = null;
         if (rSet.next()) {
@@ -1590,6 +1642,45 @@ public class MetadataTool {
         return retGeom;
     }
 
+    public static Struct getSdoGeometry(Connection _conn,
+                                        String _sdo_geometry)
+           throws SQLException, 
+                  IllegalArgumentException
+    {
+        if ( propertyManager == null )
+            propertyManager = new PropertiesManager(propertiesFile);
+        
+        if ( _conn==null )
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","getSdoGeometry"));
+          
+        if ( _sdo_geometry == null)
+            throw new IllegalArgumentException(
+            		         propertyManager.getMsg("MD_NO_OBJECT_NAME",
+                                                    propertyManager.getMsg("SDO_GEOMETRY_NULL")));
+        
+        if ( ! _sdo_geometry.contains(Constants.TAG_SDO_GEOMETRY) )
+        	throw new IllegalArgumentException(
+        			         propertyManager.getMsg("MD_NO_OBJECT_NAME",
+                                                    propertyManager.getMsg("NOT_SDO_GEOMETRY")));
+        
+        String sql = "SELECT " + _sdo_geometry + " as geom FROM DUAL";
+
+        LOGGER.logSQL(sql);
+        
+        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);        
+        ResultSet rSet = (ResultSet)pStatement.executeQuery();
+        Struct retGeom = null;
+        if (rSet.next()) {
+            retGeom = (Struct)rSet.getObject(1);
+            if ( rSet.wasNull() ) retGeom = null;
+        }
+        rSet.close();
+        rSet = null;
+        pStatement.close();
+        pStatement = null;
+        return retGeom;
+    }
+    
     public static Struct projectJGeometry(Connection _conn,
                                           JGeometry  _jGeom,
                                           int        _destinationSRID) 
@@ -1600,11 +1691,11 @@ public class MetadataTool {
             propertyManager = new PropertiesManager(propertiesFile);
 
         if ( _conn==null )
-            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","projectFilterGeoemtry"));
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","projectFilterGeometry"));
           
         if ( _jGeom == null)
             throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
-                                                                      propertyManager.getMsg("MBR")));
+                                                                      propertyManager.getMsg("JGEOMETRY_NULL")));
         if (_destinationSRID == Constants.SRID_NULL ) {
             return null;
         }
@@ -1613,7 +1704,9 @@ public class MetadataTool {
 
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         try {
-        	Struct st = JGeometry.storeJS(_conn,_jGeom);
+        	Struct st = null;
+        	//st = JGeometry.storeJS(_conn,_jGeom);
+            st = JGeom.toStruct(_jGeom,_conn);
 			pStatement.setObject(1,st);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -1639,6 +1732,96 @@ public class MetadataTool {
         pStatement.close();
         pStatement = null;
         return retGeom;
+    }
+
+    public static Struct projectSdoPoint(Connection _conn,
+                                         Point2D    _point,
+                                         int        _sourceSRID,
+                                         int        _destinationSRID)
+    {
+LOGGER.info("projectSdoPoint");
+        if ( propertyManager == null ) {
+            propertyManager = new PropertiesManager(propertiesFile);
+        }
+
+        if ( _conn==null ) {
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","projectFilterGeoemtry"));
+        }
+          
+        if ( _point == null) {
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
+                                                                      propertyManager.getMsg("MBR")));
+        }
+
+        String sql = null; 
+    	String formatSQL = "";
+        try {
+	        if ( _sourceSRID == Constants.SRID_NULL ) { 
+	          sql = "SELECT SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
+	                 " FROM DUAL";
+	          formatSQL = String.format(sql.replaceAll("?", "%s"),
+                              String.valueOf(_point.getX()),
+                              String.valueOf(_point.getY())); 
+	          LOGGER.logSQL(formatSQL);
+	        } else if (_destinationSRID == Constants.SRID_NULL ||
+	        		   _sourceSRID      == _destinationSRID )  {
+	          sql = "SELECT SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
+	                 " FROM DUAL";
+	          formatSQL = String.format(sql.replaceAll("?", "%s"),
+	                              String.valueOf(_sourceSRID),
+	                              String.valueOf(_point.getX()),
+	                              String.valueOf(_point.getY())
+	                      );
+              LOGGER.logSQL(formatSQL);
+	        } else {        
+	          sql = "SELECT f.geom.sdo_point.x, f.geom.sdo_point.y " +
+	                 " FROM (SELECT MDSYS.SDO_CS.TRANSFORM(SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL),?) as geom FROM DUAL) f" +
+	                " WHERE f.geom is not null";
+	          formatSQL = String.format(sql.replaceAll("?", "%s"),
+	                               String.valueOf(_sourceSRID),
+	                               String.valueOf(_point.getX()),
+	                               String.valueOf(_point.getY()),
+	                               String.valueOf(_destinationSRID)
+	                      );
+	          LOGGER.logSQL(formatSQL);
+
+	        }
+        } catch (Exception e) {
+          LOGGER.info("Error formatting sql ("+formatSQL+")");
+        }
+        Struct sGeom = null;
+        try {
+	        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
+LOGGER.info("=================Setting parameters ====================");
+	        if ( _sourceSRID == Constants.SRID_NULL ) {
+		        pStatement.setDouble(1,_point.getX());
+		        pStatement.setDouble(2,_point.getY());
+	        } else if (_destinationSRID == Constants.SRID_NULL ||
+	  		           _sourceSRID      == _destinationSRID )  {
+	            pStatement.setInt(1,_sourceSRID);
+		        pStatement.setDouble(2,_point.getX());
+		        pStatement.setDouble(3,_point.getY());
+	        } else {        
+	            pStatement.setInt   (1,_sourceSRID);
+		        pStatement.setDouble(2,_point.getX());
+		        pStatement.setDouble(3,_point.getY());
+	            pStatement.setInt   (4,_destinationSRID);
+		    }
+LOGGER.info("=================execute SQL====================");
+	        ResultSet rSet = (ResultSet)pStatement.executeQuery();
+	        if (rSet.next()) {
+	        	sGeom = (Struct)rSet.getObject(1);
+	            if ( rSet.wasNull() ) sGeom = null;
+	        }
+	        rSet.close();
+	        rSet = null;
+	        pStatement.close();
+	        pStatement = null;
+        } catch (Exception e) {
+        	LOGGER.error("Failed to create/Project SDO_GEOMETRY point (" + e.getLocalizedMessage());
+        }
+LOGGER.info("=================Return sGeom ====================");
+        return sGeom;
     }
 
     public static Point2D projectPoint(Connection _conn,
@@ -1745,13 +1928,21 @@ public class MetadataTool {
                                                propertyManager.getMsg("METADATA_TABLE_COLUMN_2")));
         }
         
+        String sourceSRID = Strings.isEmpty(_sourceSRID) ? "NULL" : _sourceSRID;
+        sourceSRID = sourceSRID.equalsIgnoreCase("-1") ? "NULL" : sourceSRID;
+
+        String destinationSRID = Strings.isEmpty(_destinationSRID) ? "NULL" : _destinationSRID;
+        destinationSRID = destinationSRID.equalsIgnoreCase("-1") ? "NULL" : destinationSRID;
+
         String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
-        String tableVerticesString = "         table(sdo_util.getVertices(asim.sdo_root_mbr)) v \n";
-        if (Strings.isEmpty(_sourceSRID)==false && Strings.isEmpty(_destinationSRID)==false && 
-            _sourceSRID.equalsIgnoreCase(_destinationSRID)==false ) {
-            // sdo_root_mbr SDO_GEOMETRY does not have a its SRID set!
-            tableVerticesString = 
-"          table(sdo_util.getVertices(MDSYS.SDO_CS.TRANSFORM(\n" +
+        
+        String tableVerticesString = "";
+        if (sourceSRID.equalsIgnoreCase(destinationSRID) && sourceSRID.equalsIgnoreCase("NULL") ) {
+          tableVerticesString = "         table(sdo_util.getVertices(asim.sdo_root_mbr)) v \n";
+        } else if (sourceSRID.equalsIgnoreCase(destinationSRID)==false ) {
+          // NOTE: sdo_root_mbr SDO_GEOMETRY does not have a SRID set!
+          tableVerticesString = 
+"         table(sdo_util.getVertices(MDSYS.SDO_CS.TRANSFORM(\n" +
 "                                   mdsys.sdo_geometry(\n" +
 "                                      asim.sdo_root_mbr.sdo_gtype,\n" +
 "                                      " + _sourceSRID + ",\n" +
@@ -1772,7 +1963,7 @@ public class MetadataTool {
         "              asim.sdo_index_name = asii.index_name \n" +
         "             ), \n" +
         tableVerticesString +
-        "   Where asii.table_owner = NVL(?,SYS_CONTEXT('USERENV','SESSION_USER')) \n" +
+        "   Where asii.table_owner = case when ? = 'NULL' then SYS_CONTEXT('USERENV','SESSION_USER') else ? end \n" +
         "     and asii.table_name  = ? \n" + 
         "     and asii.column_name = ? \n" +
         "   Group by sdo_index_geodetic";
@@ -1780,8 +1971,9 @@ public class MetadataTool {
         String geodetic = "";
         PreparedStatement psTable = _conn.prepareStatement(sql);
         psTable.setString(1,schema);
-        psTable.setString(2,_objectName.toUpperCase());
-        psTable.setString(3,_columnName.replace("\"","").toUpperCase());
+        psTable.setString(2,schema);
+        psTable.setString(3,_objectName.toUpperCase());
+        psTable.setString(4,_columnName.replace("\"","").toUpperCase());
         LOGGER.logSQL(sql + 
                       "\n? = " + schema +
                       "\n? = " + _objectName.toUpperCase() +

@@ -3,6 +3,7 @@ package org.GeoRaptor.sql;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -10,6 +11,7 @@ import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
+import oracle.dbtools.db.ConnectionResolver;
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.javatools.db.DBException;
 
@@ -71,18 +73,6 @@ public class DatabaseConnection {
         }
         return prettyName;
     }
-
-    public Connection getConnection() {
-        Connection conn = null;
-        if (Strings.isEmpty(this.connectionName) )
-            return conn;
-        try {
-            conn = Connections.getInstance().getConnection(this.connectionName,true);
-        } catch (DBException e) {
-            LOGGER.error("Problem getting connection (" + this.connectionName + ") of " + e.toString());
-        }
-        return conn;
-    }
     
     public String getUserName() {
         try {
@@ -142,6 +132,19 @@ public class DatabaseConnection {
         return myConnProps.getProperty("serviceName");
     }
 
+    public Connection getConnection() {
+        Connection conn = null;
+        if (Strings.isEmpty(this.connectionName) )
+            return conn;
+        try {
+            conn = Connections.getInstance().getConnection(this.connectionName,true);
+            //conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+        } catch (Exception e) {
+            LOGGER.error("Problem getting connection (" + this.connectionName + ") of " + e.toString());
+        }
+        return conn;
+    }
+
     public boolean isOpen() {
         return Connections.getInstance().isConnectionOpen(this.connectionName);
     }
@@ -152,11 +155,11 @@ public class DatabaseConnection {
         this.close();
         Connection conn;
         try {
-        	LOGGER.debug("reOpen - trying " + this.connectionName);
+        	LOGGER.debug("Trying to reopen " + this.connectionName);
             conn = Connections.getInstance().getConnection(this.connectionName);
             return this.checkConnection(conn);
         } catch (DBException e) {
-        	LOGGER.debug("reOpen exception " + e.toString());
+        	LOGGER.debug("reopen failed with " + e.toString());
         }
         return false;
     }

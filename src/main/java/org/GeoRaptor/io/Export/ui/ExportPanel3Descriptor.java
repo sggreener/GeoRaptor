@@ -22,10 +22,10 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.io.Export.ExporterWriter;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.wizard.WizardPanelDescriptor;
@@ -235,13 +235,13 @@ public class ExportPanel3Descriptor
           ePanel3.setSkipNullGeometry(true); this.exporterWriter.setSkipNullGeometry(ePanel3.isSkipNullGeometry());
           String characterSet = null;
           try {
-              characterSet = MetadataTool.getCharacterSet(this.conn);
+              characterSet = Queries.getCharacterSet(this.conn);
           } catch (SQLException e) {
               characterSet = null;
           }
           ePanel3.setCharset(characterSet); this.exporterWriter.setCharacterSet(ePanel3.getCharset());
           ePanel3.setSRID(retrieveSRID());  this.exporterWriter.setSRID(ePanel3.getSRID());
-          ePanel3.setShapeTypes(MetadataTool.getShapeType(this.conn,this.schemaName,this.objectName,this.columnName, 0, 500));
+          ePanel3.setShapeTypes(Queries.getShapeType(this.conn,this.schemaName,this.objectName,this.columnName, 0, 500));
           this.exporterWriter.setShapefileType(ePanel3.getShapefileType());
         }
         isAboutToDisplayPanel = false;
@@ -267,7 +267,7 @@ public class ExportPanel3Descriptor
       try {
           int SRID = Constants.SRID_NULL;
           LinkedHashMap<String, MetadataEntry> metaEntries;
-          metaEntries = MetadataTool.getMetadata(this.conn,
+          metaEntries = Queries.getMetadata(this.conn,
                                                  this.schemaName,
                                                  this.objectName,
                                                  this.columnName,
@@ -277,7 +277,7 @@ public class ExportPanel3Descriptor
           if ( metaEntries.size()==0 ) {
               // No entry so query actual table
               //
-              SRID = MetadataTool.getLayerSRID(this.exporterWriter.getConn(),
+              SRID = Queries.getLayerSRID(this.exporterWriter.getConn(),
                                                this.exporterWriter.getSchemaName(),
                                                this.exporterWriter.getObjectName(),
                                                this.exporterWriter.getColumnName());

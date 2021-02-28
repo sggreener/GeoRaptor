@@ -2,11 +2,15 @@ package org.GeoRaptor.tools;
 
 
 import java.math.BigDecimal;
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 import java.sql.Array;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import org.GeoRaptor.Constants;
@@ -24,6 +28,7 @@ import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
+import oracle.jdbc.OracleConnection;
 import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
 import oracle.spatial.util.GML2;
@@ -31,6 +36,8 @@ import oracle.spatial.util.GML3;
 import oracle.spatial.util.GeometryExceptionWithContext;
 import oracle.spatial.util.KML2;
 import oracle.spatial.util.WKT;
+import oracle.sql.Datum;
+import oracle.sql.NUMBER;
 
 public class SDO_GEOMETRY 
 {    
@@ -319,23 +326,11 @@ public class SDO_GEOMETRY
     */
      
 	public static String getGeometryAsString(Struct _struct) 
-     {
-         // We need a connection for when some conversions require one.
-         //       
-         Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-         return getGeometryAsString(_struct, localConnection);
-     }    
-    
-	public static String getGeometryAsString(Struct     _struct, 
-                                             Connection _conn) 
     {
         if ( _struct==null ) {
             return "";
         }
-        Connection localConnection = _conn;
-        if ( localConnection == null ) {
-            localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-        }
+        Connection conn = DatabaseConnections.getInstance().getActiveConnection(); 
         geoRaptorPreferences = MainSettings.getInstance().getPreferences();
         
         // get geometry structure
@@ -348,7 +343,7 @@ public class SDO_GEOMETRY
             } 
             Constants.renderType visualType = geoRaptorPreferences.getVisualFormat();
 
-            if ( localConnection == null && ( visualType != Constants.renderType.SDO_GEOMETRY ) )
+            if ( conn == null && ( visualType != Constants.renderType.SDO_GEOMETRY ) )
             {
                 // Drop back to ordinary sdoGeometry
                 visualType = Constants.renderType.SDO_GEOMETRY;
@@ -393,13 +388,13 @@ public class SDO_GEOMETRY
                       clipText = new String(w.fromStruct(structGeom));
                   } else {
                       switch (visualType) {
-                      case KML2 : KML2.setConnection(localConnection);
+                      case KML2 : KML2.setConnection(conn);
                                   clipText = KML2.to_KMLGeometry(structGeom);
                                   break;
-                      case GML2 : GML2.setConnection(localConnection);
+                      case GML2 : GML2.setConnection(conn);
                                   clipText = GML2.to_GMLGeometry(structGeom);
                                   break;
-                      case GML3 : GML3.setConnection(localConnection);
+                      case GML3 : GML3.setConnection(conn);
                                   clipText = GML3.to_GML3Geometry(structGeom);
                                   break;
 					default:
@@ -542,7 +537,10 @@ public class SDO_GEOMETRY
         	               /* double[] ordinates */ geom.getOrdinatesArray()
         	          );
             Connection localConnection = DatabaseConnections.getInstance().getActiveConnection();
-            return JGeometry.storeJS(newGeom,localConnection);
+            Struct stGeom = null;
+            //stGeom = JGeometry.storeJS(newGeom,localConnection);
+            stGeom = JGeom.toStruct(newGeom,localConnection);
+            return stGeom;
         } catch (Exception e) {
             return _struct;
         }
@@ -941,16 +939,20 @@ public class SDO_GEOMETRY
                                        double[]   _SDO_ORDINATE_ARRAY)
     throws SQLException
     {
+    	Integer[] _sdo_point = Arrays.stream( _SDO_ELEM_INFO_ARRAY ).boxed().toArray( Integer[]::new );
+        Integer[] _sdo_elem_info_array = Arrays.stream( _SDO_ELEM_INFO_ARRAY ).boxed().toArray( Integer[]::new );
+        Double[] _sdo_ordinate_array = Arrays.stream( _SDO_ORDINATE_ARRAY ).boxed().toArray( Double[]::new );
+    	Struct sdo_point = _conn.createStruct (Constants.TAG_MDSYS_SDO_POINT_TYPE,(Object[])_sdo_point);
+    	Array  sdo_elem_info_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ELEM_ARRAY,(Object[])_sdo_elem_info_array);
+    	Array  sdo_ordinate_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ORD_ARRAY,(Object[])_sdo_ordinate_array);
     	Object sdoGeometryComponents[] = new Object[] { 
-                _SDO_GTYPE, 
-                _SDO_SRID, 
-                _SDO_POINT, 
-                _SDO_ELEM_INFO_ARRAY,
-                _SDO_ORDINATE_ARRAY
+                new NUMBER(_SDO_GTYPE), 
+                new NUMBER(_SDO_SRID), 
+                sdo_point, 
+                sdo_elem_info_array,
+                sdo_ordinate_array
                 };
         return OraUtil.toStruct(sdoGeometryComponents, OraGeom.TYPE_GEOMETRY, _conn);
     }
-    
-
 
 }

@@ -28,9 +28,9 @@ import oracle.ide.dialogs.ProgressBar;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.ErrorDialogHandler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
@@ -38,22 +38,13 @@ import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
-/**
- *
- * @author laebe
- * @author Simon Greener, April 27th 2010 Moved getMsg handling out to separate
- *         PropertiesManager class
- *         
- *         Comment out 1467 lines
- **/
-
 public class ManageSpatialIndex extends javax.swing.JDialog 
 {
 
 	private static final long serialVersionUID = -2509004245331206103L;
 
-	private static final Logger LOGGER = Logging
-			.getLogger("org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex");
+	private static final Logger LOGGER = 
+			Logging.getLogger("org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex");
 
 	/**
 	 * We have only one instance of this class
@@ -117,8 +108,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			this.propertyManager = new PropertiesManager(ManageSpatialIndex.propertiesFile);
 			this.errorDialogHandler = new ErrorDialogHandler(ManageSpatialIndex.propertiesFile);
 		} catch (Exception e) {
-			System.out.println(
-					"Problem loading properties file: " + ManageSpatialIndex.propertiesFile + "\n" + e.getMessage());
+			System.out.println("Problem loading properties file: " + ManageSpatialIndex.propertiesFile + "\n" + e.getMessage());
 		}
 
 		// Initialise Menu
@@ -158,11 +148,11 @@ public class ManageSpatialIndex extends javax.swing.JDialog
     private javax.swing.JCheckBox chkEditSQL;
     private javax.swing.JCheckBox chkIsGeodeticIndex;
     private javax.swing.JCheckBox chkLayerGTypeApply;
-    private javax.swing.JComboBox cmbColumnName;
-    private javax.swing.JComboBox cmbDimension;
-    private javax.swing.JComboBox cmbIndexTablespaces;
-    private javax.swing.JComboBox cmbLayerGType;
-    private javax.swing.JComboBox cmbWorkTablespaces;
+    private javax.swing.JComboBox<String> cmbColumnName;
+    private javax.swing.JComboBox<String> cmbDimension;
+    private javax.swing.JComboBox<String> cmbIndexTablespaces;
+    private javax.swing.JComboBox<String> cmbLayerGType;
+    private javax.swing.JComboBox<String> cmbWorkTablespaces;
     private javax.swing.JButton discoverLayerGTypeBTN;
     private javax.swing.JLabel lblBatchSize;
     private javax.swing.JLabel lblColumnName;
@@ -202,19 +192,19 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         panelParameter = new javax.swing.JPanel();
         panelLayerGtype = new javax.swing.JPanel();
         discoverLayerGTypeBTN = new javax.swing.JButton();
-        cmbLayerGType = new javax.swing.JComboBox();
+        cmbLayerGType = new javax.swing.JComboBox<String>();
         lblLayerType = new javax.swing.JLabel();
         chkLayerGTypeApply = new javax.swing.JCheckBox();
         llblSamplePct = new javax.swing.JLabel();
         sldrSample = new javax.swing.JSlider();
         panelTablespace = new javax.swing.JPanel();
-        cmbIndexTablespaces = new javax.swing.JComboBox();
+        cmbIndexTablespaces = new javax.swing.JComboBox<String>();
         lblIndexTablespace = new javax.swing.JLabel();
-        cmbWorkTablespaces = new javax.swing.JComboBox();
+        cmbWorkTablespaces = new javax.swing.JComboBox<String>();
         lblWorkTablespace = new javax.swing.JLabel();
         pnlMiscellaneous = new javax.swing.JPanel();
         chkIsGeodeticIndex = new javax.swing.JCheckBox();
-        cmbDimension = new javax.swing.JComboBox();
+        cmbDimension = new javax.swing.JComboBox<String>();
         cbNonLeaf = new javax.swing.JCheckBox();
         lblDimension = new javax.swing.JLabel();
         sldrBatchSize = new javax.swing.JSlider();
@@ -238,7 +228,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         txtIndexName = new javax.swing.JTextField();
         lblIndexName = new javax.swing.JLabel();
         lblColumnName = new javax.swing.JLabel();
-        cmbColumnName = new javax.swing.JComboBox();
+        cmbColumnName = new javax.swing.JComboBox<String>();
         txtTablename = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -271,7 +261,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
+        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
         cmbLayerGType.setMaximumSize(null);
         cmbLayerGType.setMinimumSize(null);
         cmbLayerGType.setPreferredSize(new java.awt.Dimension(204, 20));
@@ -366,7 +356,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         panelTablespace.setMaximumSize(null);
         panelTablespace.setPreferredSize(new java.awt.Dimension(579, 45));
 
-        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbIndexTablespaces.setMaximumSize(null);
         cmbIndexTablespaces.setMinimumSize(null);
         cmbIndexTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -382,7 +372,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         lblIndexTablespace.setMinimumSize(null);
         lblIndexTablespace.setPreferredSize(new java.awt.Dimension(46, 14));
 
-        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbWorkTablespaces.setMaximumSize(null);
         cmbWorkTablespaces.setMinimumSize(null);
         cmbWorkTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -437,7 +427,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "2", "3", "4" }));
+        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "2", "3", "4" }));
         cmbDimension.setLightWeightPopupEnabled(false);
         cmbDimension.setMaximumSize(null);
         cmbDimension.setMinimumSize(null);
@@ -675,7 +665,6 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
         pnlParallelism.setBorder(javax.swing.BorderFactory.createTitledBorder("Parallelism"));
         pnlParallelism.setMaximumSize(null);
-        pnlParallelism.setNextFocusableComponent(panelTablespace);
         pnlParallelism.setPreferredSize(new java.awt.Dimension(290, 110));
 
         lblParallel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -699,7 +688,6 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         sldrParallel.setValue(0);
         sldrParallel.setMaximumSize(new java.awt.Dimension(180, 45));
         sldrParallel.setMinimumSize(new java.awt.Dimension(180, 45));
-        sldrParallel.setNextFocusableComponent(cmbWorkTablespaces);
         sldrParallel.setPreferredSize(new java.awt.Dimension(180, 45));
         sldrParallel.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -870,7 +858,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 		Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 		if (conn != null) {
 			try {
-				layerGType = MetadataTool.getLayerGeometryType(conn, this.schemaName, this.objectName, this.geoColumn,
+				layerGType = Queries.getLayerGeometryType(conn, this.schemaName, this.objectName, this.geoColumn,
 						this.sldrSample.getValue(), 0);
 			} catch (Exception e) {
 				this.lblMessage.setText(e.getMessage());
@@ -995,7 +983,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 				// Get all Geometry Columns for this schema.table
 				try {
 					List<String> geoColumns;
-					geoColumns = MetadataTool.getGeoColumns(conn, this.schemaName, this.objectName);
+					geoColumns = Queries.getGeoColumns(conn, this.schemaName, this.objectName);
 					// If empty, it will be handled after the try...catch
 					if (geoColumns.size() != 0) {
 						for (int i = 0; i < geoColumns.size(); i++)
@@ -1026,7 +1014,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			} else { // Check is supplied column is sdo_geometry
 				try {
 					this.cmbColumnName.addItem(
-							MetadataTool.getGeometryColumn(conn, this.schemaName, this.objectName, this.geoColumn));
+							Queries.getGeometryColumn(conn, this.schemaName, this.objectName, this.geoColumn));
 				} catch (SQLException sqle) {
 					if (this.isVisible())
 						this.setAlwaysOnTop(false);
@@ -1074,7 +1062,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			// Can't build index if no metadata entry, so check
 			//
 			try {
-				if (!MetadataTool.hasGeomMetadataEntry(conn, this.schemaName, this.objectName, this.geoColumn)) {
+				if (!Queries.hasGeomMetadataEntry(conn, this.schemaName, this.objectName, this.geoColumn)) {
 					this.errorDialogHandler.showErrorDialog(this, "ERROR_MESSAGE_NO_RECORD_MD",
 							Strings.objectString(_schemaName, _objectName, _columnName));
 					if (this.isVisible())
@@ -1091,7 +1079,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			try {
 				// Build list of tablespaces
 				List<String> tableSpaces;
-				tableSpaces = MetadataTool.getTablespaces(conn);
+				tableSpaces = Queries.getTablespaces(conn);
 				// If empty, it will be handled after the try...catch
 				if (tableSpaces.size() != 0) {
 					for (int i = 0; i < tableSpaces.size(); i++) {
@@ -1413,7 +1401,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			// Test what we have been given
 			// Should get back same as what we supply ... except if NULL
 			//
-			getColumnValue = MetadataTool.getGeometryColumn(_conn, _schemaName, _tableName, _columnName);
+			getColumnValue = Queries.getGeometryColumn(_conn, _schemaName, _tableName, _columnName);
 			if (Strings.isEmpty(getColumnValue)) {
 				// There is no geometry column in this table
 				//

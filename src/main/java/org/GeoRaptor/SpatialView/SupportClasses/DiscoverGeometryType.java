@@ -2,9 +2,8 @@ package org.GeoRaptor.SpatialView.SupportClasses;
 
 import java.sql.Connection;
 
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
-
+import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
@@ -202,7 +201,7 @@ public class DiscoverGeometryType extends javax.swing.JDialog {
         String layerGType = null;
         try {
             layerGType = 
-                MetadataTool.getLayerGeometryType(this.conn,
+                Queries.getLayerGeometryType(this.conn,
                                                  this.schema,
                                                  this.object,
                                                  this.column,

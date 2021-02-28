@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -95,7 +96,8 @@ public class QueryRow {
       this.jGeom = _geoValue;
       try {
           if ( this.jGeom != null && _conn != null ) {
-              this.geoValue = (Struct) JGeometry.storeJS(_conn, _geoValue);
+              Connection conn = _conn;
+              this.geoValue = (Struct) JGeometry.storeJS(conn, _geoValue);
               if ( _geoValue != null ) {
                   // Cache as row is created
                   this.currentRenderType = this.mainPreferences.getVisualFormat();

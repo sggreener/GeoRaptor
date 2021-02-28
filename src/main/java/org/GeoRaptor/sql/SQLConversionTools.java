@@ -149,7 +149,7 @@ public class SQLConversionTools {
 				if (meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY)
 						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE)
 						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE)) {
-					value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col),_conn);
+					value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col));
 				    // renderer.renderGeoObject(_ors.getOracleObject(_col), false);
 				}
 				break;

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Vector;
 
 import org.GeoRaptor.Constants;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.io.Export.ExporterWriter;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.wizard.Wizard;
 import org.GeoRaptor.tools.wizard.WizardPanelDescriptor;
@@ -44,7 +44,7 @@ public class ExporterWizard {
                                                  _schemaName,
                                                  _objectName,
                                                  geometryColumn);
-        this.exporterWriter.setAttributeColumns(MetadataTool.getColumnsAndTypes(
+        this.exporterWriter.setAttributeColumns(Queries.getColumnsAndTypes(
                                                   _conn,
                                                   this.exporterWriter.getSchemaName(),
                                                   this.exporterWriter.getObjectName(),
@@ -61,7 +61,7 @@ public class ExporterWizard {
     {
         // Let user select from the table's geometry columns
         //
-        geoColumns = new ArrayList<String>(MetadataTool.validateColumnName(_conn,
+        geoColumns = new ArrayList<String>(Queries.validateColumnName(_conn,
                                                                            _schemaName,
                                                                            _objectName,
                                                                            _columnName));

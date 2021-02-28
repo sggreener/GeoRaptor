@@ -63,22 +63,26 @@ public class AboutDialog extends javax.swing.JDialog {
     /** Creates new form AboutDialog */
     public AboutDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
-        
+
+LOGGER.info("1");
         this.cl = this.getClass().getClassLoader();
 
         //this.propertyManager = new PropertiesManager(AboutDialog.propertiesFile);
 
-        if ( this.rBundle != null)
-          this.rBundle = ResourceBundle.getBundle(AboutDialog.propertiesFile, 
-                                             Locale.getDefault());
+LOGGER.info("2");
+        this.rBundle = ResourceBundle.getBundle(AboutDialog.propertiesFile,Locale.getDefault());
 
+LOGGER.info("3");
         initComponents();
 
         // Has to be after initComponents.
         //
+LOGGER.info("4");
         this.GeoRaptorLogo = new ImageIcon(this.cl.getResource("org/GeoRaptor/images/GeoRaptorLogo.jpg"));
+LOGGER.info("5");
         this.lblLogo.setIcon(this.GeoRaptorLogo);
 
+LOGGER.info("6");
         String version = Tools.getVersion();
         //String dialog_title = Resources.getString("ABOUT_BOX_TITLE") + " - " + version;
         String dialog_title = this.rBundle.getString("ABOUT_BOX_TITLE") + " - " + version; 

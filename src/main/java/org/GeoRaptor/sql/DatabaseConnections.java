@@ -1,25 +1,22 @@
 package org.GeoRaptor.sql;
 
 import java.sql.Connection;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import javax.swing.JComboBox;
-
-import oracle.dbtools.raptor.connections.ConnectionEvent;
-import oracle.dbtools.raptor.connections.ConnectionListener;
-import oracle.dbtools.raptor.utils.Connections;
-
-import oracle.javatools.db.DBException;
 
 import org.GeoRaptor.Messages;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
+
+import oracle.dbtools.raptor.connections.ConnectionEvent;
+import oracle.dbtools.raptor.connections.ConnectionListener;
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.javatools.db.DBException;
 
 public class DatabaseConnections {
 
@@ -116,16 +113,28 @@ public class DatabaseConnections {
         return Connections.getActiveConnectionName();
      }
 
+     public Connection getConnection(String  _connName)
+     {
+         LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
+         DatabaseConnection dbConn = this.findConnectionByName(_connName);
+         if ( dbConn == null ) {
+             LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
+             return null;
+         }
+         Connection conn = dbConn.getConnection();       
+         return conn;
+     }
+
     public Connection getActiveConnection() 
     {
-        Connection dbConn;
+        Connection conn;
         try {
-            dbConn = Connections.getInstance().getConnection(Connections.getActiveConnectionName());
-        } catch (DBException e) {
+            conn = this.getConnection(Connections.getActiveConnectionName());
+        } catch (Exception e) {
             LOGGER.error("getActiveConnection failed with " + e.getMessage());
             return null;
         }
-        return dbConn==null?null:dbConn;
+        return conn;
     }
 
     public Connection getAnyOpenConnection() 
@@ -144,18 +153,7 @@ public class DatabaseConnections {
            }
         }
         return conn;
-    }
-    
-    public Connection getConnection(String  _connName)
-    {
-LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
-        DatabaseConnection dbConn = this.findConnectionByName(_connName);
-        if ( dbConn == null ) {
-LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
-            return null;
-        }
-        return dbConn.getConnection();
-    }
+    }    
     
     public javax.swing.DefaultComboBoxModel<String> getComboBoxModel(String _defaultConnName) 
     {

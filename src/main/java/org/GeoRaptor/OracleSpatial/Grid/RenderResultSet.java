@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
@@ -33,7 +34,6 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -48,6 +48,7 @@ import org.GeoRaptor.io.Export.SHPExporter;
 import org.GeoRaptor.io.Export.TABExporter;
 import org.GeoRaptor.io.Export.ui.ExporterDialog;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.GeometryProperties;
@@ -1072,7 +1073,7 @@ public class RenderResultSet
           }
           mappableColumnName       = this._table.getColumnName(mappableColumn);
           
-          String characterSet = MetadataTool.getCharacterSet(conn);
+          String characterSet = Queries.getCharacterSet(conn);
           
           int colsToProcess = this.rst.getSelectedColumnCount()==0?this._table.getColumnCount():rst.getSelectedColumnCount();
           int[]     columns = this.rst.getSelectedColumns();
@@ -1373,8 +1374,8 @@ public class RenderResultSet
     	Struct st;
     	String clipboardText = null;
 		try {
-			st = JGeom.fromGeometry(mbr.toJGeometry(iSrid),conn);
-	        clipboardText = SDO_GEOMETRY.getGeometryAsString(st,conn);
+			st = JGeom.toStruct(mbr.toJGeometry(iSrid),conn);
+	        clipboardText = SDO_GEOMETRY.getGeometryAsString(st);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1639,14 +1640,14 @@ public class RenderResultSet
         String clipboardText = ""; 
         Iterator<JGeometry> iter = geoSet.iterator();
         while (iter.hasNext() ) {
-            try {
-            	Struct st = JGeometry.storeJS(iter.next(),conn);
-                clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) 
-                		          +
-                                  SDO_GEOMETRY.getGeometryAsString(st,conn);
-            } catch (SQLException e) {
-                LOGGER.error("Conversion of JGeometry to clipboard produced error: " + e.getMessage());
-            }
+            clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) 
+			                 +
+			                 RenderTool.renderGeometryAsPlainText(
+					               iter.next(), 
+					               Constants.TAG_MDSYS_SDO_GEOMETRY,
+					               Constants.bracketType.NONE,
+					               Constants.MAX_PRECISION
+			                 );
         }
         if (Strings.isEmpty(clipboardText) ) {
             return false;
@@ -2346,19 +2347,7 @@ public class RenderResultSet
             return null;
         }
         Connection localConnection = null;
-        String connName = this.getConnectionName();
-        if (!Strings.isEmpty(connName)) {
-            // Try going straight to SQL Developer connections
-            try {
-                localConnection = Connections.getInstance().getConnection(connName, false);
-                if (localConnection!=null) {
-                    // Ensure added to databaseConnections
-                    DatabaseConnections.getInstance().addConnection(connName);
-                }
-            } catch (DBException e) {
-                LOGGER.error("RenderResultSet.getConnection(): Exception - " + e.getMessage());
-            }
-        }
+        localConnection = DatabaseConnections.getInstance().getConnection(this.getConnectionName());
         return ProxyRegistry.unwrap((localConnection==null)
                ? DatabaseConnections.getInstance().getActiveConnection()
                : localConnection);
@@ -2619,14 +2608,16 @@ public class RenderResultSet
                                          : Double.isNaN(m)
                                            ? new JGeometry(x,y,z,this.options.getSRID())
                                            : new JGeometry(x,y,z,m,this.options.getSRID());
-                                  stGeom = JGeometry.storeJS(jGeo, this.conn);                                                                
+                                  //stGeom = JGeometry.storeJS(jGeo, this.conn);
+                                  stGeom = JGeom.toStruct(jGeo,conn);
                               } else if ( saveStructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
                                   columnMetadata.setColumnTypeName(1,Constants.TAG_MDSYS_SDO_GEOMETRY);
                                   double[] ords = OraUtil.toDoubleArray(stGeom,Double.NaN);
                                   jGeo = Double.isNaN(ords[2])
                                          ? new JGeometry(ords[0],ords[1],        this.options.getSRID())
                                          : new JGeometry(ords[0],ords[1],ords[2],this.options.getSRID());
-                                  stGeom = JGeometry.storeJS(jGeo, this.conn);
+                                  //stGeom = JGeometry.storeJS(jGeo, this.conn);
+                                  stGeom = JGeom.toStruct(jGeo,conn);
                               }
                               geoExporter.printColumn(stGeom, columnMetadata);
                               // May have been changed so swap it back for processing of next row

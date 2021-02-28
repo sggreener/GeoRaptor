@@ -32,7 +32,7 @@ public class Messages {
     {
         String finalMsg = "";
         if (!Strings.isEmpty(message)) {
-            finalMsg = message.toUpperCase().contains("GEORAPTOR") ? message : ("(GeoRaptor) " + message);
+            finalMsg = message.toUpperCase().startsWith("GEORAPTOR") ? message : ("(GeoRaptor) " + message);
         }
         try {
             if ( openLogWindow )

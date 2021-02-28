@@ -10,8 +10,8 @@ import java.util.LinkedHashMap;
 import javax.sql.RowSetMetaData;
 
 import org.GeoRaptor.Constants;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -198,7 +198,7 @@ public class GMLExporter implements IExporter
                     
                     if ( SRID != this.prevSRID ) {
                         // Get srsName and srsNamespace from SrsNameSpace_Table
-                        String srsNames = MetadataTool.getSrsNames(conn,SRID,"@",true);
+                        String srsNames = Queries.getSrsNames(conn,SRID,"@",true);
                         if ( !Strings.isEmpty(srsNames) ) {
                             this.srsName      = srsNames.substring(0,srsNames.indexOf("@"));
                             this.srsNameSpace = srsNames.substring(srsNames.indexOf("@")+1);

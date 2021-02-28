@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -16,11 +17,11 @@ import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -33,6 +34,10 @@ import org.w3c.dom.Node;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.jdbc.driver.OracleConnection;
+import oracle.spatial.geometry.JGeometry;
 
 /**
  * Class describe one layer on map. It can be vector or raster type.
@@ -53,7 +58,7 @@ public class SVLayer {
 	
 	protected MetadataEntry mEntry = null; // MetadataEntry for this table/column object
 	
-	private final int defaultPrecision = 3;
+	private final int defaultPrecision = 4;
 	
 	private int precision = defaultPrecision;
 	
@@ -200,7 +205,7 @@ public class SVLayer {
 		LOGGER.debug("SLayer.setMetadataEntry=" + this.mEntry.toString());
 		try {
 			if (this.getConnection() != null && !Strings.isEmpty(this.mEntry.getObjectName())) {
-				this.isSTGeometry = MetadataTool.isSTGeometry((Connection) this.getConnection(),
+				this.isSTGeometry = Queries.isSTGeometry((Connection) this.getConnection(),
 						this.mEntry.getSchemaName(), this.mEntry.getObjectName(), this.mEntry.getColumnName());
 			}
 			LOGGER.debug("SLayer.isSTGeometry=" + this.isSTGeometry);
@@ -336,6 +341,14 @@ public class SVLayer {
 		DatabaseConnections.getInstance().addConnection(this.connName);
 	}
 
+	public String getConnectionName() {
+		return this.connName;
+	}
+
+	public String getConnectionDisplayName() {
+		return DatabaseConnections.getInstance().getConnectionDisplayName(this.connName);
+	}
+
 	public void setConnection(String _connName) throws IllegalStateException {
 		LOGGER.debug("SVLayer setConnection(" + _connName + ")");
 		if (Strings.isEmpty(_connName)) {
@@ -370,7 +383,7 @@ public class SVLayer {
 			if (!Strings.isEmpty(this.getObjectName())) {
 				String objCol = null;
 				try {
-					objCol = MetadataTool.getGeometryColumn(dbConn.getConnection(), this.getSchemaName(),
+					objCol = Queries.getGeometryColumn(dbConn.getConnection(), this.getSchemaName(),
 							this.getObjectName(), this.getGeoColumn());
 				} catch (SQLException e) {
 					// Probably connection not open.
@@ -405,21 +418,20 @@ public class SVLayer {
 		return false;
 	}
 
-	public Connection getConnection() throws IllegalStateException 
+	public Connection getConnection()  
 	{
-		if (Strings.isEmpty(this.connName)) {
-			return DatabaseConnections.getInstance().getActiveConnection();
-		} else {
-			return DatabaseConnections.getInstance().getConnection(this.connName);
+        Connection conn = null;
+        try {
+          if (Strings.isEmpty(this.connName)) 
+            conn = DatabaseConnections.getInstance().getActiveConnection();
+          else 
+    		conn = DatabaseConnections.getInstance().getConnection(this.connName);
+          if ( conn == null || conn.isClosed() )
+			conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+		} catch (SQLException e) {
+			return null;
 		}
-	}
-
-	public String getConnectionName() {
-		return this.connName;
-	}
-
-	public String getConnectionDisplayName() {
-		return DatabaseConnections.getInstance().getConnectionDisplayName(this.connName);
+        return conn;
 	}
 
 	// +++++++++++++++++++++++ End Connection Methods

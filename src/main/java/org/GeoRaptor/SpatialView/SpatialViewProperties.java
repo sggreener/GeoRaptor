@@ -18,8 +18,8 @@ import javax.swing.SwingUtilities;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -637,7 +637,7 @@ public class SpatialViewProperties
                 btnBackgroundColor.setBackground(spatialView.getMapPanel().getMapBackground());
                 // When SRID is NULL we can use the unit to report units but not supply to oracle's sdo_area and sdo_length functions.
                 try {
-                  unitsOfMeasure = MetadataTool.getUnitsOfMeasure(spatialView.getConnection(),true /* length*/);
+                  unitsOfMeasure = Queries.getUnitsOfMeasure(spatialView.getConnection(),true /* length*/);
                   if ( unitsOfMeasure != null ) {
                       int i = -1;
                       int selectedItem = 0;
@@ -659,7 +659,7 @@ public class SpatialViewProperties
                       cmbDistanceUnits.setEditable(false);
                   }
                 
-                  unitsOfArea = MetadataTool.getUnitsOfMeasure(spatialView.getConnection(),false /*area*/);
+                  unitsOfArea = Queries.getUnitsOfMeasure(spatialView.getConnection(),false /*area*/);
                   if ( unitsOfArea != null ) {
                       // Load cmbAreaUnits 
                       int i = -1;

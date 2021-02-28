@@ -89,7 +89,6 @@ import oracle.spatial.geometry.JGeometry;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
@@ -103,6 +102,7 @@ import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.ErrorDialogHandler;
 import org.GeoRaptor.tools.JGeom;
@@ -687,7 +687,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         Connection conn = DatabaseConnections.getInstance().getConnection(_connName);
         if ( conn!=null ) {
             if ( DatabaseConnections.getInstance().isConnectionOpen(_connName)) {
-                geoColumn = MetadataTool.getGeometryColumn(conn,_schemaName,_objectName,_columnName);
+                geoColumn = Queries.getGeometryColumn(conn,_schemaName,_objectName,_columnName);
                 if (Strings.isEmpty(geoColumn) ) {
                     this.errorDialogHandler.showErrorDialog(this,
                                                          "ERROR_MESSAGE_NO_COLUMNS",
@@ -880,7 +880,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         //
         try 
         {
-            List<String> keyColumns = MetadataTool.keysAndColumns(this.getConnection(),this.getSchemaName(),this.getObjectName());
+            List<String> keyColumns = Queries.keysAndColumns(this.getConnection(),this.getSchemaName(),this.getObjectName());
             if (keyColumns.size() != 0) 
                 for (int i = 0; i < keyColumns.size(); i++) {
                     this.cmbKeyColumns.addItem(keyColumns.get(i));
@@ -910,7 +910,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     private void setMetadata()
     {
         try {
-            this.metadata = MetadataTool.getMetadata(this.getConnection(),
+            this.metadata = Queries.getMetadata(this.getConnection(),
                                                      this.getSchemaName(), 
                                                      this.getObjectName(), 
                                                      null,
@@ -2423,7 +2423,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
                 this.main.setTotalRows(-1);
                 this.main.progressMessage("Counting rows in " + this.main.getObjectName());
                 String whereClause = this.main.getWhereClause();
-                this.main.setTotalRows(MetadataTool.getRowCount(this.main.getConnection(),
+                this.main.setTotalRows(Queries.getRowCount(this.main.getConnection(),
                                                                 this.main.getSchemaName(),
                                                                 this.main.getObjectName(),
                                                                 whereClause));

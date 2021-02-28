@@ -71,7 +71,6 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.MyImageSelection;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
@@ -98,6 +97,7 @@ import org.xml.sax.SAXException;
 
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
+import org.GeoRaptor.sql.Queries;
 
 
 /**
@@ -282,11 +282,11 @@ extends JPanel
     	if ( this.viewFrame == null ) {
     		this.viewFrame = new JFrame(Constants.GEORAPTOR);
     		this.viewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-    		this.viewFrame.setSize(400, 300);
+    		this.viewFrame.setSize(800, 600);
     	}
         this.viewFrame.setVisible(true);
         this.viewFrame.add(this);
-        this.viewFrame.pack();
+//        this.viewFrame.pack();
         this.viewFrame.setVisible(true);
     	this.redraw(); 
     }
@@ -450,8 +450,8 @@ extends JPanel
      throws Exception 
     {
         this.setLayout(this.borderLayoutMain);
-        this.setSize(new Dimension(900, 300));
-        this.setMinimumSize(new Dimension(750,650));
+        this.setSize(new Dimension(800, 600));
+        this.setMinimumSize(new Dimension(400,300));
         this.borderLayoutMain.minimumLayoutSize(this);
         this.borderLayoutMain.maximumLayoutSize(this);
 
@@ -1240,7 +1240,6 @@ extends JPanel
                                               Connection _conn,
                                               boolean    _zoom) 
     {
-        LOGGER.info("START: SpatialViewPanel.addNewSpatialLayer");
         String columnName = null;
         try 
         {
@@ -1250,7 +1249,7 @@ extends JPanel
             List<String> geoColumns;
             try
             {
-                geoColumns = MetadataTool.getGeoColumns(_conn,
+                geoColumns = Queries.getGeoColumns(_conn,
                                                         _schemaName,
                                                         _objectName);
             } catch (SQLException sqle) {
@@ -1312,7 +1311,6 @@ extends JPanel
                     return LayerReturnCode.Fail;                    
                 }
             }
-            LOGGER.info("Geometry column being processed is " + columnName);
         } catch (Exception e) {
           LOGGER.error("Failed to add new layer because " + e.toString());
           return LayerReturnCode.Fail;
@@ -1329,12 +1327,11 @@ extends JPanel
         MetadataEntry mEntry = null;
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
-            metaEntries = MetadataTool.getMetadata(_conn,
+            metaEntries = Queries.getMetadata(_conn,
                                                    _schemaName,
                                                    _objectName,
                                                    columnName,
                                                    false);
-            LOGGER.info(metaEntries.toString());
             // Find and assign mEntry based on choice
             for (MetadataEntry me: metaEntries.values() ) {
                 if ( me.getColumnName().equalsIgnoreCase(columnName) )  {
@@ -1359,9 +1356,8 @@ extends JPanel
             }
         }
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
-                                                     mEntry.getObjectName(), 
-                                                     mEntry.getColumnName());
-        LOGGER.info("layerName from mEntry is " + layerName);
+                                                mEntry.getObjectName(), 
+                                                mEntry.getColumnName());
 
         // ****************************
         // layer gtype discovery
@@ -1370,8 +1366,7 @@ extends JPanel
         try {
             // 0 Percentage means no sampling. 
             // 1 means first one found ie ROWNUM < 2
-System.out.println("getLayerGeometryType("+mEntry.getSchemaName()+","+mEntry.getObjectName()+","+mEntry.getColumnName()+")");
-            layerGeometryType = MetadataTool.getLayerGeometryType(_conn,
+            layerGeometryType = Queries.getLayerGeometryType(_conn,
                                                                   mEntry.getSchemaName(), 
                                                                   mEntry.getObjectName(), 
                                                                   mEntry.getColumnName(),
@@ -1404,27 +1399,26 @@ System.out.println("getLayerGeometryType("+mEntry.getSchemaName()+","+mEntry.get
                               layer.getSRIDAsInteger())==false) {
             return LayerReturnCode.MBR;
         }
-        LOGGER.info(layer.getVisibleName() + "'s mbr is " + layer.getMBR());
 
         // ****************************
         // Set layer properties
         // 
-        layer.setConnectionName(_connectionName); LOGGER.info("Connection Name set to " + _connectionName);
-        layer.setGeometryType(layerGeometryType); 
-        layer.setSRIDType();                      LOGGER.info("layer srid type is " + layer.getSRIDType().toString());
+        layer.setConnectionName(_connectionName); LOGGER.debug("Connection Name set to " + _connectionName);
+        layer.setGeometryType(layerGeometryType); LOGGER.debug("layer Geometry type is " + layerGeometryType);
+        layer.setSRIDType();                      LOGGER.debug("layer SRID type is " + layer.getSRIDType().toString());
         if ( layer.getSRIDType().toString().startsWith("GEO") ) {
             layer.setPrecision(Constants.MAX_PRECISION);
         } else {
             layer.setPrecision(-1);  // -1 forces calculation
         }
-        layer.setFetchSize(this.SVPanelPreferences.getFetchSize());
+        layer.setFetchSize(    this.SVPanelPreferences.getFetchSize());
         layer.setMinResolution(this.SVPanelPreferences.isMinResolution());
         layer.getStyling().setSelectionTransLevel(Constants.SOLID);
         layer.getStyling().setShadeTransLevel(Constants.SOLID);
         layer.setIndex();    // Will call MetadataTool.hasSpatialIndex()
         // Set whether ST_GEOMETRY object
         try {
-            layer.setSTGeometry(MetadataTool.isSTGeometry(_conn,mEntry));
+            layer.setSTGeometry(Queries.isSTGeometry(_conn,mEntry));
         } catch (SQLException e) {
             layer.setSTGeometry(false);
         }

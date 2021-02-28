@@ -100,6 +100,7 @@ import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.tools.Colours;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
@@ -107,6 +108,7 @@ import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
 import java.sql.Connection;
+import java.sql.DriverManager;
 
 
 /**
@@ -1762,7 +1764,6 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
                         // Get Layer MBR 
                         mbr = fLayerNode.getSpatialLayer().getMBR();
                     }
-LOGGER.debug("ViewLayerTree: Create JGeometry from MBR");
                     JGeometry geom = new JGeometry(mbr.getMinX(), 
                                                    mbr.getMinY(), 
                                                    mbr.getMaxX(), 
@@ -1771,7 +1772,8 @@ LOGGER.debug("ViewLayerTree: Create JGeometry from MBR");
 					Struct stGeom;
                     try {
                     	Connection conn = fLayerNode.getSpatialLayer().getConnection();
-                        stGeom = (Struct) JGeometry.storeJS(geom,conn);
+                        //stGeom = (Struct) JGeometry.storeJS(geom,conn);
+                        stGeom = JGeom.toStruct(geom,conn);
                         svp.showGeometry(fLayerNode.getSpatialLayer(),stGeom, null, SDO_GEOMETRY.getGeoMBR(stGeom), true, true, false);
                         /* ??? */ sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
                     } catch (Exception f) {

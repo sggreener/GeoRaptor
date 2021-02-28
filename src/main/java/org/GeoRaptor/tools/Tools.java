@@ -12,9 +12,11 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.image.BufferedImage;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.sql.Types;
 
 import java.text.DecimalFormat;
@@ -49,12 +51,11 @@ import oracle.sql.NUMBER;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.sql.DatabaseConnections;
-
+import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;
 
 public class Tools {
@@ -502,20 +503,25 @@ public class Tools {
           int AREA = 0; int LENGTH = 1;
           try {
             // Get area of geometry via sdo_geom method call
-            PreparedStatement ps;
-            Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
-            ps = localConnection.prepareStatement(sql);
+            Connection conn = DatabaseConnections.getInstance().getActiveConnection(); 
             //convert JGeometry instance to DB STRUCT
-            ps.setObject(1,JGeometry.storeJS(localConnection,_jGeom));
+            Struct stGeom = null;
+            //stGeom = JGeometry.storeJS(conn,_jGeom);
+            stGeom = JGeom.toStruct(_jGeom,conn);
+            PreparedStatement ps = null;
+            ps = conn.prepareStatement(sql);
+            ps.setObject(1,stGeom);
             ps.setDouble(2,tolerance);
             ps.setString(3,"unit="+areaUnits);
             ps.setString(4,"unit="+lengthUnits);
+
             try {
+            	String sGeom = RenderTool.renderStructAsPlainText(
+                                             stGeom,
+                                             Constants.bracketType.NONE, 
+                                             Constants.MAX_PRECISION);
                 LOGGER.logSQL(sql + 
-                              "\n? = " + RenderTool.renderGeometryAsPlainText(_jGeom,
-                                                                              Constants.TAG_MDSYS_SDO_GEOMETRY, 
-                                                                              Constants.bracketType.NONE, 
-                                                                              Constants.MAX_PRECISION) +
+                              "\n? = " + sGeom +
                               "\n? = " + tolerance +
                               "\n? = " + "unit="+areaUnits +
                               "\n? = " + "unit="+lengthUnits);
@@ -527,7 +533,7 @@ public class Tools {
                 dMeasures[AREA]   = rs.getDouble(1); if ( rs.wasNull() ) dMeasures[AREA]   = 0.0f;
                 dMeasures[LENGTH] = rs.getDouble(2); if ( rs.wasNull() ) dMeasures[LENGTH] = 0.0f;
             }
-            rs.close(); ps.close();
+            rs.close(); rs = null; ps.close(); ps = null;
         } catch (SQLException sqle) {
               String errString = sqle.getMessage();
               if ( !Strings.isEmpty(errString) && errString.indexOf("ORA-", 2)!=-1 )
@@ -721,7 +727,7 @@ public class Tools {
                 // There is no connection available. Perhaps we are starting up? 
                 return Constants.SRID_TYPE.UNKNOWN;
             }
-            sridType = Constants.SRID_TYPE.valueOf(MetadataTool.getSRIDRefSysKind(_c,_srid)); 
+            sridType = Constants.SRID_TYPE.valueOf(Queries.getSRIDRefSysKind(_c,_srid)); 
         } catch (IllegalStateException ise) {
             // We are starting up
             return Constants.SRID_TYPE.UNKNOWN;   
