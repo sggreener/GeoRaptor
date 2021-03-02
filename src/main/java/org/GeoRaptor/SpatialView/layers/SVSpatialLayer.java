@@ -20,6 +20,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
@@ -71,6 +72,7 @@ import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
+import oracle.sql.ROWID;
 
 
 /**
@@ -580,7 +582,7 @@ public class SVSpatialLayer
     }
     
     public boolean setLayerMBR(Envelope _defaultMBR,
-                               int             _targetSRID)
+                               int      _targetSRID)
     {
         Connection conn = super.getConnection();
          
@@ -1759,7 +1761,7 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
 
             // Create statement
             //
-            OraclePreparedStatement pStatement = (OraclePreparedStatement)conn.prepareStatement(querySQL);
+            PreparedStatement pStatement = (PreparedStatement)conn.prepareStatement(querySQL);
 
             // Assign parameters
             //
@@ -1836,10 +1838,11 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
             ors.setFetchSize(this.getResultFetchSize());
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
-            String value = "";
-            String columnName = "";
-            String columnTypeName = "";
-            RowId rowID = null;
+            String    rowID = "",
+                      value = "",
+                 columnName = "",
+             columnTypeName = "";
+            RowId           rid = null;
             while (ors.next()) {
                 LinkedHashMap<String, Object> calValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
                 for (int col = 1; col <= rSetM.getColumnCount(); col++) {
@@ -1871,9 +1874,11 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                                   if (ors.wasNull()) {
                                       value = "NULL";
                                   } else {
-                                      if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
-                                          rowID = ors.getRowId(col); 
-                                          value = rowID.toString();
+                                      if ( ors.getMetaData().getColumnType(col) == Types.ROWID ) {
+                                          rid   = ors.getRowId(col);
+                                          rowID = rid.toString();
+System.out.println("SL - " + rowID);
+                                          value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(conn, ors, col);
                                           if (value == null)
@@ -1887,7 +1892,7 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                           }
                     }
                 }
-                retList.add(new QueryRow(rowID.toString(), calValueMap, retSTRUCT));
+                retList.add(new QueryRow(rowID, calValueMap, retSTRUCT));
             }
             ors.close();
             pStatement.close();

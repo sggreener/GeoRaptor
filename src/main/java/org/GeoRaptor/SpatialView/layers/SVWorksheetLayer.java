@@ -11,8 +11,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import java.sql.ResultSetMetaData;
+import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -509,6 +511,7 @@ LOGGER.debug("SQL executed in " + executeTime);
             long dataReadTime = 0,
                 dataReadStart = 0,
                 totalFeatures = 0;
+            RowId      rid = null;
             String   rowID = "",
                      value = "",
                 columnName = "",
@@ -520,14 +523,12 @@ LOGGER.debug("SQL executed in " + executeTime);
             while ((rSet.next()) &&
                    (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
             {
-LOGGER.debug("queryByPoint row number: "+rSet.getRow());
                 LinkedHashMap<String, Object> colValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
                 stGeom = null;
                 // Process columns
                 for (int col = 1; col <= rSetM.getColumnCount(); col++) {
                     columnName     = rSetM.getColumnName(col);
                     columnTypeName = rSetM.getColumnTypeName(col);
-LOGGER.debug("queryByPoint columnName: "+columnName+ " columnTypeName="+columnTypeName);
                     if (columnName.equalsIgnoreCase(geoColumn)) {
                         stGeom = (java.sql.Struct)rSet.getObject(col);
                         // If ST_GEOMETRY, extract SDO_GEOMETRY
@@ -538,7 +539,6 @@ LOGGER.debug("queryByPoint columnName: "+columnName+ " columnTypeName="+columnTy
                             stGeom = null;
                             break; 
                         }
-LOGGER.debug("queryByPoint testing mbr intersection with geometry");
                         // Surrogate search: if MBR of feature contains search point + search distance MBR then return it
                         if (! mbr.intersects(SDO_GEOMETRY.getGeoMBR(stGeom))) {
                             stGeom = null; // make sure not added to result attributes
@@ -546,15 +546,16 @@ LOGGER.debug("queryByPoint testing mbr intersection with geometry");
                         }
                     } else {
                         if ( Tools.dataTypeIsSupported(columnTypeName) ) {
-LOGGER.debug("data type is supported.");
                               try
                               {
                                   objValue = rSet.getObject(col);
                                   if (rSet.wasNull()) {
                                       value = "NULL";
                                   } else {
-                                      if ( rSetM.getColumnType(col) == OracleTypes.ROWID ) {
-                                          rowID = rSet.getROWID(col).stringValue(); 
+                                      if ( rSetM.getColumnType(col) == Types.ROWID ) {
+                                          rid   = rSet.getRowId(col); 
+                                          rowID = rid.toString();
+System.out.println("WL - " + rowID);
                                           value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(oConn, columnName, objValue);
@@ -566,16 +567,12 @@ LOGGER.debug("data type is supported.");
                               } catch (Exception e) {
                                   value = "NULL";
                               }
-LOGGER.debug("calValueMap.put("+rSetM.getColumnName(col)+","+value+")");
                               colValueMap.put(rSetM.getColumnName(col), value);
-LOGGER.debug("calValueMap.put() is done");
                           }
                     }
                 }
                 if (stGeom != null) { 
-LOGGER.debug("retList.add(QueryRow())");
                     retList.add(new QueryRow(rowID, colValueMap, stGeom));
-LOGGER.debug("retList.add(QueryRow()) - DONE");
                 }
             }
             dataReadTime += (  System.currentTimeMillis() - dataReadStart );

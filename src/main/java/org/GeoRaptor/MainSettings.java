@@ -138,8 +138,8 @@ public class MainSettings {
 				System.err.println("GeoRaptor Version not found: continuing.");
 			} else {
 				if (!version.equalsIgnoreCase(MainSettings.VERSION)) {
-					System.err
-							.println(this.propertyManager.getMsg("XML_VERSION_MESSAGE", version, MainSettings.VERSION));
+					System.err.println(this.propertyManager
+                                           .getMsg("XML_VERSION_MESSAGE", version, MainSettings.VERSION));
 				}
 			}
 			Node panelNode = (Node) xpath.evaluate("/GeoRaptor/SpatialPanel", doc, XPathConstants.NODE);

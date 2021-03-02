@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
 
@@ -492,6 +493,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); // list of return rows
         Struct            retStruct = null;
         ResultSet               ors = null;
+        RowId                   rid = null;
         String                rowID = null;
         try 
         {
@@ -534,7 +536,9 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                                       value = "NULL";
                                   } else {
                                       if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
-                                          rowID = ((OracleResultSet)ors).getROWID(col).stringValue(); 
+                                          rid   = ors.getRowId(col);
+                                          rowID = rid.toString();
+System.out.println("QL - " + rowID);
                                           value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(this.getConnection(),ors,col);                                          

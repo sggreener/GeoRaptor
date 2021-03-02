@@ -184,7 +184,7 @@ public class SQLConversionTools {
 
 			switch (meta.getColumnType(_col)) {
 
-			case Types.ROWID:   value = _rSet.getRowId(_col); break;
+			case Types.ROWID:   value = _rSet.getRowId(_col).toString(); break;
 			case Types.NVARCHAR:
 			case Types.NCHAR:   value = _rSet.getNString(_col); break;			
 			case Types.CHAR:
@@ -285,11 +285,11 @@ public class SQLConversionTools {
     
 			case Types.NCLOB       : return readNClob((NClob)_object);
 			case Types.CLOB        : return readClob((Clob)_object);
-            case Types.NCHAR    : 
-            case Types.CHAR     : CHAR ch = (CHAR)_object;
-                                  return ch.getString(); 
-            case Types.NVARCHAR : 
-            case Types.VARCHAR  :
+            case Types.NCHAR       : 
+            case Types.CHAR        : CHAR ch = (CHAR)_object;
+                                     return ch.getString(); 
+            case Types.NVARCHAR    : 
+            case Types.VARCHAR     :
               // Try CHAR based conversion first
               String retStr = "";
               try { 
@@ -386,6 +386,8 @@ public class SQLConversionTools {
                 return num.stringValue();
             } else if (_object instanceof oracle.sql.ROWID ) {
                 return ((ROWID)_object).stringValue();
+            } else if (_object instanceof java.sql.RowId) {
+                return ((java.sql.RowId)_object).toString();
             } else if (_object instanceof Clob) { 
                 return readClob((Clob)_object);
             } else if (_object instanceof oracle.sql.CHAR) {

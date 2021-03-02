@@ -762,9 +762,9 @@ public class SDO_GEOMETRY
         while ( dst.hasMoreTokens() ) 
         {
             tok = dst.nextToken();
-            if (tok.contains("SDO_ELEM_INFO_Array")) {
+            if (tok.contains("SDO_ELEM_INFO_ARRAY")) {
                 if ( _foldOrds > 0 ) output += "\n";
-            } if (tok.contains("SDO_ORDINATE_Array") ) {
+            } if (tok.contains("SDO_ORDINATE_ARRAY") ) {
                 if ( _foldOrds > 0 ) output += "\n";
                 valueConversion = true;
                 sdoOrdinateArray = true;

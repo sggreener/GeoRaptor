@@ -1999,7 +1999,9 @@ public class RenderResultSet
                                           : renderer.renderGeoObject(nonMappableStruct,true)));
                             }
                           }
-                      } else if (classname.equalsIgnoreCase("oracle.sql.ROWID") ) {
+                      } else if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
+                                 classname.equalsIgnoreCase("java.sql.RowId")
+                                ) {
                             rowID = SQLConversionTools.convertToString(conn,
                                                                        columnName,
                                                                        this._table.getValueAt(viewRow,viewCol));
@@ -2214,15 +2216,15 @@ public class RenderResultSet
                                 }
                             }
                         }
-                        if (classname.equalsIgnoreCase("oracle.sql.ROWID") ) {
+                        if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
+                            classname.equalsIgnoreCase("java.sql.RowId") ) {
                             rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
+System.out.println("RRS - " + rowID);
                         } else {
                             try 
                             {
                                 if ( Tools.dataTypeIsSupported(classname) ) {
-                                    String value = SQLConversionTools.convertToString(conn,
-                                                                                      columnName,
-                                                                                      this._table.getValueAt(viewRow,viewCol));
+                                    String value = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
                                     // Object value = this._table.getValueAt(viewRow,viewCol);
                                     attr.put(columnName, value==null ? null : value );
                                 }

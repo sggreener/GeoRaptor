@@ -202,7 +202,7 @@ extends JPanel
                 //
                 this.propertyManager = new PropertiesManager(SpatialViewPanel.propertiesFile);
             } catch (Exception e) {
-                System.out.println("Problem loading properties file: " + SpatialViewPanel.propertiesFile + "\n" + e.getMessage());
+                LOGGER.error("Problem loading properties file: " + SpatialViewPanel.propertiesFile + "\n" + e.getMessage());
             }
             
             this.SHOW_GEOMETRY_PARAMETER_ERROR    = this.propertyManager.getMsg("SHOW_GEOMETRY_PARAMETER_ERROR");

@@ -288,7 +288,7 @@ public class MapPanel
             this.messageNoQueryableLayer       = new JLabel(noQueryableLayer, iconNoQueryableLayer, JLabel.TRAILING);
 
         } catch (Exception e) {
-            System.out.println("(MapPanel Constructor): Problem loading properties file (" + MapPanel.propertiesFile + ")\n" + e.getMessage());
+            LOGGER.error ("(MapPanel Constructor): Problem loading properties file (" + MapPanel.propertiesFile + ")\n" + e.getMessage());
         }
 
         // Get map background color

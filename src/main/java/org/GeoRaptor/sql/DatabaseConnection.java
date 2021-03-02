@@ -3,21 +3,20 @@ package org.GeoRaptor.sql;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
 
-import oracle.dbtools.db.ConnectionResolver;
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.javatools.db.DBException;
+import oracle.jdbc.OracleConnection;
 
 public class DatabaseConnection {
 
-    private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.sql.DatabaseConnection");
+    private static final Logger LOGGER = 
+    		org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnection");
     
     public String       connectionName;
     public String          displayName;
@@ -137,8 +136,13 @@ public class DatabaseConnection {
         if (Strings.isEmpty(this.connectionName) )
             return conn;
         try {
-            conn = Connections.getInstance().getConnection(this.connectionName,true);
             //conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+            conn = Connections.getInstance().getConnection(this.connectionName,true);
+            if (conn.isWrapperFor(OracleConnection.class)){
+            	return (OracleConnection)conn.unwrap(OracleConnection.class);  
+            } else {
+            	return conn;
+          	}
         } catch (Exception e) {
             LOGGER.error("Problem getting connection (" + this.connectionName + ") of " + e.toString());
         }

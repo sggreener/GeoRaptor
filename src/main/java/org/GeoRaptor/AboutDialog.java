@@ -45,8 +45,7 @@ public class AboutDialog extends javax.swing.JDialog {
     private ClassLoader cl = this.getClass().getClassLoader();
 
     protected PropertiesManager propertyManager;
-    protected ResourceBundle    rBundle;
-    
+        
     private static final String propertiesFile = "org.GeoRaptor.Resources";
     
     private static AboutDialog INSTANCE;
@@ -64,34 +63,24 @@ public class AboutDialog extends javax.swing.JDialog {
     public AboutDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
 
-LOGGER.info("1");
         this.cl = this.getClass().getClassLoader();
 
-        //this.propertyManager = new PropertiesManager(AboutDialog.propertiesFile);
+        this.propertyManager = new PropertiesManager(AboutDialog.propertiesFile);
 
-LOGGER.info("2");
-        this.rBundle = ResourceBundle.getBundle(AboutDialog.propertiesFile,Locale.getDefault());
-
-LOGGER.info("3");
         initComponents();
 
         // Has to be after initComponents.
         //
-LOGGER.info("4");
         this.GeoRaptorLogo = new ImageIcon(this.cl.getResource("org/GeoRaptor/images/GeoRaptorLogo.jpg"));
-LOGGER.info("5");
         this.lblLogo.setIcon(this.GeoRaptorLogo);
 
-LOGGER.info("6");
         String version = Tools.getVersion();
-        //String dialog_title = Resources.getString("ABOUT_BOX_TITLE") + " - " + version;
-        String dialog_title = this.rBundle.getString("ABOUT_BOX_TITLE") + " - " + version; 
+        String dialog_title = Resources.getString("ABOUT_BOX_TITLE") + " - " + version;
         
         setTitle(dialog_title);
 		
         this.taGeoRaptorAboutText.setContentType("text/html");
-        String html_doc = this.rBundle.getString("ABOUT_HTML"); 
-        //html_doc = this.propertyManager.getMsg("ABOUT_HTML");
+        String html_doc = this.propertyManager.getMsg("ABOUT_HTML", version);
         
         this.taGeoRaptorAboutText.setText(html_doc);
         this.taGeoRaptorAboutText.setBackground(this.getBackground());
