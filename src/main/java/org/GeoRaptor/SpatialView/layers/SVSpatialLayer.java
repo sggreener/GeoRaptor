@@ -11,8 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,7 +45,6 @@ import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
-import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
@@ -64,15 +61,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import oracle.jdbc.driver.OracleConnection;
-import oracle.dbtools.raptor.utils.Connections;
-import oracle.dbtools.raptor.utils.DBObject;
-import oracle.jdbc.OracleDriver;
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
-import oracle.sql.ROWID;
 
 
 /**
@@ -689,6 +680,7 @@ public class SVSpatialLayer
     public String getInitSQL(String _geoColumn) 
     {
         LOGGER.debug("SVSpatialLayer.getInitSQL(" +_geoColumn + ") -> " + this.getVisibleName() + " hasIndex="+this.hasIndex());
+        
         // If SQL Developer still starting up and a layer is being loaded from XML
         // the connections won't work
         //
@@ -710,11 +702,17 @@ public class SVSpatialLayer
             LOGGER.warn("(SVSpatialLayer.getInitSQL) General Exception: " + e.getMessage());
             return null;
         }
+        
+        // check completed, now construct SQL
+        //
         String retLayerSQL;
         retLayerSQL = "SELECT rowid," + (Strings.isEmpty(columns) ? "" : columns+"," ) + 
                              "t." + _geoColumn + " as " + _geoColumn + " \n" +
-                      "  FROM " + (this.preferences.getSQLSchemaPrefix()?this.getFullObjectName():this.getObjectName()) + " t \n" +
+                      "  FROM " + (this.preferences.getSQLSchemaPrefix()
+                                   ? this.getFullObjectName()
+                                   : this.getObjectName()) + " t \n" +
                       " WHERE ";
+        
         if ( this.hasIndex() ) {
             retLayerSQL += "SDO_FILTER(t." + _geoColumn + 
                            (this.isSTGeometry()
@@ -726,7 +724,9 @@ public class SVSpatialLayer
                            " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + _geoColumn + "," + this.getTolerance() + ") = 'TRUE'\n" +
                            " AND MDSYS.SDO_GEOM.RELATE(t." + _geoColumn + ",'ANYINTERACT',?,"+this.getTolerance()+") = 'TRUE'";
         }
-LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
+        LOGGER.logSQL(retLayerSQL);
+        
+//System.out.println("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         return retLayerSQL;
     }
 
@@ -734,14 +734,22 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         this.layerSQL = this.getInitSQL(super.getGeoColumn());
     }
 
-    public String getDefaultSDOFilterClause(Point2D.Double _pixelSize) 
+    public String getSDOFilterClause() 
     {
         String sdoFilterClause = this.sdoFilterClause;
-        if ( this.getMinResolution() && _pixelSize != null  ) {
-            double maxPixelSize = Math.max(_pixelSize.getX(), _pixelSize.getY());
-            if (maxPixelSize != 0.0) {
-                sdoFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
+        if (this.getMinResolution()) {
+            Point.Double pixelSize = null;
+            try {
+                pixelSize = this.getSpatialView().getMapPanel().getPixelSize();
+            } catch (NoninvertibleTransformException e) {
+                pixelSize = new Point.Double(0.0,0.0);
             }
+	        if ( this.getMinResolution() && pixelSize != null  ) {
+	            double maxPixelSize = Math.max(pixelSize.getX(), pixelSize.getY());
+	            if (maxPixelSize != 0.0) {
+	                sdoFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
+	            }
+	        }
         }
         return sdoFilterClause;
     }
@@ -821,6 +829,7 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         } else {
             sql = SQL.replace("SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'","1=1");
         }
+        
         if ( this.hasIndex() ) {
             LOGGER.debug("  Replacing: " + "SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'");
             if ( this.isSTGeometry() ) {
@@ -843,7 +852,8 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
         } catch (SQLException sqle) {
             LOGGER.error(this.getLayerName() + ": failed to prepare SQL Statement. (" + sqle.getMessage());
             return _sql;
-        }            
+        }
+        
         ResultSetMetaData rsmd;
         int columnCount = 0; 
         try {
@@ -987,9 +997,10 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
     protected PreparedStatement setParameters(String _sql, 
                                             Envelope _mbr) 
     {
-        LOGGER.debug("SVSpatialLayer.setParameters()");
+//System.out.println("\n\n\nSVSpatialLayer.setParameters()");
+//System.out.println("... " + _sql);
         PreparedStatement pStatement = null;
-        String   spatialFilterClause = "";
+        String       sdoFilterClause = "";
         Struct            filterGeom = null;
         int           stmtParamIndex = 1;
         try 
@@ -1006,42 +1017,30 @@ LOGGER.debug("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
                               );
 
             pStatement = super.getConnection().prepareStatement(_sql);
-            
+
             // Filter Geom is always expressed in terms of the layer's SRID
             //
             filterGeom = this.getSearchFilterGeometry(_mbr,project,querySRID,this.getSRIDAsInteger());
             pStatement.setObject(stmtParamIndex++, filterGeom, java.sql.Types.STRUCT);
-            LOGGER.debug("SVSpatialLayer.setParameters(): window geometry parameter " + (stmtParamIndex-1) + " to STRUCT is " + (filterGeom==null?"null":"not null"));
+//System.out.println("? window geometry parameter(" + (stmtParamIndex-1) + ") = " + RenderTool.renderStructAsPlainText(filterGeom, Constants.bracketType.NONE, 12) );
 
             // Set up SDO_Filter clause depending on whether min_resolution is to be applied or not
             // If ST_Geometry, can't use sdoFilterClause
             //
-            LOGGER.debug("SVSpatialLayer.setParameters(): hasIndex()=" + this.hasIndex());
+//System.out.println(".... hasIndex()=" + this.hasIndex());
             if ( this.hasIndex() && this.isSTGeometry()==false ) {
-                spatialFilterClause = this.sdoFilterClause; // Default
-                if (this.getMinResolution()) {
-                    Point.Double pixelSize = null;
-                    try {
-                        pixelSize = this.getSpatialView().getMapPanel().getPixelSize();
-                    } catch (NoninvertibleTransformException e) {
-                        pixelSize = new Point.Double(0.0,0.0);
-                    }
-                    double maxPixelSize = Math.max(pixelSize.getX(), pixelSize.getY());
-                    if (maxPixelSize != 0.0) {
-                        spatialFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
-                        LOGGER.debug("SVSpatialLayer.setParameters(): spatialFilterClause parameter " + (stmtParamIndex-1) + " to " + spatialFilterClause);
-                    }
-                }
-LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
-                pStatement.setString(stmtParamIndex++, spatialFilterClause);
+              sdoFilterClause = this.getSDOFilterClause();                    
+//System.out.println("? sdoFilterClause(" + (stmtParamIndex-1) + ") = " + sdoFilterClause);
+              pStatement.setString(stmtParamIndex++, sdoFilterClause);
             }
-            LOGGER.debug("SVSpatialLayer.setParameters(): this.getPrefreences().isLogSearchStats() = " + this.getPreferences().isLogSearchStats() );
+            
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info("\n" + _sql + "\n" + 
                             String.format("?=%s\n?=%s", 
                                           SDO_GEOMETRY.getGeometryAsString(filterGeom),
-                                          spatialFilterClause));
+                                          sdoFilterClause));
             }
+            
         } catch (SQLException sqle) {
             // isView() then say no index
             if ( this.isView() ) {
@@ -1052,9 +1051,9 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                                   _sql + "\n" +
                                   String.format("? %s\n? %s", 
                                                 SDO_GEOMETRY.getGeometryAsString(filterGeom),
-                                                spatialFilterClause));
+                                                sdoFilterClause));
         } 
-        LOGGER.debug("returning pStatement");
+//System.out.println("End SVSpatialLayer.setParameters() returning pStatement");
         return pStatement;
     }
 
@@ -1187,7 +1186,10 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                 totalFeatures++;
                 
                 if (this.styling.getLabelColumn() != null) {
-                    labelValue = SQLConversionTools.convertToString(oConn,this.styling.getLabelColumn(), ors.getObject(this.styling.getLabelColumn().replace("\"","")));
+                    labelValue = SQLConversionTools.convertToString(
+                    		oConn,
+                    		this.styling.getLabelColumn(), 
+                    		ors.getObject(this.styling.getLabelColumn().replace("\"","")));
                 }
                 if (this.styling.getRotationColumn() != null) {
                     try {
@@ -1196,7 +1198,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                         angleValue = 0.0f;
                     }
                 }
-                if (this.styling.getShadeColumn() != null && this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                if (this.styling.getShadeColumn() != null && 
+                    this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         shadeValue = ors.getString(this.styling.getShadeColumn().replace("\"",""));
@@ -1204,7 +1207,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                         shadeValue = "255,255,255";
                     }
                 } 
-                if (this.styling.getPointColorColumn() != null && this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
+                if (this.styling.getPointColorColumn() != null && 
+                    this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = ors.getString(this.styling.getPointColorColumn().replace("\"",""));
@@ -1212,7 +1216,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                         pointColorValue = "255,255,255";
                     }
                 } 
-                if (this.styling.getLineColorColumn() != null && this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
+                if (this.styling.getLineColorColumn() != null && 
+                    this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = ors.getString(this.styling.getLineColorColumn().replace("\"",""));
@@ -1220,7 +1225,8 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                         lineColorValue = "0,0,0";
                     }
                 }  
-                if (this.styling.getPointSizeColumn() != null && this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
+                if (this.styling.getPointSizeColumn() != null && 
+                    this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         pointSizeValue = ors.getDouble(this.styling.getPointSizeColumn().replace("\"",""));
                     } catch (Exception e) {
@@ -1585,8 +1591,12 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
             spatialIndexName = "";
         }
         if ( this.hasIndex() ) {
-            String queryHint = "/*+ORDERED" + (Strings.isEmpty(spatialIndexName) ? "" : " INDEX(b " + spatialIndexName+")") + "*/";
-            sql = "WITH searchDistance As (" +
+        	
+            String queryHint = "/*+ORDERED" + (Strings.isEmpty(spatialIndexName) 
+            		           ? "" : " INDEX(b " + spatialIndexName+")") + 
+            		           "*/";
+            
+            sql = "WITH searchDistance As (\n" +
                   "  SELECT MDSYS.SDO_GEOM.SDO_DISTANCE(?/*search pt1*/,?/*DistancePoint*/,?/*tol*/,?/*unit*/) AS dist \n" +
                   "    FROM DUAL \n" +
                   ")\n" +
@@ -1598,6 +1608,7 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                            : "a.*\n" 
                            ) +
                   "  FROM (" + this.getSQL() + "\n " ;
+            
             if (this.getPreferences().isNN() ) {
                sql += "      ) a,\n" +
                     "       "+this.getFullObjectName() + " b,\n" +
@@ -1673,7 +1684,16 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
         }
         return maxSearchRadius;
     }
-    
+
+    private boolean queryContainsOperator(String _querySQL) {
+        Constants.SDO_OPERATORS[] sdoOperators = Constants.SDO_OPERATORS.values();
+        for (int i=0; i < sdoOperators.length;i++) {
+        	if ( _querySQL.contains("SDO_"+sdoOperators[i].toString()) ) 
+        	  return true;
+        }    	
+    	return false;
+    }
+
     /**
      * @history Simon Greener April 13th 2010
      *          - Reorganised SQL
@@ -1776,13 +1796,19 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                 //               : "a.*\n" 
                 //               )
                 //"  FROM (" + this.getSQL() + 
-                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);                   params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
+                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     
+                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);
+                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                pStatement.setDouble(stmtParamIndex++,this.getTolerance());
+                params += String.format("? %f\n",this.getTolerance());
+                pStatement.setString(stmtParamIndex++,units_parameter.replace(",",""));
+                params += String.format("? '%s'\n",units_parameter.replace(",",""));
+                
                 // MBR for SDO_FILTER 
                 //
-                pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);                          params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
+                pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);
+                params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
                 if ( ! this.isSTGeometry() ) {
                     spatialFilterClause = this.sdoFilterClause; // Default
                     if (this.getMinResolution()) {
@@ -1791,8 +1817,17 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                             spatialFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
                         }
                     }
-                    pStatement.setString(stmtParamIndex++, spatialFilterClause);                  params += "? '"+spatialFilterClause+"'\n";
+                    pStatement.setString(stmtParamIndex++, spatialFilterClause);
+                    params += "? '"+spatialFilterClause+"'\n";
+                    // Does it have a secondary filter clause?
+                    // eg SDO_ANYINTERACT
+                    if ( this.queryContainsOperator(querySQL) ) {
+                        pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);
+                        params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
+                    }
+                    	
                 }
+                
                 if ( this.getPreferences().isNN() ) {
                     //       "       ) a,\n" +
                     //     "       "+this.getFullObjectName() + " b,\n" +
@@ -1875,10 +1910,10 @@ LOGGER.debug("spatialFilterClause = " + spatialFilterClause);
                                       value = "NULL";
                                   } else {
                                       if ( ors.getMetaData().getColumnType(col) == Types.ROWID ) {
-                                          rid   = ors.getRowId(col);
-                                          rowID = rid.toString();
-System.out.println("SL - " + rowID);
-                                          value = rowID;
+                                          //rid   = ors.getRowId(col);
+                                          //rowID = "NULL"; // rid.toString();
+                                          //value = rowID;
+                                          continue;
                                       } else {
                                           value = SQLConversionTools.convertToString(conn, ors, col);
                                           if (value == null)

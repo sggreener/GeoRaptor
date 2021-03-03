@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
@@ -48,8 +47,8 @@ import org.GeoRaptor.io.Export.SHPExporter;
 import org.GeoRaptor.io.Export.TABExporter;
 import org.GeoRaptor.io.Export.ui.ExporterDialog;
 import org.GeoRaptor.sql.DatabaseConnections;
-import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.JGeom;
@@ -73,7 +72,6 @@ import oracle.ide.Ide;
 import oracle.ide.controller.ContextMenu;
 import oracle.ide.controller.IdeAction;
 import oracle.ide.dialogs.ProgressBar;
-import oracle.javatools.db.DBException;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
@@ -2002,9 +2000,8 @@ public class RenderResultSet
                       } else if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
                                  classname.equalsIgnoreCase("java.sql.RowId")
                                 ) {
-                            rowID = SQLConversionTools.convertToString(conn,
-                                                                       columnName,
-                                                                       this._table.getValueAt(viewRow,viewCol));
+                    	  continue;
+                          //rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
                       } else {
                               if ( Tools.dataTypeIsSupported(classname) ) {
                                 String value = SQLConversionTools.convertToString(conn,
@@ -2218,8 +2215,8 @@ public class RenderResultSet
                         }
                         if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
                             classname.equalsIgnoreCase("java.sql.RowId") ) {
-                            rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
-System.out.println("RRS - " + rowID);
+                        	continue;
+                            //rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
                         } else {
                             try 
                             {

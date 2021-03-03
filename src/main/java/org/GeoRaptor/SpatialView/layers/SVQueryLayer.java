@@ -1,43 +1,33 @@
 package org.GeoRaptor.SpatialView.layers;
 
 import java.awt.Graphics2D;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
-
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleTypes;
-import oracle.jdbc.driver.OracleConnection;
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
@@ -45,18 +35,19 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.apache.commons.codec.binary.Base64;
-
 import org.geotools.util.logging.Logger;
-
 import org.w3c.dom.Node;
+
+import oracle.jdbc.OracleResultSetMetaData;
+import oracle.jdbc.OracleTypes;
+import oracle.spatial.geometry.JGeometry;
 
 public class SVQueryLayer 
 extends SVSpatialLayer 
 {
-    public static final String CLASS_NAME = Constants.KEY_SVQueryLayer;
-    private static final Logger   LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
+    public  static final String CLASS_NAME = Constants.KEY_SVQueryLayer;
+    private static final Logger     LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
 
     protected Constants.SDO_OPERATORS 
                              sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
@@ -213,29 +204,35 @@ extends SVSpatialLayer
 
         // Our query SQL can be:
         // 1. Built on top of the current Layer SQL (including user modifications), or
-        // 2. Build on top of the original dataimport org.apache.commons.codec.binary.Base64; object using "clean" SQL
+        // 2. Build on top of the original data import org.apache.commons.codec.binary.Base64; object using "clean" SQL
         // While 1 means duplicate filter queries, 1 is chosen for the time being
         //
-        String qSql = String.format("%s\n  AND 2=2",super.getSQL());   // Note use of 2=2 Predicate
+        String qSql = String.format("%s\n AND 2=2",super.getSQL());   // Note use of 2=2 Predicate
         if (Strings.isEmpty(super.wrappedSQL)) {
             qSql = super.wrapSQL(qSql);
             this.wrappedSQL = qSql;
         } else {
             qSql = this.wrappedSQL;
         }
+        
         LOGGER.debug("sdoOperator is " + this.sdoOperator.toString() + " with isSTGeometry of "+this.isSTGeometry());
+
         if (   this.hasIndex() && 
-            ! (this.isSTGeometry() && this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)) {
+            ! (this.isSTGeometry() && 
+               this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)
+           )
+        {
             qSql = qSql.replace("2=2",
                    ( this.isSTGeometry() 
                      ? "t." + super.getGeoColumn() + ".ST_" + this.sdoOperator.toString() + "(MDSYS.ST_GEOMETRY("  + filterGeometry + ")) = 1"
-                   : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
-                                   this.sdoOperator.toString(),
-                                   super.getGeoColumn(),
-                                   filterGeometry,
-                                   (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
-                                    ? ( ",'" + getRelationshipMask() + "'" ) : "")
-                                   ) 
+                     : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
+                                     this.sdoOperator.toString(),
+                                     super.getGeoColumn(),
+                                     filterGeometry,
+                                     (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
+                                      ? ( ",'" + getRelationshipMask() + "'" ) 
+                                      : "")
+                                     ) 
                    ));
         } else {
             // Original SQL may have sdo_relate already. If so, change its ANYTINTERACT mask
@@ -253,41 +250,51 @@ extends SVSpatialLayer
                                      this.getTolerance()));
             }
         }
-LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
+        LOGGER.logSQL("SVQueryLayer - getSQL = " + qSql);
         return qSql;
     }
 
     protected PreparedStatement setParameters(String _sql, 
                                             Envelope _mbr) 
     {
+    	Connection              conn = null;
         PreparedStatement pStatement = null;
         int           stmtParamIndex = 1;
         String                params = "";
         try 
         {
+            conn       = super.getConnection();
+            
             pStatement = super.setParameters(_sql,_mbr);
             if ( pStatement==null ) {
-                LOGGER.error("Failed to set parameters for Query SQL");
+                LOGGER.error("Failed to set SQL parameters for Query Layer " + super.layerName);
                 return null;
             }
+//System.out.println("\n\n\n\n");
+            
             // Now set up parameters for this layer
             //
             stmtParamIndex = super.isSTGeometry() ? 2 : 3; // This is UGLY and hardcoded! I need to know what parameters are set by super.setParameters()
-            Connection conn = super.getConnection();
             if (super.hasIndex()) 
             {
+//System.out.println("hasIndex()= "+super.hasIndex());
                 // Use SDO_RELATE, SDO_EQUAL etc.
                 // Only SDO_RELATE has third parameter
                 //
-            	Struct stGeom = null;
-            	//stGeom = (Struct)JGeometry.storeJS(conn,this.getGeometry());
-                stGeom = JGeom.toStruct(this.getGeometry(),conn);
-            	pStatement.setObject(stmtParamIndex++,stGeom,java.sql.Types.STRUCT);
-                params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
 
+            	Struct stSearchGeom = null;
+            	String searchGeometry = "";
+            	stSearchGeom = JGeom.toStruct(this.getGeometry(),conn);
+            	searchGeometry = SDO_GEOMETRY.getGeometryAsString(stSearchGeom);
+            	pStatement.setObject(stmtParamIndex++,stSearchGeom,java.sql.Types.STRUCT);
+                params += "\n? = " + searchGeometry;                
+//System.out.println("? search geometry(" + (stmtParamIndex-1) + ") : " + searchGeometry);
+                
                 if (this.isBuffered()) {
+                	// This buffer geometry replaces search geometry...
+//System.out.println("isBuffered()= "+this.isBuffered());
                     /**
-                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- previous
+                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters
                      *                     dist IN NUMBER,
                      *                     tol IN NUMBER
                      *                     [, params IN VARCHAR2]
@@ -295,14 +302,24 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                     **/
                     pStatement.setDouble(stmtParamIndex++,this.getBufferDistance());
                     params += "\n? = " + this.getBufferDistance();
+//System.out.println("Buffer Distance(" + (stmtParamIndex-1) + "): " + params);
                     pStatement.setDouble(stmtParamIndex++,super.getTolerance());
                     params += "\n? = " + String.valueOf(super.getTolerance());
-                }
+//System.out.println("Tolerance(" + (stmtParamIndex-1) + ") : " + params);
+                } 
+                
                 if ( this.sdoOperator==Constants.SDO_OPERATORS.RELATE ) {
                     pStatement.setString(stmtParamIndex++,"mask=" + this.getRelationshipMask() );
                     params += "\n? = mask=" + this.getRelationshipMask();
+//System.out.println("Relationship Mask(" + (stmtParamIndex-1) + ") : " + params);
                 }
-            } else {
+            } 
+            else /* ! super.hasIndex() ie no SDO_FILTER */ 
+            {
+//System.out.println("! hasIndex()= ");
+            	// Add geom1  <-- super.setParameters
+            	// mask/geom2,tol parameter values
+            	//
                 // SDO_GEOM.RELATE(
                 //      geom1 IN SDO_GEOMETRY,
                 //      mask IN VARCHAR2,
@@ -312,12 +329,16 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                 //
                 pStatement.setString(stmtParamIndex++,"'" + this.getRelationshipMask() + "'" );
                 params += "\n? = mask=" + this.getRelationshipMask();
-                Struct stGeom = (Struct)JGeometry.storeJS(conn,this.getGeometry());
+                
+                Struct stGeom = null; // (Struct)JGeometry.storeJS(conn,this.getGeometry());
+                stGeom = JGeom.toStruct(this.getGeometry(),conn);
                 pStatement.setObject(stmtParamIndex++,stGeom,java.sql.Types.STRUCT);
                 params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
+                
                 if (this.isBuffered()) {
+//System.out.println("isBuffered()= "+this.isBuffered());
                     /**
-                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- previous
+                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters
                      *                     dist IN NUMBER,
                      *                     tol IN NUMBER
                      *                     [, params IN VARCHAR2]
@@ -328,9 +349,12 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                     pStatement.setDouble(stmtParamIndex++,super.getTolerance());
                     params += "\n? = " + String.valueOf(super.getTolerance());
                 }
+                // Tolerance
                 pStatement.setDouble(stmtParamIndex++,super.getTolerance());
                 params += "\n? = " + String.valueOf(super.getTolerance());
             }
+//System.out.println("QL: " + _sql);
+//System.out.println("QL: " + params);
         } catch (SQLException sqle) {
             LOGGER.error("SVQueryLayer.setParameters("+sqle.getMessage()+") - SQL copied to clipboard.");
             Tools.doClipboardCopy(_sql + params);
@@ -517,7 +541,7 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                     columnTypeName = rSetM.getColumnTypeName(col);
                     if (columnTypeName.equals("LONG")) {
                         // LONGs will kill the SQL stream and we can't use them anyway
-                        System.out.println("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
+                        LOGGER.warn("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
                         continue;
                     }
                     if (columnName.equalsIgnoreCase(super.getGeoColumn())) {
@@ -536,10 +560,10 @@ LOGGER.debug("SVQueryLayer - getSQL = " + qSql);
                                       value = "NULL";
                                   } else {
                                       if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
-                                          rid   = ors.getRowId(col);
-                                          rowID = rid.toString();
-System.out.println("QL - " + rowID);
-                                          value = rowID;
+                                    	  continue;
+                                          //rid   = ors.getRowId(col);
+                                          //rowID = rid.toString();
+                                          //value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(this.getConnection(),ors,col);                                          
                                           if (value == null)

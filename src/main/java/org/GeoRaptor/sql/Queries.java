@@ -3,20 +3,16 @@ package org.GeoRaptor.sql;
 import java.awt.geom.Point2D;
 import java.sql.Array;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Struct;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.swing.JOptionPane;
-
-import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -26,8 +22,9 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
+
+import oracle.spatial.geometry.JGeometry;
 
 
 /**
@@ -37,7 +34,6 @@ import org.geotools.util.logging.Logger;
  *          Implemented keysAndColumns()
  **/
 
-@SuppressWarnings("deprecation")
 public class Queries {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.MetadataTool");
@@ -1739,13 +1735,14 @@ public class Queries {
                                          int        _sourceSRID,
                                          int        _destinationSRID)
     {
-LOGGER.info("projectSdoPoint");
+LOGGER.debug("projectSdoPoint(" + _point.toString() + "," + _sourceSRID + "," + _destinationSRID+")");
+
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
         }
 
-        if ( _conn==null ) {
-            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","projectFilterGeoemtry"));
+        if ( _conn == null ) {
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","projectSdoPoint"));
         }
           
         if ( _point == null) {
@@ -1753,46 +1750,24 @@ LOGGER.info("projectSdoPoint");
                                                                       propertyManager.getMsg("MBR")));
         }
 
-        String sql = null; 
-    	String formatSQL = "";
-        try {
-	        if ( _sourceSRID == Constants.SRID_NULL ) { 
-	          sql = "SELECT SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
-	                 " FROM DUAL";
-	          formatSQL = String.format(sql.replaceAll("?", "%s"),
-                              String.valueOf(_point.getX()),
-                              String.valueOf(_point.getY())); 
-	          LOGGER.logSQL(formatSQL);
-	        } else if (_destinationSRID == Constants.SRID_NULL ||
-	        		   _sourceSRID      == _destinationSRID )  {
-	          sql = "SELECT SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
-	                 " FROM DUAL";
-	          formatSQL = String.format(sql.replaceAll("?", "%s"),
-	                              String.valueOf(_sourceSRID),
-	                              String.valueOf(_point.getX()),
-	                              String.valueOf(_point.getY())
-	                      );
-              LOGGER.logSQL(formatSQL);
-	        } else {        
-	          sql = "SELECT f.geom.sdo_point.x, f.geom.sdo_point.y " +
-	                 " FROM (SELECT MDSYS.SDO_CS.TRANSFORM(SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL),?) as geom FROM DUAL) f" +
-	                " WHERE f.geom is not null";
-	          formatSQL = String.format(sql.replaceAll("?", "%s"),
-	                               String.valueOf(_sourceSRID),
-	                               String.valueOf(_point.getX()),
-	                               String.valueOf(_point.getY()),
-	                               String.valueOf(_destinationSRID)
-	                      );
-	          LOGGER.logSQL(formatSQL);
-
-	        }
-        } catch (Exception e) {
-          LOGGER.info("Error formatting sql ("+formatSQL+")");
-        }
+        String sql = ""; 
         Struct sGeom = null;
+    	
+        if ( _sourceSRID == Constants.SRID_NULL ) { 
+          sql = "SELECT SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
+                 " FROM DUAL";
+        } else if (_destinationSRID == Constants.SRID_NULL ||
+        		   _sourceSRID      == _destinationSRID )  {
+          sql = "SELECT SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
+                 " FROM DUAL";
+        } else {        
+          sql = "SELECT f.geom.sdo_point.x, f.geom.sdo_point.y " +
+                 " FROM (SELECT MDSYS.SDO_CS.TRANSFORM(SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL),?) as geom FROM DUAL) f" +
+                " WHERE f.geom is not null";
+        }
         try {
 	        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
-LOGGER.info("=================Setting parameters ====================");
+LOGGER.debug("=================Setting parameters ====================");
 	        if ( _sourceSRID == Constants.SRID_NULL ) {
 		        pStatement.setDouble(1,_point.getX());
 		        pStatement.setDouble(2,_point.getY());
@@ -1801,26 +1776,29 @@ LOGGER.info("=================Setting parameters ====================");
 	            pStatement.setInt(1,_sourceSRID);
 		        pStatement.setDouble(2,_point.getX());
 		        pStatement.setDouble(3,_point.getY());
-	        } else {        
+	        } else {
 	            pStatement.setInt   (1,_sourceSRID);
 		        pStatement.setDouble(2,_point.getX());
 		        pStatement.setDouble(3,_point.getY());
 	            pStatement.setInt   (4,_destinationSRID);
 		    }
-LOGGER.info("=================execute SQL====================");
-	        ResultSet rSet = (ResultSet)pStatement.executeQuery();
-	        if (rSet.next()) {
-	        	sGeom = (Struct)rSet.getObject(1);
-	            if ( rSet.wasNull() ) sGeom = null;
+LOGGER.debug("=================execute SQL====================");
+	        ResultSet rs = (ResultSet)pStatement.executeQuery();
+	        if (rs.next()) {
+	        	sGeom = (Struct)rs.getObject(1);
+	            if ( rs.wasNull() ) sGeom = null;
 	        }
-	        rSet.close();
-	        rSet = null;
+	        rs.close();
+	        rs = null;
 	        pStatement.close();
 	        pStatement = null;
+	        
+	        LOGGER.debug(RenderTool.renderStructAsPlainText(sGeom, Constants.bracketType.NONE, 8));
+
         } catch (Exception e) {
         	LOGGER.error("Failed to create/Project SDO_GEOMETRY point (" + e.getLocalizedMessage());
         }
-LOGGER.info("=================Return sGeom ====================");
+        LOGGER.debug("================= End projectSdoPoint ====================");
         return sGeom;
     }
 
@@ -2606,5 +2584,64 @@ LOGGER.info("=================Return sGeom ====================");
       st.close(); st = null;
       return srid;
   }
-    
+
+  public static String getPrimaryKey(
+		  Connection _conn,
+          String     _schemaName,
+          String     _objectName)
+  throws SQLException,
+         IllegalArgumentException
+  {
+	  if ( propertyManager == null )
+		  propertyManager = new PropertiesManager(propertiesFile);
+
+	  if ( _conn==null )
+		  throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","object_type SQL"));
+
+	  if (Strings.isEmpty(_objectName) ) 
+		  throw new IllegalArgumentException(
+				      propertyManager.getMsg("MD_NO_OBJECT_NAME",
+                      propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
+
+	  String schemaClause = null;
+      if (Strings.isEmpty(_schemaName) ) {
+          schemaClause = " \n";
+      } else {
+          schemaClause = " ac.owner = ? and \n";
+      }
+
+	  String sql = "select ac.constraint_type, \r\n" + 
+	  		"       CAST(LISTAGG(aic.column_name) WITHIN GROUP (ORDER BY ac.owner, ac.table_name, ac.constraint_type) as varchar2(32)) as column_name, count(*)\r\n" + 
+	  		"  from all_constraints ac\r\n" + 
+	  		"       inner join\r\n" + 
+	  		"       all_ind_columns aic\r\n" + 
+	  		"       on (aic.index_owner = ac.owner and aic.index_name = ac.constraint_name)\r\n" + 
+	  		"  where " + schemaClause + 
+	  		"        ac.table_name = ? " +
+	  		"    and constraint_type in ('U','P')\r\n" + 
+	  		"group by ac.owner, ac.table_name, ac.constraint_name, ac.constraint_type\r\n" + 
+	  		"having count(*) = 1";
+
+	  String column_name = null;
+	  LOGGER.logSQL(sql);
+	  
+      PreparedStatement ps = _conn.prepareStatement(sql);
+      if (Strings.isEmpty(_schemaName) ) {
+          ps.setString(1,_objectName);
+      } else {
+          ps.setString(1,_schemaName);
+          ps.setString(2,_objectName);    	  
+      }
+
+	  ResultSet rs = ps.executeQuery(sql);
+      if (!rs.isBeforeFirst() ) {    
+    	  return null;
+      } else if (rs.next()) {
+    	  column_name = rs.getString(1);
+          column_name = rs.wasNull() ? null : column_name;
+      }
+      rs.close(); rs = null; ps.close(); ps = null;
+      return column_name;
+  }
+
 }

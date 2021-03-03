@@ -1,6 +1,5 @@
 package org.GeoRaptor;
 
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -14,7 +13,6 @@ import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
-import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;
@@ -22,7 +20,6 @@ import oracle.ide.Context;
 import oracle.ide.Ide;
 import oracle.ide.controller.Controller;
 import oracle.ide.controller.IdeAction;
-import oracle.sql.ArrayDescriptor;
 
 /**
  * @author Bessie Gong Email: sadbessie@gmail.com
@@ -219,7 +216,8 @@ public class TableContextMenuController implements Controller
     {
     	try 
     	{
-    		if ( selectedSchemaName.equalsIgnoreCase(connectionUserName) || Queries.checkCrossSchemaDMLPermissions(conn)) 
+    		if ( selectedSchemaName.equalsIgnoreCase(connectionUserName) || 
+                 Queries.checkCrossSchemaDMLPermissions(conn)) 
     		{
     			MetadataPanel mp = MetadataPanel.getInstance();
     			boolean status =  mp.initialise(

@@ -617,6 +617,7 @@ public class DBaseWriter {
                 // is not available in the ResultSet class. Hence ResultSet has to be
                 // cast to OracleResultSet
                 String sRowid;
+// SGG TODO
                 ROWID rowid = ((OracleResultSet)resultSet).getROWID(columnIndex);
                 // Oracle ROWIDs are coded in HEX which means that a delimiter can't appear in it unless delimiter 0-9,A-F
                 ByteBuffer asciiBytes = ByteBuffer.wrap(rowid.getBytes());

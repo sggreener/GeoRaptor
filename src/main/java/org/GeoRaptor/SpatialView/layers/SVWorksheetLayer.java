@@ -4,12 +4,11 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
+import java.sql.Connection;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
@@ -21,26 +20,17 @@ import java.util.LinkedHashMap;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
-
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdbc.OraclePreparedStatement;
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleStatement;
-import oracle.jdbc.OracleTypes;
-
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
-import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
@@ -48,11 +38,14 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
-
 import org.w3c.dom.Node;
-import java.sql.Connection;
+
+import oracle.jdbc.OraclePreparedStatement;
+import oracle.jdbc.OracleResultSet;
+import oracle.jdbc.OracleResultSetMetaData;
+import oracle.jdbc.OracleStatement;
+import oracle.spatial.geometry.JGeometry;
 
 
 public class SVWorksheetLayer 
@@ -553,10 +546,10 @@ LOGGER.debug("SQL executed in " + executeTime);
                                       value = "NULL";
                                   } else {
                                       if ( rSetM.getColumnType(col) == Types.ROWID ) {
-                                          rid   = rSet.getRowId(col); 
-                                          rowID = rid.toString();
-System.out.println("WL - " + rowID);
-                                          value = rowID;
+                                    	  continue;
+                                          //rid   = rSet.getRowId(col); 
+                                          //rowID = rid.toString();
+                                          //value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(oConn, columnName, objValue);
                                           if (value == null) {
