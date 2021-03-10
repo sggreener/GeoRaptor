@@ -1,6 +1,7 @@
 package org.GeoRaptor.SpatialView.layers;
 
 import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -29,9 +30,11 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -44,11 +47,14 @@ import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
 
 public class SVQueryLayer 
-extends SVSpatialLayer 
+extends SVSpatialLayer
+implements iLayer
 {
     public  static final String CLASS_NAME = Constants.KEY_SVQueryLayer;
+
     private static final Logger     LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
 
+    protected    String              sql = "";
     protected Constants.SDO_OPERATORS 
                              sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
     protected       int        precision = 2;
@@ -106,20 +112,20 @@ extends SVSpatialLayer
     /** Copy constructor
      *
      **/
-    public SVQueryLayer(SVQueryLayer _sLayer) 
+    public SVQueryLayer(SVQueryLayer _qLayer) 
     {
-        super(_sLayer);
+        super(_qLayer);
         LOGGER.debug("*********** SVQueryLayer(SVQueryLayer)");
         if ( this.getSpatialView() != null ) {
             LOGGER.debug("************** this.getSpatialView() != null");
             // this.setLayerName(this.getSpatialView().checkLayerName(super.getLayerName()));
-            this.setGeometry(_sLayer.getGeometry());
-            this.setBufferDistance(_sLayer.getBufferDistance());
-            this.setBuffered(_sLayer.getBufferDistance()!=0.0);
-            this.setDrawQueryGeometry(_sLayer.isDrawQueryGeometry());
-            this.setRelationshipMask(_sLayer.getRelationshipMask());
-            this.setSdoOperator(_sLayer.getSdoOperator());            
-            this.setSQL("");
+            this.setGeometry(_qLayer.getGeometry());
+            this.setBufferDistance(_qLayer.getBufferDistance());
+            this.setBuffered(_qLayer.getBufferDistance()!=0.0);
+            this.setDrawQueryGeometry(_qLayer.isDrawQueryGeometry());
+            this.setRelationshipMask(_qLayer.getRelationshipMask());
+            this.setSdoOperator(_qLayer.getSdoOperator());            
+            this.setSQL(_qLayer.getSQL());
         } else {
             LOGGER.debug("************** this.getSpatialView() == null");
             this.drawGeometry = super.getPreferences().isDrawQueryGeometry();            
@@ -166,208 +172,296 @@ extends SVSpatialLayer
     }
 
     public void setSQL(String _layerSQL) {
-        // no nothing
+        if ( Strings.isEmpty(_layerSQL))
+        	this.sql = this.generateSQL(this.isBuffered(),this.isProjected());
+        else
+        	this.sql = _layerSQL;
     }
 
     public String getSQL() {
-        return getQuerySQL();
+    	if (Strings.isEmpty(this.sql)) {
+            this.setSQL(this.generateSQL(this.isBuffered(),this.isProjected()));
+    	} 
+    	return this.sql;
     }
-    public String getQuerySQL() 
+
+    private boolean isProjected() {
+        boolean project = super.project && 
+                          super.spatialView.getSRID().equals(Constants.NULL) == false && 
+                          super.getSRID().equals(Constants.NULL) == false;
+		return project;
+    }
+    
+    public String generateSQL(boolean _buffered,
+    		                  boolean _project)
     {
-        // If filter geometry buffered? 
+System.out.println("<generateSQL>");
+    	String sql = "";
+        // Get search predicate
         //
-        String bufferClause = "?";
-        if (this.isBuffered()) 
+        String searchGeom = "",
+               bufferGeom = "";
+        
+        // If filter geometry buffered could need projecting to stored geometry 
+        // We transform/project the search geometry (eg draw optimized rectangle) to the SRID of the
+        // to-be-searched table/column as the search geometry will be in the SRID units of the view.
+        //
+        if (_buffered && _project) 
         {
-            String lengthUnits = super.getSpatialView().getDistanceUnitType();
-            String bufferParams = ((super.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits)) 
+            /**
+             * MDSYS.SDO_GEOM.SDO_BUFFER(
+             *    geom IN SDO_GEOMETRY,
+             *    dist IN NUMBER,
+             *    tol IN NUMBER
+             *    [, params IN VARCHAR2]
+             * ) RETURN SDO_GEOMETRY;
+            **/
+            String lengthUnits  = super.getSpatialView().getDistanceUnitType();
+            String bufferParams = ((super.getSRID().equals(Constants.NULL) || 
+            		                Strings.isEmpty(lengthUnits)) 
                                    ? "" 
                                    : ",'unit=" + lengthUnits + "'");
-            /**
-             * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
-             *                     dist IN NUMBER,
-             *                     tol IN NUMBER
-             *                     [, params IN VARCHAR2]
-             *                    ) RETURN SDO_GEOMETRY;
-            **/
-            bufferClause = String.format("SDO_GEOM.SDO_BUFFER(?,?,?%s)",bufferParams);
+            bufferGeom = String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?%s)",bufferParams);
+        	searchGeom = String.format("MDSYS.SDO_CS.TRANSFORM(%s,%s)",bufferGeom,super.getSRID());
         }
-
-        // Create filter Geometry that could be buffered and might need projecting
-        //
-        String filterGeometry = "";
-        filterGeometry = (super.project && 
-                          super.spatialView.getSRID().equals(Constants.NULL) == false && 
-                          super.getSRID().equals(Constants.NULL) == false) 
-                         ? String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)",bufferClause,super.getSRID()) 
-                         : bufferClause;
-
-        // Our query SQL can be:
-        // 1. Built on top of the current Layer SQL (including user modifications), or
-        // 2. Build on top of the original data import org.apache.commons.codec.binary.Base64; object using "clean" SQL
-        // While 1 means duplicate filter queries, 1 is chosen for the time being
-        //
-        String qSql = String.format("%s\n AND 2=2",super.getSQL());   // Note use of 2=2 Predicate
-        if (Strings.isEmpty(super.wrappedSQL)) {
-            qSql = super.wrapSQL(qSql);
-            this.wrappedSQL = qSql;
+        else if ( _buffered ) {
+            String lengthUnits  = super.getSpatialView().getDistanceUnitType();
+            String bufferParams = ((super.getSRID().equals(Constants.NULL) || 
+            		                Strings.isEmpty(lengthUnits)) 
+                                   ? "" 
+                                   : ",'unit=" + lengthUnits + "'");
+            searchGeom = String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?%s)",bufferParams);        	
+        }
+        else if ( _project ) {
+        	searchGeom = String.format("MDSYS.SDO_CS.TRANSFORM(?,%s)",super.getSRID());        	
         } else {
-            qSql = this.wrappedSQL;
+        	searchGeom = "?";
+        }        	
+
+        // Base CTE
+        //
+        sql = "WITH sGeom AS (\n" +
+              "  SELECT " + searchGeom + " AS geom FROM DUAL\n" +
+              ")\n";
+
+        // Build rest of SQL
+        //
+        String columns = "";
+        try {
+          columns = Queries.getColumns(super.getConnection(),
+                                       super.getSchemaName(),
+                                       super.getObjectName(),
+                                       true /* _supportedDataTypes */ );
+        } catch (Exception e) {
+            LOGGER.error("SVQueryLayer GetColumns " + e.getMessage());
+            return null;
         }
         
-        LOGGER.debug("sdoOperator is " + this.sdoOperator.toString() + " with isSTGeometry of "+this.isSTGeometry());
+        String geoColumn = "";
+        if ( _project )
+        	// Project actual geometry column data to view srid
+        	geoColumn = String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)",super.getGeoColumn(),super.spatialView.getSRID());
+        else
+        	geoColumn = "t." + super.getGeoColumn();
+        
+        sql += "SELECT f.* \n" +
+               "  FROM (SELECT " + (Strings.isEmpty(columns) ? "" : columns+"," ) + 
+                               geoColumn + " as " + super.getGeoColumn() + " \n" +
+                       "  FROM sGeom a,\n" + 
+                       "       " + this.getFullObjectName() + " t \n";
 
-        if (   this.hasIndex() && 
-            ! (this.isSTGeometry() && 
-               this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)
-           )
-        {
-            qSql = qSql.replace("2=2",
-                   ( this.isSTGeometry() 
-                     ? "t." + super.getGeoColumn() + ".ST_" + this.sdoOperator.toString() + "(MDSYS.ST_GEOMETRY("  + filterGeometry + ")) = 1"
-                     : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
+        String searchPredicate = "";
+        if ( this.hasIndex() ) {
+           searchPredicate = String.format("SDO_%s(t.%s,%s%s) = 'TRUE'",
                                      this.sdoOperator.toString(),
                                      super.getGeoColumn(),
-                                     filterGeometry,
+                                     "a.geom",  // Note: Is in units of getGeoColumn 
                                      (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
                                       ? ( ",'" + getRelationshipMask() + "'" ) 
                                       : "")
-                                     ) 
-                   ));
+                                     );
         } else {
-            // Original SQL may have sdo_relate already. If so, change its ANYTINTERACT mask
-            //
-            if ( qSql.toUpperCase().indexOf("MDSYS.SDO_GEOM.RELATE")!=0 &&
-                 qSql.toUpperCase().indexOf("'ANYINTERACT'")!=0 ) {
-                qSql = qSql.replace("'ANYINTERACT'", "'mask=" + getRelationshipMask() + "'");
-            } else {
-                // Add new relate mask
-                qSql = qSql.replace("2=2",
-                                    String.format("%s(t.%s,'%s',%s,%f) = 'TRUE'",
-                                     super.getGeoColumn() + (this.isSTGeometry() ? ".GEOM" : ""),
-                                     getRelationshipMask(),
-                                     filterGeometry,
-                                     this.getTolerance()));
-            }
+        	searchPredicate = "t." + super.getGeoColumn() + " IS NOT NULL\n" +
+                         " AND t." + super.getGeoColumn() + ".SDO_GTYPE is not null\n" +
+                         " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + super.getGeoColumn() + "," + this.getTolerance() + ") = 'TRUE'\n" +
+                         " AND MDSYS.SDO_GEOM.RELATE(t." + super.getGeoColumn() + ",'ANYINTERACT',a.geom,"+this.getTolerance()+") = 'TRUE'";
         }
-        LOGGER.logSQL("SVQueryLayer - getSQL = " + qSql);
-        return qSql;
-    }
 
-    protected PreparedStatement setParameters(String _sql, 
-                                            Envelope _mbr) 
+        sql += " WHERE " + searchPredicate + "\n" +
+               ") f";
+
+        LOGGER.logSQL(sql);
+
+System.out.println(sql);
+System.out.println("</generateSQL>");
+
+        return sql;
+    }
+    
+	protected PreparedStatement setParameters(String _sql) 
+	{
+		Connection              conn = null;
+		PreparedStatement pStatement = null;
+		
+		int stmtParamIndex  = 1;
+		String params       = "";
+		Struct stSearchGeom = null;
+		
+		try {
+			conn = super.getConnection();
+
+            pStatement = super.getConnection().prepareStatement(_sql);
+	        
+			stSearchGeom = JGeom.toStruct(this.getGeometry(), conn);
+			pStatement.setObject(stmtParamIndex++, stSearchGeom, java.sql.Types.STRUCT);
+			params = "? - " + RenderTool.renderGeometryAsPlainText(this.getGeometry(), Constants.TAG_MDSYS_SDO_GEOMETRY, Constants.bracketType.NONE, 12);
+	        if (this.isBuffered() ) 
+	        {
+	            // String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,unit='....')");
+				pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
+				params += "? - " + String.valueOf(this.getBufferDistance());
+				pStatement.setDouble(stmtParamIndex++, super.getTolerance());
+				params += "? - " + String.valueOf(this.getTolerance());
+	        } 
+
+		} catch (Exception e) {
+			LOGGER.error("SVQueryLayer.setParameters(" + e.getMessage() + ") - SQL copied to clipboard.");
+			Tools.doClipboardCopy(_sql + params);
+			return null;
+		}
+		return pStatement;
+	}
+
+    public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, 
+                                            int     _numSearchPixels) 
     {
-    	Connection              conn = null;
+        // Take simple approach:
+    	// 1 Execute normal SQL
+    	// 2. Filter each geometry in its resultSet
+        // 3. Filtering can occur in srid of outer geometry as always same as SpatialView
+        //
+        ArrayList<QueryRow> queryList = new ArrayList<QueryRow>(); // list of return rows
+        
+        String sql = this.getSQL();
+
+        // WITH sGeom AS (
+        //	 SELECT ? AS geom FROM DUAL
+        // )
+        // SELECT f.*
+        //   FROM (SELECT "ID","LABEL","ANGLEDEGREES",t.GEOM as GEOM 
+        //	         FROM sGeom a,
+        //                GEORAPTOR.PROJPOINT2D t 
+        //          WHERE SDO_ANYINTERACT(t.GEOM,a.geom) = 'TRUE'
+        // ) f
+        
+        // Add SDO_DISTANCE predicate
+        //
+        // WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.geom,distancePoint,tol,unit) <= distance
+        
+        sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/,?/*unit*/) <= ?";
+
+        // Get distance point and search distance 
+        //
+        Connection              conn = null;
         PreparedStatement pStatement = null;
-        int           stmtParamIndex = 1;
-        String                params = "";
+        conn = this.getConnection();
+
+        try {
+	        double    sdo_distance = super.getSearchRadius(_numSearchPixels);	        
+	        Point2D  searchPoint2D = new Point2D.Double(_worldPoint.getX(),_worldPoint.getY());	        
+	        Struct     searchPoint = Queries.projectSdoPoint(conn,searchPoint2D,this.spatialView.getSRIDAsInteger(),this.spatialView.getSRIDAsInteger());
+	        String units_parameter = String.format(",unit=%s",Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH));
+        
+	        // Get sdo_distance tolerance parameter
+	        pStatement = this.setParameters(sql);
+System.out.println("Query queryByPoint: " + sql);	        
+	        int stmtParamIndex = pStatement.getParameterMetaData().getParameterCount();
+	        stmtParamIndex -= 3; 
+	        String params = "";
+	        pStatement.setObject(stmtParamIndex++, searchPoint, java.sql.Types.STRUCT); params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? '%s'\n",this.getTolerance());
+	        pStatement.setDouble(stmtParamIndex++, sdo_distance);                       params += String.format("? '%s'\n",this.getTolerance());
+	        pStatement.setString(stmtParamIndex++, units_parameter);                    params += String.format("? '%s'\n",units_parameter);
+	        System.out.println(params);
+	        
+        } catch (Exception e) {
+        }
+        
+        Struct retStruct = null;
+        ResultSet    ors = null;
         try 
         {
-            conn       = super.getConnection();
+            ors = pStatement.executeQuery();
             
-            pStatement = super.setParameters(_sql,_mbr);
-            if ( pStatement==null ) {
-                LOGGER.error("Failed to set SQL parameters for Query Layer " + super.layerName);
-                return null;
-            }
-//System.out.println("\n\n\n\n");
-            
-            // Now set up parameters for this layer
-            //
-            stmtParamIndex = super.isSTGeometry() ? 2 : 3; // This is UGLY and hardcoded! I need to know what parameters are set by super.setParameters()
-            if (super.hasIndex()) 
-            {
-//System.out.println("hasIndex()= "+super.hasIndex());
-                // Use SDO_RELATE, SDO_EQUAL etc.
-                // Only SDO_RELATE has third parameter
-                //
+            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
+            ors.setFetchSize(this.getResultFetchSize());
+            OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
-            	Struct stSearchGeom = null;
-            	String searchGeometry = "";
-            	stSearchGeom = JGeom.toStruct(this.getGeometry(),conn);
-            	searchGeometry = SDO_GEOMETRY.getGeometryAsString(stSearchGeom);
-            	pStatement.setObject(stmtParamIndex++,stSearchGeom,java.sql.Types.STRUCT);
-                params += "\n? = " + searchGeometry;                
-//System.out.println("? search geometry(" + (stmtParamIndex-1) + ") : " + searchGeometry);
-                
-                if (this.isBuffered()) {
-                	// This buffer geometry replaces search geometry...
-//System.out.println("isBuffered()= "+this.isBuffered());
-                    /**
-                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters
-                     *                     dist IN NUMBER,
-                     *                     tol IN NUMBER
-                     *                     [, params IN VARCHAR2]
-                     *                    ) RETURN SDO_GEOMETRY;
-                    **/
-                    pStatement.setDouble(stmtParamIndex++,this.getBufferDistance());
-                    params += "\n? = " + this.getBufferDistance();
-//System.out.println("Buffer Distance(" + (stmtParamIndex-1) + "): " + params);
-                    pStatement.setDouble(stmtParamIndex++,super.getTolerance());
-                    params += "\n? = " + String.valueOf(super.getTolerance());
-//System.out.println("Tolerance(" + (stmtParamIndex-1) + ") : " + params);
-                } 
-                
-                if ( this.sdoOperator==Constants.SDO_OPERATORS.RELATE ) {
-                    pStatement.setString(stmtParamIndex++,"mask=" + this.getRelationshipMask() );
-                    params += "\n? = mask=" + this.getRelationshipMask();
-//System.out.println("Relationship Mask(" + (stmtParamIndex-1) + ") : " + params);
-                }
-            } 
-            else /* ! super.hasIndex() ie no SDO_FILTER */ 
+            String          value = "";
+            String     columnName = "";
+            String columnTypeName = "";
+            Object       objValue = null;
+            long    totalFeatures = 0;    
+            while ((ors.next()) &&
+                   (this.getSpatialView().getSVPanel().isCancelOperation()==false)) 
             {
-//System.out.println("! hasIndex()= ");
-            	// Add geom1  <-- super.setParameters
-            	// mask/geom2,tol parameter values
-            	//
-                // SDO_GEOM.RELATE(
-                //      geom1 IN SDO_GEOMETRY,
-                //      mask IN VARCHAR2,
-                //      geom2 IN SDO_GEOMETRY,
-                //      tol IN NUMBER
-                //      ) RETURN VARCHAR2;
-                //
-                pStatement.setString(stmtParamIndex++,"'" + this.getRelationshipMask() + "'" );
-                params += "\n? = mask=" + this.getRelationshipMask();
-                
-                Struct stGeom = null; // (Struct)JGeometry.storeJS(conn,this.getGeometry());
-                stGeom = JGeom.toStruct(this.getGeometry(),conn);
-                pStatement.setObject(stmtParamIndex++,stGeom,java.sql.Types.STRUCT);
-                params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
-                
-                if (this.isBuffered()) {
-//System.out.println("isBuffered()= "+this.isBuffered());
-                    /**
-                     * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters
-                     *                     dist IN NUMBER,
-                     *                     tol IN NUMBER
-                     *                     [, params IN VARCHAR2]
-                     *                    ) RETURN SDO_GEOMETRY;
-                    **/
-                    pStatement.setDouble(stmtParamIndex++,this.getBufferDistance());
-                    params += "\n? = " + this.getBufferDistance();
-                    pStatement.setDouble(stmtParamIndex++,super.getTolerance());
-                    params += "\n? = " + String.valueOf(super.getTolerance());
+                LinkedHashMap<String, Object> calValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
+                for (int col = 1; col <= rSetM.getColumnCount(); col++) {
+                	
+                    columnName     = rSetM.getColumnName(col);
+                    columnTypeName = rSetM.getColumnTypeName(col);
+                    
+                    if (columnTypeName.equals("LONG")) {
+                        // LONGs will kill the SQL stream and we can't use them anyway
+                        LOGGER.warn("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
+                        continue;
+                    }
+                    
+                    if (columnName.equalsIgnoreCase(super.getGeoColumn())) {
+                        retStruct = (java.sql.Struct)ors.getObject(col);
+                        if (ors.wasNull()) {
+                            break; // process next row
+                        }
+                        totalFeatures++;
+                    } else {
+                          if ( Tools.dataTypeIsSupported(columnTypeName) )
+                          {
+                              try
+                              {
+                                  objValue = ors.getObject(col);
+                                  if (ors.wasNull()) {
+                                      value = "NULL";
+                                  } else {
+                                      if ( ors.getMetaData().getColumnType(col) == OracleTypes.ROWID ) {
+                                    	  continue;
+                                      } else {
+                                          value = SQLConversionTools.convertToString(conn,ors,col);                                          
+                                          if (value == null)
+                                              value = "NULL";
+                                      }
+                                  }
+                              } catch (Exception e) {
+                                  value = "NULL";
+                              }
+                              calValueMap.put(rSetM.getColumnName(col), value);
+                          }
+                    }
                 }
-                // Tolerance
-                pStatement.setDouble(stmtParamIndex++,super.getTolerance());
-                params += "\n? = " + String.valueOf(super.getTolerance());
+                queryList.add(new QueryRow(null, calValueMap, retStruct));
             }
-//System.out.println("QL: " + _sql);
-//System.out.println("QL: " + params);
+            ors.close();
+            pStatement.close();
+
+            if ( this.getPreferences().isLogSearchStats() ) {
+                LOGGER.info(super.getSpatialView() + "." + this.layerName + 
+                            " Total Features Returned = " + totalFeatures);
+            }
+            
         } catch (SQLException sqle) {
-            LOGGER.error("SVQueryLayer.setParameters("+sqle.getMessage()+") - SQL copied to clipboard.");
-            Tools.doClipboardCopy(_sql + params);
-            return null;
-        } catch (Exception e) {
-			// TODO Auto-generated catch block
-            LOGGER.error("SVQueryLayer.setParameters("+e.getMessage()+") - SQL copied to clipboard.");
-            Tools.doClipboardCopy(_sql + params);
-            return null;
-		}
-        return pStatement;
+        }
+        return queryList;        
     }
-
+    
     /**
      * Execute SQL and draw data on given graphical device
      * @param _mbr MBR coordinates
@@ -380,31 +474,20 @@ extends SVSpatialLayer
         LOGGER.debug("QueryLayer.drawLayer(" + _mbr.toString());
         Connection conn = null;
         try {
-            // Make sure layer's connection has not been lost
+            // Also make sure layer's connection has not been lost
             conn = super.getConnection();
             if ( conn == null ) {
                 return false;
             }
         } catch (IllegalStateException ise) {
-            // Thrown by super.getConnection() indicates starting up, so we do nothing
+            // Indicates SQL Developer is starting up, so we do nothing
             return false;
         }
         
-        // Get SQL
-        // Will call SVSpatialLayer to wrapSQL
+        // Get SQL and set its parameters 
         //
-        String qSql = this.getQuerySQL();
-        if (Strings.isEmpty(qSql)) {
-            return false;
-        }
-
-        // Set up parameters for host layer 
-        //
-        PreparedStatement pStatement = null;
-        pStatement = this.setParameters(qSql,_mbr);
-        if (pStatement==null) {
-            return false;
-        }
+        String                  qSql = this.getSQL();
+        PreparedStatement pStatement = this.setParameters(qSql);
 
         if ( this.isDrawQueryGeometry() ) {
             try {
@@ -459,8 +542,12 @@ extends SVSpatialLayer
                 LOGGER.error(super.propertyManager.getMsg("ERROR_DISPLAY_QUERY_GEOM",e.getMessage()));
             }
         }
-        
+
         LOGGER.logSQL(qSql);
+
+System.out.println("=======================");
+System.out.println(qSql);
+System.out.println("=======================");
 
         // Now execute query
         //
@@ -495,19 +582,14 @@ extends SVSpatialLayer
             return null;
         }
 
-        // We wrap the SQL the user may have modified in order to return only the columns needed for visualisation
-        // Ensures all columns needed for labelling, colouring, rotation etc area available 
-        // in order to reduce network traffic
-        //
-        qSql = wrapSQL(qSql);
-
         if ( this.getPreferences().isLogSearchStats() ) {
             LOGGER.fine(qSql);
         }
 
         // Set up parameters for host layer 
         //
-        pStatement = this.setParameters(qSql,_mbr);
+System.out.println("getCache() - " + qSql);
+        pStatement = this.setParameters(qSql);
         if (pStatement==null) {
             return null;
         }
@@ -537,13 +619,16 @@ extends SVSpatialLayer
             {
                 LinkedHashMap<String, Object> calValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
                 for (int col = 1; col <= rSetM.getColumnCount(); col++) {
+                	
                     columnName     = rSetM.getColumnName(col);
                     columnTypeName = rSetM.getColumnTypeName(col);
+                    
                     if (columnTypeName.equals("LONG")) {
                         // LONGs will kill the SQL stream and we can't use them anyway
                         LOGGER.warn("GeoRaptor ignored " + rSetM.getColumnName(col) + "/" + rSetM.getColumnTypeName(col));
                         continue;
                     }
+                    
                     if (columnName.equalsIgnoreCase(super.getGeoColumn())) {
                         retStruct = (java.sql.Struct)ors.getObject(col);
                         if (ors.wasNull()) {
@@ -581,11 +666,14 @@ extends SVSpatialLayer
             }
             ors.close();
             pStatement.close();
+            
             this.setNumberOfFeatures(totalFeatures);
+            
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info(super.getSpatialView() + "." + this.layerName + 
                             " Total Features Returned = " + this.getNumberOfFeatures());
             }
+            
         } catch (SQLException sqle) {
             // isView() then say no index
             if ( this.isView() ) {
@@ -797,5 +885,182 @@ extends SVSpatialLayer
             LOGGER.error("Error: " + e.getMessage());
         }
     }
+
+    public String getQuerySQLOld() 
+    {
+        // If filter geometry buffered? 
+        //
+        String bufferClause = "?";
+        
+        if (this.isBuffered()) 
+        {
+            String lengthUnits  = super.getSpatialView().getDistanceUnitType();
+            String bufferParams = ((super.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits)) 
+                                   ? "" 
+                                   : ",'unit=" + lengthUnits + "'");
+            /**
+             * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
+             *                     dist IN NUMBER,
+             *                     tol IN NUMBER
+             *                     [, params IN VARCHAR2]
+             *                    ) RETURN SDO_GEOMETRY;
+            **/
+            bufferClause = String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?%s)",bufferParams);
+        }
+
+        // Create filter Geometry that could be buffered and might need projecting
+        //
+        String filterGeometry = "";
+        filterGeometry = (super.project && 
+                          super.spatialView.getSRID().equals(Constants.NULL) == false && 
+                          super.getSRID().equals(Constants.NULL) == false) 
+                         ? String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)",
+                                         bufferClause,
+                                         super.spatialView.getSRID()) 
+                         : bufferClause;
+
+        // Our query SQL can be:
+        // 1. Built on top of the current Layer SQL (including user modifications), or
+        // 2. Build on top of the original data import org.apache.commons.codec.binary.Base64; object using "clean" SQL
+        // While 1 means duplicate filter queries, 1 is chosen for the time being
+        //
+        String qSql = String.format("%s\n AND 2=2",super.getSQL());   // Note use of 2=2 Predicate
+        if (Strings.isEmpty(super.wrappedSQL)) {
+            qSql = super.wrapSQL(qSql);
+            this.wrappedSQL = qSql;
+        } else {
+            qSql = this.wrappedSQL;
+        }
+        
+        LOGGER.debug("sdoOperator is " + this.sdoOperator.toString() + " with isSTGeometry of "+this.isSTGeometry());
+
+        if (   this.hasIndex() && 
+            ! (this.isSTGeometry() && 
+               this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)
+           )
+        {
+            qSql = qSql.replace("2=2",
+                   ( this.isSTGeometry() 
+                     ? "t." + super.getGeoColumn() + ".ST_" + this.sdoOperator.toString() + "(MDSYS.ST_GEOMETRY("  + filterGeometry + ")) = 1"
+                     : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
+                                     this.sdoOperator.toString(),
+                                     super.getGeoColumn(),
+                                     filterGeometry,
+                                     (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
+                                      ? ( ",'" + getRelationshipMask() + "'" ) 
+                                      : "")
+                                     ) 
+                   ));
+        } else {
+            // Original SQL may have sdo_relate already. If so, change its ANYTINTERACT mask
+            //
+            if ( qSql.toUpperCase().indexOf("MDSYS.SDO_GEOM.RELATE")!=0 &&
+                 qSql.toUpperCase().indexOf("'ANYINTERACT'")!=0 ) {
+                qSql = qSql.replace("'ANYINTERACT'", "'mask=" + getRelationshipMask() + "'");
+            } else {
+                // Add new relate mask
+                qSql = qSql.replace("2=2",
+                                    String.format("%s(t.%s,'%s',%s,%f) = 'TRUE'",
+                                     super.getGeoColumn() + (this.isSTGeometry() ? ".GEOM" : ""),
+                                     getRelationshipMask(),
+                                     filterGeometry,
+                                     this.getTolerance()));
+            }
+        }
+        LOGGER.logSQL("SVQueryLayer - getSQL = " + qSql);
+        return qSql;
+    }
+
+	protected PreparedStatement setParametersOLD(String _sql, Envelope _mbr) {
+		Connection conn = null;
+		PreparedStatement pStatement = null;
+		int stmtParamIndex = 1;
+		String params = "";
+		try {
+			conn = super.getConnection();
+
+			pStatement = super.setParameters(_sql, _mbr);
+			if (pStatement == null) {
+				LOGGER.error("Failed to set SQL parameters for Query Layer " + super.layerName);
+				return null;
+			}
+// Now set up parameters for this layer
+//
+			stmtParamIndex = super.isSTGeometry() ? 2 : 3; // This is UGLY and hardcoded! I need to know what parameters
+															// are set by super.setParameters()
+			if (super.hasIndex()) {
+// Use SDO_RELATE, SDO_EQUAL etc.
+// Only SDO_RELATE has third parameter
+//
+
+				Struct stSearchGeom = null;
+				String searchGeometry = "";
+				stSearchGeom = JGeom.toStruct(this.getGeometry(), conn);
+				searchGeometry = SDO_GEOMETRY.getGeometryAsString(stSearchGeom);
+				pStatement.setObject(stmtParamIndex++, stSearchGeom, java.sql.Types.STRUCT);
+				params += "\n? = " + searchGeometry;
+
+				if (this.isBuffered()) {
+// This buffer geometry replaces search geometry...
+					/**
+					 * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters dist
+					 * IN NUMBER, tol IN NUMBER [, params IN VARCHAR2] ) RETURN SDO_GEOMETRY;
+					 **/
+					pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
+					params += "\n? = " + this.getBufferDistance();
+					pStatement.setDouble(stmtParamIndex++, super.getTolerance());
+					params += "\n? = " + String.valueOf(super.getTolerance());
+				}
+
+				if (this.sdoOperator == Constants.SDO_OPERATORS.RELATE) {
+					pStatement.setString(stmtParamIndex++, "mask=" + this.getRelationshipMask());
+					params += "\n? = mask=" + this.getRelationshipMask();
+				}
+			} else /* ! super.hasIndex() ie no SDO_FILTER */
+			{
+// Add geom1  <-- super.setParameters
+// mask/geom2,tol parameter values
+//
+// SDO_GEOM.RELATE(
+//      geom1 IN SDO_GEOMETRY,
+//      mask IN VARCHAR2,
+//      geom2 IN SDO_GEOMETRY,
+//      tol IN NUMBER
+//      ) RETURN VARCHAR2;
+//
+				pStatement.setString(stmtParamIndex++, "'" + this.getRelationshipMask() + "'");
+				params += "\n? = mask=" + this.getRelationshipMask();
+
+				Struct stGeom = null; // (Struct)JGeometry.storeJS(conn,this.getGeometry());
+				stGeom = JGeom.toStruct(this.getGeometry(), conn);
+				pStatement.setObject(stmtParamIndex++, stGeom, java.sql.Types.STRUCT);
+				params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
+
+				if (this.isBuffered()) {
+					/**
+					 * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters dist
+					 * IN NUMBER, tol IN NUMBER [, params IN VARCHAR2] ) RETURN SDO_GEOMETRY;
+					 **/
+					pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
+					params += "\n? = " + this.getBufferDistance();
+					pStatement.setDouble(stmtParamIndex++, super.getTolerance());
+					params += "\n? = " + String.valueOf(super.getTolerance());
+				}
+// Tolerance
+				pStatement.setDouble(stmtParamIndex++, super.getTolerance());
+				params += "\n? = " + String.valueOf(super.getTolerance());
+			}
+		} catch (SQLException sqle) {
+			LOGGER.error("SVQueryLayer.setParameters(" + sqle.getMessage() + ") - SQL copied to clipboard.");
+			Tools.doClipboardCopy(_sql + params);
+			return null;
+		} catch (Exception e) {
+// TODO Auto-generated catch block
+			LOGGER.error("SVQueryLayer.setParameters(" + e.getMessage() + ") - SQL copied to clipboard.");
+			Tools.doClipboardCopy(_sql + params);
+			return null;
+		}
+		return pStatement;
+	}
 
 }

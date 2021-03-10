@@ -17,8 +17,8 @@ public class Logger {
     public void info     (int    _message) {Messages.log("info: " + _message,false); }
     public void logSQL   (String _message) {if (MainSettings.getInstance().getPreferences().isLogSearchStats() ) Messages.log("logSQL: " + _message,false); }
     public void config   (String _message) {Messages.log("config: " + _message,false);}
-    public void fine     (String _message) {Messages.log("debug: " + _message,false); }
-    public void finer    (String _message) {Messages.log("debug: " + _message,false); }
-    public void finest   (String _message) {Messages.log("trace: " + _message,false); }
+    public void fine     (String _message) {Messages.log("fine: " + _message,false); }
+    public void finer    (String _message) {Messages.log("finer: " + _message,false); }
+    public void finest   (String _message) {Messages.log("finest: " + _message,false); }
     
 }

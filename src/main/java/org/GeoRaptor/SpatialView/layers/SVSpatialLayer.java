@@ -75,9 +75,11 @@ import oracle.spatial.geometry.JGeometry;
  * 75 - 2.5.8 Several Geometry Types
  */
 public class SVSpatialLayer 
-     extends SVLayer
+     extends SVLayer 
+  implements iLayer 
 {
-    public static final String CLASS_NAME = Constants.KEY_SVSpatialLayer;
+
+    public final static String CLASS_NAME = Constants.KEY_SVSpatialLayer;
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayer");
 
@@ -272,7 +274,7 @@ public class SVSpatialLayer
     }
 
     public String getClassName() {
-        return SVSpatialLayer.CLASS_NAME;
+        return this.CLASS_NAME;
     }
     
     protected void setStyling(Styling _style) {
@@ -679,8 +681,6 @@ public class SVSpatialLayer
      */
     public String getInitSQL(String _geoColumn) 
     {
-        LOGGER.debug("SVSpatialLayer.getInitSQL(" +_geoColumn + ") -> " + this.getVisibleName() + " hasIndex="+this.hasIndex());
-        
         // If SQL Developer still starting up and a layer is being loaded from XML
         // the connections won't work
         //
@@ -690,44 +690,42 @@ public class SVSpatialLayer
                                        super.getSchemaName(),
                                        super.getObjectName(),
                                        true /* _supportedDataTypes */ );
-        } catch (IllegalStateException ise) {
-            return null;
-        } catch (SQLException sqle) {
-            LOGGER.warn("(SVSpatialLayer.getInitSQL) SQL Error: " + sqle.getMessage());
-            return null;
-        } catch (IllegalArgumentException iae) {
-            LOGGER.warn("(SVSpatialLayer.getInitSQL) Illegal Argument Exception: " + iae.getMessage());
-            return null;
         } catch (Exception e) {
-            LOGGER.warn("(SVSpatialLayer.getInitSQL) General Exception: " + e.getMessage());
+            LOGGER.error("SVSpatialLayer.getInitSQL GetColumns Exception: " + e.getMessage());
             return null;
         }
         
-        // check completed, now construct SQL
+        // create database table/view/mview name
         //
-        String retLayerSQL;
-        retLayerSQL = "SELECT rowid," + (Strings.isEmpty(columns) ? "" : columns+"," ) + 
-                             "t." + _geoColumn + " as " + _geoColumn + " \n" +
-                      "  FROM " + (this.preferences.getSQLSchemaPrefix()
-                                   ? this.getFullObjectName()
-                                   : this.getObjectName()) + " t \n" +
-                      " WHERE ";
+        String databaseObjectName = (this.preferences.getSQLSchemaPrefix()
+                                    ? this.getFullObjectName()
+                                    : this.getObjectName()) ;
         
+        // Get search predicate
+        //
+        String searchPredicate = "";
         if ( this.hasIndex() ) {
-            retLayerSQL += "SDO_FILTER(t." + _geoColumn + 
-                           (this.isSTGeometry()
-                            ?   ",?) = 'TRUE'"
-                            : ",?,?) = 'TRUE'");
+        	if ( this.isSTGeometry() )
+              searchPredicate = "SDO_FILTER(t." + _geoColumn + ",?) = 'TRUE'";
+        	else
+              searchPredicate = "SDO_FILTER(t." + _geoColumn + ",?,?) = 'TRUE'";
         } else {
-            retLayerSQL += "t." + _geoColumn + " IS NOT NULL\n" +
-                           " AND t." + _geoColumn + ".sdo_gtype is not null\n" +
-                           " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + _geoColumn + "," + this.getTolerance() + ") = 'TRUE'\n" +
-                           " AND MDSYS.SDO_GEOM.RELATE(t." + _geoColumn + ",'ANYINTERACT',?,"+this.getTolerance()+") = 'TRUE'";
+        	searchPredicate = "t." + _geoColumn + " IS NOT NULL\n" +
+                         " AND t." + _geoColumn + ".sdo_gtype is not null\n" +
+                         " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + _geoColumn + "," + this.getTolerance() + ") = 'TRUE'\n" +
+                         " AND MDSYS.SDO_GEOM.RELATE(t." + _geoColumn + ",'ANYINTERACT',?,"+this.getTolerance()+") = 'TRUE'";
         }
-        LOGGER.logSQL(retLayerSQL);
+
+        // Now create initial SQL
+        String initialSQL;
+        initialSQL = "SELECT ROWID," + (Strings.isEmpty(columns) ? "" : columns+"," ) + 
+                             "t." + _geoColumn + " as " + _geoColumn + " \n" +
+                      "  FROM " + databaseObjectName + " t \n" +
+                      " WHERE " + searchPredicate;
         
-//System.out.println("SVSpatialLayer.getInitSQL returning " + retLayerSQL);
-        return retLayerSQL;
+        LOGGER.logSQL(initialSQL);
+        
+        return initialSQL;
     }
 
     public void setInitSQL() {
@@ -809,15 +807,10 @@ public class SVSpatialLayer
         
         Connection conn = null;
         // Get connection, including trying to open it.
-        if ( super.openConnection() ) {
-            conn = super.getConnection();
-            if (conn==null) {
-                LOGGER.error(this.getLayerName() + ": no open database connection available.");
-                return _sql;
-            }
-        } else {
-            LOGGER.error(this.getLayerName() + "'s connect (" + super.getConnectionDisplayName() + ") cannot be opened.");
-            return _sql;
+        conn = super.getConnection();
+        if (conn==null) {
+           LOGGER.error(this.getLayerName() + ": no open database connection available.");
+           return _sql;
         }
 
         // Create main SELECT clause from user attributes        
@@ -999,44 +992,41 @@ public class SVSpatialLayer
     {
 //System.out.println("\n\n\nSVSpatialLayer.setParameters()");
 //System.out.println("... " + _sql);
+    	
+        boolean project = this.project &&
+                this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL &&
+                this.getSRIDAsInteger()             != Constants.SRID_NULL;
+
+        int querySRID = project 
+              ? this.spatialView.getSRIDAsInteger() 
+              : (this.spatialView.getSRIDAsInteger()==Constants.SRID_NULL
+                 ? this.getSRIDAsInteger()
+                 : this.spatialView.getSRIDAsInteger()
+                );
+
         PreparedStatement pStatement = null;
         String       sdoFilterClause = "";
         Struct            filterGeom = null;
         int           stmtParamIndex = 1;
         try 
         {
-            boolean project = this.project &&
-                              this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL &&
-                              this.getSRIDAsInteger()             != Constants.SRID_NULL;
-            
-            int querySRID = project 
-                            ? this.spatialView.getSRIDAsInteger() 
-                            : (this.spatialView.getSRIDAsInteger()==Constants.SRID_NULL
-                               ? this.getSRIDAsInteger()
-                               : this.spatialView.getSRIDAsInteger()
-                              );
-
             pStatement = super.getConnection().prepareStatement(_sql);
 
             // Filter Geom is always expressed in terms of the layer's SRID
             //
             filterGeom = this.getSearchFilterGeometry(_mbr,project,querySRID,this.getSRIDAsInteger());
             pStatement.setObject(stmtParamIndex++, filterGeom, java.sql.Types.STRUCT);
-//System.out.println("? window geometry parameter(" + (stmtParamIndex-1) + ") = " + RenderTool.renderStructAsPlainText(filterGeom, Constants.bracketType.NONE, 12) );
 
             // Set up SDO_Filter clause depending on whether min_resolution is to be applied or not
             // If ST_Geometry, can't use sdoFilterClause
             //
-//System.out.println(".... hasIndex()=" + this.hasIndex());
             if ( this.hasIndex() && this.isSTGeometry()==false ) {
               sdoFilterClause = this.getSDOFilterClause();                    
-//System.out.println("? sdoFilterClause(" + (stmtParamIndex-1) + ") = " + sdoFilterClause);
               pStatement.setString(stmtParamIndex++, sdoFilterClause);
             }
-            
             if ( this.getPreferences().isLogSearchStats() ) {
-                LOGGER.info("\n" + _sql + "\n" + 
-                            String.format("?=%s\n?=%s", 
+                LOGGER.logSQL("\n" + _sql + "\n" + 
+                              String.format("?=%s\n?=%s", 
                                           SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                           sdoFilterClause));
             }
@@ -1053,7 +1043,6 @@ public class SVSpatialLayer
                                                 SDO_GEOMETRY.getGeometryAsString(filterGeom),
                                                 sdoFilterClause));
         } 
-//System.out.println("End SVSpatialLayer.setParameters() returning pStatement");
         return pStatement;
     }
 
@@ -1097,12 +1086,14 @@ public class SVSpatialLayer
             LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's SQL statement.");
             return false;
         }
+        
         if (Strings.isEmpty(this.wrappedSQL)) {
             sql = this.wrapSQL(sql);
             this.wrappedSQL = sql;
         } else {
             sql = this.wrappedSQL;
         }
+        
         if (Strings.isEmpty(sql)) {
             LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Wrapping of layer's SQL statement failed.");
             return false;
@@ -1639,8 +1630,7 @@ public class SVSpatialLayer
         return sql;
     }
 
-    @SuppressWarnings("unused")
-	private double getSearchRadius(int _numSearchPixels) 
+	protected double getSearchRadius(int _numSearchPixels) 
     throws NoninvertibleTransformException 
     {
         double maxSearchRadius = 0.0;
@@ -1736,7 +1726,8 @@ public class SVSpatialLayer
             geoColumn = geoColumn.replace("\"","");
 
             querySQL = getIdentifySQL(project);
-            
+System.out.println("Layer queryByPoint: " + querySQL);	        
+
             // Get target SRID and units_parameter in case layer have been drag-and-dropped to a different view/srid
             //
             String     lengthUnits  = Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH);            

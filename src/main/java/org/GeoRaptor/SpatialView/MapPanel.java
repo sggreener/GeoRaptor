@@ -37,11 +37,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DecimalFormat;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -69,16 +67,12 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
-import oracle.jdeveloper.layout.VerticalFlowLayout;
-
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.ScaleBar;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
@@ -96,14 +90,15 @@ import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
+
+import oracle.jdeveloper.layout.VerticalFlowLayout;
+import oracle.spatial.geometry.JGeometry;
 
 
 /**
  * Main class for map.
  */
-@SuppressWarnings("deprecation")
 public class MapPanel 
      extends JPanel 
   implements MouseListener, 
@@ -349,7 +344,6 @@ public class MapPanel
     }
     
     public void setMapBackground(String _color) {
-        LOGGER.debug("MapPanel.setMapBackground(String " + _color==null?"NULL":_color.toString());
         if (Strings.isEmpty(_color) ) {
             return;
         }
@@ -363,7 +357,6 @@ public class MapPanel
     }
     
     public void setMapBackground(Color _color) {
-        LOGGER.debug("MapPanel.setMapBackground(Color " + _color==null?"NULL":_color.toString());
         this.mapBackground = _color;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -453,7 +446,7 @@ public class MapPanel
              _screenSize.getHeight() == Double.NaN || 
              _screenSize.getHeight() == Double.MAX_VALUE ||
              _screenSize.getHeight()  == 0.0f ) {
-            LOGGER.debug("Can't set world to page due to screen not yet set.");
+            LOGGER.info("Can't set world to page due to screen not yet set.");
             return ;
         }
         double scaleX = _screenSize.getWidth()  / (_maxX - _minX);
@@ -2031,25 +2024,25 @@ public class MapPanel
              _mbr.isNull() || 
              _mbr.isInvalid() ||
              _mbr.isEmpty() ) {
-            // DEBUG System.out.println("MapPanel.setWindow: Nothing to do");
+            // LOGGER.debug("MapPanel.setWindow: Nothing to do");
             return;
         }
         // Create modifiable local window
         Envelope mbr = new Envelope(_mbr);
         
-        // DEBUG System.out.println("MapPanel.setWindow: Current window mbr = " + this.window.toString());
-        // DEBUG System.out.println("MapPanel.setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
-        // DEBUG System.out.println("MapPanel.setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
+        // LOGGER.debug("MapPanel.setWindow: Current window mbr = " + this.window.toString());
+        // LOGGER.debug("MapPanel.setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
+        // LOGGER.debug("MapPanel.setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
 
         if ( mbr.equals(this.window) ) {
-        // DEBUG System.out.println("MapPanel.setWindows: mbr equals this.window.");
+        // LOGGER.debug("MapPanel.setWindows: mbr equals this.window.");
             if (this.isWorldToScreenSet())  {
-                // DEBUG System.out.println("MapPanel.setWindow: Transform set. Nothing to do.");
+                // LOGGER.debug("MapPanel.setWindow: Transform set. Nothing to do.");
                 return;
             }
         } else {
-            // DEBUG System.out.println("MapPanel.setWindow: mbr does not equal this.window.... ");
-            // DEBUG System.out.println("MapPanel.setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
+            // LOGGER.debug("MapPanel.setWindow: mbr does not equal this.window.... ");
+            // LOGGER.debug("MapPanel.setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
             // Ensure new MBR does not have one side == 0
             //
             if ( _mbr.getWidth()==0 || 
@@ -2061,7 +2054,7 @@ public class MapPanel
                 mbr = new Envelope(_mbr.centre(),halfSide,halfSide);
             }
         }
-        // DEBUG System.out.println("MapPanel.setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
+        // LOGGER.debug("MapPanel.setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
         this.window.Normalize(this.clientView);
         this.window.setMBR(new Envelope(mbr));
         this.setWorldToScreenTransform(this.window.minX, 
@@ -2162,9 +2155,9 @@ public class MapPanel
     public void Initialise() 
     {
         // Is map panel visible?
-        // DEBUG System.out.println("MapPanel.initialize(): width/height: " + this.getBounds().width + " && " + this.getBounds().height );
+        // LOGGER.debug("MapPanel.initialize(): width/height: " + this.getBounds().width + " && " + this.getBounds().height );
         if ( this.getBounds().isEmpty() ) {
-            // DEBUG System.out.println("MapPanel.initialize(): View " + this.spatialView.getViewName() + " height/width = 0");
+            // LOGGER.debug("MapPanel.initialize(): View " + this.spatialView.getViewName() + " height/width = 0");
             return;
         }
         // remember client view
@@ -2174,7 +2167,7 @@ public class MapPanel
         // or no world to screen transform is set
         //
         boolean viewChanged = this.window.Normalize(this.clientView);
-        // DEBUG System.out.println("MapPanel.initialize(): After normalise, viewChanged is: " + viewChanged + " isWorldToScreenSet()==" + this.isWorldToScreenSet());
+        // LOGGER.debug("MapPanel.initialize(): After normalise, viewChanged is: " + viewChanged + " isWorldToScreenSet()==" + this.isWorldToScreenSet());
         if ( viewChanged || this.isWorldToScreenSet()==false ) 
         {
             setWorldToScreenTransform( this.window.minX, 
@@ -2217,7 +2210,7 @@ public class MapPanel
         conn = spatialView.getActiveLayer().getConnection();
         Struct stGeom = null;
         try {
-//          stGeom = JGeometry.storeJS(conn,_geometry);
+           stGeom = JGeom.toStruct(_geometry,conn);
         } catch (Exception e) {
             return;
         }
@@ -2239,10 +2232,18 @@ public class MapPanel
                   sQueryLayer = new SVQueryLayer(sLayer);   // Create from existing superclass
                   sQueryLayer.setVisibleName(vlt.getSpatialOperator().toString() + " - " + sLayer.getVisibleName());
                   sQueryLayer.setPrecision(dialog.getPrecision());
+                  sQueryLayer.setGeometry(_geometry);
+                  sQueryLayer.setBufferDistance(dialog.getBufferDistance());
+                  sQueryLayer.setBuffered(sQueryLayer.getBufferDistance()!=0.0);
+                  sQueryLayer.setRelationshipMask(dialog.getRelationshipMask(sLayer.hasIndex()));
+                  sQueryLayer.setSdoOperator(dialog.getSdoOperator());
+                  // Both Query and Graphic layers use same SQL so force its creation 
+                  sQueryLayer.setSQL(null); 
                   if ( dialog.targetGraphic() ) {
                       sGraphicLayer = new SVGraphicLayer(sLayer);  // Create from existing superclass
-                      sGraphicLayer.setVisibleName(vlt.getSpatialOperator().toString() + " - " + sLayer.getVisibleName());
-                      sGraphicLayer.setSQL("");
+                      sGraphicLayer.setVisibleName(sQueryLayer.getVisibleName());
+                      
+                      // Load data into cache
                       sGraphicLayer.add(sQueryLayer.getCache(window));
                       sGraphicLayer.setLayerMBR();
                       if ( mainPrefs.isRandomRendering()) {
@@ -2250,12 +2251,6 @@ public class MapPanel
                       }
                       success = spatialView.getSVPanel().addLayerToView(sGraphicLayer,false /*zoom*/);
                   } else {
-                      sQueryLayer.setGeometry(_geometry);
-                      sQueryLayer.setBufferDistance(dialog.getBufferDistance());
-                      sQueryLayer.setBuffered(sQueryLayer.getBufferDistance()!=0.0);
-                      sQueryLayer.setRelationshipMask(dialog.getRelationshipMask(sLayer.hasIndex()));
-                      sQueryLayer.setSdoOperator(dialog.getSdoOperator());
-                      sQueryLayer.setSQL(dialog.getQuerySQL());
                       sQueryLayer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE);
                       sQueryLayer.setDraw(true);
                       if ( mainPrefs.isRandomRendering() ) {
@@ -2713,10 +2708,11 @@ public class MapPanel
            *                     [, params IN VARCHAR2]
            *                    ) RETURN SDO_GEOMETRY;
            */
-          displayString = "SDO_GEOM.SDO_BUFFER(" + displayString + "," + 
-                                               this.tfBufferDistance.getText() + "," + 
-                                               String.format("%f",(float)(1f/Math.pow(10,dFormat.getMaximumFractionDigits()))) +
-                                               bufferParams;
+          displayString = "MDSYS.SDO_GEOM.SDO_BUFFER(" + 
+                              displayString + "," + 
+                              this.tfBufferDistance.getText() + "," + 
+                              String.format("%f",(float)(1f/Math.pow(10,dFormat.getMaximumFractionDigits()))) +
+                              bufferParams;
         }
         this.displayText.setText(displayString);
       }

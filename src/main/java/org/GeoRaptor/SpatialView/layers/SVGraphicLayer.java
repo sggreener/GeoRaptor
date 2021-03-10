@@ -37,7 +37,7 @@ import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 
 
-public class SVGraphicLayer extends SVSpatialLayer 
+public class SVGraphicLayer extends SVSpatialLayer implements iLayer 
 {
 
     public static final String CLASS_NAME = Constants.KEY_SVGraphicLayer;
@@ -70,160 +70,6 @@ public class SVGraphicLayer extends SVSpatialLayer
         this.setMinResolution(false);
     }
 
-    @Override
-    public String getClassName() {
-        return SVGraphicLayer.CLASS_NAME;
-    }
-    
-    /**
-     * Execute SQL and draw data on given graphical device
-     * @param _mbr MBR coordinates
-     * @param _g2 graphical device
-     * @return if return false, something was wrong (for example, Connection with DB faild)
-     */
-    @Override
-    public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
-    {
-        LOGGER.debug("drawing graphic layer " + this.getLayerName());
-        Connection conn = null;
-        try {
-            // Make sure layer's connection has not been lost
-            conn = super.getConnection();
-            if ( conn == null ) {
-                return false;
-            }
-        } catch (IllegalStateException ise) {
-            // Thrown by this.conn indicates starting up, so we do nothing
-            return false;
-        }
-
-        try {
-            // Nothing to do if cache is empty
-            //
-            if (this.cache==null || this.cache.size() == 0) {
-                LOGGER.warn(this.getVisibleName() + " contains no geometries to draw.");
-                return false;
-            }
-
-            // Done for readability only
-            Map<String, Object> attData = this.cache.get(0).getAttData();
-            
-            // Check if labeling is to occur
-            String label =
-                Strings.isEmpty(this.getStyling().getLabelColumn()) ? null : this.getStyling().getLabelColumn();            
-            boolean bLabel = false;
-            if (this.cache.get(0).getColumnCount() == 0 ||
-                attData == null || Strings.isEmpty(label)) {
-                bLabel = false;
-            } else {
-                if (attData.containsKey(label)) {
-                    bLabel = true;
-                }
-            }
-            String      shadeCol =
-                Strings.isEmpty(this.getStyling().getShadeColumn())     ?"":this.getStyling().getShadeColumn();
-            String pointColorCol =
-                Strings.isEmpty(this.getStyling().getPointColorColumn())?"":this.getStyling().getPointColorColumn();
-            String  lineColorCol =
-                Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
-            String  pointSizeCol =
-                Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
-            boolean bShade      = false,
-                    bPointColor = false,
-                    bLineColor  = false,
-                    bPointSize  = false;
-            if ( attData != null ) {
-                bShade      = (this.getStyling().getShadeType()      == Styling.STYLING_TYPE.COLUMN && attData.containsKey(shadeCol));
-                bPointColor = (this.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointColorCol));
-                bLineColor  = (this.getStyling().getLineColorType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(lineColorCol));
-                bPointSize  = (this.getStyling().getPointSizeType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointSizeCol));                
-            }
-            boolean bRotate = (Strings.isEmpty(super.getStyling().getRotationColumn()) ? false : true); 
-
-            // Set graphics2D once for all features
-            drawTools.setGraphics2D(_g2);
-
-            // Now process and draw all JGeometry objects in the cache.
-            //
-            JGeometry geo = null;
-            long numFeats = 0;
-            QueryRow qrow = null;
-            Iterator<QueryRow> iter = this.cache.iterator();
-            while (iter.hasNext()) 
-            {
-                qrow = iter.next();
-                if ( qrow == null ) {
-                    continue;
-                }
-                geo = qrow.getJGeom();
-                if (geo == null) {
-                    LOGGER.warn("Null Graphic layer JGeometry found when drawing and will be skipped.");
-                    continue;
-                }
-                // Display geometry only if overlaps display MBR
-                if ((_mbr.isSet() && _mbr.overlaps(JGeom.getGeoMBR(geo))) || _mbr.isNull()) 
-                {
-                    numFeats++;
-                    // Draw the geometry using current (probably default) display settings
-                    super.callDrawFunction(geo,
-                                           (bLabel      ? SQLConversionTools.convertToString(conn,label,         qrow.getAttData().get(label)) : ""),
-                                           (bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol)) : ""),
-                                           (bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : ""),
-                                           (bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)) : ""),
-                                           (bPointSize  ? MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),4) : 4 ),
-                                           (bRotate     ? (super.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
-                                                           ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(super.getStyling().getRotationColumn())).doubleValue() - 90.0f)) 
-                                                           : ((NUMBER)qrow.getAttData().get(super.getStyling().getRotationColumn())).doubleValue())
-                                                        : 0.0f));
-                }
-            }
-            if ( super.calculateMBR ) {
-                this.setLayerMBR();
-            }
-            this.setNumberOfFeatures(numFeats);
-            LOGGER.debug("GraphicLayer.drawLayer end");
-        } catch (Exception e) {
-            LOGGER.warn(this.getClass().getName()+".drawLayer: error - " + e.toString());
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    @Override
-    public LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
-                                                            boolean _fullDataType) 
-    throws SQLException 
-    {
-        // Only dates and numbers is ignored by this theme
-        LinkedHashMap<String, String> returnSet =
-            new LinkedHashMap<String, String>();
-        if (this.getCache() == null || this.getCacheCount() == 0)
-            return null;
-        if (this.getCache().get(0).getAttData() == null ||
-            this.getCache().get(0).getAttData().size() == 0)
-            return null;
-        // Only need to process one row to get column names
-        QueryRow qrow = this.getCache().get(0);
-        Iterator<?> it = qrow.getAttData().keySet().iterator();
-        String key = null;
-        String obj = null;
-        String validDataTypes =
-            "NUMBER,FLOAT,ROWID,CLOB,CHAR,DATE,TIMESTAMP,TIMESTAMPTZ,TIMESTAMPLTZ,INTERVALDS,INTERVALYM,BINARY_DOUBLE,BINARY_FLOAT,STRING,BIGDECIMAL,INTEGER,SHORT,LONG,DOUBLE";
-        while (it.hasNext()) {
-            key = (String)it.next();
-            obj = Tools.dataTypeAsString(qrow.getAttData().get(key));
-            if (_onlyNumbersDatesAndStrings) {
-                if (validDataTypes.contains(obj)) {
-                    returnSet.put(key, obj);
-                }
-            } else {
-                returnSet.put(key, obj);
-            }
-
-        }
-        return new LinkedHashMap<String, String>(returnSet);
-    }
-
     public SVGraphicLayer createCopy(boolean _renderCopy) 
     throws Exception {
         if ( _renderCopy ) {
@@ -245,7 +91,12 @@ public class SVGraphicLayer extends SVSpatialLayer
             throw new Exception(super.getPropertyManager().getMsg("GRAPHIC_THEME_COPY"));
         }
     }
-
+    
+    @Override
+    public String getClassName() {
+        return SVGraphicLayer.CLASS_NAME;
+    }
+    
     public void setConnection() {
         // Stops call to SVLayer to set the oracle connection
     }
@@ -396,6 +247,156 @@ public class SVGraphicLayer extends SVSpatialLayer
         return retList;
     }
     
+    /**
+     * Execute SQL and draw data on given graphical device
+     * @param _mbr MBR coordinates
+     * @param _g2 graphical device
+     * @return if return false, something was wrong (for example, Connection with DB faild)
+     */
+    @Override
+    public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
+    {
+        LOGGER.debug("drawing graphic layer " + this.getLayerName());
+        Connection conn = null;
+        try {
+            // Make sure layer's connection has not been lost
+            conn = super.getConnection();
+            if ( conn == null ) {
+                return false;
+            }
+        } catch (IllegalStateException ise) {
+            // Thrown by this.conn indicates starting up, so we do nothing
+            return false;
+        }
+
+        try {
+            // Nothing to do if cache is empty
+            //
+            if (this.cache==null || this.cache.size() == 0) {
+                LOGGER.warn(this.getVisibleName() + " contains no geometries to draw.");
+                return false;
+            }
+
+            // Done for readability only
+            Map<String, Object> attData = this.cache.get(0).getAttData();
+            
+            // Check if labeling is to occur
+            String label = Strings.isEmpty(this.getStyling().getLabelColumn()) 
+                           ? null 
+                           : this.getStyling().getLabelColumn();            
+            boolean bLabel = false;
+            if (this.cache.get(0).getColumnCount() == 0 ||
+                attData == null || Strings.isEmpty(label)) {
+                bLabel = false;
+            } else {
+                if (attData.containsKey(label)) {
+                    bLabel = true;
+                }
+            }
+            String      shadeCol =
+                Strings.isEmpty(this.getStyling().getShadeColumn())     ?"":this.getStyling().getShadeColumn();
+            String pointColorCol =
+                Strings.isEmpty(this.getStyling().getPointColorColumn())?"":this.getStyling().getPointColorColumn();
+            String  lineColorCol =
+                Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
+            String  pointSizeCol =
+                Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
+            boolean bShade      = false,
+                    bPointColor = false,
+                    bLineColor  = false,
+                    bPointSize  = false;
+            if ( attData != null ) {
+                bShade      = (this.getStyling().getShadeType()      == Styling.STYLING_TYPE.COLUMN && attData.containsKey(shadeCol));
+                bPointColor = (this.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointColorCol));
+                bLineColor  = (this.getStyling().getLineColorType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(lineColorCol));
+                bPointSize  = (this.getStyling().getPointSizeType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointSizeCol));                
+            }
+            boolean bRotate = (Strings.isEmpty(super.getStyling().getRotationColumn()) ? false : true); 
+
+            // Set graphics2D once for all features
+            drawTools.setGraphics2D(_g2);
+
+            // Now process and draw all JGeometry objects in the cache.
+            //
+            JGeometry geo = null;
+            long numFeats = 0;
+            QueryRow qrow = null;
+            Iterator<QueryRow> iter = this.cache.iterator();
+            while (iter.hasNext()) 
+            {
+                qrow = iter.next();
+                if ( qrow == null ) {
+                    continue;
+                }
+                geo = qrow.getJGeom();
+                if (geo == null) {
+                    LOGGER.warn("Null Graphic layer JGeometry found when drawing and will be skipped.");
+                    continue;
+                }
+                // Display geometry only if overlaps display MBR
+                if ((_mbr.isSet() && _mbr.overlaps(JGeom.getGeoMBR(geo))) || _mbr.isNull()) 
+                {
+                    numFeats++;
+                    // Draw the geometry using current (probably default) display settings
+                    super.callDrawFunction(geo,
+                                           (bLabel      ? SQLConversionTools.convertToString(conn,label,         qrow.getAttData().get(label)) : ""),
+                                           (bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol)) : ""),
+                                           (bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : ""),
+                                           (bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)) : ""),
+                                           (bPointSize  ? MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),4) : 4 ),
+                                           (bRotate     ? (super.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
+                                                           ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(super.getStyling().getRotationColumn())).doubleValue() - 90.0f)) 
+                                                           : ((NUMBER)qrow.getAttData().get(super.getStyling().getRotationColumn())).doubleValue())
+                                                        : 0.0f));
+                }
+            }
+            if ( super.calculateMBR ) {
+                this.setLayerMBR();
+            }
+            this.setNumberOfFeatures(numFeats);
+            LOGGER.debug("GraphicLayer.drawLayer end");
+        } catch (Exception e) {
+            LOGGER.warn(this.getClass().getName()+".drawLayer: error - " + e.toString());
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    @Override
+    public LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
+                                                            boolean _fullDataType) 
+    throws SQLException 
+    {
+        // Only dates and numbers is ignored by this theme
+        LinkedHashMap<String, String> returnSet =
+            new LinkedHashMap<String, String>();
+        if (this.getCache() == null || this.getCacheCount() == 0)
+            return null;
+        if (this.getCache().get(0).getAttData() == null ||
+            this.getCache().get(0).getAttData().size() == 0)
+            return null;
+        // Only need to process one row to get column names
+        QueryRow qrow = this.getCache().get(0);
+        Iterator<?> it = qrow.getAttData().keySet().iterator();
+        String key = null;
+        String obj = null;
+        String validDataTypes =
+            "NUMBER,FLOAT,ROWID,CLOB,CHAR,DATE,TIMESTAMP,TIMESTAMPTZ,TIMESTAMPLTZ,INTERVALDS,INTERVALYM,BINARY_DOUBLE,BINARY_FLOAT,STRING,BIGDECIMAL,INTEGER,SHORT,LONG,DOUBLE";
+        while (it.hasNext()) {
+            key = (String)it.next();
+            obj = Tools.dataTypeAsString(qrow.getAttData().get(key));
+            if (_onlyNumbersDatesAndStrings) {
+                if (validDataTypes.contains(obj)) {
+                    returnSet.put(key, obj);
+                }
+            } else {
+                returnSet.put(key, obj);
+            }
+
+        }
+        return new LinkedHashMap<String, String>(returnSet);
+    }
+
     @Override
     public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, int _numSearchPixels) 
     {

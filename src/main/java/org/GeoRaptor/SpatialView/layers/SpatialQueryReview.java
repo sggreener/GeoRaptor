@@ -52,6 +52,7 @@ public class SpatialQueryReview extends JDialog {
      * Reference to data structure with properties
      */
     protected SVSpatialLayer layer;
+    
     protected Constants.SDO_OPERATORS sdoOperator;
 
     private String originalSdoGeometryString;
@@ -113,19 +114,19 @@ public class SpatialQueryReview extends JDialog {
         rgCreateLayer = new javax.swing.ButtonGroup();
         pnlReview = new javax.swing.JPanel();
         tpReview = new javax.swing.JTabbedPane();
-        pnlSQL = new javax.swing.JPanel();
-        scrollTaSQL = new javax.swing.JScrollPane();
-        taSQL = new javax.swing.JTextArea();
+        pnlGeometry = new javax.swing.JPanel();
+        scrollTaGeometry = new javax.swing.JScrollPane();
+        taGeometry = new javax.swing.JTextArea();
         lblBufferDistance = new javax.swing.JLabel();
         tfBufferDistance = new javax.swing.JTextField();
-        cbEditSQL = new javax.swing.JCheckBox();
+        cbEditGeometry = new javax.swing.JCheckBox();
         rbPrecisionLayer = new javax.swing.JRadioButton();
         lblPrecision = new javax.swing.JLabel();
         rbPrecisionView = new javax.swing.JRadioButton();
         rbPrecisionNone = new javax.swing.JRadioButton();
         btnCopyClipboard = new javax.swing.JButton();
         lblCreateLayer = new javax.swing.JLabel();
-        rbSQL = new javax.swing.JRadioButton();
+        rbGeometry = new javax.swing.JRadioButton();
         rbGraphic = new javax.swing.JRadioButton();
         pnlRelate = new javax.swing.JPanel();
         cbAnyInteract = new javax.swing.JCheckBox();
@@ -148,20 +149,20 @@ public class SpatialQueryReview extends JDialog {
         pnlReview.setMaximumSize(new java.awt.Dimension(681, 339));
         pnlReview.setMinimumSize(new java.awt.Dimension(681, 339));
 
-        pnlSQL.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        pnlSQL.setMaximumSize(new java.awt.Dimension(664, 260));
-        pnlSQL.setMinimumSize(new java.awt.Dimension(664, 260));
-        pnlSQL.setPreferredSize(new java.awt.Dimension(664, 260));
+        pnlGeometry.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        pnlGeometry.setMaximumSize(new java.awt.Dimension(664, 260));
+        pnlGeometry.setMinimumSize(new java.awt.Dimension(664, 260));
+        pnlGeometry.setPreferredSize(new java.awt.Dimension(664, 260));
 
-        scrollTaSQL.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scrollTaSQL.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollTaSQL.setPreferredSize(new java.awt.Dimension(556, 119));
+        scrollTaGeometry.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollTaGeometry.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollTaGeometry.setPreferredSize(new java.awt.Dimension(556, 119));
 
-        taSQL.setColumns(1);
-        taSQL.setFont(new java.awt.Font("Courier New", 1, 12));
-        taSQL.setRows(30);
-        taSQL.setTabSize(4);
-        scrollTaSQL.setViewportView(taSQL);
+        taGeometry.setColumns(1);
+        taGeometry.setFont(new java.awt.Font("Courier New", 1, 12));
+        taGeometry.setRows(30);
+        taGeometry.setTabSize(4);
+        scrollTaGeometry.setViewportView(taGeometry);
 
         lblBufferDistance.setLabelFor(tfBufferDistance);
         lblBufferDistance.setText("Buffer Distance:");
@@ -173,8 +174,8 @@ public class SpatialQueryReview extends JDialog {
             }
         });
 
-        cbEditSQL.setText("Edit SQL");
-        cbEditSQL.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+        cbEditGeometry.setText("Edit SQL");
+        cbEditGeometry.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
 
         bgPrecision.add(rbPrecisionLayer);
         rbPrecisionLayer.setSelected(true);
@@ -213,12 +214,12 @@ public class SpatialQueryReview extends JDialog {
 
         lblCreateLayer.setText("Create Layer:");
 
-        rgCreateLayer.add(rbSQL);
-        rbSQL.setSelected(true);
-        rbSQL.setText("SQL");
-        rbSQL.addActionListener(new java.awt.event.ActionListener() {
+        rgCreateLayer.add(rbGeometry);
+        rbGeometry.setSelected(true);
+        rbGeometry.setText("Query Geometry");
+        rbGeometry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rbSQLActionPerformed(evt);
+                rbGeometryActionPerformed(evt);
             }
         });
 
@@ -230,47 +231,47 @@ public class SpatialQueryReview extends JDialog {
             }
         });
 
-        javax.swing.GroupLayout pnlSQLLayout = new javax.swing.GroupLayout(pnlSQL);
-        pnlSQL.setLayout(pnlSQLLayout);
-        pnlSQLLayout.setHorizontalGroup(
-            pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pnlSQLLayout.createSequentialGroup()
+        javax.swing.GroupLayout pnlGeometryLayout = new javax.swing.GroupLayout(pnlGeometry);
+        pnlGeometry.setLayout(pnlGeometryLayout);
+        pnlGeometryLayout.setHorizontalGroup(
+        		pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlGeometryLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(scrollTaSQL, javax.swing.GroupLayout.DEFAULT_SIZE, 642, Short.MAX_VALUE)
-                    .addGroup(pnlSQLLayout.createSequentialGroup()
-                        .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(pnlSQLLayout.createSequentialGroup()
+                .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(scrollTaGeometry, javax.swing.GroupLayout.DEFAULT_SIZE, 642, Short.MAX_VALUE)
+                    .addGroup(pnlGeometryLayout.createSequentialGroup()
+                        .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(pnlGeometryLayout.createSequentialGroup()
                                 .addComponent(lblBufferDistance)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(tfBufferDistance, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(btnCopyClipboard))
                         .addGap(35, 35, 35)
-                        .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblPrecision, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(lblCreateLayer, javax.swing.GroupLayout.Alignment.TRAILING))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(rbPrecisionLayer)
                             .addComponent(rbGraphic))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(rbPrecisionView)
-                            .addComponent(rbSQL))
+                            .addComponent(rbGeometry))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(rbPrecisionNone)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 197, Short.MAX_VALUE)
-                        .addComponent(cbEditSQL)))
+                        .addComponent(cbEditGeometry)))
                 .addContainerGap())
         );
-        pnlSQLLayout.setVerticalGroup(
-            pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlSQLLayout.createSequentialGroup()
+        pnlGeometryLayout.setVerticalGroup(
+        		pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlGeometryLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(scrollTaSQL, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollTaGeometry, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(cbEditSQL)
+                .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cbEditGeometry)
                     .addComponent(lblBufferDistance)
                     .addComponent(tfBufferDistance, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(rbPrecisionLayer)
@@ -278,15 +279,15 @@ public class SpatialQueryReview extends JDialog {
                     .addComponent(rbPrecisionNone)
                     .addComponent(lblPrecision))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(pnlSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCopyClipboard)
                     .addComponent(lblCreateLayer)
                     .addComponent(rbGraphic)
-                    .addComponent(rbSQL))
+                    .addComponent(rbGeometry))
                 .addGap(13, 13, 13))
         );
 
-        tpReview.addTab("SQL", pnlSQL);
+        tpReview.addTab("Query Geometry", pnlGeometry);
 
         cbAnyInteract.setText("ANYINTERACT");
         cbAnyInteract.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
@@ -531,16 +532,16 @@ public class SpatialQueryReview extends JDialog {
     }//GEN-LAST:event_rbPrecisionNoneActionPerformed
 
     private void btnCopyClipboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCopyClipboardActionPerformed
-        Tools.doClipboardCopy(taSQL.getText());
+        Tools.doClipboardCopy(taGeometry.getText());
     }//GEN-LAST:event_btnCopyClipboardActionPerformed
 
     private void rbGraphicActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbGraphicActionPerformed
         modifySQL();
     }//GEN-LAST:event_rbGraphicActionPerformed
 
-    private void rbSQLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbSQLActionPerformed
+    private void rbGeometryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbGeometryActionPerformed
         modifySQL();
-    }//GEN-LAST:event_rbSQLActionPerformed
+    }//GEN-LAST:event_rbGeometryActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup bgPrecision;
@@ -551,7 +552,7 @@ public class SpatialQueryReview extends JDialog {
     private javax.swing.JCheckBox cbContains;
     private javax.swing.JCheckBox cbCoveredBy;
     private javax.swing.JCheckBox cbCovers;
-    private javax.swing.JCheckBox cbEditSQL;
+    private javax.swing.JCheckBox cbEditGeometry;
     private javax.swing.JCheckBox cbEqual;
     private javax.swing.JCheckBox cbInside;
     private javax.swing.JCheckBox cbOn;
@@ -564,15 +565,15 @@ public class SpatialQueryReview extends JDialog {
     private javax.swing.JLabel lblPrecision;
     private javax.swing.JPanel pnlRelate;
     private javax.swing.JPanel pnlReview;
-    private javax.swing.JPanel pnlSQL;
+    private javax.swing.JPanel pnlGeometry;
     private javax.swing.JRadioButton rbGraphic;
     private javax.swing.JRadioButton rbPrecisionLayer;
     private javax.swing.JRadioButton rbPrecisionNone;
     private javax.swing.JRadioButton rbPrecisionView;
-    private javax.swing.JRadioButton rbSQL;
+    private javax.swing.JRadioButton rbGeometry;
     private javax.swing.ButtonGroup rgCreateLayer;
-    private javax.swing.JScrollPane scrollTaSQL;
-    private javax.swing.JTextArea taSQL;
+    private javax.swing.JScrollPane scrollTaGeometry;
+    private javax.swing.JTextArea taGeometry;
     private javax.swing.JTextField tfBufferDistance;
     private javax.swing.JTabbedPane tpReview;
     // End of variables declaration//GEN-END:variables
@@ -589,35 +590,36 @@ public class SpatialQueryReview extends JDialog {
 
         pnlReview.setBorder(javax.swing.BorderFactory.createTitledBorder(this.propertyManager.getMsg("pnlReview")));
         lblBufferDistance.setText(this.propertyManager.getMsg("lblBufferDistance"));
-        cbEditSQL.setText(this.propertyManager.getMsg("cbEditSQL"));
+        cbEditGeometry.setText(this.propertyManager.getMsg("cbEditGeometry"));
         lblPrecision.setText(this.propertyManager.getMsg("lblPrecision"));
         rbPrecisionLayer.setText(this.propertyManager.getMsg("rbPrecisionLayer") + " (" + layer.getPrecision(false) + ")");
         rbPrecisionView.setText(this.propertyManager.getMsg("rbPrecisionView")   + " (" + layer.getSpatialView().getPrecision(false) + ")");
         rbPrecisionNone.setText(this.propertyManager.getMsg("rbPrecisionNone"));
         btnOK.setText(this.propertyManager.getMsg("btnOK"));
         btnCancel.setText(this.propertyManager.getMsg("btnCancel"));
-        tpReview.setTitleAt(0, this.propertyManager.getMsg("tpReviewSQL"));
+        tpReview.setTitleAt(0, this.propertyManager.getMsg("tpReviewGeometry"));
         tpReview.setTitleAt(1, this.propertyManager.getMsg("tpReviewRelate"));
         btnCopyClipboard.setText(this.propertyManager.getMsg("btnCopyClipboard"));
         lblCreateLayer.setText(this.propertyManager.getMsg("lblCreateLayer"));
-        rbSQL.setSelected(true);
+        rbGeometry.setSelected(true);
 
+        final String filterGeometry = _filterGeometry;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 rbPrecisionLayer.setSelected(true);
-                cbEditSQL.setSelected(false);
+                cbEditGeometry.setSelected(false);
                 pnlRelate.setEnabled(_operator==Constants.SDO_OPERATORS.RELATE);
                 cbAnyInteract.setSelected(true);
                 tpReview.setEnabledAt(tpReview.indexOfComponent(pnlRelate),
                                       _operator==Constants.SDO_OPERATORS.RELATE);
-                taSQL.setText(getQuerySQL());
-                scrollTaSQL.setWheelScrollingEnabled(true);
-                scrollTaSQL.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                taGeometry.setText(getGeometry()); // getQueryGeometry());
+                scrollTaGeometry.setWheelScrollingEnabled(true);
+                scrollTaGeometry.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
                 pack();
                 // Set horizontalScrollBar to far left
-                JScrollBar horizontalScrollBar = scrollTaSQL.getHorizontalScrollBar();
+                JScrollBar horizontalScrollBar = scrollTaGeometry.getHorizontalScrollBar();
                 horizontalScrollBar.setValue(horizontalScrollBar.getMinimum());
-                scrollTaSQL.setViewportView(taSQL);
+                scrollTaGeometry.setViewportView(taGeometry);
                 repaint();
             }
         });
@@ -682,10 +684,10 @@ public class SpatialQueryReview extends JDialog {
     }
 
     public String getSQL() {
-        return taSQL.getText();
+        return taGeometry.getText();
     }
 
-    public String getQuerySQL() 
+    public String getGeometry() 
     {
         // Create appropriate filter geometry of desired ordinate precision
         //
@@ -706,88 +708,39 @@ public class SpatialQueryReview extends JDialog {
             dFormatter = Tools.getDecimalFormatter(precision);
             geometryString =
                 SDO_GEOMETRY.applyPrecision(geometryString,
-                                                         dFormatter,
-                                                         8) /* 2D * 4 coords = 8 ordinates */;
+                                            dFormatter,
+                                            8) /* 2D * 4 coords = 8 ordinates */;
         }
         // Do we buffer it?
         //
         if (this.getBufferDistance()!= 0) 
         {
-            try {
-                String lengthUnits = Tools.getViewUnits(this.layer.getSpatialView(),
-                                                        Constants.MEASURE.LENGTH);
-                String bufferParams = ((layer.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits)) ? ")" :
-                                       ",'unit=" + lengthUnits + "')");
-                /**
-                 * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
-                 *                     dist IN NUMBER,
-                 *                     tol IN NUMBER
-                 *                     [, params IN VARCHAR2]
-                 *                    ) RETURN SDO_GEOMETRY;
-                **/
-                geometryString = "SDO_GEOM.SDO_BUFFER(" + geometryString +
-                                 "," + tfBufferDistance.getText() + "," +
-                                 dFormatter.format(tolerance) +
-                                 bufferParams;
-            } catch (Exception e) {
-                LOGGER.error("SpatialQueryReview.modifySQL() - " + e.getLocalizedMessage());
-                return "";
-            }
+            String lengthUnits = Tools.getViewUnits(this.layer.getSpatialView(),
+                                                    Constants.MEASURE.LENGTH);
+            String bufferParams = ((layer.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits)) ? "\n)" :
+                                   ",\n    'unit=" + lengthUnits + "'\n)");
+            /**
+             * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
+             *                     dist IN NUMBER,
+             *                     tol IN NUMBER
+             *                     [, params IN VARCHAR2]
+             *                    ) RETURN SDO_GEOMETRY;
+            **/
+            geometryString = "MDSYS.SDO_GEOM.SDO_BUFFER(\n    " + 
+                                  geometryString + ",\n    " + 
+                                  tfBufferDistance.getText() + ",\n    " +
+                                  dFormatter.format(tolerance) +
+                                  bufferParams;
         }
         
-        // Now build SQL
-        //
-        this.filterGeometry = (this.layer.project && 
-                               this.layer.spatialView.getSRID().equals(Constants.NULL) == false && 
-                               this.layer.getSRID().equals(Constants.NULL) == false) 
-                              ? String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)",geometryString,layer.getSRID()) 
-                              : geometryString;
-
-        // Our query SQL can be:
-        // 1. Built on top of the current Layer SQL (including user modifications), or
-        // 2. Build on top of the original database object
-        // While 2 means duplicate filter queries, 1 is chosen for the time being
-        //
-        // NOTE: Query "hardcodes" all parameters to make the setting parameters when 
-        // using SVSpatialLayer' drawGeometry method easier 
-        //
-        String sql = this.layer.getSQL();
-        LOGGER.debug("hasIndex()=="+this.layer.hasIndex() + " || (this.layer.isSTGeometry() && this.sdoOperator!=Constants.SDO_OPERATORS.RELATE))==" + (this.layer.isSTGeometry() && this.sdoOperator!=Constants.SDO_OPERATORS.RELATE));
-        if (this.layer.hasIndex() || (this.layer.isSTGeometry() && this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)) {
-            sql += "\n  AND " +
-                   ( this.layer.isSTGeometry() 
-                     ? "t." + this.layer.getGeoColumn() + ".ST_" + this.sdoOperator.toString() + "(MDSYS.ST_GEOMETRY("  + this.filterGeometry + ")) = 1"
-                   : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
-                                   this.sdoOperator.toString(),
-                                   this.layer.getGeoColumn(),
-                                   this.filterGeometry,
-                                   (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
-                                    ? ( ",'" + getRelationshipMask(this.layer.hasIndex()) + "'" ) : "")
-                                   ) 
-                   );
-        } else {
-            // Original SQL may have sdo_relate already. If so, change its ANYTINTERACT mask
-            //
-            if ( sql.toUpperCase().indexOf("MDSYS.SDO_GEOM.RELATE")!=0 &&
-                 sql.toUpperCase().indexOf("'ANYINTERACT'")!=0 ) {
-                sql = sql.replace("'ANYINTERACT'", "'mask=" + getRelationshipMask(this.layer.hasIndex()) + "'");
-            } else {
-                // Add new relate mask
-                sql += String.format("\n  AND %s(t.%s,\n       '%s',\n       %s,\n       %f) = 'TRUE'",
-                                     this.layer.getGeoColumn() + (this.layer.isSTGeometry() ? ".GEOM" : ""),
-                                     getRelationshipMask(this.layer.hasIndex()),
-                                     this.filterGeometry,
-                                     tolerance);
-            }
-        }
-        return sql;
+        return geometryString;
     }
 
     private void modifySQL() {
       SwingUtilities.invokeLater(new Runnable() {
         public void run() {
-            taSQL.setText(getQuerySQL());
-            JScrollBar horizontalScrollBar = scrollTaSQL.getHorizontalScrollBar();
+            taGeometry.setText(getGeometry()); // getQuerySQL());
+            JScrollBar horizontalScrollBar = scrollTaGeometry.getHorizontalScrollBar();
             horizontalScrollBar.setValue(horizontalScrollBar.getMinimum());
         }
       });

@@ -372,7 +372,7 @@ LOGGER.debug("*** Removing " + _layerName);
       if ( this.svp.getViewLayerTree().getViewNode(this.name) != null )
         this.svp.getViewLayerTree().getViewNode(this.name).collapse();
   }        
-        
+
   public boolean addLayer(SVSpatialLayer _layer,
                           boolean        _isDrawn,
                           boolean        _isActive,

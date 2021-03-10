@@ -1328,10 +1328,10 @@ extends JPanel
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
             metaEntries = Queries.getMetadata(_conn,
-                                                   _schemaName,
-                                                   _objectName,
-                                                   columnName,
-                                                   false);
+                                              _schemaName,
+                                              _objectName,
+                                              columnName,
+                                              false);
             // Find and assign mEntry based on choice
             for (MetadataEntry me: metaEntries.values() ) {
                 if ( me.getColumnName().equalsIgnoreCase(columnName) )  {

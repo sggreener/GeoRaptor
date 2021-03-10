@@ -91,7 +91,7 @@
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
           <SubComponents>
-            <Container class="javax.swing.JPanel" name="pnlSQL">
+            <Container class="javax.swing.JPanel" name="pnlGeometry">
               <Properties>
                 <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                   <Border info="org.netbeans.modules.form.compat2.border.EmptyBorderInfo">
@@ -110,8 +110,8 @@
               </Properties>
               <Constraints>
                 <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                  <JTabbedPaneConstraints tabName="SQL">
-                    <Property name="tabTitle" type="java.lang.String" value="SQL"/>
+                  <JTabbedPaneConstraints tabName="Query Geometry">
+                    <Property name="tabTitle" type="java.lang.String" value="Query Geometry"/>
                   </JTabbedPaneConstraints>
                 </Constraint>
               </Constraints>
@@ -122,7 +122,7 @@
                       <Group type="102" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="scrollTaSQL" alignment="0" pref="642" max="32767" attributes="0"/>
+                              <Component id="scrollTaGeometry" alignment="0" pref="642" max="32767" attributes="0"/>
                               <Group type="102" alignment="0" attributes="0">
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Group type="102" alignment="0" attributes="0">
@@ -145,12 +145,12 @@
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="rbPrecisionView" alignment="0" min="-2" max="-2" attributes="0"/>
-                                      <Component id="rbSQL" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="rbGeometry" alignment="0" min="-2" max="-2" attributes="0"/>
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="rbPrecisionNone" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace pref="197" max="32767" attributes="0"/>
-                                  <Component id="cbEditSQL" min="-2" max="-2" attributes="0"/>
+                                  <Component id="cbEditGeometry" min="-2" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -161,10 +161,10 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="scrollTaSQL" min="-2" pref="183" max="-2" attributes="0"/>
+                          <Component id="scrollTaGeometry" min="-2" pref="183" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
-                              <Component id="cbEditSQL" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbEditGeometry" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="lblBufferDistance" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="tfBufferDistance" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="rbPrecisionLayer" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -177,7 +177,7 @@
                               <Component id="btnCopyClipboard" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="lblCreateLayer" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="rbGraphic" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="rbSQL" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="rbGeometry" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace min="-2" pref="13" max="-2" attributes="0"/>
                       </Group>
@@ -185,7 +185,7 @@
                 </DimensionLayout>
               </Layout>
               <SubComponents>
-                <Container class="javax.swing.JScrollPane" name="scrollTaSQL">
+                <Container class="javax.swing.JScrollPane" name="scrollTaGeometry">
                   <Properties>
                     <Property name="horizontalScrollBarPolicy" type="int" value="32"/>
                     <Property name="verticalScrollBarPolicy" type="int" value="22"/>
@@ -199,7 +199,7 @@
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                   <SubComponents>
-                    <Component class="javax.swing.JTextArea" name="taSQL">
+                    <Component class="javax.swing.JTextArea" name="taGeometry">
                       <Properties>
                         <Property name="columns" type="int" value="1"/>
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
@@ -227,9 +227,9 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tfBufferDistanceActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JCheckBox" name="cbEditSQL">
+                <Component class="javax.swing.JCheckBox" name="cbEditGeometry">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Edit SQL"/>
+                    <Property name="text" type="java.lang.String" value="Edit Geometry"/>
                     <Property name="horizontalTextPosition" type="int" value="10"/>
                   </Properties>
                 </Component>
@@ -288,7 +288,7 @@
                     <Property name="text" type="java.lang.String" value="Create Layer:"/>
                   </Properties>
                 </Component>
-                <Component class="javax.swing.JRadioButton" name="rbSQL">
+                <Component class="javax.swing.JRadioButton" name="rbGeometry">
                   <Properties>
                     <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
                       <ComponentRef name="rgCreateLayer"/>
@@ -297,7 +297,7 @@
                     <Property name="text" type="java.lang.String" value="SQL"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="rbSQLActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="rbGeometryActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JRadioButton" name="rbGraphic">

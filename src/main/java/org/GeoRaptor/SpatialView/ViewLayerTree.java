@@ -1831,7 +1831,7 @@ LOGGER.debug("Testing class type of " + fLayerNode.getSpatalLayerType());
                                    : this.propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_ATTRIBUTES",shortVisibleName);
 LOGGER.debug("Menus entry is " + showLayerAttrMenuText);
         if ( ! showLayerAttrMenuText.equals(this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYERS_ATTRIBUTES")) ) {
-LOGGER.debug("Layer type is " + SVSpatialLayer.CLASS_NAME);
+LOGGER.debug("Layer type is " + fLayerNode.getSpatalLayerType());
             if ( fLayerNode.getSpatalLayerType().equalsIgnoreCase(Constants.KEY_SVGraphicLayer)) 
             {
 LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLayer");
@@ -3068,7 +3068,7 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
       }
 
       public String getSpatalLayerType() {
-          return SVSpatialLayer.CLASS_NAME;
+          return this.sLayer.getClassName();
       }
       
       public SVSpatialLayer getSpatialLayer() {

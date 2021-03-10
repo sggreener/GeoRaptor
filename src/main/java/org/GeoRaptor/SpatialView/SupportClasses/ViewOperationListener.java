@@ -32,7 +32,6 @@ public class ViewOperationListener
     public void setSpatialViewOpr(VIEW_OPERATION _spatialViewOpr) {
         this.svPanel.setMessage(null,false);
         this.spatialViewOpr = _spatialViewOpr;
-System.out.println(this.svPanel==null?"svPanel is null":(this.svPanel.getActiveView()==null?"getActiveView is null":this.svPanel.getActiveView().getViewName()));
         this.svPanel.setToolbarStatus(_spatialViewOpr,
                                       this.svPanel.getActiveView().getWindowNavigator(),
                                       this.svPanel.getActiveView().getMBR());

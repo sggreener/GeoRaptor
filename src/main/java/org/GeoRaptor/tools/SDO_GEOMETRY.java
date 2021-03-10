@@ -744,21 +744,24 @@ public class SDO_GEOMETRY
                                         DecimalFormat _formatter, 
                                         int           _foldOrds) 
     {
-        boolean valueConversion = false;
-        boolean sdoOrdinateArray = false;
-        double ordinate = 0.0;
-        int ords = -1;
+        boolean   valueConversion = false;
+        boolean  sdoOrdinateArray = false;
+        double           ordinate = 0.0;
+        int                  ords = -1;
         boolean separatorHandling = false;
-        String formatString = " )(,";
+        String       formatString = " )(,";
+        
         if ( _formatter.getDecimalFormatSymbols().getDecimalSeparator() == ',' ) {
             // We have to splice the ordinates back together. 
             // Luckily the formatter will not have any groupingSymbol so numbers will be of the form 
             // left , right
             separatorHandling = true;
         }
-        StringTokenizer dst = new StringTokenizer(_geom,formatString,true);
-        String tok = "", prevTok = ""; 
-        String output = "";
+        
+        StringTokenizer dst = new StringTokenizer(_geom.replaceAll(" ",""),formatString,true);
+        String          tok = "", 
+                    prevTok = ""; 
+        String       output = "";
         while ( dst.hasMoreTokens() ) 
         {
             tok = dst.nextToken();
@@ -803,10 +806,11 @@ public class SDO_GEOMETRY
                             ordinate = Double.parseDouble(tok);
                             output += _formatter.format(ordinate) + "," ;
                         }
-                        if ( sdoOrdinateArray &&
+                        if ( sdoOrdinateArray  &&
                              prevTok.isEmpty() &&
-                             ords  > 0 && 
-                             (ords+1) % _foldOrds == 0 ) 
+                             ords  > 0         && 
+                             _foldOrds!=0      && 
+                             (ords+1) % _foldOrds == 0 )  
                         {
                           output += "\n";         
                         }

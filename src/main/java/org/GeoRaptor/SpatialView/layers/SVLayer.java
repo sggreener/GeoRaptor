@@ -422,12 +422,22 @@ public class SVLayer {
 	{
         Connection conn = null;
         try {
-          if (Strings.isEmpty(this.connName)) 
-            conn = DatabaseConnections.getInstance().getActiveConnection();
-          else 
-    		conn = DatabaseConnections.getInstance().getConnection(this.connName);
-          if ( conn == null || conn.isClosed() )
-			conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+        	DatabaseConnections dcs = DatabaseConnections.getInstance();
+            if (! Strings.isEmpty(this.connName)) {
+              if ( dcs.isConnectionOpen(this.connName) )
+                return dcs.getConnection(this.connName);
+              else {
+                // Try and reopen
+            	dcs.openConnection(this.connName);
+                if ( dcs.isConnectionOpen(this.connName) ) {
+                  return dcs.getConnection(this.connName);
+                }
+              }
+            }
+            // Systematically try and get a connection
+            conn = dcs.getActiveConnection();  
+            if ( conn == null || conn.isClosed() )
+			  conn = dcs.getAnyOpenConnection();
 		} catch (SQLException e) {
 			return null;
 		}
