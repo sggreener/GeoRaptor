@@ -70,6 +70,7 @@ import javax.swing.SwingUtilities;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
@@ -80,6 +81,7 @@ import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SpatialQueryReview;
 import org.GeoRaptor.SpatialView.layers.Styling;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
@@ -446,7 +448,7 @@ public class MapPanel
              _screenSize.getHeight() == Double.NaN || 
              _screenSize.getHeight() == Double.MAX_VALUE ||
              _screenSize.getHeight()  == 0.0f ) {
-            LOGGER.info("Can't set world to page due to screen not yet set.");
+            LOGGER.debug("Can't set world to page due to screen not yet set.");
             return ;
         }
         double scaleX = _screenSize.getWidth()  / (_maxX - _minX);
@@ -800,16 +802,16 @@ public class MapPanel
     public void mousePressed(MouseEvent e) 
     {
         ViewOperationListener.VIEW_OPERATION svo = this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr();
-        LOGGER.debug("mousePressed: " + svo.toString());
+        //LOGGER.debug("mousePressed: " + svo.toString());
         try {
             if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
             {
-                LOGGER.debug("mousePressed: BUTTON1_MASK is LEFT MOUSE BUTTON");
+                //LOGGER.debug("mousePressed: BUTTON1_MASK is LEFT MOUSE BUTTON");
                 Stroke oldStroke = this.getBiG2D().getStroke();
                 switch (svo)
                 {
                     case MOVE:
-                        LOGGER.debug("mousePressed: VIEW_OPERATION.MOVE");
+                        //LOGGER.debug("mousePressed: VIEW_OPERATION.MOVE");
                         // Get Screen pixels where user clicked
                         //
                         this.startScreen.setLocation(e.getX(),e.getY());            
@@ -1126,7 +1128,7 @@ public class MapPanel
         }
         
         if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
-            LOGGER.debug("mouseDragged: LEFT MOUSE BUTTON; svo="+svo.toString() );
+            //LOGGER.debug("mouseDragged: LEFT MOUSE BUTTON; svo="+svo.toString() );
             switch (svo)
             {
                 case MOVE: 
@@ -1250,7 +1252,7 @@ public class MapPanel
         try {
             if ((_mouseEvent.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
             {
-                LOGGER.debug("mouseReleased: LEFT MOUSE BUTTON: "+ svo.toString());
+                //LOGGER.debug("mouseReleased: LEFT MOUSE BUTTON: "+ svo.toString());
                 switch (svo)
                 {
                   case ZOOM_BOUNDS :
@@ -1442,7 +1444,7 @@ public class MapPanel
                 }
             } else if ((_mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
             {
-                LOGGER.debug("mouseReleased: RIGHT MOUSE BUTTON: "+ svo.toString());
+                //LOGGER.debug("mouseReleased: RIGHT MOUSE BUTTON: "+ svo.toString());
                 Stroke oldStroke = this.getBiG2D().getStroke();
                 switch (svo)
                 {
@@ -1568,7 +1570,7 @@ public class MapPanel
                       break;
                     
                     default: /* Right Mouse Click Menu */
-                        LOGGER.debug("mouseReleased: SET Point/COPY MBR/Point");
+                        //LOGGER.debug("mouseReleased: SET Point/COPY MBR/Point");
                         // Create Menu
                         JPopupMenu popup = new JPopupMenu(Constants.GEORAPTOR);                        
                         final MouseEvent mouseEvent = _mouseEvent;
@@ -1712,12 +1714,12 @@ public class MapPanel
         if ( this.window==null || 
              this.window.isNull() ||
              this.window.isInvalid() )  {
-            LOGGER.debug("refreshALL(): window is null so initialize from view");
+            //LOGGER.debug("refreshALL(): window is null so initialize from view");
             if (this.spatialView.initializeMBR(null) == false) {
                 return;
             }
         }
-        LOGGER.debug("refreshALL: Check View Operation: " + this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr().toString());
+        //LOGGER.debug("refreshALL: Check View Operation: " + this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr().toString());
         repaint();
     } // public RefreshAll
 
@@ -1789,10 +1791,10 @@ public class MapPanel
     
     private boolean hasDrawableLayer() {
       
-        Iterator<SVSpatialLayer> layerList = this.spatialView.getLayerList().values().iterator();
+        Iterator<iLayer> layerList = this.spatialView.getLayerList().values().iterator();
         boolean layerSelectForDraw = false;
         while (layerList.hasNext()) {
-            SVSpatialLayer layer = layerList.next();
+            iLayer layer = layerList.next();
             if (layer.isDraw()) {
                 layerSelectForDraw = true;
                 break;
@@ -1806,17 +1808,17 @@ public class MapPanel
     }
 
     private void checkLayerConnections() {
-        LOGGER.debug("------------------------------------\nSTART: checkLayerConnections");
+        //LOGGER.debug("------------------------------------\nSTART: checkLayerConnections");
         String connName = "",
                nameList = "";
-        Iterator<SVSpatialLayer> iter = this.spatialView.getLayerList().values().iterator();
+        Iterator<iLayer> iter = this.spatialView.getLayerList().values().iterator();
         while (iter.hasNext()) {
-            SVSpatialLayer layer = iter.next();
+            iLayer layer = iter.next();
             connName = layer.getConnectionName();
             if ( ( !Strings.isEmpty(connName) ) && 
                  ( ! nameList.contains(connName) ) ) {
                 try {
-                    LOGGER.debug("checkLayerConnections. Checking " + connName);
+                    //LOGGER.debug("checkLayerConnections. Checking " + connName);
                     // Make sure layer's connection exists...
                     if ( ! DatabaseConnections.getInstance().connectionExists(connName)) {
                         DatabaseConnections.getInstance().addConnection(connName);
@@ -1824,7 +1826,7 @@ public class MapPanel
                     // Make sure layer's connection is open 
                     if ( ! layer.isConnectionOpen() ) {
                         boolean oc = layer.openConnection();
-                        LOGGER.debug("Connection " + connName + " " + (oc?"opened":"closed."));
+                        //LOGGER.debug("Connection " + connName + " " + (oc?"opened":"closed."));
                     }
                 } catch (IllegalStateException ise) {
                     // Thrown by super.getConnection() indicates starting up, so we do nothing
@@ -1835,7 +1837,7 @@ public class MapPanel
                 nameList = " " + connName;
             }
         }
-        LOGGER.debug("End: checkLayerConnections\n------------------------------------");
+        //LOGGER.debug("End: checkLayerConnections\n------------------------------------");
     }
     
     public void paintComponent(Graphics g) 
@@ -1946,7 +1948,7 @@ public class MapPanel
 
             // Do drawing and save window only at end of the draw
             // 
-            LOGGER.debug(" ******* this.drawTimer.schedule(...)");
+            //LOGGER.debug(" ******* this.drawTimer.schedule(...)");
             this.drawTimer.schedule(new DrawTask(g2,this.spatialView), 0);
             //LOGGER.debug(" ***** END: MapPanel.paintComponent() this.redrawBIOnly="+this.redrawBIOnly.toString());
             return;
@@ -2084,7 +2086,7 @@ public class MapPanel
     }
 
     public Graphics2D getBiG2D() {
-        LOGGER.debug("getBiG2D " + this.biG2D==null?"null":"set");
+        //LOGGER.debug("getBiG2D " + this.biG2D==null?"null":"set");
         return this.biG2D;
     }
 
@@ -2218,7 +2220,7 @@ public class MapPanel
         SwingUtilities.invokeLater(new Runnable() {
               public void run() {
                   final ViewLayerTree         vlt = spatialView.getSVPanel().getViewLayerTree();
-                  final SVSpatialLayer     sLayer = vlt.getQueryTarget();
+                  final iLayer             sLayer = vlt.getQueryTarget();
                   SVGraphicLayer    sGraphicLayer = null;
                   SVQueryLayer        sQueryLayer = null;
                   final SpatialQueryReview dialog = new SpatialQueryReview(new JFrame(), true);
@@ -2229,7 +2231,13 @@ public class MapPanel
                       spatialView.getSVPanel().setNone();
                       return;
                   }
-                  sQueryLayer = new SVQueryLayer(sLayer);   // Create from existing superclass
+                  sQueryLayer = new SVQueryLayer(sLayer.getSpatialView(),
+                		                         sLayer.getLayerName(),
+                		                         sLayer.getVisibleName(),
+                		                         sLayer.getDesc(),
+                		                         sLayer.getMetadataEntry(),
+                		                         sLayer.isDraw()
+                                     ); // Create from base spatial layer in view
                   sQueryLayer.setVisibleName(vlt.getSpatialOperator().toString() + " - " + sLayer.getVisibleName());
                   sQueryLayer.setPrecision(dialog.getPrecision());
                   sQueryLayer.setGeometry(_geometry);
@@ -2240,9 +2248,8 @@ public class MapPanel
                   // Both Query and Graphic layers use same SQL so force its creation 
                   sQueryLayer.setSQL(null); 
                   if ( dialog.targetGraphic() ) {
-                      sGraphicLayer = new SVGraphicLayer(sLayer);  // Create from existing superclass
+                      sGraphicLayer = new SVGraphicLayer((SVSpatialLayer) sLayer);  // Create from existing superclass
                       sGraphicLayer.setVisibleName(sQueryLayer.getVisibleName());
-                      
                       // Load data into cache
                       sGraphicLayer.add(sQueryLayer.getCache(window));
                       sGraphicLayer.setLayerMBR();
@@ -2323,7 +2330,7 @@ public class MapPanel
         }
         // get selected layer
         //
-        SVSpatialLayer sLayer = this.spatialView.getActiveLayer();
+        iLayer sLayer = this.spatialView.getActiveLayer();
         if (sLayer == null) 
         {
             // allow selection if only one layer in list
@@ -2422,7 +2429,7 @@ public class MapPanel
         }
 
         public void run() {
-            LOGGER.debug(" ****** START DrawTask.run()");
+            //LOGGER.debug(" ****** START DrawTask.run()");
             //LOGGER.debug(" ******** WorldToScreen ? " + this.mapPanel.isWorldToScreenSet());
             if ( ! this.mapPanel.isWorldToScreenSet() ) {
                 //LOGGER.debug(" ******** Setting World To Screen with " + this.spatialView.getMBR().toString());
@@ -2444,7 +2451,7 @@ public class MapPanel
             // by getting iterator starting a maximum size
             // and "unwinding" the layers in the list via litr.hasPrevious()/litr.previous()
             //
-            ArrayList<SVSpatialLayer> tempAR = new ArrayList<SVSpatialLayer>(this.spatialView.getLayerList().values());
+            ArrayList<iLayer> tempAR = new ArrayList<iLayer>(this.spatialView.getLayerList().values());
             if ( ! this.mapPanel.isWorldToScreenSet() ) {
                 // finish layer draw
                 this.svp.setProgressBar(false, null, -1, -1);
@@ -2457,14 +2464,14 @@ public class MapPanel
                 return;
             }
             
-            LOGGER.debug("******** tempAR.size "+(tempAR==null?"null":tempAR.size()));
-            ListIterator<SVSpatialLayer> litr = tempAR.listIterator(tempAR.size());
+            //LOGGER.debug("******** tempAR.size "+(tempAR==null?"null":tempAR.size()));
+            ListIterator<iLayer> litr = tempAR.listIterator(tempAR.size());
             int currentlLayer = 0,
             maxDrawableLayers = svp.getViewLayerTree().getDrawableLayerCount(this.spatialView.getViewName());
             svp.setMessage(this.spatialView.getViewName(),false);
             while (litr.hasPrevious() && (this.svp.isCancelOperation() == false)) {
-                SVSpatialLayer layer = litr.previous();
-                LOGGER.debug("******** MapPanel.drawTask: " + layer.getLayerName() + " isDraw=" + layer.isDraw());
+                iLayer layer = litr.previous();
+                //LOGGER.debug("******** MapPanel.drawTask: " + layer.getLayerName() + " isDraw=" + layer.isDraw());
                 if (layer.isDraw()) 
                 {
                     // update progress bar
@@ -2479,8 +2486,6 @@ public class MapPanel
                     boolean status = layer.drawLayer(this.mapPanel.getWindow(), getBiG2D());
                     if (status == false) {
                         LOGGER.warn(layer.getVisibleName() + " failed to draw correctly");
-                    } else {
-                        LOGGER.debug("******** " + layer.getVisibleName() + " draw successful");
                     }
                 }
             }
@@ -2489,7 +2494,7 @@ public class MapPanel
             if (afterLayerDrawList != null && 
                 afterLayerDrawList.size()>0) 
             {
-                LOGGER.debug("******** AfterLayerDraw of " + afterLayerDrawList.size() + " layers.");
+                //LOGGER.debug("******** AfterLayerDraw of " + afterLayerDrawList.size() + " layers.");
                 AfterLayerDraw ald = null;
                 Iterator<AfterLayerDraw> iter = afterLayerDrawList.iterator();
                 while (iter.hasNext()) {
@@ -2536,7 +2541,7 @@ public class MapPanel
             // Make sure next/prev etc buttons are correct
             this.svp.setToolbarStatus();
             refreshAll();
-            LOGGER.debug(" ****** FINISH DrawTask.run()");
+            //LOGGER.debug(" ****** FINISH DrawTask.run()");
         }
     }
     

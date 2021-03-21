@@ -33,6 +33,7 @@ import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
@@ -265,14 +266,14 @@ public class SpatialView {
      return ( this == this.getSVPanel().getActiveView() );
   }
   
-  public void setActiveLayer(SVSpatialLayer _layer) {
-      if ( _layer == null ) {
+  public void setActiveLayer(iLayer newLayer) {
+      if ( newLayer == null ) {
           return;
       }
-      svp.getViewLayerTree().setLayerActive(_layer.getLayerName());
+      svp.getViewLayerTree().setLayerActive(newLayer.getLayerName());
   }
 
-  public SVSpatialLayer getActiveLayer() {
+  public iLayer getActiveLayer() {
       return this.svp.getViewLayerTree().getActiveLayer(this.getViewName());
   }
 
@@ -319,32 +320,32 @@ public class SpatialView {
       return this.svp.getViewLayerTree().getLayerCount(this.getViewName());
   }
 
-  public SVSpatialLayer getFirstLayer() {
+  public iLayer getFirstLayer() {
       if ( this.getLayerCount() == 0 )
           return null;
-      LinkedHashMap<String,SVSpatialLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
+      LinkedHashMap<String, iLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
       if ( layerList == null )
           return null;
-      Iterator<SVSpatialLayer> it = layerList.values().iterator();
-      SVSpatialLayer retLayer = null;
+      Iterator<iLayer> it = layerList.values().iterator();
+      iLayer retLayer = null;
       if (it.hasNext()) {
           retLayer = it.next();
       }
       return retLayer;
   }
   
-  public Map<String, SVSpatialLayer> getLayerList() {
+  public Map<String, iLayer> getLayerList() {
       return this.svp.getViewLayerTree().getLayers(this.getViewName());
   }
 
-  protected SVSpatialLayer getLayer(String _layerName) {
+  protected iLayer getLayer(String _layerName) {
       if ( this.svp.getViewLayerTree().getLayerCount(this.getViewName()) == 0 )
           return null;
-      SVSpatialLayer retLayer = null;
-      LinkedHashMap<String,SVSpatialLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
+      iLayer retLayer = null;
+      LinkedHashMap<String,iLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
       if ( layerList == null )
           return null;
-      Iterator<SVSpatialLayer> it = layerList.values().iterator();
+      Iterator<iLayer> it = layerList.values().iterator();
       while (it.hasNext()) {
           retLayer = it.next();
           if (retLayer.getLayerName().equalsIgnoreCase(_layerName)) {
@@ -373,10 +374,10 @@ LOGGER.debug("*** Removing " + _layerName);
         this.svp.getViewLayerTree().getViewNode(this.name).collapse();
   }        
 
-  public boolean addLayer(SVSpatialLayer _layer,
-                          boolean        _isDrawn,
-                          boolean        _isActive,
-                          boolean        _zoom) 
+  public boolean addLayer(iLayer  _layer,
+                          boolean _isDrawn,
+                          boolean _isActive,
+                          boolean _zoom) 
   {
       ViewLayerTree.ViewNode vNode = this.svp.getViewLayerTree().getViewNode(this.name);
       if ( vNode == null ) {
@@ -624,15 +625,15 @@ LOGGER.debug("*** Removing " + _layerName);
 
     /**
      * Set initialite world parameters for provided layer or, if null, all layers.
-     * @param _layer : Layer whose MBR is to be used to set extent of current view/map
+     * @param _zoomLayer : Layer whose MBR is to be used to set extent of current view/map
      *                 If _layer is null, all layers in view will be used to compute a new MBR
      */
-    protected boolean initializeMBR(SVSpatialLayer _layer) 
+    protected boolean initializeMBR(iLayer _zoomLayer) 
     {
         // get layer's MBR
         Envelope mbr = null;
-        if ( _layer != null ) {
-            mbr = _layer.getMBR();
+        if ( _zoomLayer != null ) {
+            mbr = _zoomLayer.getMBR();
         } else {
             mbr = this.getMBRForDrawLayers();   
         }
@@ -668,14 +669,14 @@ LOGGER.debug("*** Removing " + _layerName);
         Envelope returnMBR = new Envelope(this.getDefaultPrecision());
         // Find MBR from what is ticked for draw.
         //
-        SVSpatialLayer layer = null;
+        iLayer layer = null;
         if ( this.svp.getViewLayerTree().getLayerCount(this.getViewName()) > 0 ) 
         {
-            LinkedHashMap<String,SVSpatialLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
+            LinkedHashMap<String, iLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
             if ( layerList == null ) {
                 return null;
             }
-            Iterator<SVSpatialLayer> layerListIt = layerList.values().iterator();
+            Iterator<iLayer> layerListIt = layerList.values().iterator();
             while (layerListIt.hasNext())
             {
                 layer = layerListIt.next();
@@ -701,11 +702,11 @@ LOGGER.debug("*** Removing " + _layerName);
     public double getTolerance() 
     {
         double tolerance = Double.MAX_VALUE;
-        SVSpatialLayer layer = null;
-        LinkedHashMap<String,SVSpatialLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
+        iLayer layer = null;
+        LinkedHashMap<String,iLayer> layerList = this.svp.getViewLayerTree().getLayers(this.getViewName());
         if ( layerList == null )
             return tolerance;
-        Iterator<SVSpatialLayer> it = layerList.values().iterator();
+        Iterator<iLayer> it = layerList.values().iterator();
         while (it.hasNext()) 
         {
             layer = it.next();
@@ -795,7 +796,7 @@ LOGGER.debug("</toXML>");
                              this.SRIDBaseUnitType);
     }
     
-    public void saveToDisk(LinkedHashMap<String,SVSpatialLayer> _selected) {
+    public void saveToDisk(LinkedHashMap<String,iLayer> _selected) {
         String saveXML  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
                saveXML += "<View>" + this.toXML(true/*Don't save Active Layer Name*/) + "<Layers>";
         if ( _selected == null || _selected.size() == 0) {
@@ -818,7 +819,7 @@ LOGGER.debug("</toXML>");
                 LOGGER.info(propertyManager.getMsg("FILE_SAVE_THEME",wLayer.getLayerName()));
                 saveXML += "<Layer>" + wLayer.toXML() + "</Layer>";
             } else {
-                SVSpatialLayer sLayer = _selected.get(layerName);
+                SVSpatialLayer sLayer = (SVSpatialLayer) _selected.get(layerName);
                 LOGGER.info(propertyManager.getMsg("FILE_SAVE_THEME",sLayer.getLayerName()));
                 saveXML += "<Layer>" + sLayer.toXML() + "</Layer>";
             }

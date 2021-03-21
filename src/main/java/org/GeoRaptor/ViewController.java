@@ -48,9 +48,13 @@ public class ViewController implements Controller {
 	}
 	
 	@Override
-	public boolean handleEvent(IdeAction action, Context context) {
+	public boolean handleEvent(IdeAction action, Context context) 
+	{
 		int cmdId = action.getCommandId();
-	
+
+        DatabaseConnections dcs = DatabaseConnections.getInstance();
+        Connection         conn = dcs.getAnyOpenConnection();
+
 		if (cmdId == OPEN_MAP) {
 			if (checkConnection()) {			
                 SpatialViewPanel svp = SpatialViewPanel.getInstance();
@@ -59,30 +63,28 @@ public class ViewController implements Controller {
 				show("No active connection");
 			}
 		} else if(cmdId == MANAGE_ALL_METADATA) {
-			if (checkConnection()) {
-    			DatabaseConnections dcs = DatabaseConnections.getInstance();
-    			DatabaseConnection   dc = dcs.getConnectionAt(0);  
-    			Connection         conn = dc.getConnection();
-    			MetadataPanel        mp = MetadataPanel.getInstance();
-    			boolean status;
+			DatabaseConnection dc = dcs.getConnectionAt(0);  
+			if (conn!=null) {
+    			MetadataPanel mp = MetadataPanel.getInstance();
+    			boolean   status = false;
 				try {
 					status = mp.initialise(conn,
 							               dc.getCurrentSchema(),
-                                           null,null,
+                                           null, /* _objectName */
+                                           null, /* _columnName */
                                            dc.getUserName());
 	    			if (status == true) {
 	    				mp.setVisible(true);
 	    			}
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					show("Could not create Metadata Dialog (" + e.toString() + ")");
+					show("Could not create Metadata Dialog");
 				}
     			
 			} else {
-				show("No active connection");
+				show("No connection available");
 			}
 		} else if (cmdId == LOAD_SHAPEFILE) {
-			if (checkConnection()) {			
+			if (conn!=null) {
 				ShapefileLoad.getInstance().initialise();
 			} else {
 				show("No active connection");

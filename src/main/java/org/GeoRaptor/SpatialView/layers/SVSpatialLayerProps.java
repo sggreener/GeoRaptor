@@ -65,7 +65,7 @@ public class SVSpatialLayerProps extends JDialog {
     /**
      * Reference to data structure with properties
      */
-    protected SVSpatialLayer layer;
+    protected iLayer layer;
 
     /**
      * Get reference to single instance of GeoRaptor's Preferences
@@ -504,25 +504,25 @@ public class SVSpatialLayerProps extends JDialog {
         }
     }
 
-    public void initDialog(final SVSpatialLayer _layer) 
+    public void initDialog(final iLayer _iLayer) 
     {
-        this.layer = _layer;
+        this.layer = _iLayer;
        // tpProperties.setSelectedIndex(0);   
         SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     // We don't show certain fields when we are setting the properties of a graphic theme.
                     //
-                    boolean notGraphicLayer = ! (_layer instanceof SVGraphicLayer);
+                    boolean notGraphicLayer = ! (_iLayer instanceof SVGraphicLayer);
                     lblDBConnection.setEnabled(notGraphicLayer);
                     cmbConnections.setEnabled(notGraphicLayer);
                     btnConnection.setEnabled(notGraphicLayer);
                     geoColumnTF.setEnabled(notGraphicLayer);
                     btnGTypeDiscover.setEnabled(notGraphicLayer);
                     // SQL Panel
-                        lblFetchSize.setEnabled(notGraphicLayer && !(_layer instanceof SVQueryLayer));
-                         fetchSizeTF.setEnabled(notGraphicLayer && !(_layer instanceof SVQueryLayer));
-                    chkMinResolution.setEnabled(notGraphicLayer && !(_layer instanceof SVQueryLayer || _layer instanceof SVWorksheetLayer));
-                         btnSQLApply.setEnabled(notGraphicLayer && !(_layer instanceof SVQueryLayer));
+                        lblFetchSize.setEnabled(notGraphicLayer && !(_iLayer instanceof SVQueryLayer));
+                         fetchSizeTF.setEnabled(notGraphicLayer && !(_iLayer instanceof SVQueryLayer));
+                    chkMinResolution.setEnabled(notGraphicLayer && !(_iLayer instanceof SVQueryLayer || _iLayer instanceof SVWorksheetLayer));
+                         btnSQLApply.setEnabled(notGraphicLayer && !(_iLayer instanceof SVQueryLayer));
                                sqlTA.setEnabled(notGraphicLayer);
                          scrollSQLTA.setEnabled(notGraphicLayer);
                               pnlSQL.setEnabled(notGraphicLayer);
@@ -536,7 +536,7 @@ public class SVSpatialLayerProps extends JDialog {
                     // SQL Panel
                         lblFetchSize.setVisible(notGraphicLayer);
                          fetchSizeTF.setVisible(notGraphicLayer);
-                    chkMinResolution.setVisible(notGraphicLayer && !(_layer instanceof SVQueryLayer || _layer instanceof SVWorksheetLayer));
+                    chkMinResolution.setVisible(notGraphicLayer && !(_iLayer instanceof SVQueryLayer || _iLayer instanceof SVWorksheetLayer));
                          btnSQLApply.setVisible(notGraphicLayer);
                                sqlTA.setVisible(notGraphicLayer);
                          scrollSQLTA.setVisible(notGraphicLayer);
@@ -544,13 +544,13 @@ public class SVSpatialLayerProps extends JDialog {
 
                     // If SVQueryLayer we keep the relevant tab, otherwise we remove it
                     for (int i=0;i < pnlProperties.getTabCount(); i++ ) {
-                        if ( pnlProperties.getTitleAt(i).equalsIgnoreCase("Query Layer") && ! ( _layer instanceof SVQueryLayer ) ) {
+                        if ( pnlProperties.getTitleAt(i).equalsIgnoreCase("Query Layer") && ! ( _iLayer instanceof SVQueryLayer ) ) {
                             pnlProperties.remove(i);
                             break;
                         } 
                     }
                     for (int i=0;i < pnlProperties.getTabCount(); i++ ) {
-                        if ( pnlProperties.getTitleAt(i).equalsIgnoreCase("SQL") && ( _layer instanceof SVGraphicLayer ) ) {
+                        if ( pnlProperties.getTitleAt(i).equalsIgnoreCase("SQL") && ( _iLayer instanceof SVGraphicLayer ) ) {
                             pnlProperties.remove(i);
                             break;
                         }
@@ -574,8 +574,8 @@ public class SVSpatialLayerProps extends JDialog {
                     }
                     cmbConnections.setSelectedItem(currentDisplayName);
                     
-                    nameInputTF.setText(_layer.getVisibleName());
-                    geoColumnTF.setText(_layer.getGeoColumn());
+                    nameInputTF.setText(_iLayer.getVisibleName());
+                    geoColumnTF.setText(_iLayer.getGeoColumn());
                     InputVerifier verifyGeoColumn = new InputVerifier() {
                         public boolean verify(JComponent comp) {
                             boolean returnValue = true;
@@ -593,8 +593,8 @@ public class SVSpatialLayerProps extends JDialog {
                         }
                     };
                     geoColumnTF.setInputVerifier(verifyGeoColumn);
-                    lblToleranceValue.setText(formatOrd(_layer.getTolerance(),_layer.getPrecision(false)));
-                    tfPrecisionValue.setText(String.valueOf(_layer.getPrecision(false)));
+                    lblToleranceValue.setText(formatOrd(_iLayer.getTolerance(),_iLayer.getPrecision(false)));
+                    tfPrecisionValue.setText(String.valueOf(_iLayer.getPrecision(false)));
                     cmbSRIDType.setModel(Constants.getSRIDTypeCombo());
                     if (layer.getSRIDType() == Constants.SRID_TYPE.UNKNOWN) {
                         discoverSetSRIDType();
@@ -610,7 +610,7 @@ public class SVSpatialLayerProps extends JDialog {
 
                     cmbGTypes.setModel(Constants.getGeometryTypesCombo());
 
-                    String geometryType = _layer.getGeometryType().toString();
+                    String geometryType = _iLayer.getGeometryType().toString();
                     for (int i = 0; i < cmbGTypes.getItemCount(); i++) {
                         if (cmbGTypes.getItemAt(i).toString().equals(geometryType)) {
                             cmbGTypes.setSelectedIndex(i);
@@ -619,46 +619,46 @@ public class SVSpatialLayerProps extends JDialog {
                     }
                     cmbGTypes.setMaximumRowCount(cmbGTypes.getItemCount());
 
-                    sridTF.setText(((_layer.getSRID() != null) ?
-                                    _layer.getSRID() : "NULL"));
+                    sridTF.setText( ( (_iLayer.getSRID() != null) ? _iLayer.getSRID() : "NULL") );
+                    
                     // MBR
                     //
-                    Envelope mbr = _layer.getMBR();
-LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + " layer precision " + _layer.getPrecision(true) + " format.minX=" + formatOrd(mbr.minX, _layer.getPrecision(true)));
-                    lblLLX.setText(formatOrd(mbr.minX, _layer.getPrecision(true)));
-                    lblLLY.setText(formatOrd(mbr.minY, _layer.getPrecision(true)));
-                    lblURX.setText(formatOrd(mbr.maxX, _layer.getPrecision(true)));
-                    lblURY.setText(formatOrd(mbr.maxY, _layer.getPrecision(true)));
-                    pnlMBR.setBackground(_layer.getSpatialView().getMapPanel().getMapBackground());
+                    Envelope mbr = _iLayer.getMBR();
+LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + " layer precision " + _iLayer.getPrecision(true) + " format.minX=" + formatOrd(mbr.minX, _iLayer.getPrecision(true)));
+                    lblLLX.setText(formatOrd(mbr.minX, _iLayer.getPrecision(true)));
+                    lblLLY.setText(formatOrd(mbr.minY, _iLayer.getPrecision(true)));
+                    lblURX.setText(formatOrd(mbr.maxX, _iLayer.getPrecision(true)));
+                    lblURY.setText(formatOrd(mbr.maxY, _iLayer.getPrecision(true)));
+                    pnlMBR.setBackground(_iLayer.getSpatialView().getMapPanel().getMapBackground());
                     pnlMBR.setToolTipText(TT_LAYER_MBR);
                     if (notGraphicLayer) {
                          // result set fetch size
                         //
-                        fetchSizeTF.setText(String.valueOf(_layer.getResultFetchSize()));
+                        fetchSizeTF.setText(String.valueOf(_iLayer.getResultFetchSize()));
  
                         // Min_resolution Pixel filter
                         //
-                        if ( _layer.getGeometryType().toString().toUpperCase().contains(Constants.GEOMETRY_TYPES.POINT.toString().toUpperCase()) ) {
+                        if ( _iLayer.getGeometryType().toString().toUpperCase().contains(Constants.GEOMETRY_TYPES.POINT.toString().toUpperCase()) ) {
                             chkMinResolution.setSelected(false);
                             chkMinResolution.setEnabled(false);
                         } else {
-                            chkMinResolution.setSelected(_layer.getMinResolution());
+                            chkMinResolution.setSelected(_iLayer.getMinResolution());
                         }
                         
                         // SQL sentence
                         //
-                        if ( _layer instanceof SVQueryLayer) {
-                            sqlTA.setText(((SVQueryLayer)_layer).getSQL());
-                        } else if ( _layer instanceof SVWorksheetLayer) {
-                            sqlTA.setText(((SVWorksheetLayer)_layer).getSQL());
-                        } else if ( _layer instanceof SVGraphicLayer) {
+                        if ( _iLayer instanceof SVQueryLayer) {
+                            sqlTA.setText(((SVQueryLayer)_iLayer).getSQL());
+                        } else if ( _iLayer instanceof SVWorksheetLayer) {
+                            sqlTA.setText(((SVWorksheetLayer)_iLayer).getSQL());
+                        } else if ( _iLayer instanceof SVGraphicLayer) {
                             sqlTA.setText("");
                         } else /* SVSpatialLayer */ {
-                            String initSQL = _layer.getInitSQL(_layer.getGeoColumn());
-                            if (_layer.getSQL().equalsIgnoreCase(initSQL))
+                            String initSQL = _iLayer.getInitSQL(_iLayer.getGeoColumn());
+                            if (_iLayer.getSQL().equalsIgnoreCase(initSQL))
                                 sqlTA.setText(initSQL);
                             else
-                                sqlTA.setText(_layer.getSQL());
+                                sqlTA.setText(_iLayer.getSQL());
                         }
                     }
 
@@ -666,27 +666,27 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     //
 
                     // Label
-                    labelAttributes = _layer.getStyling().getLabelAttributes();
+                    labelAttributes = _iLayer.getStyling().getLabelAttributes();
                     setLabelStyling((SimpleAttributeSet)labelAttributes);
-                    labelPosition   = _layer.getStyling().getLabelPosition();
+                    labelPosition   = _iLayer.getStyling().getLabelPosition();
                     lblPosition.setText(propertyManager.getMsg("MARK_POSITION", labelPosition.toString()));
-                    labelOffsetDistance     = _layer.getStyling().getLabelOffset();
+                    labelOffsetDistance     = _iLayer.getStyling().getLabelOffset();
                     lblOffset.setText(propertyManager.getMsg("MARK_OFFSET",String.valueOf(labelOffsetDistance)));
-                    tfLoScale.setText(String.valueOf(_layer.getStyling().getTextLoScale()));
-                    tfHiScale.setText(String.valueOf(_layer.getStyling().getTextHiScale()));
+                    tfLoScale.setText(String.valueOf(_iLayer.getStyling().getTextLoScale()));
+                    tfHiScale.setText(String.valueOf(_iLayer.getStyling().getTextHiScale()));
 
                     // Mark
-                    markLabelAttributes = _layer.getStyling().getMarkLabelAttributes();
+                    markLabelAttributes = _iLayer.getStyling().getMarkLabelAttributes();
                     setMarkLabelStyling((SimpleAttributeSet)markLabelAttributes);
-                    markLabelPosition   = _layer.getStyling().getMarkLabelPosition();
+                    markLabelPosition   = _iLayer.getStyling().getMarkLabelPosition();
                     lblMarkPosition.setText(propertyManager.getMsg("MARK_POSITION", markLabelPosition.toString()));
-                    markOffsetDistance     = _layer.getStyling().getMarkLabelOffset();
+                    markOffsetDistance     = _iLayer.getStyling().getMarkLabelOffset();
                     lblMarkOffset.setText(propertyManager.getMsg("MARK_OFFSET", String.valueOf(markOffsetDistance)));
 
                     // Geometry Label
                     //
                     cmbGeometryLabelPosition.setModel(Constants.getGeometryLabelPositionCombo());
-                    String geometryLabelPoint = _layer.getStyling().getGeometryLabelPosition().toString();
+                    String geometryLabelPoint = _iLayer.getStyling().getGeometryLabelPosition().toString();
                     for (int i = 0; i < cmbGeometryLabelPosition.getItemCount(); i++) {
                         if (cmbGeometryLabelPosition.getItemAt(i).toString().equals(geometryLabelPoint)) {
                             cmbGeometryLabelPosition.setSelectedIndex(i);
@@ -700,31 +700,31 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     cmbPointColorColumns.setEnabled(false);
                     pointColorButton.setEnabled(false);
                     pointColorButton.setBackground(null);
-                    if (_layer.getStyling().getPointColorType() == Styling.STYLING_TYPE.CONSTANT) {
+                    if (_iLayer.getStyling().getPointColorType() == Styling.STYLING_TYPE.CONSTANT) {
                         rbPointColorSolid.setSelected(true);
-                        pointColor = _layer.getStyling().getPointColor(null);
+                        pointColor = _iLayer.getStyling().getPointColor(null);
                         pointColorButton.setBackground(pointColor);
                         pointColorButton.setForeground(Colours.highContrast(pointColor));
                         pointColorButton.setEnabled(true);
-                    } else if (_layer.getStyling().getPointColorType() == Styling.STYLING_TYPE.RANDOM) {
+                    } else if (_iLayer.getStyling().getPointColorType() == Styling.STYLING_TYPE.RANDOM) {
                         rbPointColorRandom.setSelected(true);
-                    } else if (_layer.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
+                    } else if (_iLayer.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
                         rbPointColorColumn.setSelected(true);
                         cmbPointColorColumns.setEnabled(true);
                     }
                     
-                    pointSizeTF.setText(String.valueOf(_layer.getStyling().getPointSize(4)));
-                    sldrPointSize.setValue(_layer.getStyling().getPointSize(4));
+                    pointSizeTF.setText(String.valueOf(_iLayer.getStyling().getPointSize(4)));
+                    sldrPointSize.setValue(_iLayer.getStyling().getPointSize(4));
                     
-                    rbPointSizeFixed.setSelected(_layer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
-                    pointSizeTF.setEnabled(_layer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
-                    sldrPointSize.setEnabled(_layer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
-                    rbPointSizeColumn.setSelected(_layer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.COLUMN);
-                    cmbPointSizeColumns.setEnabled(_layer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.COLUMN);
+                    rbPointSizeFixed.setSelected(_iLayer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
+                    pointSizeTF.setEnabled(_iLayer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
+                    sldrPointSize.setEnabled(_iLayer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.CONSTANT);
+                    rbPointSizeColumn.setSelected(_iLayer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.COLUMN);
+                    cmbPointSizeColumns.setEnabled(_iLayer.getStyling().getPointSizeType() == Styling.STYLING_TYPE.COLUMN);
                     
                     cmbPointTypes.setModel(PointMarker.getComboBoxModel());
                     cmbPointTypes.setRenderer(PointMarker.getPointTypeRenderer());
-                    String displayPointType = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_layer.getStyling().getPointType()));
+                    String displayPointType = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_iLayer.getStyling().getPointType()));
                     for (int i = 0; i < cmbPointTypes.getItemCount(); i++) {
                         if (cmbPointTypes.getItemAt(i).toString().equals(displayPointType)) {
                             cmbPointTypes.setSelectedIndex(i);
@@ -738,32 +738,32 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     cmbStrokeColorColumns.setEnabled(false);
                     strokeColorButton.setEnabled(false);
                     strokeColorButton.setBackground(null);
-                    if (_layer.getStyling().getLineColorType() == Styling.STYLING_TYPE.CONSTANT) {
+                    if (_iLayer.getStyling().getLineColorType() == Styling.STYLING_TYPE.CONSTANT) {
                         rbStrokeColorSolid.setSelected(true);
-                        lineColor = _layer.getStyling().getLineColor(null);
+                        lineColor = _iLayer.getStyling().getLineColor(null);
                         strokeColorButton.setBackground(lineColor);
                         strokeColorButton.setForeground(Colours.highContrast(lineColor));
                         strokeColorButton.setEnabled(true);
-                    } else if (_layer.getStyling().getLineColorType() == Styling.STYLING_TYPE.RANDOM) {
+                    } else if (_iLayer.getStyling().getLineColorType() == Styling.STYLING_TYPE.RANDOM) {
                         rbStrokeColorRandom.setSelected(true);
-                    } else if (_layer.getStyling().getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
+                    } else if (_iLayer.getStyling().getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
                         rbStrokeColorColumn.setSelected(true);
                         cmbStrokeColorColumns.setEnabled(true);
                     }
 
-                    sldrStrokeTransLevel.setValue(100 - _layer.getStyling().getLineTransLevelAsPercent());
+                    sldrStrokeTransLevel.setValue(100 - _iLayer.getStyling().getLineTransLevelAsPercent());
                     lblStrokeTransLevel.setText(String.format(LABEL_TRANSPARENCY + "%3d",
-                                                              100 - _layer.getStyling().getLineTransLevelAsPercent()));
+                                                              100 - _iLayer.getStyling().getLineTransLevelAsPercent()));
                     sldrStrokeTransLevel.setToolTipText(TT_VALUE_0_1);
 
-                    lineWidthTF.setText(String.valueOf(_layer.getStyling().getLineWidth()));
-                    sldrLineWidth.setValue(_layer.getStyling().getLineWidth());
-                    lineColor = _layer.getStyling().getLineColor(null); 
+                    lineWidthTF.setText(String.valueOf(_iLayer.getStyling().getLineWidth()));
+                    sldrLineWidth.setValue(_iLayer.getStyling().getLineWidth());
+                    lineColor = _iLayer.getStyling().getLineColor(null); 
                     strokeColorButton.setBackground(lineColor);
                     strokeColorButton.setForeground(Colours.highContrast(lineColor));
                     cmbLineStyles.setModel(LineStyle.getComboBoxModel());
                     cmbLineStyles.setRenderer(LineStyle.getLineStyleRenderer());
-                    String displayLineStroke = Strings.TitleCase(LineStyle.getLineStyleAsString(_layer.getStyling().getLineStrokeType()));
+                    String displayLineStroke = Strings.TitleCase(LineStyle.getLineStyleAsString(_iLayer.getStyling().getLineStrokeType()));
                     for (int i = 0; i < cmbLineStyles.getItemCount(); i++) {
                         if (cmbLineStyles.getItemAt(i).toString().equals(displayLineStroke)) {
                             cmbLineStyles.setSelectedIndex(i);
@@ -772,7 +772,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     }
                     cmbMarkGeoStart.setModel(PointMarker.getComboBoxModel());
                     cmbMarkGeoStart.setRenderer(PointMarker.getPointTypeRenderer());
-                    String vertexMarker = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_layer.getStyling().getMarkGeoStart()));
+                    String vertexMarker = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_iLayer.getStyling().getMarkGeoStart()));
                     for (int i = 0; i < cmbMarkGeoStart.getItemCount(); i++) {
                         if (cmbMarkGeoStart.getItemAt(i).toString().equals(vertexMarker)) {
                             cmbMarkGeoStart.setSelectedIndex(i);
@@ -781,7 +781,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     }
                     cmbMarkGeoPoints.setModel(PointMarker.getComboBoxModel());
                     cmbMarkGeoPoints.setRenderer(PointMarker.getPointTypeRenderer());
-                    vertexMarker = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_layer.getStyling().getMarkGeoPoints()));
+                    vertexMarker = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_iLayer.getStyling().getMarkGeoPoints()));
                     for (int i = 0; i < cmbMarkGeoPoints.getItemCount(); i++) {
                         if (cmbMarkGeoPoints.getItemAt(i).toString().equals(vertexMarker)) {
                             cmbMarkGeoPoints.setSelectedIndex(i);
@@ -791,7 +791,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     
                     cmbMarkSegment.setModel(Constants.getSegmentLabelCombo());
                     cmbMarkSegment.setSelectedIndex(0);
-                    String segmentMark = _layer.getStyling().getMarkSegment().toString();
+                    String segmentMark = _iLayer.getStyling().getMarkSegment().toString();
                     for (int i = 0; i < cmbMarkSegment.getItemCount(); i++) {
                         if (cmbMarkSegment.getItemAt(i).toString().equals(segmentMark)) {
                             cmbMarkSegment.setSelectedIndex(i);
@@ -800,7 +800,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     }
                                         
                     cmbVertexLabelContent.setModel(Constants.getVertexLabelCombo());
-                    String vertexLabel = Constants.getVertexLabelType(_layer.getStyling().getMarkVertex());
+                    String vertexLabel = Constants.getVertexLabelType(_iLayer.getStyling().getMarkVertex());
                     for (int i = 0; i < cmbVertexLabelContent.getItemCount(); i++) {
                         if (cmbVertexLabelContent.getItemAt(i).toString().equals(vertexLabel)) {
                             cmbVertexLabelContent.setSelectedIndex(i);
@@ -810,7 +810,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                     
                     cmbSegmentArrows.setModel(Constants.getSegmentArrowsType());
                     cmbSegmentArrows.setSelectedIndex(0);
-                    String segmentArrows = _layer.getStyling().getSegmentArrow().toString();
+                    String segmentArrows = _iLayer.getStyling().getSegmentArrow().toString();
                     for (int i = 0; i < cmbSegmentArrows.getItemCount(); i++) {
                         if (cmbSegmentArrows.getItemAt(i).toString().replace(" ","_").toUpperCase().equals(segmentArrows)) {
                             cmbSegmentArrows.setSelectedIndex(i);
@@ -818,56 +818,56 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                         }
                     }
 
-                    cbOrientVertexLabel.setSelected(_layer.getStyling().isMarkOriented());
+                    cbOrientVertexLabel.setSelected(_iLayer.getStyling().isMarkOriented());
                     
                     // shade properties
                     //
                     cmbShadeColumns.setEnabled(false);
                     fixShadeColorB.setEnabled(false);
                     fixShadeColorB.setBackground(null);
-                    if (_layer.getStyling().getShadeType() == Styling.STYLING_TYPE.NONE) {
+                    if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.NONE) {
                         noShadeRB.setSelected(true);
-                    } else if (_layer.getStyling().getShadeType() == Styling.STYLING_TYPE.CONSTANT) {
+                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.CONSTANT) {
                         fixShadeColorRB.setSelected(true);
-                        shadeColor = _layer.getStyling().getShadeColor(Colours.getRGBa(Color.BLACK));
+                        shadeColor = _iLayer.getStyling().getShadeColor(Colours.getRGBa(Color.BLACK));
                         fixShadeColorB.setBackground(shadeColor);
                         fixShadeColorB.setForeground(Colours.highContrast(shadeColor));
                         fixShadeColorB.setEnabled(true);
-                    } else if (_layer.getStyling().getShadeType() == Styling.STYLING_TYPE.RANDOM) {
+                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.RANDOM) {
                         randomShadeRB.setSelected(true);
-                    } else if (_layer.getStyling().getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.COLUMN) {
                         columnShadeColorRB.setSelected(true);
                         cmbShadeColumns.setEnabled(true);
                     }
 
-                    sldrShadeTransLevel.setValue(100 - _layer.getStyling().getShadeTransLevelAsPercent());
+                    sldrShadeTransLevel.setValue(100 - _iLayer.getStyling().getShadeTransLevelAsPercent());
                     lblShadeTransLevel.setText(String.format(LABEL_TRANSPARENCY + "%3d",
-                                                             100 - _layer.getStyling().getShadeTransLevelAsPercent()));
+                                                             100 - _iLayer.getStyling().getShadeTransLevelAsPercent()));
                     sldrShadeTransLevel.setToolTipText(TT_VALUE_0_1);
 
                     // selection properties
                     //
-                    tfSelectionPointSize.setText(String.valueOf(_layer.getStyling().getSelectionPointSize()));
-                    sldrSelectionPointSize.setValue(_layer.getStyling().getSelectionPointSize());
-                    tfSelectionLineWidth.setText(String.valueOf(_layer.getStyling().getSelectionLineWidth()));
-                    sldrSelectionLineWidth.setValue(_layer.getStyling().getSelectionLineWidth());
+                    tfSelectionPointSize.setText(String.valueOf(_iLayer.getStyling().getSelectionPointSize()));
+                    sldrSelectionPointSize.setValue(_iLayer.getStyling().getSelectionPointSize());
+                    tfSelectionLineWidth.setText(String.valueOf(_iLayer.getStyling().getSelectionLineWidth()));
+                    sldrSelectionLineWidth.setValue(_iLayer.getStyling().getSelectionLineWidth());
                     cmbSelectionLineStyles.setModel(LineStyle.getComboBoxModel());
                     cmbSelectionLineStyles.setRenderer(LineStyle.getLineStyleRenderer());
-                    String displaySelectionLineStyle = Strings.TitleCase(LineStyle.getLineStyleAsString(_layer.getStyling().getLineStrokeType()));
+                    String displaySelectionLineStyle = Strings.TitleCase(LineStyle.getLineStyleAsString(_iLayer.getStyling().getLineStrokeType()));
                     for (int i = 0; i < cmbSelectionLineStyles.getItemCount(); i++) {
                         if (cmbSelectionLineStyles.getItemAt(i).toString().equals(displaySelectionLineStyle)) {
                             cmbSelectionLineStyles.setSelectedIndex(i);
                             break;
                         }
                     }
-                    selectShadeColor = _layer.getStyling().getSelectionColor();
-                    cbSelectionActive.setSelected(_layer.getStyling().isSelectionActive());
-                    btnSelectionColor.setBackground(_layer.getStyling().getSelectionColor());
-                    btnSelectionColor.setForeground(Colours.highContrast(_layer.getStyling().getSelectionColor()));
+                    selectShadeColor = _iLayer.getStyling().getSelectionColor();
+                    cbSelectionActive.setSelected(_iLayer.getStyling().isSelectionActive());
+                    btnSelectionColor.setBackground(_iLayer.getStyling().getSelectionColor());
+                    btnSelectionColor.setForeground(Colours.highContrast(_iLayer.getStyling().getSelectionColor()));
                     
-                    sldrSelectionTransLevel.setValue(100 - _layer.getStyling().getSelectionShadeTransLevelAsPercent());
+                    sldrSelectionTransLevel.setValue(100 - _iLayer.getStyling().getSelectionShadeTransLevelAsPercent());
                     lblSelectionTransLevel.setText(String.format(LABEL_TRANSPARENCY + "%3d",
-                                                                 100 - _layer.getStyling().getSelectionShadeTransLevelAsPercent()));
+                                                                 100 - _iLayer.getStyling().getSelectionShadeTransLevelAsPercent()));
                     sldrSelectionTransLevel.setToolTipText(TT_VALUE_0_1);
 
                     // Label stuff
@@ -899,8 +899,8 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
 
                         // Get labelColumnsAndTypes only if SQL filled in and not SVWorksheetLayer
                         //
-                        if ( ! (Strings.isEmpty(sqlTA.getText()) && _layer instanceof SVWorksheetLayer ) ) {
-                            labelColumnsAndTypes = _layer.getColumnsAndTypes(true, /* Only numbers strings etc */
+                        if ( ! (Strings.isEmpty(sqlTA.getText()) && _iLayer instanceof SVWorksheetLayer ) ) {
+                            labelColumnsAndTypes = _iLayer.getColumnsAndTypes(true, /* Only numbers strings etc */
                                                                              true) /* full DataType wanted */;
                             if (labelColumnsAndTypes != null &&
                                 labelColumnsAndTypes.size() > 0) {
@@ -936,10 +936,10 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                             // Now set label columns comboBox to right column
                             //
                             cmbLabelColumns.setSelectedIndex(0);
-                            if (!Strings.isEmpty(_layer.getStyling().getLabelColumn())) {
+                            if (!Strings.isEmpty(_iLayer.getStyling().getLabelColumn())) {
                                 for (int i = 0;
                                     i < cmbLabelColumns.getItemCount(); i++) {
-                                    if (cmbLabelColumns.getItemAt(i).toString().equals(_layer.getStyling().getLabelColumn())) {
+                                    if (cmbLabelColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getLabelColumn())) {
                                         cmbLabelColumns.setSelectedIndex(i);
                                         break;
                                     }
@@ -949,38 +949,38 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                             cmbLabelColumns.setEnabled(true);
 
                             // Apply styling
-                            setLabelStyling(_layer.getStyling().getLabelAttributes());
-                            setMarkLabelStyling(_layer.getStyling().getMarkLabelAttributes());
+                            setLabelStyling(_iLayer.getStyling().getLabelAttributes());
+                            setMarkLabelStyling(_iLayer.getStyling().getMarkLabelAttributes());
 
                             // Now set rotation columns comboBox to right column
                             //
-                            if (Strings.isEmpty(_layer.getStyling().getRotationColumn()))
+                            if (Strings.isEmpty(_iLayer.getStyling().getRotationColumn()))
                                 cmbRotationColumns.setSelectedIndex(0);
                             else {
                                 for (int i = 0;
                                      i < cmbRotationColumns.getItemCount();
                                      i++) {
-                                    if (cmbRotationColumns.getItemAt(i).toString().equals(_layer.getStyling().getRotationColumn())) {
+                                    if (cmbRotationColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getRotationColumn())) {
                                         cmbRotationColumns.setSelectedIndex(i);
                                         break;
                                     }
                                 }
                             }
                             cmbRotationColumns.setMaximumRowCount(10);
-                            if (_layer.getStyling().getRotationValue() ==
+                            if (_iLayer.getStyling().getRotationValue() ==
                                 Constants.ROTATION_VALUES.DEGREES)
                                 rbDegrees.setSelected(true);
                             else
                                 rbRadians.setSelected(true);
-                            setRotationTarget(_layer.getStyling().getRotationTarget().toString());
+                            setRotationTarget(_iLayer.getStyling().getRotationTarget().toString());
 
-                            if (Strings.isEmpty(_layer.getStyling().getPointSizeColumn()))
+                            if (Strings.isEmpty(_iLayer.getStyling().getPointSizeColumn()))
                                 cmbPointSizeColumns.setSelectedIndex(0);
                             else {
                                 for (int i = 0;
                                      i < cmbPointSizeColumns.getItemCount();
                                      i++) {
-                                    if (cmbPointSizeColumns.getItemAt(i).toString().equals(_layer.getStyling().getPointSizeColumn())) {
+                                    if (cmbPointSizeColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getPointSizeColumn())) {
                                         cmbPointSizeColumns.setSelectedIndex(i);
                                         break;
                                     }
@@ -991,12 +991,12 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
 
                             // Now set shade columns comboBox to right column
                             //
-                            if (Strings.isEmpty(_layer.getStyling().getShadeColumn()))
+                            if (Strings.isEmpty(_iLayer.getStyling().getShadeColumn()))
                                 cmbShadeColumns.setSelectedIndex(0);
                             else {
                                 for (int i = 0;
                                      i < cmbShadeColumns.getItemCount(); i++) {
-                                    if (cmbShadeColumns.getItemAt(i).toString().equals(_layer.getStyling().getShadeColumn())) {
+                                    if (cmbShadeColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getShadeColumn())) {
                                         cmbShadeColumns.setSelectedIndex(i);
                                         break;
                                     }
@@ -1007,12 +1007,12 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                             
                             // Now set point and line color columns comboBox to right column
                             //
-                            if (Strings.isEmpty(_layer.getStyling().getPointColorColumn()))
+                            if (Strings.isEmpty(_iLayer.getStyling().getPointColorColumn()))
                                 cmbPointColorColumns.setSelectedIndex(0);
                             else {
                                 for (int i = 0;
                                      i < cmbPointColorColumns.getItemCount(); i++) {
-                                    if (cmbPointColorColumns.getItemAt(i).toString().equals(_layer.getStyling().getPointColorColumn())) {
+                                    if (cmbPointColorColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getPointColorColumn())) {
                                         cmbPointColorColumns.setSelectedIndex(i);
                                         break;
                                     }
@@ -1021,12 +1021,12 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                             cmbPointColorColumns.setMaximumRowCount(10);
                             cmbPointColorColumns.setEnabled(rbPointColorColumn.isSelected());
 
-                            if (Strings.isEmpty(_layer.getStyling().getLineColorColumn()))
+                            if (Strings.isEmpty(_iLayer.getStyling().getLineColorColumn()))
                                 cmbStrokeColorColumns.setSelectedIndex(0);
                             else {
                                 for (int i = 0;
                                      i < cmbStrokeColorColumns.getItemCount(); i++) {
-                                    if (cmbStrokeColorColumns.getItemAt(i).toString().equals(_layer.getStyling().getLineColorColumn())) {
+                                    if (cmbStrokeColorColumns.getItemAt(i).toString().equals(_iLayer.getStyling().getLineColorColumn())) {
                                         cmbStrokeColorColumns.setSelectedIndex(i);
                                         break;
                                     }
@@ -1040,13 +1040,13 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                         cmbRotationColumns.setEnabled(cmbRotationColumns.getItemCount() > 1);
                         for (int i = 0; i < cmbRotationTarget.getItemCount();
                              i++) {
-                            if (cmbRotationTarget.getItemAt(i).toString().toUpperCase().equals(_layer.getStyling().getRotationTarget().toString().toUpperCase())) {
+                            if (cmbRotationTarget.getItemAt(i).toString().toUpperCase().equals(_iLayer.getStyling().getRotationTarget().toString().toUpperCase())) {
                                 cmbRotationTarget.setSelectedIndex(i);
                                 break;
                             }
                         }
                         // can we set the right tab to the foreground based on geometry type?
-                        switch ( _layer.getGeometryType() ) {
+                        switch ( _iLayer.getGeometryType() ) {
                         case POINT        :                       
                         case MULTIPOINT   : pnlProperties.setSelectedComponent(pnlPoint);
                                             break;
@@ -1063,8 +1063,8 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                         default           : break;
                         }
 
-                        if (_layer instanceof SVQueryLayer) {
-                            SVQueryLayer qLayer = (SVQueryLayer)_layer;
+                        if (_iLayer instanceof SVQueryLayer) {
+                            SVQueryLayer qLayer = (SVQueryLayer)_iLayer;
                             tfQueryBufferDistance.setText(String.valueOf(qLayer.getBufferDistance()));
                             cbQueryBufferGeometry.setSelected(qLayer.isBuffered());
                             cbQueryShowQueryGeometry.setSelected(qLayer.isDrawQueryGeometry());
@@ -1098,7 +1098,7 @@ LOGGER.debug("SVSpatialLayerProps.InitDialog _layer.getMBR()="+mbr.toString() + 
                         }
                     } catch (SQLException e) {
                     }
-                    if ( _layer instanceof SVWorksheetLayer ) {
+                    if ( _iLayer instanceof SVWorksheetLayer ) {
                         pnlProperties.setSelectedIndex(pnlProperties.indexOfTab("SQL"));
                     }
                     // Now set new size

@@ -99,6 +99,7 @@ import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
@@ -156,7 +157,7 @@ public class ViewLayerTree
                                         TreeViewPlus};
     private expansionTypes expansionType = expansionTypes.TreeViewPlus;
 
-    protected SVSpatialLayer                queryTargetLayer = null;
+    protected iLayer                queryTargetLayer = null;
     protected Constants.SDO_OPERATORS currentSpatialOperator = Constants.SDO_OPERATORS.RELATE;
     
     // For use with deleting nodes ... I can't get the standard methods to work
@@ -375,11 +376,11 @@ public class ViewLayerTree
       }      
     }
                                          
-    private void setQueryTarget(SVSpatialLayer _sLayer) {
+    private void setQueryTarget(iLayer _sLayer) {
       this.queryTargetLayer = _sLayer;
     }
     
-    public SVSpatialLayer getQueryTarget() {
+    public iLayer getQueryTarget() {
       return this.queryTargetLayer;
     }
     
@@ -817,7 +818,7 @@ public class ViewLayerTree
       return null;
     }
 
-    public SVSpatialLayer getActiveLayer(String _viewName) {
+    public iLayer getActiveLayer(String _viewName) {
       // find view object by name
       DefaultMutableTreeNode vNode = getNodeByName(_viewName);
       if ( vNode instanceof ViewNode ) {
@@ -840,8 +841,8 @@ public class ViewLayerTree
      * @param _layer
      * @param _numFeats
      */
-    public void refreshLayerCount(SVSpatialLayer _layer,
-                                  long           _numFeats) 
+    public void refreshLayerCount(iLayer _layer,
+                                  long   _numFeats) 
     {
         try {
 LOGGER.debug("refreshLayerCount("+_layer.getLayerName()+" " + _numFeats);
@@ -863,7 +864,7 @@ LOGGER.debug("setting lNode to "+String.format("(%d) %s",_numFeats,_layer.getVis
 LOGGER.debug("End refreshLayerCount " + _layer.getLayerName());
     }
 
-    public void removeLayerCount(SVSpatialLayer _layer) {
+    public void removeLayerCount(iLayer _layer) {
 LOGGER.debug("start removeLayerCount " + _layer.getLayerName());
         // find layer by name
         DefaultMutableTreeNode node = getNodeByName(_layer.getLayerName());
@@ -1291,7 +1292,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
       return lhm;
     }
 
-    public LinkedHashMap<String,SVSpatialLayer> getLayers(String _viewName) 
+    public LinkedHashMap<String,iLayer> getLayers(String _viewName) 
     {
         // find View
         DefaultMutableTreeNode vNode = getNodeByName(_viewName);
@@ -1564,7 +1565,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
 				private static final long serialVersionUID = 1L;
 
 		public void actionPerformed(ActionEvent e) {
-              LinkedHashMap<String,SVSpatialLayer> selectedLayers = getSelectedLayers(_viewNode);
+              LinkedHashMap<String,iLayer> selectedLayers = getSelectedLayers(_viewNode);
               if ( selectedLayers == null || selectedLayers.size() == 0) {
                   selectedLayers = _viewNode.getLayers();
               } 
@@ -1608,7 +1609,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
         return popup;
     }
 
-    private LinkedHashMap<String,SVSpatialLayer> getSelectedLayers(ViewNode _vNode) 
+    private LinkedHashMap<String,iLayer> getSelectedLayers(ViewNode _vNode) 
     {
         int selectedNodeCount = getSelectionModel().getSelectionCount();
         if ( selectedNodeCount == 0 || _vNode == null || _vNode.getChildCount()==0 ) {
@@ -1616,7 +1617,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
         }
         // Process
         //
-        LinkedHashMap<String,SVSpatialLayer> lhm = new LinkedHashMap<String,SVSpatialLayer>(_vNode.getChildCount());
+        LinkedHashMap<String,iLayer> lhm = new LinkedHashMap<String,iLayer>(_vNode.getChildCount());
         DefaultMutableTreeNode nodeToSave = null;
         LayerNode lNode = null;
         TreePath[] nodes = getSelectionModel().getSelectionPaths();
@@ -1635,7 +1636,7 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
                 }
             }
         }
-        return new LinkedHashMap<String,SVSpatialLayer>(lhm);
+        return new LinkedHashMap<String,iLayer>(lhm);
     }
     
     private JPopupMenu getLayerMenu (final ViewNode  _view,
@@ -2275,7 +2276,7 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
       return m;
     }
 
-    private void query(SVSpatialLayer                       _layer,
+    private void query(iLayer                               _layer,
                        ViewOperationListener.VIEW_OPERATION _queryType,
                        Constants.SDO_OPERATORS              _operatorType) 
     {
@@ -2552,20 +2553,16 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
             // NOTE: When a layer with same SRID as a view is dragged to another and projected, 
             //       but then moved back it needs its SQL changed
             //
-/*// Messages.log("lNode.getSpatialLayer().getSRID()-" + lNode.getSpatialLayer().getSRID() + "-.equals(Constants.NULL) " + 
-             lNode.getSpatialLayer().getSRID().equals(Constants.NULL) + 
-             " || targetViewNode.getSpatialView().getSRID()-"+targetViewNode.getSpatialView().getSRID()+"-.equals(Constants.NULL) " + 
-             targetViewNode.getSpatialView().getSRID().equals(Constants.NULL) + 
-             " || sourceViewNode.getSpatialView().getSRID()-"+sourceViewNode.getSpatialView().getSRID()+"-.equals(targetViewNode.getSpatialView().getSRID())" + 
-             sourceViewNode.getSpatialView().getSRID().equals(targetViewNode.getSpatialView().getSRID()));
-*/
             
             boolean projectionRequired = false;
-            if ( lNode.getSpatialLayer().getSRIDAsInteger() != targetViewNode.getSpatialView().getSRIDAsInteger() ) {
-                projectionRequired = ! (    lNode.getSpatialLayer().getSRID().equals(Constants.NULL)           // Layer has NULL SRID
-                                         || targetViewNode.getSpatialView().getSRID().equals(Constants.NULL)   // Target View has NULL SRID 
-                                         || sourceViewNode.getSpatialView().getSRID().equals(targetViewNode.getSpatialView().getSRID() ) // Layer == View SRID (and both not NULL)
-                                       );
+            if (            lNode.getSpatialLayer().getSRIDAsInteger()
+                 != targetViewNode.getSpatialView().getSRIDAsInteger() ) 
+            {
+                projectionRequired = 
+                   ! (            lNode.getSpatialLayer().getSRID().equals(Constants.NULL)  // Layer has NULL SRID
+                       || targetViewNode.getSpatialView().getSRID().equals(Constants.NULL)  // Target View has NULL SRID 
+                       || sourceViewNode.getSpatialView().getSRID().equals(targetViewNode.getSpatialView().getSRID() ) // Layer == View SRID (and both not NULL)
+                     );
             }
             lNode.getSpatialLayer().setProject(projectionRequired, 
                                                true /* Always recalc mbr of layer*/);
@@ -2678,7 +2675,7 @@ LOGGER.debug("START: drop");
           return false;
         }
 
-        public SVSpatialLayer getActiveLayer() 
+        public iLayer getActiveLayer() 
         {
             LayerNode lNode = this.getActiveLayerNode();
             return lNode==null?null:lNode.getSpatialLayer();
@@ -2719,7 +2716,7 @@ LOGGER.debug("ViewLayerTree.createLayerCopy - SVGraphicLayer");
                     this.addLayer(gLayer,_lNode.isDraw(),false);
                 } else {
 LOGGER.debug("ViewLayerTree.createLayerCopy - SVSpatialLayer");
-                    SVSpatialLayer sLayer = new SVSpatialLayer(_lNode.getSpatialLayer());
+                    SVSpatialLayer sLayer = new SVSpatialLayer((SVSpatialLayer)_lNode.getSpatialLayer());
                     this.addLayer(sLayer,_lNode.isDraw(),false);
                 }
             } catch (Exception e) {
@@ -2733,7 +2730,7 @@ LOGGER.debug("ViewLayerTree.createLayerCopy - SVSpatialLayer");
             }
         }
         
-        public void addLayer(SVSpatialLayer _layer,
+        public void addLayer(iLayer _layer,
                              boolean        _isDraw,
                              boolean        _isActive) 
         {
@@ -2775,8 +2772,8 @@ LOGGER.debug("viewLayerTree.addLayer adjustedName =" + adjustedName);
             return null;
         }
         
-        public LinkedHashMap<String,SVSpatialLayer> getLayers() {
-            LinkedHashMap<String,SVSpatialLayer> lhm = new LinkedHashMap<String,SVSpatialLayer>(25);
+        public LinkedHashMap<String,iLayer> getLayers() {
+            LinkedHashMap<String,iLayer> lhm = new LinkedHashMap<String,iLayer>(25);
             DefaultMutableTreeNode node = null;
             LayerNode lNode = null;
             Enumeration<?> e = this.breadthFirstEnumeration();
@@ -2975,7 +2972,7 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
   
       private static final long serialVersionUID = 1L;
       
-	  private SVSpatialLayer     sLayer = null;
+	  private iLayer             sLayer = null;
       private JPanel       leafRenderer = new JPanel();
       private FlowLayout     leafLayout = new FlowLayout(FlowLayout.LEFT,5,2);
       private JCheckBox       leafCheck = new JCheckBox();
@@ -2984,11 +2981,11 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
       private ButtonGroup btnGroupLayer = null;
       private DefaultTreeModel treeModel = null;
 
-      public LayerNode(SVSpatialLayer _layer, 
-                       boolean        _isDraw,
-                       boolean        _isActive,
-                       ButtonGroup    _btnGroup,
-                       Font           _fontValue)
+      public LayerNode(iLayer      _layer, 
+                       boolean     _isDraw,
+                       boolean     _isActive,
+                       ButtonGroup _btnGroup,
+                       Font        _fontValue)
       {
           this.treeModel = (DefaultTreeModel)getModel();
           this.leafActive.setSelected(_isActive);
@@ -3071,11 +3068,11 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
           return this.sLayer.getClassName();
       }
       
-      public SVSpatialLayer getSpatialLayer() {
+      public iLayer getSpatialLayer() {
           return this.sLayer;
       }
 
-      public void setSpatialLayer(SVSpatialLayer _sLayer) {
+      public void setSpatialLayer(iLayer _sLayer) {
           this.sLayer = _sLayer;
       }
 

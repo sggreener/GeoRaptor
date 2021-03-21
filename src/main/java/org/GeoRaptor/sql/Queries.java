@@ -148,7 +148,7 @@ public class Queries {
         if ( propertyManager == null ) 
             propertyManager = new PropertiesManager(propertiesFile);
         
-        if (Strings.isEmpty(_columnName)) {
+        if (Strings.isEmpty(_objectName) || Strings.isEmpty(_columnName)) {
             // Get all Geometry Columns for this schema.table
             try {
                 geoColumns = getGeoColumns(_conn, 
@@ -537,33 +537,37 @@ public class Queries {
         
         if ( _conn==null )
             throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","SDO_GEOMETRY column_name SQL"));
-        
-        if (Strings.isEmpty(_objectName) ) 
-            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
-                                               propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
-        
+
         String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
+        
         List<String> geoColumns = new ArrayList<String>();
+
         String sql = "select atc.COLUMN_NAME \n" +
-                     "  from ALL_TAB_COLUMNS atc \n" +
-                     " where atc.owner      = NVL(?,SYS_CONTEXT('USERENV','SESSION_USER')) \n" +
-                     "   and atc.table_name = ? \n" + 
-                     "   and atc.data_type not like 'ST_ANNOT%' \n" + 
-                     "   and ( atc.data_type = 'SDO_GEOMETRY' \n" + 
-                     "      or atc.data_type LIKE 'ST!_%' escape '!' )\n" +
-                     " order by atc.COLUMN_ID";
+                "  from ALL_TAB_COLUMNS atc \n" +
+                " where atc.owner      = NVL(?,SYS_CONTEXT('USERENV','SESSION_USER')) \n";
+
+        if (! Strings.isEmpty(_objectName) ) 
+          sql += "   and atc.table_name = ? \n";
+        
+        sql += "   and atc.data_type not like 'ST_ANNOT%' \n" + 
+               "   and ( atc.data_type = 'SDO_GEOMETRY' \n" + 
+               "      or atc.data_type LIKE 'ST!_%' escape '!' )\n" +
+               " order by atc.COLUMN_ID";
         
         PreparedStatement psGeomColumns = _conn.prepareStatement(sql);
         psGeomColumns.setString(1,schema);
-        psGeomColumns.setString(2,_objectName.toUpperCase());
+        if (! Strings.isEmpty(_objectName) ) 
+          psGeomColumns.setString(2,_objectName.toUpperCase());
         LOGGER.logSQL(sql + 
                       "\n? = " + schema +
-                      "\n? = " + _objectName.toUpperCase());
+                      (Strings.isEmpty(_objectName) ? "" : "\n? = " + _objectName.toUpperCase()) );
 
         ResultSet geomColumnsRSet = psGeomColumns.executeQuery();
+        
         while (geomColumnsRSet.next()) {
             geoColumns.add(geomColumnsRSet.getString(1));
         }
+        
         geomColumnsRSet.close();
         geomColumnsRSet = null;
         psGeomColumns.close();

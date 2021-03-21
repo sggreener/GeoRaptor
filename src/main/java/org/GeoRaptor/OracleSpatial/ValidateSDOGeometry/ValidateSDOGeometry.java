@@ -100,6 +100,7 @@ import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.Styling;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
@@ -194,11 +195,11 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     protected SpatialView       validationView = null; // Pointer to one of the below
     protected SVGraphicLayer   validationLayer = null;
     private SpatialViewPanel               svp = null;
-    private SVSpatialLayer  currentActiveLayer = null;
+    private iLayer          currentActiveLayer = null;
     private SpatialView      currentActiveView = null;
     private SpatialView           existingView = null;
     private SpatialView                newView = null;
-    private Envelope        usedViewMBR = null;
+    private Envelope               usedViewMBR = null;
     private JTextField                tfFilter = new JTextField();
     private JLabel                   lblFilter = new JLabel();
     private boolean                  nullGeoms = false;

@@ -40,6 +40,7 @@ import javax.xml.xpath.XPathFactory;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.Constants.GEOMETRY_TYPES;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -973,7 +974,8 @@ public class SVSpatialLayer
         return this.calculateMBR;
     }
 
-    public void setNumberOfFeatures(long _number) {
+    public void setNumberOfFeatures(long _number) 
+    {
         LOGGER.debug("setNumberOfFeatures()="+_number);
         this.numberOfFeatures = _number;
         if (this.getPreferences().isNumberOfFeaturesVisible() ) {
@@ -1110,9 +1112,10 @@ public class SVSpatialLayer
         return success;
     }
 
-    protected boolean executeDrawQuery(PreparedStatement _pStatement,
-                                       String            _sql2Debug,
-                                       Graphics2D        _g2)
+    @Override
+	public boolean executeDrawQuery(PreparedStatement _pStatement,
+                                    String            _sql2Debug,
+                                    Graphics2D        _g2)
     {
         LOGGER.debug("** START: executeDrawQuery\n=======================");
         if ( _g2 == null ) {
@@ -1486,6 +1489,7 @@ public class SVSpatialLayer
         // Shared SVLayer stuff
         //
         newLayer = new SVSpatialLayer(super.getSpatialView());
+        
         // set SVLayer properties (What is a copy? Is it a render layer?)
         newLayer.setMetadataEntry(super.getMetadataEntry());
         newLayer.setSRIDType(super.getSRIDType());
@@ -1704,7 +1708,9 @@ public class SVSpatialLayer
     {
     	Struct            retSTRUCT = null; // read SDO_GEOMETRY column
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); // list of return rows
-        int         numSearchPixels = _numSearchPixels <= 0 ? this.getPreferences().getSearchPixels() : _numSearchPixels;
+        int         numSearchPixels = _numSearchPixels <= 0 
+                                      ? this.getPreferences().getSearchPixels() 
+                                      : _numSearchPixels;
         // Need future check for 3D indexed layers??
         // Sable 5-1 Data and Index Dimensionality, and Query Support
         //
@@ -1722,15 +1728,17 @@ public class SVSpatialLayer
                               this.getSRIDAsInteger()             != Constants.SRID_NULL;
 
             // If we need to transform the geometry for display then we are best to give it a different name in the output string
-            String geoColumn = project ? projectedGeometryName.toUpperCase() : this.getGeoColumn().toUpperCase();
+            String geoColumn = project 
+                               ? this.projectedGeometryName.toUpperCase() 
+                               : this.getGeoColumn().toUpperCase();
             geoColumn = geoColumn.replace("\"","");
 
-            querySQL = getIdentifySQL(project);
-System.out.println("Layer queryByPoint: " + querySQL);	        
+            querySQL = this.getIdentifySQL(project);
+System.out.println("SVSpatialLayer queryByPoint: " + querySQL);	        
 
             // Get target SRID and units_parameter in case layer have been drag-and-dropped to a different view/srid
             //
-            String     lengthUnits  = Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH);            
+            String     lengthUnits  = Tools.getViewUnits(this.spatialView,Constants.MEASURE.LENGTH);
             String units_parameter = "";
             int          querySRID = -1;
             if ( project ) {
@@ -1754,11 +1762,13 @@ System.out.println("Layer queryByPoint: " + querySQL);
                 // Compute End point of search distance line
                 // Note: first point of line denoting search distance is the passed in point (world units)
                 //
-                pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
+                pixelSize   = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
                 searchPoint = Queries.projectSdoPoint(conn,_worldPoint,this.getSRIDAsInteger(),querySRID);
+                
                 Point2D distancePoint2D = new Point2D.Double(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
-                                                           _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0));
+                                                             _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0));
                 distancePoint = Queries.projectSdoPoint(conn,distancePoint2D,this.getSRIDAsInteger(),querySRID);
+                
                 // SDO_Filter geometry has same SRID as layer
                 Envelope mbr = new Envelope(_worldPoint.getX() - (numSearchPixels*pixelSize.getX()/1.9),
                                             _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
@@ -1927,14 +1937,23 @@ System.out.println("Layer queryByPoint: " + querySQL);
             }
         } catch (SQLException sqlex) {
             Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",sqlex.getMessage()),querySQL + "\n" + params);
-/*        } catch (NoninvertibleTransformException nte) {
-            JOptionPane.showMessageDialog(null,
-                                          this.getSpatialView().getSVPanel().getMapPanel().getPropertyManager().getMsg("ERROR_SCREEN2WORLD_TRANSFORM")+ "\n" + nte.getLocalizedMessage(),
-                                          MainSettings.EXTENSION_NAME,
-                                          JOptionPane.ERROR_MESSAGE);
-*/
         } 
         return retList;
     }
 
-} // class SVSpatialLayer
+    public GEOMETRY_TYPES getGeometryType()
+    {
+    	return super.getGeometryType();
+    }
+    
+    public Envelope getMBR() 
+    {
+    	return super.getMBR();
+    }
+
+	public MetadataEntry getMetadataEntry()
+	{
+		return super.getMetadataEntry();
+	}
+
+} 

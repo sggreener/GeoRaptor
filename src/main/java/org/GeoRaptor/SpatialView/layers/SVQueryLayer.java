@@ -1,12 +1,15 @@
 package org.GeoRaptor.SpatialView.layers;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.RowId;
@@ -14,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.UUID;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -24,6 +28,9 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.Constants.GEOMETRY_TYPES;
+import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -47,74 +54,54 @@ import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
 
 public class SVQueryLayer 
-extends SVSpatialLayer
+   extends SVLayer
 implements iLayer
 {
     public  static final String CLASS_NAME = Constants.KEY_SVQueryLayer;
 
     private static final Logger     LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
 
-    protected    String              sql = "";
     protected Constants.SDO_OPERATORS 
-                             sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
-    protected       int        precision = 2;
-    protected JGeometry    queryGeometry = null; 
-    protected    String relationshipMask = "";
-    protected    double   bufferDistance = 0.0;
-    protected   boolean         buffered = false;
-    protected   boolean     drawGeometry = false;
+                                   sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
+    protected    String                    sql = "";
+    protected       int              precision = 2;
+    protected JGeometry          queryGeometry = null; 
+    protected    String       relationshipMask = "";
+    protected    double         bufferDistance = 0.0;
+    protected   boolean               buffered = false;
+    protected   boolean           drawGeometry = false;
+    private final String sdoFilterMinResClause = "min_resolution=%f,querytype=WINDOW";
+    private final String       sdoFilterClause = "querytype=WINDOW";
 
     public SVQueryLayer(SpatialView   _sView, 
-                        String        _name, 
-                        String        _screenName,
+                        String        _layerName, 
+                        String        _visibleName,
                         String        _desc, 
                         MetadataEntry _me, 
                         boolean       _draw) 
     {
-        super(_sView, 
-              _name, 
-              _screenName, 
-              _desc, 
-              _me, 
-              _draw);
-        this.drawGeometry = super.getPreferences().isDrawQueryGeometry();
-    }
-    
-    /**
-     * @constructor SVSpatialLayer
-     * @param _sView
-     * @param _node
-     * @author Simon Greener, December 6th, 2010
-     *          -  XML Constructor
-     */
+        super(_sView, _me);
+        this.layerName   = Strings.isEmpty(_layerName)? UUID.randomUUID().toString() : _layerName;
+        this.visibleName = _visibleName;
+        this.desc        = _desc;
+        this.draw        = _draw;
+        this.preferences = MainSettings.getInstance().getPreferences();
+        this.drawGeometry = this.preferences.isDrawQueryGeometry();
+        this.setResultFetchSize(preferences.getFetchSize());
+        this.setPrecision(-1); // force calculation from mbr
+        if ( this.preferences.isRandomRendering()) {
+            this.styling.setAllRandom();
+        }
+    }    
     public SVQueryLayer(SpatialView _sView, Node _node) {
       super(_sView, _node);
       this.fromXMLNode(_node);
-      this.drawGeometry = super.getPreferences().isDrawQueryGeometry();
+      this.drawGeometry = this.getPreferences().isDrawQueryGeometry();
     }
 
-    /** Copy constructor
-     *
-     **/
-    public SVQueryLayer(SVSpatialLayer _sLayer) 
-    {
-        super(_sLayer);
-        LOGGER.debug("*********** SVQueryLayer(SVSpatialLayer)");
-        if ( this.getSpatialView() != null ) {
-            this.setLayerName(this.getSpatialView().checkLayerName(super.getLayerName()));
-        }
-        // This is an informational query of actual data: filtering would make the result invalid
-        this.setMinResolution(false);
-        this.drawGeometry = super.getPreferences().isDrawQueryGeometry();
-        LOGGER.debug("*********** SVQueryLayer(SVSpatialLayer) -- END");
-    }
-
-    /** Copy constructor
-     *
-     **/
     public SVQueryLayer(SVQueryLayer _qLayer) 
     {
-        super(_qLayer);
+        super(_qLayer.getSpatialView());
         LOGGER.debug("*********** SVQueryLayer(SVQueryLayer)");
         if ( this.getSpatialView() != null ) {
             LOGGER.debug("************** this.getSpatialView() != null");
@@ -128,7 +115,7 @@ implements iLayer
             this.setSQL(_qLayer.getSQL());
         } else {
             LOGGER.debug("************** this.getSpatialView() == null");
-            this.drawGeometry = super.getPreferences().isDrawQueryGeometry();            
+            this.drawGeometry = _qLayer.getPreferences().isDrawQueryGeometry();            
         }
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
@@ -186,8 +173,7 @@ implements iLayer
     }
 
     private boolean isProjected() {
-        boolean project = super.project && 
-                          super.spatialView.getSRID().equals(Constants.NULL) == false && 
+        boolean project = super.spatialView.getSRID().equals(Constants.NULL) == false && 
                           super.getSRID().equals(Constants.NULL) == false;
 		return project;
     }
@@ -320,7 +306,7 @@ System.out.println("</generateSQL>");
 	            // String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,unit='....')");
 				pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
 				params += "? - " + String.valueOf(this.getBufferDistance());
-				pStatement.setDouble(stmtParamIndex++, super.getTolerance());
+				pStatement.setDouble(stmtParamIndex++, this.getTolerance());
 				params += "? - " + String.valueOf(this.getTolerance());
 	        } 
 
@@ -332,9 +318,62 @@ System.out.println("</generateSQL>");
 		return pStatement;
 	}
 
+	protected double getSearchRadius(int _numSearchPixels) 
+    throws NoninvertibleTransformException 
+    {
+        double maxSearchRadius = 0.0;
+        // Get search radius
+        // Is diagonal distance computed as sqrt of size of pixel (* number of pixels in search)
+        // in X and Y squared (ie pythagoras)
+        //
+        Point.Double pixelSize = this.spatialView.getMapPanel().getPixelSize();
+        maxSearchRadius = Math.sqrt(Math.pow(pixelSize.getX() * _numSearchPixels, 2.0f) +
+                                    Math.pow(pixelSize.getY() * _numSearchPixels, 2.0f));            
+        if (!this.project) 
+        {
+            if (super.getSRIDType() == Constants.SRID_TYPE.UNKNOWN)
+                super.setSRIDType();
+            switch (super.getSRIDType()) {
+            case GEODETIC_COMPOUND:
+            case GEODETIC_GEOCENTRIC:
+            case GEODETIC_GEOGRAPHIC2D:
+            case GEODETIC_GEOGRAPHIC3D:
+            case GEOGRAPHIC2D:
+                // Generate search distance as this is geodetic 
+                Point screenPoint1 = this.spatialView.getMapPanel().getScreenCenter();
+                Point2D.Double worldPoint1 = (Point2D.Double)this.spatialView.getMapPanel().ScreenToWorld(screenPoint1);
+                Point screenPoint2 = new Point(screenPoint1.x+_numSearchPixels,screenPoint1.y);
+                // System.out.println("screenPoint1 " + screenPoint1.toString() + " => screenPoint2 " + screenPoint2.toString());
+                Point2D.Double worldPoint2 = (Point2D.Double)this.spatialView.getMapPanel().ScreenToWorld(screenPoint2);
+                // System.out.println("worldPoint1 " + worldPoint1.toString() + " => " + worldPoint2.toString());
+                // There are more efficient ways of calculating this distance... 
+                // perhaps via an inline computation query in actual SDO_NN SQL sdo_geom.sdo_distance(sdo_point(1),sdo_point(2))
+                //
+                try { 
+                    double distVincenty = COGO.distVincenty(worldPoint1.getX(),worldPoint1.getY(), worldPoint2.getX(),worldPoint2.getY());
+                    maxSearchRadius = distVincenty;
+                } catch (Exception e) {
+                	LOGGER.info("DistVincenty threw exception " + e.getMessage());
+                }
+                break;
+			default:
+				break;
+            }
+        }
+        return maxSearchRadius;
+    }
+
+	private String nnQuery()
+	{
+		return "";
+		
+	}
+	
     public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, 
                                             int     _numSearchPixels) 
     {
+System.out.println("<SVQueryLayer method=queryByPoint");
+
         // Take simple approach:
     	// 1 Execute normal SQL
     	// 2. Filter each geometry in its resultSet
@@ -342,23 +381,13 @@ System.out.println("</generateSQL>");
         //
         ArrayList<QueryRow> queryList = new ArrayList<QueryRow>(); // list of return rows
         
-        String sql = this.getSQL();
+        String sql = null;
+        sql = this.generateSQL(this.isBuffered(),this.isProjected());
 
-        // WITH sGeom AS (
-        //	 SELECT ? AS geom FROM DUAL
-        // )
-        // SELECT f.*
-        //   FROM (SELECT "ID","LABEL","ANGLEDEGREES",t.GEOM as GEOM 
-        //	         FROM sGeom a,
-        //                GEORAPTOR.PROJPOINT2D t 
-        //          WHERE SDO_ANYINTERACT(t.GEOM,a.geom) = 'TRUE'
-        // ) f
-        
-        // Add SDO_DISTANCE predicate
-        //
-        // WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.geom,distancePoint,tol,unit) <= distance
-        
-        sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/,?/*unit*/) <= ?";
+        if ( this.getSRIDAsInteger() == Constants.SRID_NULL)
+          sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/) <= ?";
+        else
+          sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/,?/*unit*/) <= ?";
 
         // Get distance point and search distance 
         //
@@ -366,27 +395,48 @@ System.out.println("</generateSQL>");
         PreparedStatement pStatement = null;
         conn = this.getConnection();
 
+		String params          = "";
         try {
-	        double    sdo_distance = super.getSearchRadius(_numSearchPixels);	        
+			int stmtParamIndex     = 1;
+	        double     sdoDistance = this.getSearchRadius(_numSearchPixels);	        
 	        Point2D  searchPoint2D = new Point2D.Double(_worldPoint.getX(),_worldPoint.getY());	        
 	        Struct     searchPoint = Queries.projectSdoPoint(conn,searchPoint2D,this.spatialView.getSRIDAsInteger(),this.spatialView.getSRIDAsInteger());
-	        String units_parameter = String.format(",unit=%s",Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH));
-        
-	        // Get sdo_distance tolerance parameter
-	        pStatement = this.setParameters(sql);
-System.out.println("Query queryByPoint: " + sql);	        
-	        int stmtParamIndex = pStatement.getParameterMetaData().getParameterCount();
-	        stmtParamIndex -= 3; 
-	        String params = "";
-	        pStatement.setObject(stmtParamIndex++, searchPoint, java.sql.Types.STRUCT); params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
-	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? '%s'\n",this.getTolerance());
-	        pStatement.setDouble(stmtParamIndex++, sdo_distance);                       params += String.format("? '%s'\n",this.getTolerance());
-	        pStatement.setString(stmtParamIndex++, units_parameter);                    params += String.format("? '%s'\n",units_parameter);
-	        System.out.println(params);
+			//Struct    searchBuffer = Queries.bufferGeom(conn,searchPoint,sdo_distance);
+	        String units_parameter = String.format("unit=%s",Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH));
+	        
+            pStatement = super.getConnection().prepareStatement(sql);
+
+	        // WITH sGeom AS (
+	        //	 SELECT MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,?) as geom FROM DUAL
+	        // )
+	        // SELECT f.*
+	        //   FROM (SELECT "ID","LABEL","ANGLEDEGREES",t.GEOM as GEOM 
+	        //	         FROM sGeom a,
+	        //                GEORAPTOR.PROJPOINT2D t 
+	        //          WHERE SDO_ANYINTERACT(t.GEOM,a.geom) = 'TRUE'
+	        //        ) f
+	        //  WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.geom,?distancePoint,?tol,?unit) <= distance
+	        
+	        pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);  params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+	        pStatement.setDouble(stmtParamIndex++, sdoDistance);                        params += String.format("? %s\n",  String.valueOf(sdoDistance));
+	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? %s\n",String.valueOf(this.getTolerance()));
+	        if ( this.getSRIDAsInteger() != Constants.SRID_NULL)
+	          pStatement.setString(stmtParamIndex++, units_parameter);                  params += String.format("? '%s'\n",units_parameter);
+	        
+	        pStatement.setObject(stmtParamIndex++, searchPoint, java.sql.Types.STRUCT); params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? %s\n",  String.valueOf(this.getTolerance()));
+	        if ( this.getSRIDAsInteger() != Constants.SRID_NULL)
+              pStatement.setString(stmtParamIndex++, units_parameter);                  params += String.format("? '%s'\n",units_parameter);
+	        pStatement.setDouble(stmtParamIndex++, sdoDistance);                        params += String.format("? %s\n",  String.valueOf(sdoDistance));
 	        
         } catch (Exception e) {
+        	System.out.println("</SVQueryLayer method=error: " + e.getLocalizedMessage());
+        	return null;
         }
-        
+
+LOGGER.logSQL(sql + "\n" + params);
+System.out.println("</SVQueryLayer method=execute");	        
+
         Struct retStruct = null;
         ResultSet    ors = null;
         try 
@@ -395,12 +445,12 @@ System.out.println("Query queryByPoint: " + sql);
             
             ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
+            
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
             String          value = "";
             String     columnName = "";
             String columnTypeName = "";
-            Object       objValue = null;
             long    totalFeatures = 0;    
             while ((ors.next()) &&
                    (this.getSpatialView().getSVPanel().isCancelOperation()==false)) 
@@ -428,7 +478,6 @@ System.out.println("Query queryByPoint: " + sql);
                           {
                               try
                               {
-                                  objValue = ors.getObject(col);
                                   if (ors.wasNull()) {
                                       value = "NULL";
                                   } else {
@@ -451,6 +500,7 @@ System.out.println("Query queryByPoint: " + sql);
             }
             ors.close();
             pStatement.close();
+System.out.println(" Total Features Returned = " + totalFeatures);
 
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info(super.getSpatialView() + "." + this.layerName + 
@@ -458,17 +508,13 @@ System.out.println("Query queryByPoint: " + sql);
             }
             
         } catch (SQLException sqle) {
+System.out.println("</SVQueryLayer submethod=executeSQL: " + sqle.getLocalizedMessage());
         }
+System.out.println("</SVQueryLayer method=queryByPoint");	        
         return queryList;        
     }
-    
-    /**
-     * Execute SQL and draw data on given graphical device
-     * @param _mbr MBR coordinates
-     * @param _g2 graphical device
-     * @return if return false, something was wrong (for example, Connection with DB faild)
-     */
-    @Override
+        
+	@Override
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
         LOGGER.debug("QueryLayer.drawLayer(" + _mbr.toString());
@@ -489,30 +535,34 @@ System.out.println("Query queryByPoint: " + sql);
         String                  qSql = this.getSQL();
         PreparedStatement pStatement = this.setParameters(qSql);
 
-        if ( this.isDrawQueryGeometry() ) {
-            try {
+        if ( this.isDrawQueryGeometry() ) 
+        {
+            try 
+            {
                 JGeometry jGeom = this.getGeometry();
                 if ( jGeom!=null) {
                     // Set graphics2D to draw query feature
-                    drawTools.setGraphics2D(_g2);
+                    this.drawTools.setGraphics2D(_g2);
                     // Save settings
-                    LineStyle.LINE_STROKES ls = super.getStyling().getLineStrokeType();
-                    int lw = super.getStyling().getLineWidth();
-                    Styling.STYLING_TYPE st = super.getStyling().getShadeType();
-                    float stl = super.getStyling().getShadeTransLevel();
+                    LineStyle.LINE_STROKES ls = this.styling.getLineStrokeType();
+                    int lw = this.styling.getLineWidth();
+                    Styling.STYLING_TYPE st = this.styling.getShadeType();
+                    float stl = this.styling.getShadeTransLevel();
                     
-                    super.getStyling().setLineWidth(2);
-                    super.getStyling().setLineStrokeType(LineStyle.LINE_STROKES.LINE_DASH);
-                    super.getStyling().setShadeType(Styling.STYLING_TYPE.NONE);
+                    this.styling.setLineWidth(2);
+                    this.styling.setLineStrokeType(LineStyle.LINE_STROKES.LINE_DASH);
+                    this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
                     // Draw original geometry before buffering
                     //
-                    super.callDrawFunction(jGeom,null,null,null,null,4,0.0);
+                    this.callDrawFunction(jGeom,(String)null,(String)null,(String)null,(String)null,4,0.0);
                     
                     if ( this.isBuffered()) {
-                        super.getStyling().setLineWidth(lw); // set back
-                        super.getStyling().setShadeType(this.getPreferences().isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                        super.getStyling().setShadeTransLevel(0.5f);
-                        super.getStyling().setLineStrokeType(LineStyle.LINE_STROKES.LINE_DOT);
+                        this.styling.setLineWidth(lw); // set back
+                        this.styling.setShadeType(this.getPreferences().isRandomRendering()
+                        		                  ? Styling.STYLING_TYPE.RANDOM
+                                                  : Styling.STYLING_TYPE.CONSTANT);
+                        this.styling.setShadeTransLevel(0.5f);
+                        this.styling.setLineStrokeType(LineStyle.LINE_STROKES.LINE_DOT);
                         try {
                             if (this.getSRIDType().toString().startsWith("GEO")) {
                                 double lat = 0.0;
@@ -528,15 +578,15 @@ System.out.println("Query queryByPoint: " + sql);
                             } else  {
                                 jGeom = jGeom.buffer(this.getBufferDistance());
                             }
-                            super.callDrawFunction(jGeom,null,null,null,null,4,0.0);
+                            this.callDrawFunction(jGeom,null,null,null,null,4,0.0);
                         } catch (Exception e) {
                             LOGGER.error("Failed to buffer query geometry by " + this.getBufferDistance());
                             jGeom = this.getGeometry();
                         }
                     }
-                    super.getStyling().setShadeTransLevel(stl);
-                    super.getStyling().setLineStrokeType(ls);
-                    super.getStyling().setShadeType(st);
+                    this.styling.setShadeTransLevel(stl);
+                    this.styling.setLineStrokeType(ls);
+                    this.styling.setShadeType(st);
                 }
             } catch (IOException e) {
                 LOGGER.error(super.propertyManager.getMsg("ERROR_DISPLAY_QUERY_GEOM",e.getMessage()));
@@ -551,15 +601,9 @@ System.out.println("=======================");
 
         // Now execute query
         //
-        return super.executeDrawQuery(pStatement,qSql,_g2);
+        return this.executeDrawQuery(pStatement,qSql,_g2);
     }
-
-    /**
-     * @method getCache
-     * @param _mbr - Needed for SVSpatialLayer sdo_filter that is a part of a Query
-     * @description Turns current query into a cache of geometry and attribute objects.
-     * @author Simon Greener, December 2012, Original Coding.
-     */
+	
     public ArrayList<QueryRow> getCache(Envelope _mbr)
     {
         PreparedStatement pStatement = null;
@@ -599,7 +643,6 @@ System.out.println("getCache() - " + qSql);
         ArrayList<QueryRow> retList = new ArrayList<QueryRow>(); // list of return rows
         Struct            retStruct = null;
         ResultSet               ors = null;
-        RowId                   rid = null;
         String                rowID = null;
         try 
         {
@@ -685,11 +728,11 @@ System.out.println("getCache() - " + qSql);
         } catch (NullPointerException npe) {
             if ( conn != null ) { // Assume conn==null is a startup problem
                 if ( this.getPreferences().isLogSearchStats() ) {
-                    LOGGER.error("SVSpatialLayer.executeDrawQuery error: " + npe.getMessage());
+                    LOGGER.error("SVQueryLayer.getCache error: " + npe.getMessage());
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("SVSpatialLayer.executeDrawQuery - general exception");
+            LOGGER.error("SVQueryLayer.getCache - general exception");
             e.printStackTrace();
         } finally {
             try { ors.close();        } catch (Exception _e) { }
@@ -698,6 +741,9 @@ System.out.println("getCache() - " + qSql);
         return retList;
     }
 
+    public double getTolerance() {
+    	return super.getTolerance();
+    }
     public String getRelationshipMask() {
         return this.relationshipMask;
     }
@@ -822,7 +868,7 @@ System.out.println("getCache() - " + qSql);
       }
       return SVLayer_SpatialLayerXML + 
              String.format("<SVQueryLayer><SQL>%s</SQL><isBuffered>%s</isBuffered><bufferDistance>%s</bufferDistance><sdoOperator>%s</sdoOperator><relationshipMask>%s</relationshipMask><geometry>%s</geometry><drawQueryGeometry>%s</drawQueryGeometry></SVQueryLayer>",
-                           super.getSQL(),   
+                           this.getSQL(),   
                            this.isBuffered(),
                            this.getBufferDistance(),
                            this.getSdoOperator(),
@@ -886,181 +932,712 @@ System.out.println("getCache() - " + qSql);
         }
     }
 
-    public String getQuerySQLOld() 
-    {
-        // If filter geometry buffered? 
-        //
-        String bufferClause = "?";
-        
-        if (this.isBuffered()) 
-        {
-            String lengthUnits  = super.getSpatialView().getDistanceUnitType();
-            String bufferParams = ((super.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits)) 
-                                   ? "" 
-                                   : ",'unit=" + lengthUnits + "'");
-            /**
-             * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
-             *                     dist IN NUMBER,
-             *                     tol IN NUMBER
-             *                     [, params IN VARCHAR2]
-             *                    ) RETURN SDO_GEOMETRY;
-            **/
-            bufferClause = String.format("MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?%s)",bufferParams);
-        }
+    public SpatialView getSpatialView() {
+        return super.getSpatialView();
+    }    
 
-        // Create filter Geometry that could be buffered and might need projecting
-        //
-        String filterGeometry = "";
-        filterGeometry = (super.project && 
-                          super.spatialView.getSRID().equals(Constants.NULL) == false && 
-                          super.getSRID().equals(Constants.NULL) == false) 
-                         ? String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)",
-                                         bufferClause,
-                                         super.spatialView.getSRID()) 
-                         : bufferClause;
+    protected Styling styling = new Styling();
 
-        // Our query SQL can be:
-        // 1. Built on top of the current Layer SQL (including user modifications), or
-        // 2. Build on top of the original data import org.apache.commons.codec.binary.Base64; object using "clean" SQL
-        // While 1 means duplicate filter queries, 1 is chosen for the time being
-        //
-        String qSql = String.format("%s\n AND 2=2",super.getSQL());   // Note use of 2=2 Predicate
-        if (Strings.isEmpty(super.wrappedSQL)) {
-            qSql = super.wrapSQL(qSql);
-            this.wrappedSQL = qSql;
-        } else {
-            qSql = this.wrappedSQL;
-        }
-        
-        LOGGER.debug("sdoOperator is " + this.sdoOperator.toString() + " with isSTGeometry of "+this.isSTGeometry());
+	@Override
+	public Styling getStyling() {
+        return this.styling;
+	}
 
-        if (   this.hasIndex() && 
-            ! (this.isSTGeometry() && 
-               this.sdoOperator!=Constants.SDO_OPERATORS.RELATE)
-           )
-        {
-            qSql = qSql.replace("2=2",
-                   ( this.isSTGeometry() 
-                     ? "t." + super.getGeoColumn() + ".ST_" + this.sdoOperator.toString() + "(MDSYS.ST_GEOMETRY("  + filterGeometry + ")) = 1"
-                     : String.format("SDO_%s(t.%s,\n       %s%s) = 'TRUE'",
-                                     this.sdoOperator.toString(),
-                                     super.getGeoColumn(),
-                                     filterGeometry,
-                                     (this.sdoOperator==Constants.SDO_OPERATORS.RELATE 
-                                      ? ( ",'" + getRelationshipMask() + "'" ) 
-                                      : "")
-                                     ) 
-                   ));
-        } else {
-            // Original SQL may have sdo_relate already. If so, change its ANYTINTERACT mask
-            //
-            if ( qSql.toUpperCase().indexOf("MDSYS.SDO_GEOM.RELATE")!=0 &&
-                 qSql.toUpperCase().indexOf("'ANYINTERACT'")!=0 ) {
-                qSql = qSql.replace("'ANYINTERACT'", "'mask=" + getRelationshipMask() + "'");
-            } else {
-                // Add new relate mask
-                qSql = qSql.replace("2=2",
-                                    String.format("%s(t.%s,'%s',%s,%f) = 'TRUE'",
-                                     super.getGeoColumn() + (this.isSTGeometry() ? ".GEOM" : ""),
-                                     getRelationshipMask(),
-                                     filterGeometry,
-                                     this.getTolerance()));
-            }
+	public void setStyling(Styling _styling) {
+        this.styling = _styling;
+	}
+
+	@Override
+	public String getStylingAsString() {
+        return this.styling.toString(this.getSpatialView().getMapPanel().getMapBackground());
+	}
+
+    protected Preferences           preferences = null;
+
+	@Override
+	public Preferences getPreferences() {
+        if (this.preferences==null) {
+            this.preferences = MainSettings.getInstance().getPreferences();
         }
-        LOGGER.logSQL("SVQueryLayer - getSQL = " + qSql);
-        return qSql;
+        return this.preferences;
+	}
+
+    protected String layerName   = "";         // Unique layer name. This is the universal unique name for this layer.
+    protected String visibleName = "";         // This text is write into JTree where we show layers
+
+	@Override
+	public String getLayerNameAndConnectionName() {
+        return this.layerName + "." + super.getConnectionDisplayName();
+	}
+
+	@Override
+	public String getLayerName() {
+        return this.layerName;
+	}
+
+	@Override
+	public void setLayerName(String _layerName) {
+        this.layerName = _layerName;		
+	}
+
+    protected String  desc = "";         // Layer description. It is diplay when user left mouse cursor on layer name.
+
+    public String getDesc() {
+        return this.desc;
     }
 
-	protected PreparedStatement setParametersOLD(String _sql, Envelope _mbr) {
-		Connection conn = null;
-		PreparedStatement pStatement = null;
-		int stmtParamIndex = 1;
-		String params = "";
-		try {
-			conn = super.getConnection();
+    public void setDesc(String _desc) {
+        this.desc = _desc;
+    }
 
-			pStatement = super.setParameters(_sql, _mbr);
-			if (pStatement == null) {
-				LOGGER.error("Failed to set SQL parameters for Query Layer " + super.layerName);
-				return null;
-			}
-// Now set up parameters for this layer
-//
-			stmtParamIndex = super.isSTGeometry() ? 2 : 3; // This is UGLY and hardcoded! I need to know what parameters
-															// are set by super.setParameters()
-			if (super.hasIndex()) {
-// Use SDO_RELATE, SDO_EQUAL etc.
-// Only SDO_RELATE has third parameter
-//
+	@Override
+	public String getVisibleName() {
+        return this.visibleName;
+    }
 
-				Struct stSearchGeom = null;
-				String searchGeometry = "";
-				stSearchGeom = JGeom.toStruct(this.getGeometry(), conn);
-				searchGeometry = SDO_GEOMETRY.getGeometryAsString(stSearchGeom);
-				pStatement.setObject(stmtParamIndex++, stSearchGeom, java.sql.Types.STRUCT);
-				params += "\n? = " + searchGeometry;
-
-				if (this.isBuffered()) {
-// This buffer geometry replaces search geometry...
-					/**
-					 * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters dist
-					 * IN NUMBER, tol IN NUMBER [, params IN VARCHAR2] ) RETURN SDO_GEOMETRY;
-					 **/
-					pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
-					params += "\n? = " + this.getBufferDistance();
-					pStatement.setDouble(stmtParamIndex++, super.getTolerance());
-					params += "\n? = " + String.valueOf(super.getTolerance());
-				}
-
-				if (this.sdoOperator == Constants.SDO_OPERATORS.RELATE) {
-					pStatement.setString(stmtParamIndex++, "mask=" + this.getRelationshipMask());
-					params += "\n? = mask=" + this.getRelationshipMask();
-				}
-			} else /* ! super.hasIndex() ie no SDO_FILTER */
-			{
-// Add geom1  <-- super.setParameters
-// mask/geom2,tol parameter values
-//
-// SDO_GEOM.RELATE(
-//      geom1 IN SDO_GEOMETRY,
-//      mask IN VARCHAR2,
-//      geom2 IN SDO_GEOMETRY,
-//      tol IN NUMBER
-//      ) RETURN VARCHAR2;
-//
-				pStatement.setString(stmtParamIndex++, "'" + this.getRelationshipMask() + "'");
-				params += "\n? = mask=" + this.getRelationshipMask();
-
-				Struct stGeom = null; // (Struct)JGeometry.storeJS(conn,this.getGeometry());
-				stGeom = JGeom.toStruct(this.getGeometry(), conn);
-				pStatement.setObject(stmtParamIndex++, stGeom, java.sql.Types.STRUCT);
-				params += "\n? = " + SDO_GEOMETRY.getGeometryAsString(stGeom);
-
-				if (this.isBuffered()) {
-					/**
-					 * MDSYS.SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY, <-- super.setParameters dist
-					 * IN NUMBER, tol IN NUMBER [, params IN VARCHAR2] ) RETURN SDO_GEOMETRY;
-					 **/
-					pStatement.setDouble(stmtParamIndex++, this.getBufferDistance());
-					params += "\n? = " + this.getBufferDistance();
-					pStatement.setDouble(stmtParamIndex++, super.getTolerance());
-					params += "\n? = " + String.valueOf(super.getTolerance());
-				}
-// Tolerance
-				pStatement.setDouble(stmtParamIndex++, super.getTolerance());
-				params += "\n? = " + String.valueOf(super.getTolerance());
-			}
-		} catch (SQLException sqle) {
-			LOGGER.error("SVQueryLayer.setParameters(" + sqle.getMessage() + ") - SQL copied to clipboard.");
-			Tools.doClipboardCopy(_sql + params);
-			return null;
-		} catch (Exception e) {
-// TODO Auto-generated catch block
-			LOGGER.error("SVQueryLayer.setParameters(" + e.getMessage() + ") - SQL copied to clipboard.");
-			Tools.doClipboardCopy(_sql + params);
-			return null;
-		}
-		return pStatement;
+    public void setVisibleName(String _visibleName) {
+        this.visibleName = _visibleName;		
 	}
+
+    protected boolean draw = true;       // true - draw layer, false - not draw layer
+
+    public boolean is_draw() {
+        return this.draw;
+    }
+
+    public boolean isDraw() {
+        return this.draw;
+    }
+
+    public void setDraw(boolean _draw) {
+        this.draw = _draw;
+    }
+
+    protected Constants.OBJECT_TYPES objectType = Constants.OBJECT_TYPES.TABLE;
+
+	public void setObjectType(String _objectType) {
+	    if (Strings.isEmpty(_objectType) ) {
+	        try {
+	            this.objectType = Constants.OBJECT_TYPES.valueOf(Queries.getObjectType(super.getConnection(),
+                                                                                       mEntry.getSchemaName(),
+                                                                                       mEntry.getObjectName()));
+	        } catch (SQLException e) {
+	            this.objectType = Constants.OBJECT_TYPES.TABLE;
+	        }
+	    } else {
+	        try {
+	            this.objectType = Constants.OBJECT_TYPES.valueOf(_objectType);
+	        } catch (Exception e) {
+	            this.objectType = Constants.OBJECT_TYPES.TABLE;
+	        }
+	    }
+	}
+
+	public boolean isView() {
+	    return this.objectType.equals(Constants.OBJECT_TYPES.VIEW);
+	}
+
+    protected boolean indexExists = true;       // Does spatial index exist for this layer
+	
+	@Override
+	public void setIndex() {
+        Connection conn = null; 
+        try {
+            conn = super.getConnection();
+        } catch (IllegalStateException ise) {
+            LOGGER.warn("No connection available for (" + 
+                        this.getLayerNameAndConnectionName() + 
+                        ") to check spatial index (" + ise.toString() + ")");
+            this.indexExists = false;
+        }
+        try {
+            LOGGER.debug("SVSpatialLayer(" + 
+                         this.getLayerNameAndConnectionName() + 
+                         ").setIndex.isSpatiallyIndexed()");
+            this.indexExists = Queries.isSpatiallyIndexed(conn,
+                                                               super.getSchemaName(),
+                                                               super.getObjectName(),
+                                                               super.getGeoColumn(),
+                                                               super.getSRID());                
+            LOGGER.debug("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
+        } catch (IllegalArgumentException iae) {
+            LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
+            this.indexExists = false;
+        }
+    }
+
+    public void setIndex(String _hasIndex) {
+        try {
+            if (Strings.isEmpty(_hasIndex) )
+                this.setIndex();
+            else 
+                this.indexExists = Boolean.valueOf(_hasIndex); 
+        } catch (Exception e) {
+            this.indexExists = true;
+        }
+    }
+  
+    public void setIndex(boolean _indexExists) {
+        this.indexExists = _indexExists;
+    }
+    
+    public boolean hasIndex() {
+        return this.indexExists;
+    }
+
+	@Override
+	public boolean setLayerMBR(Envelope _defaultMBR, int _targetSRID)
+    {
+        Connection conn = super.getConnection();
+         
+        // If source is INDEX get MBR from RTree index
+        //
+        Envelope lMBR = new Envelope(this.getDefaultPrecision());
+        
+        LOGGER.debug("SVQueryLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
+                         "\nSRIDTYPE=" + this.getSRIDType().toString()+
+                   "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
+        
+        // If one method fails, a warning is written. When this happens we need to report success of later method
+        boolean multiTry = false;
+        
+        if (this.hasIndex() &&
+            this.getSRIDType().toString().startsWith("GEO") == false &&
+            this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
+        {
+            try {
+                lMBR.setMBR(Queries.getExtentFromRTree(conn,
+                                                       this.getSchemaName(),
+                                                       this.getObjectName(),
+                                                       this.getGeoColumn(),
+                                                       this.getSRID(),
+                                                       String.valueOf(_targetSRID))); 
+                LOGGER.debug("SVQueryLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
+                if ( lMBR.isSet() ) {
+                    super.setMBR(lMBR);
+                    return true;
+                } 
+            } catch (SQLException e) {
+                LOGGER.warn(e.getMessage() + ": Will now try and extract MBR from metadata.");
+                multiTry = true;
+            }
+        }
+        
+        // Try and get Metadata from database.
+        //
+        boolean hasMetadata = false;
+        try {
+            hasMetadata = Queries.hasGeomMetadataEntry(conn,
+                                                            this.getSchemaName(),
+                                                            this.getObjectName(),
+                                                            this.getGeoColumn());
+            // Try and extract from existing Metadata
+            if ( hasMetadata ) {
+                try 
+                {
+                    lMBR = Queries.getExtentFromDimInfo(conn, 
+                                                             this.getSchemaName(),
+                                                             this.getObjectName(), 
+                                                             this.getGeoColumn(),
+                                                             this.getSpatialView().getSRID());
+                    if ( lMBR.isSet() ) {
+                        super.setMBR(lMBR);
+                        if (multiTry) {
+                            LOGGER.warn("Extracting MBR From Metadata Successful.");
+                        }
+                        return true;
+                    } 
+                } catch (Exception e) {
+                    LOGGER.warn("Error extracting MBR from metadata (" + e.getMessage() + "): Extracting MBR from a sample of records.");
+                    multiTry = true;
+                }
+            }  
+        } catch (SQLException e) {
+            LOGGER.warn("No User_Sdo_Geom_Metadata: Skipping to extract MBR from a sample of records.");
+            multiTry = true;
+        }
+        
+        // Try sampling geometries to get MBR
+        //
+        try 
+        {
+            lMBR = Queries.getExtentFromSample(conn, 
+                                               this.getSchemaName(),
+                                               this.getObjectName(), 
+                                               this.getGeoColumn(),
+                                               Constants.VAL_MBR_SAMPLE_LIMIT);
+            if ( lMBR.isSet() ) {
+                super.setMBR(lMBR);
+                if (multiTry) {
+                    LOGGER.warn("Extracting MBR From Sample Successful.");
+                }
+                return true;
+            } 
+        } catch (SQLException e) {
+            LOGGER.warn("Failed to get MBR Through Sampling (" + e.getMessage() + ").");
+        }
+        
+        LOGGER.debug("SVQueryLayer.setLayerMBR() setMBR=" + lMBR.toString());        
+        if ( _defaultMBR!=null && 
+             _defaultMBR.isSet() ) {
+            super.setMBR(_defaultMBR);
+            LOGGER.warn("Default MBR Applied to Layer.");
+            return true;
+        }
+        return false;
+    }
+
+	@Override
+	public String getInitSQL(String _geoColumn) {
+		return this.getSQL();
+	}
+
+	@Override
+	public void setInitSQL() {
+		this.setSQL("");
+	}
+
+	@Override
+	public String getSDOFilterClause() 
+    {
+        String sdoFilterClause = this.getSDOFilterClause();
+        if (this.getMinResolution()) {
+            Point.Double pixelSize = null;
+            try {
+                pixelSize = this.getSpatialView().getMapPanel().getPixelSize();
+            } catch (NoninvertibleTransformException e) {
+                pixelSize = new Point.Double(0.0,0.0);
+            }
+	        if ( this.getMinResolution() && pixelSize != null  ) {
+	            double maxPixelSize = Math.max(pixelSize.getX(), pixelSize.getY());
+	            if (maxPixelSize != 0.0) {
+	                sdoFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
+	            }
+	        }
+        }
+        return sdoFilterClause;
+	}
+
+	@Override
+	public String wrapSQL(String _sql) {
+		return this.getSQL();
+	}
+
+	@Override
+	public String getLayerSQL() {
+		return this.getSQL();
+	}
+
+    protected boolean calculateMBR = false;      // When true, recalculates Layer MBR at next draw from actual data
+
+    public GEOMETRY_TYPES getGeometryType()
+    {
+    	return super.getGeometryType();
+    }
+    
+    public Envelope getMBR() 
+    {
+    	return super.getMBR();
+    }
+
+	@Override
+    public void setMBRRecalculation(boolean _recalc) {
+        this.calculateMBR = _recalc;
+    }
+
+	@Override
+    public boolean getMBRRecalculation() {
+        return this.calculateMBR;
+    }
+
+    protected long numberOfFeatures = 0;          // Feature Count for display and stats
+
+	@Override
+	public void setNumberOfFeatures(long _number) 
+    {
+        LOGGER.debug("setNumberOfFeatures()="+_number);
+        this.numberOfFeatures = _number;
+        if (this.getPreferences().isNumberOfFeaturesVisible() ) {
+            this.getSpatialView().getSVPanel().getViewLayerTree().refreshLayerCount(this,_number);
+        } else {
+            this.getSpatialView().getSVPanel().getViewLayerTree().removeLayerCount(this);
+        }
+    }
+
+	@Override
+	public long getNumberOfFeatures() {
+        return this.numberOfFeatures;
+	}
+
+	@Override
+	public LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings, boolean _fullDataType)
+			throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void callDrawFunction(Struct _struct, 
+			                     String _label, 
+			                     String _shadeValue, 
+			                     String _pointColorValue,
+			                     String _lineColorValue, 
+			                     int _pointSizeValue, 
+			                     double _rotationAngle) 
+	 throws SQLException, 
+	        IOException 
+	{
+		if (_struct == null) {
+			return;
+		}
+		Struct stGeom = _struct;
+		String sqlTypeName = _struct.getSQLTypeName();
+		if (sqlTypeName.indexOf("MDSYS.ST_") == 0) {
+			stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+		}
+		if (stGeom == null) {
+			return;
+		}
+		JGeometry geo = JGeometry.loadJS(stGeom);
+		if (geo == null) {
+			return;
+		}
+		this.callDrawFunction(geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue, _rotationAngle);
+	}
+
+	@Override
+	public void callDrawFunction(JGeometry _geo, 
+                                 String _label, 
+                                 String _shadeValue, 
+                                 String _pointColorValue,
+                                 String _lineColorValue, 
+                                 int _pointSizeValue, 
+                                 double _rotationAngle) 
+     throws IOException 
+	{
+		if (_geo == null) {
+			return;
+		}
+		drawTools.drawGeometry(_geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue,
+				this.styling.getRotationTarget(), _rotationAngle,
+				this.styling.getLabelAttributes(this.getSpatialView().getMapPanel().getMapBackground()),
+				this.styling.getLabelPosition(), this.styling.getLabelOffset());
+	}
+
+    protected String layerCopySuffix = " (COPY)";  // Should be Tools>Preferences>GeoRaptor
+
+	@Override
+	public SVQueryLayer createCopy() throws Exception {
+        SVQueryLayer newLayer = null;
+
+        String newName = super.getSpatialView().getSVPanel().getViewLayerTree().checkName(this.getLayerName());
+
+        // Shared SVLayer stuff
+        //
+        newLayer = new SVQueryLayer(this.getSpatialView(),
+                                    newName,
+                                    this.getVisibleName()+layerCopySuffix,
+                                    this.getDesc(),
+                                    this.getMetadataEntry(),
+                                    this.isDraw());
+        
+        // set SVLayer properties (What is a copy? Is it a render layer?)
+        newLayer.setSRIDType(this.getSRIDType());
+        newLayer.setGeometryType(this.getGeometryType());
+        newLayer.setConnectionName(super.connName);
+        newLayer.setIndex(this.hasIndex());
+        newLayer.setMBR(this.getMBR());
+        newLayer.setSQL(this.getSQL());
+        newLayer.setMinResolution(this.getMinResolution());
+        newLayer.setFetchSize(this.getFetchSize());
+        newLayer.setPrecision(this.getPrecision(false));
+        newLayer.setProject(this.getProject(),false);
+
+        // Label
+        newLayer.setStyling(new Styling(this.styling));
+        
+        return newLayer;
+	}
+
+    protected boolean minResolution = false;      // Do we use min_resolution sdo_filter parameter when querying?
+
+	@Override
+	public void setMinResolution(boolean _minResolution) 
+	{
+        if ( this.geometryType == Constants.GEOMETRY_TYPES.POINT )
+            this.minResolution = false;
+        else
+            this.minResolution = _minResolution;
+    }
+  
+    public boolean getMinResolution() {
+        return ( this.geometryType == Constants.GEOMETRY_TYPES.POINT ) ? false : this.minResolution;
+    }
+
+	@Override
+    public void setResultFetchSize(int _resultFetchSize) {
+        this.resultFetchSize = _resultFetchSize;
+    }
+  
+    public int getResultFetchSize() {
+        return this.resultFetchSize;
+    }
+    
+    protected SVSpatialLayerDraw drawTools = new SVSpatialLayerDraw(this); // Class used to draw this layer 
+
+    public SVSpatialLayerDraw getDrawTools() {
+        return this.drawTools;
+    }
+
+	@Override
+    public SpatialView getView() {
+        return super.getSpatialView();
+    }
+
+    protected boolean project = false;      // Project to view's projection?
+
+	@Override
+    public boolean getProject() {
+        return this.project;
+    }
+  
+	@Override
+    public void setProject(boolean _yes, boolean _calcMBR) {
+        this.project = _yes;
+        if (_calcMBR) {
+            // Anytime this is called we need to recalculate the MBR of the layer
+            this.setLayerMBR(super.mbr, super.getSRIDAsInteger());
+        }
+    }
+
+    protected int resultFetchSize = 100;        // Fetch size for ResultSet
+
+	@Override
+    public void setFetchSize(int _fetchSize) {
+        if (_fetchSize == 0)
+            this.resultFetchSize = this.getPreferences().getFetchSize();
+        else
+            this.resultFetchSize = _fetchSize;
+    }
+
+	@Override
+    public int getFetchSize() {
+        return this.resultFetchSize;
+    }
+
+	@Override
+	public MetadataEntry getMetadataEntry()
+	{
+		return super.getMetadataEntry();
+	}
+
+    @Override
+	public boolean executeDrawQuery(PreparedStatement _pStatement,
+                                    String            _sql2Debug,
+                                    Graphics2D        _g2)
+    {
+        LOGGER.debug("** START: executeDrawQuery\n=======================");
+        if ( _g2 == null ) {
+            LOGGER.debug("**** Graphics2D is null; return;");
+            return false;
+        }
+        // connection needed for 
+        ResultSet    ors = null;
+        Envelope newMBR = new Envelope(this.getDefaultPrecision());
+        String     labelValue = null,
+                   shadeValue = null,
+              pointColorValue = null,
+               lineColorValue = null,
+                  sqlTypeName = "";
+        boolean isFastPickler = this.getPreferences().isFastPicklerConversion();
+        double pointSizeValue = 4,
+                   angleValue = 0.0f;
+        Struct         stGeom = null;
+        JGeometry       jGeom = null;
+        byte[]    geomPickler = null;
+        long    mbrCalcStart  = 0,
+                  mbrCalcTime = 0,
+                totalFeatures = 0,
+                dataReadStart = System.currentTimeMillis(),
+                 dataReadTime = 0,
+                dataDrawStart = 0,
+                 dataDrawTime = 0,
+                 executeStart = 0,
+                  executeTime = 0;    
+        try 
+        {
+            Connection oConn = (Connection)_pStatement.getConnection();
+            // Set graphics2D once for all features
+            drawTools.setGraphics2D(_g2);
+            executeStart = System.currentTimeMillis();
+            ors = _pStatement.executeQuery();
+            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
+            ors.setFetchSize(this.getResultFetchSize());
+            executeTime = ( System.currentTimeMillis() - executeStart );
+            while ((ors.next()) &&
+                   (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
+            {
+                /// reading a geometry from database       
+                sqlTypeName = ((java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
+                if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
+                    geomPickler = ors.getBytes(super.getGeoColumn().replace("\"",""));
+                    if (geomPickler == null) { continue; }
+                    //convert image into a JGeometry object using the SDO pickler
+                    jGeom = JGeometry.load(geomPickler);
+                } else {
+                    stGeom = (java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""));
+                    if (stGeom == null) continue;
+                    // If ST_GEOMETRY, extract SDO_GEOMETRY
+                    if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
+                        stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
+                    } 
+                    if (stGeom==null) { continue; }
+                    jGeom = JGeometry.loadJS(stGeom);
+                }
+                if (jGeom == null) continue;
+                
+                totalFeatures++;
+                
+                if (this.styling.getLabelColumn() != null) {
+                    labelValue = SQLConversionTools.convertToString(
+                    		oConn,
+                    		this.styling.getLabelColumn(), 
+                    		ors.getObject(this.styling.getLabelColumn().replace("\"","")));
+                }
+                if (this.styling.getRotationColumn() != null) {
+                    try {
+                        angleValue = ors.getDouble(this.styling.getRotationColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        angleValue = 0.0f;
+                    }
+                }
+                if (this.styling.getShadeColumn() != null && 
+                    this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                    try {
+                        // regardless as to whether RGB or Integer, get colour as a string.
+                        shadeValue = ors.getString(this.styling.getShadeColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        shadeValue = "255,255,255";
+                    }
+                } 
+                if (this.styling.getPointColorColumn() != null && 
+                    this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
+                    try {
+                        // regardless as to whether RGB or Integer, get colour as a string.
+                        pointColorValue = ors.getString(this.styling.getPointColorColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        pointColorValue = "255,255,255";
+                    }
+                } 
+                if (this.styling.getLineColorColumn() != null && 
+                    this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
+                    try {
+                        // regardless as to whether RGB or Integer, get colour as a string.
+                        lineColorValue = ors.getString(this.styling.getLineColorColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        lineColorValue = "0,0,0";
+                    }
+                }  
+                if (this.styling.getPointSizeColumn() != null && 
+                    this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
+                    try {
+                        pointSizeValue = ors.getDouble(this.styling.getPointSizeColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        pointSizeValue = 4;
+                    }
+                }              
+                // Draw the feature
+                //
+                dataDrawStart = System.currentTimeMillis();
+                callDrawFunction(jGeom, 
+                                 labelValue, 
+                                 shadeValue, 
+                                 pointColorValue,
+                                 lineColorValue,
+                                 (int)(Math.round(pointSizeValue<4.0?4:pointSizeValue) % 72),
+                                 this.styling.getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
+                                 ? COGO.radians(COGO.normalizeDegrees(angleValue - 90.0f)) 
+                                 : angleValue);
+                dataDrawTime += ( System.currentTimeMillis() - dataDrawStart );
+                
+                // Check if we are reccalculating the layer's MBR
+                //
+                if ( this.getMBRRecalculation() ) {
+                    LOGGER.debug("**** MBR Recalculation - processing individual geometry for " + this.getLayerNameAndConnectionName());
+                    mbrCalcStart =  System.currentTimeMillis();
+                    newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
+                    mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );
+                }
+                if ( this.preferences.isQueryLimited() && totalFeatures >= this.preferences.getQueryLimit() ) {
+                    break;
+                }
+            } // while feature to process
+            dataReadTime += (  System.currentTimeMillis() - dataReadStart );
+            this.setNumberOfFeatures(totalFeatures);
+            float featsPerSecond = ( this.getNumberOfFeatures() / (((float)(dataReadTime + executeTime) / (float)Constants.MILLISECONDS) % Constants.SECONDS) );
+            LOGGER.logSQL("\n" + 
+                           super.getSpatialView().getVisibleName() + ">>" + this.getVisibleName() + "\n" + 
+                           ( this.getPreferences().isLogSearchStats() ? 
+                           "SQL Execution Time = " + Tools.milliseconds2Time(executeTime) + "\n" : "" ) + 
+                           "         Draw Time = " + Tools.milliseconds2Time(dataDrawTime)+ "\n" +
+                           ( this.getMBRRecalculation() ? 
+                           "     MBR Calc Time = " + Tools.milliseconds2Time(mbrCalcTime)+ "\n" : "" ) + 
+                           "    Data Read Time = " + Tools.milliseconds2Time(dataReadTime - (dataDrawTime+mbrCalcTime)) + "\n" +
+                           "   Total Read Time = " + Tools.milliseconds2Time(dataReadTime) + "\n" +
+                           " Features Returned = " + this.getNumberOfFeatures()  + "\n" +
+                           "   Features/Second = " + String.format("%10.2f",featsPerSecond));
+            if ( this.getMBRRecalculation() ) {
+                LOGGER.debug("**** MBR Recalculation - Final processing " + newMBR.toString());
+                if (newMBR.getWidth() == newMBR.getHeight()) {
+                  // Must be a single point
+                  //
+                  Point2D.Double pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
+                  double maxBufferSize = Math.max(pixelSize.getX(),pixelSize.getY()) * this.getPreferences().getSearchPixels();
+                  newMBR.setChange(maxBufferSize);
+                }
+                LOGGER.debug("**** MBR Recalculation - setMBR to " + newMBR.toString());
+                super.setMBR(newMBR);
+                this.setMBRRecalculation(false);
+            }
+        } catch (SQLException sqle) {
+            // isView() then say no index
+            if ( this.isView() ) { this.setIndex(false); };
+            String params = "";
+            ParameterMetaData pmd = null;
+            try {
+                pmd = _pStatement.getParameterMetaData();
+                for (int i=1;i<=pmd.getParameterCount();i++) {
+                    params += "\n" + pmd.getParameterTypeName(i);
+                }
+            } catch (SQLException e) {
+            }
+            Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
+                                                               sqle.toString()),
+                                  _sql2Debug + params);
+            return false;
+        } catch (IOException ioe) {
+            JOptionPane.showMessageDialog(null,
+                                          super.propertyManager.getMsg("FILE_IO_ERROR",
+                                                                       ioe.getLocalizedMessage()),
+                                          MainSettings.EXTENSION_NAME,
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        } catch (NullPointerException npe) {
+            LOGGER.debug("**** NullPointerException - " + npe.toString());
+            npe.printStackTrace();
+            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("SVQueryLayer.executeDrawQuery - general exception");
+            e.printStackTrace();
+            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
+            return false;
+        } finally {
+            try { ors.close();        } catch (Exception _e) { }
+            try { _pStatement.close(); } catch (Exception _e) { }
+        }
+        LOGGER.debug("** FINISH: executeDrawQuery\n========================");
+        return true;
+    }
 
 }

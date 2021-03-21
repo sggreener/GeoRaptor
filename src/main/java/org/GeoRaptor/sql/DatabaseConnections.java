@@ -10,6 +10,7 @@ import org.GeoRaptor.Messages;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 
@@ -73,7 +74,7 @@ public class DatabaseConnections {
                  itView = svPanel.getViews().get(it.next());
                  Iterator<String> layerNamesIter = itView.getLayerList().keySet().iterator();
                  while (layerNamesIter.hasNext()) {
-                     SVSpatialLayer sLayer = itView.getLayerList().get(layerNamesIter.next());
+                     iLayer sLayer = itView.getLayerList().get(layerNamesIter.next());
                      if ( sLayer.getConnectionName().equalsIgnoreCase(evt.getOldName()) ) {
                          sLayer.setConnectionName(evt.getConnectionName());
                      }
@@ -332,10 +333,13 @@ public class DatabaseConnections {
         return dbConn == null ? null : dbConn;
     }
 
-    public DatabaseConnection getConnectionAt(int _index) {
+    public DatabaseConnection getConnectionAt(int _index) 
+    {
         if ( this.cache == null || this.cache.size()==0 || (_index > this.cache.size()-1) )
             return null;
+        
         DatabaseConnection dbConn = null;
+        
         // LinkedHashMap iterates in the order in which the entries were put into the map
         int i = 0; // is 0 based
         Iterator<DatabaseConnection> iter = this.cache.values().iterator();

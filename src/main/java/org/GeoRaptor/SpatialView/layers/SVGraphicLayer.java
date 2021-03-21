@@ -37,7 +37,9 @@ import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 
 
-public class SVGraphicLayer extends SVSpatialLayer implements iLayer 
+public class SVGraphicLayer 
+extends SVSpatialLayer 
+implements iLayer 
 {
 
     public static final String CLASS_NAME = Constants.KEY_SVGraphicLayer;

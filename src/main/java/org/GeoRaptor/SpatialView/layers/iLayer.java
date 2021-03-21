@@ -4,7 +4,8 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 
 import java.io.IOException;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Struct;
 
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
@@ -103,6 +105,8 @@ public interface iLayer {
 
     String getSQL();
 
+    Envelope getMBR();
+    
     void setMBRRecalculation(boolean _recalc);
 
     boolean getMBRRecalculation();
@@ -111,30 +115,11 @@ public interface iLayer {
 
     long getNumberOfFeatures();
 
-    /**
-     * Execute SQL and draw data on given graphical device
-     * @param _mbr MBR coordinates
-     * @param _g2 graphical device
-     * @return if return false, something was wrong (for example, Connection with DB faild)
-     */
     boolean drawLayer(Envelope _mbr, Graphics2D _g2);
 
     LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
                                                      boolean _fullDataType) throws SQLException;
 
-    /**
-     * Convert STRUCT object to JGeometry and call drawX function base on Geometry type
-     * @history Simon Greener April 2010.
-     * Added call to draw geometry via new java.awt.Shape aware drawGeometry funciton
-     * @history Simon Greener May 31st 2010.
-     * Moved setting of graphics2D of drawTools to calling function
-     * @history Simon Greener June 2nd 2010.
-     * Got rid of super.lastReadLayerMBR.setMBR(geo.getMBR())
-     * because we are processing single geometries and NOT the whole layer.
-     * Also, geo.getMBR() returns different arrays depending on whether xy or xyz etc.
-     * - Also moved setting of temporary layer transparency to own function
-     * and to before this function is called (for each and all geometries)
-     */
     void callDrawFunction(Struct _struct, String _label, String _shadeValue, String _pointColorValue,
                           String _lineColorValue, int _pointSizeValue, double _rotationAngle) throws SQLException,
                                                                                                      IOException;
@@ -142,10 +127,7 @@ public interface iLayer {
     void callDrawFunction(JGeometry _geo, String _label, String _shadeValue, String _pointColorValue,
                           String _lineColorValue, int _pointSizeValue, double _rotationAngle) throws IOException;
 
-    /**
-     * Create copy of current class.
-     */
-    org.GeoRaptor.SpatialView.layers.SVSpatialLayer createCopy() throws Exception;
+    org.GeoRaptor.SpatialView.layers.iLayer createCopy() throws Exception;
 
     void setMinResolution(boolean _minResolution);
 
@@ -171,20 +153,53 @@ public interface iLayer {
 
     int getFetchSize();
 
-    /**
-     * @history Simon Greener April 13th 2010
-     * - Reorganised SQL
-     * - Moved to use of new Constants class
-     * @history Simon Greener June 7th 2010
-     * - Added
-     * ORDER BY
-     * SDO_NN_DISTANCE ancillary operator
-     * - etc to try and address John O'Toole's partition problem
-     * @history Simon Greener December 15th 2010
-     * - Fully parameterized queries.
-     * - Changed method of calculating cutoff distance for geodetic data
-     * @history Simon Greener December 15th 2010
-     * - New approach that honors current SQL defining layer
-     */
     ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, int _numSearchPixels);
+    
+	Constants.GEOMETRY_TYPES getGeometryType();
+
+	// Wrappers over SVLayer
+    //	
+ 	int getSRIDAsInteger();
+
+	Connection getConnection();
+
+	void setMBR(Envelope mbr);
+
+	boolean isGeodetic();
+
+	void setView(SpatialView spatialView);
+
+	String getSRID();
+
+	String getConnectionName();
+
+	Constants.SRID_TYPE getSRIDType();
+
+	boolean isConnectionOpen();
+
+	boolean openConnection();
+
+	String getConnectionDisplayName();
+
+	String getGeoColumn();
+
+	String getSchemaName();
+
+	String getObjectName();
+
+	void setGeoColumn(String trim);
+
+	void setPrecision(String text);
+
+	void setSRIDType(String string);
+
+	void setGeometryType(String string);
+
+	void setConnectionName(String connectionName);
+
+	MetadataEntry getMetadataEntry();
+
+	boolean executeDrawQuery(PreparedStatement _pStatement, String _sql2Debug, Graphics2D _g2);
+
 }
+

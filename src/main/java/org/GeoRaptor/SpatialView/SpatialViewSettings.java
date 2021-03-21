@@ -19,6 +19,7 @@ import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
@@ -82,6 +83,7 @@ final public class SpatialViewSettings {
 
                 // Now process View's layers
                 //
+                iLayer            iLayer = null;
                 SVSpatialLayer    sLayer = null;
                 SVQueryLayer      qLayer = null;
                 SVWorksheetLayer  wLayer = null;
@@ -209,7 +211,7 @@ final public class SpatialViewSettings {
 
           Iterator<String> layerNamesIter = itView.getLayerList().keySet().iterator();
           while (layerNamesIter.hasNext()) {
-              SVSpatialLayer sLayer = itView.getLayerList().get(layerNamesIter.next());
+              iLayer sLayer = (iLayer) itView.getLayerList().get(layerNamesIter.next());
               // We don't save SVGraphicLayers
               if ( ! (sLayer instanceof SVGraphicLayer) )  
               {

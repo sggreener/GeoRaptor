@@ -51,7 +51,7 @@ public class SpatialQueryReview extends JDialog {
     /**
      * Reference to data structure with properties
      */
-    protected SVSpatialLayer layer;
+    protected iLayer layer;
     
     protected Constants.SDO_OPERATORS sdoOperator;
 
@@ -578,10 +578,11 @@ public class SpatialQueryReview extends JDialog {
     private javax.swing.JTabbedPane tpReview;
     // End of variables declaration//GEN-END:variables
 
-    public void initDialog(final SVSpatialLayer          _layer,
+    public void initDialog(final iLayer                  _sLayer,
                            final Constants.SDO_OPERATORS _operator,
-                           final String                  _filterGeometry) {
-        this.layer                     = _layer;
+                           final String                  _filterGeometry)
+    {
+        this.layer                     = _sLayer;
         this.sdoOperator               = _operator;
         this.filterGeometry            = _filterGeometry;
         this.originalSdoGeometryString = _filterGeometry;
@@ -603,7 +604,6 @@ public class SpatialQueryReview extends JDialog {
         lblCreateLayer.setText(this.propertyManager.getMsg("lblCreateLayer"));
         rbGeometry.setSelected(true);
 
-        final String filterGeometry = _filterGeometry;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 rbPrecisionLayer.setSelected(true);
@@ -623,7 +623,6 @@ public class SpatialQueryReview extends JDialog {
                 repaint();
             }
         });
-
     }
     
     public Constants.SDO_OPERATORS getSdoOperator() {

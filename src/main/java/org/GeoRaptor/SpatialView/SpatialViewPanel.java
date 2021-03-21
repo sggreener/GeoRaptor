@@ -81,6 +81,7 @@ import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.Styling;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.PropertiesManager;
@@ -515,7 +516,7 @@ extends JPanel
         zoomLayerButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         if ( activeView != null ) {
-                          SVSpatialLayer sLayer = activeView.getActiveLayer();
+                          iLayer sLayer = activeView.getActiveLayer();
                           if ( sLayer != null ) {
                               zoomFullButton(sLayer);
                           } else {
@@ -975,7 +976,7 @@ extends JPanel
      * If _zoomLayer is null then zoom extent is calculated from all drawable layers, 
      * otherwise only using the provided layer.
      */
-    public void zoomFullButton(SVSpatialLayer _zoomLayer) 
+    public void zoomFullButton(iLayer _zoomLayer) 
     {
         if (this.activeView.initializeMBR(_zoomLayer)) {
             // zoom to whole world
@@ -1783,7 +1784,7 @@ extends JPanel
             this.setMessage(this.propertyManager.getMsg("LOAD_VIEW_FROM_DISK_LOAD_VIEW",vNode.getSpatialView().getVisibleName()), false);
             // Now process layers in the XML
             //
-            SVSpatialLayer newLayer = null;
+            iLayer newLayer = null;
             NodeList lList = (NodeList) xpath.evaluate(topLayerNode,topNode,XPathConstants.NODESET);
             for(int j = 0 ; j < lList.getLength(); j++){
                 lNode = lList.item(j).cloneNode(true);
@@ -1851,13 +1852,13 @@ extends JPanel
     * @author Simon Greener June 17th 2010
     *          Added improved selection colouring based on geometry or layer type
     */  
-    public void showGeometry(final SVSpatialLayer  _layer,
-                             final Struct          _geo, 
-                             final List<QueryRow>  _geoSet,
-                             final Envelope _mbr,
-                             final boolean         _selectionColouring,
-                             final boolean         _zoom,
-                             boolean               _drawAfter) 
+    public void showGeometry(final iLayer         _iLayer,
+                             final Struct         _geo, 
+                             final List<QueryRow> _geoSet,
+                             final Envelope       _mbr,
+                             final boolean        _selectionColouring,
+                             final boolean        _zoom,
+                             boolean              _drawAfter) 
     {
         if ( _geo == null && _geoSet == null) {
             JOptionPane.showMessageDialog(null,
@@ -1950,8 +1951,8 @@ extends JPanel
         
         // If layer not supplied can we get our properties from the active layer?
         //
-        SVSpatialLayer propertiesLayer = null;
-        if ( _layer == null ) {
+        iLayer propertiesLayer = null;
+        if ( _iLayer == null ) {
             propertiesLayer = mappingView.getActiveLayer();
             if  (propertiesLayer == null) 
             {
@@ -1981,7 +1982,7 @@ extends JPanel
                 }
             } 
         } else {
-            propertiesLayer = _layer;
+            propertiesLayer = _iLayer;
         }
         if ( propertiesLayer.getConnection()==null ) {
             propertiesLayer.setConnection(mappingView.getConnectionName());
@@ -1990,7 +1991,7 @@ extends JPanel
         // Temporary layer with only those layer properties so that our changed 
         // rendering (se selection) won't affect original layer
         //
-        SVSpatialLayer tLayer = null;
+        iLayer tLayer = null;
         try {
             tLayer = propertiesLayer.createCopy( );
         } catch (Exception e) {
@@ -2007,21 +2008,21 @@ extends JPanel
             boolean selectionColouring = false;
             boolean        initialised = false; // Controls multiple initiation in draw method
             Graphics2D             g2d = null;
-            SVSpatialLayer renderLayer = null;
+            iLayer         renderLayer = null;
             
             public ShadeAfterDraw(Graphics2D     _g2d,
                                   Struct         _geo, 
                                   List<QueryRow> _geoSet,
-                                  SVSpatialLayer _renderLayer,
+                                  iLayer         _tLayer,
                                   boolean        _selectionColouring)
             {
                 super(true);  // true means remove after drawing layer
-                this.g2d    = _g2d;
-                this.geo    = _geo;
-                this.geoSet = _geoSet;
-                this.renderLayer = _renderLayer;
+                this.g2d                = _g2d;
+                this.geo                = _geo;
+                this.geoSet             = _geoSet;
+                this.renderLayer        = _tLayer;
                 this.selectionColouring = _selectionColouring;
-                this.initialised = false;
+                this.initialised        = false;
             }
             
             public void initialize() 
@@ -2255,7 +2256,7 @@ extends JPanel
         this.activeView.setActiveLayer(_activeLayer);
     }
  
-    public SVSpatialLayer getActiveLayer() {
+    public iLayer getActiveLayer() {
         return this.getActiveView().getActiveLayer();
     }
 

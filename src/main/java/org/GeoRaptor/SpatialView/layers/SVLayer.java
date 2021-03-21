@@ -80,7 +80,8 @@ public class SVLayer {
 		this.propertyManager = new PropertiesManager(propertiesFile);
 	}
 
-	public SVLayer(SpatialView _spatialView, MetadataEntry _me) {
+	public SVLayer(SpatialView   _spatialView, 
+                   MetadataEntry _me) {
 		this(_spatialView);
 		if (_me != null) {
 			this.setMetadataEntry(_me);

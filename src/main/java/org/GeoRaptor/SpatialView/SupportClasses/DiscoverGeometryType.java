@@ -3,6 +3,7 @@ package org.GeoRaptor.SpatialView.SupportClasses;
 import java.sql.Connection;
 
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
@@ -23,12 +24,12 @@ public class DiscoverGeometryType extends javax.swing.JDialog {
 
 	private static final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.SupportClasses.DiscoverGeometryType");
 
-    protected SVSpatialLayer layer;
+    protected iLayer     layer;
     protected Connection conn;
-    protected String schema;
-    protected String object;
-    protected String column;
-    protected String geometryType;
+    protected String     schema;
+    protected String     object;
+    protected String     column;
+    protected String     geometryType;
     protected boolean CANCELLED = false;
 
     /** Creates new form DiscoverGeometryType */
@@ -37,15 +38,16 @@ public class DiscoverGeometryType extends javax.swing.JDialog {
         initComponents();
     }
     
-    public DiscoverGeometryType(boolean        _modal,
-                                SVSpatialLayer _layer,
-                                Connection      _conn,
-                                String        _schema,
-                                String        _object,
-                                String        _column,
-                                String  _geometryType) {
+    public DiscoverGeometryType(boolean    _modal,
+                                iLayer     _layer,
+                                Connection _conn,
+                                String     _schema,
+                                String     _object,
+                                String     _column,
+                                String     _geometryType) 
+    {
       this(null,_modal);
-      this.layer = _layer;
+      this.layer =       _layer;
       this.conn  = _conn;
       this.schema = _schema;
       this.object = _object;

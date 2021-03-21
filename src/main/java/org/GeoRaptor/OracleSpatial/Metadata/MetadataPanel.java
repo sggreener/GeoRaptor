@@ -1287,9 +1287,9 @@ public class MetadataPanel extends javax.swing.JDialog {
         if ( this.dbConnections.getConnectionCount()==0 ) {
             throw new Exception(propertyManager.getMsg("MD_NO_CONNECTION_FOR","Metadata Manager"));
         }
-        this.conn = (_conn!=null)? _conn : this.dbConnections.getConnectionAt(0).getConnection();
+        this.conn       = (_conn!=null)               ? _conn               : this.dbConnections.getConnectionAt(0).getConnection();
         this.schemaName = Strings.isEmpty(_schemaName)?this.conn.getSchema():_schemaName;
-        this.userName = Strings.isEmpty(_userName)  ?this.schemaName             :_userName;
+        this.userName   = Strings.isEmpty(_userName)  ?this.schemaName      :_userName;
 
         // 2. Initialize connection pulldown
         //
@@ -1339,14 +1339,11 @@ public class MetadataPanel extends javax.swing.JDialog {
         }
 
         // 6. Populate User Widgets
+        //    If MetadataTool launched from View menu, the first metadata record in metadataTM will be used.
         //    If nothing in top table (currTable) then no metadata for object exists
         //    it will be tagged as isMissing()
         //
-        if ( _conn==null ) {
-            populateUserWidgets((MetadataEntry)this.metadataTM.getValueAt(0, this.metadataTM.mEntryPosn));
-        } else {
-            populateUserWidgets(_objectName,_columnName);
-        }
+        populateUserWidgets((MetadataEntry)this.metadataTM.getValueAt(0, this.metadataTM.mEntryPosn));
         
         // 7. Set up Models and Listeners
         //
@@ -1362,12 +1359,13 @@ public class MetadataPanel extends javax.swing.JDialog {
 
      private void populateUserWidgets(MetadataEntry _mEntry) 
      {
+
          // If we have been given a MetadataEntry then it came from the database
          //
          // 1. Populate key properties
          //
          this.schemaName = _mEntry.getSchemaName();
-         this.objectName = _mEntry.getObjectName();
+         this.objectName = _mEntry.getObjectName();  // SGG What is null
          this.columnName = _mEntry.getColumnName();
          
          // 2. Populate columns combo with single item
@@ -1386,7 +1384,9 @@ public class MetadataPanel extends javax.swing.JDialog {
          //
          this.objectType = "";
          try {
-             this.objectType = Queries.getObjectType(this.conn, this.schemaName, this.objectName);
+        	 if (! Strings.isEmpty(_mEntry.getObjectName()) )
+               this.objectType = Queries.getObjectType(this.conn, this.schemaName, this.objectName);
+        	 
          } catch (Exception e /* SQLException sqle and IllegalArgumentException */ ) {
              JOptionPane.showMessageDialog(null,
                                            propertyManager.getMsg("ERROR_MESSAGE_OBJECT_TYPE_NOT_FOUND",
@@ -1400,7 +1400,10 @@ public class MetadataPanel extends javax.swing.JDialog {
          
          // 5. Setup full object name
          //
-         this.tfSelectedObject.setText(_mEntry.getFullName() + " (" + this.objectType + ")");
+    	 if (Strings.isEmpty(_mEntry.getObjectName()))
+           this.tfSelectedObject.setText("");
+         else
+           this.tfSelectedObject.setText(_mEntry.getFullName() + " (" + this.objectType + ")");
          
          // 6. set SRID of dialog
          //
@@ -1418,14 +1421,16 @@ public class MetadataPanel extends javax.swing.JDialog {
         
         // 1. Geometry column checks....
         //
-        List<String>tableGeometryColumns = new ArrayList<String>(Queries.validateColumnName(this.conn,
-                                                                                                 this.schemaName,
-                                                                                                 _objectName,
-                                                                                                 _columnName));
+        List<String>tableGeometryColumns = new ArrayList<String>(
+        		Queries.validateColumnName(this.conn,
+                                           this.schemaName,
+                                           _objectName,
+                                           _columnName) );
+        
         if ( tableGeometryColumns == null || tableGeometryColumns.size()==0 ) {
             throw new IllegalArgumentException(
-                               propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",
-                                                      schemaUser));
+                             propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",
+                                                    schemaUser) );
         }
 
         // 2. Passed in schema/object/geometry column values are valid
