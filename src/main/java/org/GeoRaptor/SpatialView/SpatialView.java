@@ -31,7 +31,7 @@ import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
@@ -819,7 +819,7 @@ LOGGER.debug("</toXML>");
                 LOGGER.info(propertyManager.getMsg("FILE_SAVE_THEME",wLayer.getLayerName()));
                 saveXML += "<Layer>" + wLayer.toXML() + "</Layer>";
             } else {
-                SVSpatialLayer sLayer = (SVSpatialLayer) _selected.get(layerName);
+                SVTableLayer sLayer = (SVTableLayer) _selected.get(layerName);
                 LOGGER.info(propertyManager.getMsg("FILE_SAVE_THEME",sLayer.getLayerName()));
                 saveXML += "<Layer>" + sLayer.toXML() + "</Layer>";
             }

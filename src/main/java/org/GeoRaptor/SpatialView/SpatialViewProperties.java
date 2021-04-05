@@ -30,11 +30,6 @@ import java.sql.Connection;
 
 
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * SpatialViewProperties.java
  *
  * Created on 04/11/2010, 3:13:11 PM
@@ -650,7 +645,8 @@ public class SpatialViewProperties
                           String key = (String)keyIter.next();  // Get the next key.
                           cmbDistanceUnits.addItem(unitsOfMeasure.get(key)); // Add associated value to Combo
                           if ( key.equalsIgnoreCase(tfUOD.getText()) ||
-                              unitsOfMeasure.get(key).equalsIgnoreCase(tfUOD.getText()) ) {
+                              unitsOfMeasure.get(key).equalsIgnoreCase(tfUOD.getText()) ) 
+                          {
                               selectedItem = i;
                           } 
                       }

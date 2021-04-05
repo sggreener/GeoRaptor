@@ -97,7 +97,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;

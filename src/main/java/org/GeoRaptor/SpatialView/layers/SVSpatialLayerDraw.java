@@ -51,12 +51,12 @@ import org.GeoRaptor.tools.Coordinate;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.RenderTool;
+import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
 
-@SuppressWarnings("deprecation")
 public class SVSpatialLayerDraw {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayerDraw");
@@ -65,10 +65,7 @@ public class SVSpatialLayerDraw {
      * Reference to main class
      */
     protected iLayer layer;
-    private Connection layerConnection = null;
-    private Styling    styling; 
     private Graphics2D graphics2D;
-
     private BasicStroke markStroke = null;
 
     public static final int    ALIGN_TOP = 1;
@@ -84,17 +81,68 @@ public class SVSpatialLayerDraw {
     public SVSpatialLayerDraw(iLayer _sLayer) 
     {
         this.layer = _sLayer;
-        if ( _sLayer instanceof SVSpatialLayer) 
-        {
-        	this.styling = ((SVSpatialLayer)this.layer).styling;
-        	this.layerConnection = ((SVSpatialLayer)this.layer).getConnection();
-        }
-        else { 
-        	this.styling = ((SVQueryLayer)this.layer).styling;
-        	this.layerConnection = ((SVQueryLayer)this.layer).getConnection();
-        }
-        this.markStroke = new BasicStroke(this.styling.getLineWidth() + 1,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND);        	
+    	
+    	if ( this.layer.getStyling() != null)
+          this.markStroke = new BasicStroke(
+                                     this.layer.getStyling().getLineWidth() + 1,
+                                     BasicStroke.CAP_ROUND,
+                                     BasicStroke.JOIN_ROUND);        	
     }
+
+	public void callDrawFunction(Struct _struct, 
+			                    Styling _styling, 
+			                    String  _label, 
+			                    Color   _shadeValue,
+			                    Color   _pointColorValue, 
+			                    Color   _lineColorValue, 
+			                    int     _pointSizeValue, 
+			                    double  _rotationAngle) 
+    throws SQLException, IOException 
+	{
+		if (_struct == null) {
+			return;
+		}
+		Struct stGeom = _struct;
+		String sqlTypeName = _struct.getSQLTypeName();
+		if (sqlTypeName.indexOf("MDSYS.ST_") == 0) {
+			stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
+		}
+		if (stGeom == null) {
+			return;
+		}
+		JGeometry geo = JGeometry.loadJS(stGeom);
+		if (geo == null) {
+			return;
+		}
+		callDrawFunction(geo, 
+                         _styling, 
+                         _label, 
+                         _shadeValue, 
+                         _pointColorValue, 
+                         _lineColorValue, 
+                         _pointSizeValue, 
+                         _rotationAngle);
+	}
+
+	public void callDrawFunction(
+			JGeometry _geo, 
+			Styling _styling, 
+			String _label, 
+			Color _shadeValue,
+			Color _pointColorValue, 
+			Color _lineColorValue, 
+			int _pointSizeValue, 
+			double _rotationAngle
+	) 
+    throws IOException 
+	{
+		if (_geo == null) {
+			return;
+		}
+		drawGeometry(_geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue,
+				_styling.getRotationTarget(), _rotationAngle, _styling.getLabelAttributes(),
+				_styling.getLabelPosition(), _styling.getLabelOffset());
+	}
 
     /**
      *
@@ -116,26 +164,35 @@ public class SVSpatialLayerDraw {
      */
     public void drawGeometry(JGeometry             _geo,
                              String                _label,
-                             String                _shadeValue,
-                             String                _pointColorValue,
-                             String                _lineColorValue,
+                             Color                 _shadeColorValue,
+                             Color                 _pointColorValue,
+                             Color                 _lineColorValue,
                              int                   _pointSizeValue,
                              Constants.ROTATE      _rotate,
                              double                _angle,
                              AttributeSet          _attributes,
-                             Constants.TEXT_OFFSET_POSITION _labelPosition,
+                             Constants.
+                              TEXT_OFFSET_POSITION _labelPosition,
                              int                   _labelOffset)
     throws IOException
     {
+		Styling styling = this.layer.getStyling();
+    	Color pointColor = ( _pointColorValue != null ) ? _pointColorValue : styling.getPointColor(null);  
+    	Color lineColor = ( _lineColorValue != null ) ? _lineColorValue : styling.getLineColor(null);  
+    	Color shadeColor = ( _shadeColorValue != null ) ? _shadeColorValue : styling.getShadeColor(null);  
+
         if ( this.graphics2D==null ) {
             throw new IOException("SVSpatialLayerDraw: No Graphics Context for drawing");
         }
+        
         if (_geo == null) {
             return;
         }
+        
         if (this.getWorldToScreenTransform()==null) {
             throw new IOException("SVSpatialLayerDraw: WorldToScreenTransform is null.");
         }
+        
         // DEBUG LOGGER.debug(String.format("labelValue=%s shadeValue=%s pointColorValue=%s lineColorValue=%s pointSizeValue=%d rotate=%s angle=%f labelPosition=%s labelOffset=%d", _label,_shadeValue,_pointColorValue,_lineColorValue,_pointSizeValue, _rotate.toString(), _angle, _labelPosition.toString(), _labelOffset));
         Shape shp = null;        
         this.setLabelPosition(_labelPosition);
@@ -146,28 +203,52 @@ public class SVSpatialLayerDraw {
             JGeometry[] _geoList = _geo.getElements();
             for (JGeometry _g : _geoList) {
                 if ( _g != null ) {
-                   drawGeometry(_g, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue, _rotate, _angle, _attributes, _labelPosition, _labelOffset);
+                   drawGeometry(_g, 
+                                _label, 
+                                shadeColor, 
+                                pointColor, 
+                                lineColor, 
+                                _pointSizeValue, 
+                                _rotate, 
+                                _angle, 
+                                _attributes, 
+                                _labelPosition, 
+                                _labelOffset);
                 }
             }
             break;
         case JGeometry.GTYPE_POINT:
             // Render the point
             try {
-                drawPoint(_geo, _label, _pointColorValue, _pointSizeValue, _rotate, _angle, _attributes, _labelOffset);
+                drawPoint(_geo, 
+                		  _label, 
+                		  pointColor, 
+                		  _pointSizeValue, 
+                		  _rotate, 
+                		  _angle, 
+                		  _attributes, 
+                		  _labelOffset);
             } catch (Exception e) {
                 LOGGER.warn("SVSpatialLayerDraw drawPoint() failed: " + e.toString() );
             }
-            if (this.styling.isMarkVertex() )
+            if (styling.isMarkVertex() )
             {
                 markPoint(_geo);
             }
             break;
         case JGeometry.GTYPE_MULTIPOINT:
             // Render the points of the multipoint
-            drawMultiPoint(_geo, _label, _pointColorValue, _pointSizeValue, _rotate, _angle, _attributes, false);
-            if (this.styling.isMarkGeoStart()  ||
-                this.styling.isMarkGeoPoints() ||
-                this.styling.isMarkVertex())
+            drawMultiPoint(_geo, 
+            		       _label, 
+            		       pointColor, 
+            		       _pointSizeValue, 
+            		       _rotate, 
+            		       _angle, 
+            		       _attributes, 
+            		       false);
+            if (styling.isMarkGeoStart()  ||
+                styling.isMarkGeoPoints() ||
+                styling.isMarkVertex())
             {
                 markElement(_geo,false);
             }
@@ -196,17 +277,17 @@ public class SVSpatialLayerDraw {
                 //
                 switch (gtype) {
                   case JGeometry.GTYPE_POLYGON      :
-                  case JGeometry.GTYPE_MULTIPOLYGON : fillShape(shp, _shadeValue);
+                  case JGeometry.GTYPE_MULTIPOLYGON : fillShape(shp, shadeColor);
                   case JGeometry.GTYPE_CURVE        :
-                  case JGeometry.GTYPE_MULTICURVE   : drawShape(shp, _lineColorValue);
+                  case JGeometry.GTYPE_MULTICURVE   : drawShape(shp, lineColor);
                 }
                 // Now mark them
                 //
-                if (this.styling.isMarkGeoStart()  ||
-                    this.styling.isMarkGeoPoints() ||
-                    this.styling.isSegmentArrows() ||
-                    this.styling.isMarkVertex()    ||
-                    this.styling.isMarkSegment()  )
+                if (styling.isMarkGeoStart()  ||
+                    styling.isMarkGeoPoints() ||
+                    styling.isSegmentArrows() ||
+                    styling.isMarkVertex()    ||
+                    styling.isMarkSegment()  )
                 {
                     // DEBUG 
                     markGeometry(_geo);
@@ -220,7 +301,14 @@ public class SVSpatialLayerDraw {
                         //textAlongLine(shp,_label,_attributes);
                     } else {
                         // DEBUG LOGGER.info("labelLineAndPolygonSegments being called");
-                        labelLineAndPolygonSegments(_geo,_label,_pointColorValue, _pointSizeValue, _rotate, _angle, _attributes, _labelOffset);
+                        labelLineAndPolygonSegments(_geo,
+                        		                    _label,
+                        		                    pointColor, 
+                        		                    _pointSizeValue, 
+                        		                    _rotate, 
+                        		                    _angle, 
+                        		                    _attributes, 
+                        		                    _labelOffset);
                     }
                 }
             break;
@@ -231,7 +319,10 @@ public class SVSpatialLayerDraw {
                                              _geo.getElemInfo(),
                                              _geo.getOrdinatesArray()),
                            _label, 
-                           _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue, 
+                           shadeColor, 
+                           pointColor, 
+                           lineColor, 
+                           _pointSizeValue, 
                            _rotate, _angle,
                            _attributes, 
                            _labelPosition, 
@@ -276,7 +367,7 @@ public class SVSpatialLayerDraw {
                                                       BasicStroke.JOIN_ROUND,
                                                       10.0f));
             //this.graphics2D.setStroke(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,(int)bWidth));
-            this.graphics2D.setComposite(this.styling.getLineAlphaComposite());
+            this.graphics2D.setComposite(this.layer.getStyling().getLineAlphaComposite());
             this.graphics2D.draw(bShape);
         }
 
@@ -323,7 +414,7 @@ public class SVSpatialLayerDraw {
     @SuppressWarnings("incomplete-switch")
 	private void labelLineAndPolygonSegments(JGeometry        _jGeom,
                                              String           _label,
-                                             String           _pointColorValue,
+                                             Color            _pointColorValue,
                                              int              _pointSizeValue,
                                              Constants.ROTATE _rotate,
                                              double           _angle,
@@ -349,7 +440,7 @@ public class SVSpatialLayerDraw {
 				boolean hasCircularArcs = element.hasCircularArcs();
                 // DEBUG LOGGER.info("labelLineAndPolygonSegments: hasCircularArcs(): " + hasCircularArcs);
                 // DEBUG LOGGER.info("labelLineAndPolygonSegments: element type is: " + element.getType());
-                switch (this.styling.getGeometryLabelPosition()) {
+                switch (this.layer.getStyling().getGeometryLabelPosition()) {
                     case SDO_POINT:
                         // DEBUG LOGGER.info("labelLineAndPolygonSegments: SDO_POINT");
                         cPoint = element.getLabelPoint()==null
@@ -392,14 +483,19 @@ public class SVSpatialLayerDraw {
                 // DEBUG LOGGER.info("labelLineAndPolygonSegments: labelPoint=" + labelPoint==null?"NULL":(labelPoint.getX() + "," + labelPoint.getY()));
                 if ( labelPoint == null ) { continue; }
                 // Draw marker for label?
-                // DEBUG LOGGER.info( this.styling.getPointType().toString());
-                if ( this.styling.getPointType()!=PointMarker.MARKER_TYPES.NONE ) {
+                // DEBUG LOGGER.info( this.layer.getStyling().getPointType().toString());
+                if ( this.layer.getStyling().getPointType()!=PointMarker.MARKER_TYPES.NONE ) {
                     // Don't draw selected colour if polygon
-                    this.graphics2D.setStroke(this.styling.getLineStroke());
+                    this.graphics2D.setStroke(this.layer.getStyling().getLineStroke());
                     // Check Scale
                     //
                     if ( this.isWithinScale() ) {
-                        drawPoint(labelPoint, this.styling.getPointType(), _pointColorValue, _pointSizeValue, _rotate, _angle);
+                        drawPoint(labelPoint, 
+                                  this.layer.getStyling().getPointType(), 
+                                  _pointColorValue, 
+                                  _pointSizeValue, 
+                                  _rotate, 
+                                  _angle);
                     }
                 }
                 // Got point so now draw label
@@ -429,8 +525,7 @@ public class SVSpatialLayerDraw {
         Struct stGeom = null;
         try
         {
-        	Connection conn = this.layerConnection;
-            //stGeom = JGeometry.storeJS(conn,_geom);
+        	Connection conn = this.layer.getConnection();
             stGeom = JGeom.toStruct(_geom,conn);
             if ( stGeom == null ) {
                 return null;
@@ -515,9 +610,9 @@ public class SVSpatialLayerDraw {
      */
     private void draw3DGeometry(J3D_Geometry     _geo,
                                 String           _label,
-                                String           _shadeValue,
-                                String           _pointColorValue,
-                                String           _lineColorValue,
+                                Color            _shadeValue,
+                                Color            _pointColorValue,
+                                Color            _lineColorValue,
                                 int              _pointSizeValue,
                                 Constants.ROTATE _rotate,
                                 double           _angle,
@@ -548,7 +643,6 @@ public class SVSpatialLayerDraw {
             // RenderTool rt = new RenderTool();
             // System.out.println("process3DGeometry: "+ e.getMessage() + "\n" + rt.renderGeometryAsPlainText(_geo, Constants.bracketType.NONE));
         }
-
     }
 
     /**
@@ -556,7 +650,7 @@ public class SVSpatialLayerDraw {
      * @param _point2D         Point2D                 - transformed point
      * @param _pointType       PointMarker.MARKER_TYPE - type of point eg CIRCLE, ASTEROID, SQUARE
      * @param _pointColorValue String                  - Value from database as string (r,g,b,a)
-     * @param _pointSizeValue  int                     - Point marker size 4 - 16 pts
+     * @param _pointSizeValue  int                     - Point marker size 4+ pts
      * @param _rotate          Constants.ROTATE        - type of rotatation of marker symbol 
      * @param _angle           double                  - rotate marker unless 0
      * @throws IOException
@@ -565,20 +659,18 @@ public class SVSpatialLayerDraw {
      **/
     private void drawPoint(Point2D                  _point2D,
                            PointMarker.MARKER_TYPES _pointType,
-                           String                   _pointColorValue,
+                           Color                    _pointColorValue,
                            int                      _pointSizeValue,
                            Constants.ROTATE         _rotate,
                            double                   _angle)
     {
         Shape drawShape = PointMarker.getPointShape(_pointType,
                                                     _point2D,
-                                                    this.styling.getPointSize(_pointSizeValue),
+                                                    this.layer.getStyling().getPointSize(_pointSizeValue),
                                                     (_rotate == Constants.ROTATE.MARKER ||
                                                      _rotate == Constants.ROTATE.BOTH)
                                                     ? _angle : 0.0f);
-        this.graphics2D.setColor(Strings.isEmpty(_pointColorValue)
-                                 ? this.styling.getPointColor(Colours.colorToString(Color.BLACK))
-                                 : Colours.fromRGBa(_pointColorValue));
+        this.graphics2D.setColor(_pointColorValue);
         this.graphics2D.fill(drawShape);
         this.graphics2D.draw(drawShape);
     }
@@ -601,9 +693,10 @@ public class SVSpatialLayerDraw {
      * @throws IOException
      * @author Simon Greener May 28th 2010 - Original Coding
      */
-    public void drawPoint(double                   _X, double _Y,
+    public void drawPoint(double                   _X,
+                          double                   _Y,
                           PointMarker.MARKER_TYPES _mt,
-                          String                   _pointColorValue,
+                          Color                    _pointColorValue,
                           int                      _pointSizeValue,
                           Constants.ROTATE         _rotate,
                           double                   _angle)
@@ -612,7 +705,12 @@ public class SVSpatialLayerDraw {
         // Should not keep getting transform every time...
         //
         Point2D point2D = this.getWorldToScreenTransform().transform(new Point.Double(_X, _Y), null);
-        drawPoint(point2D, _mt, _pointColorValue, _pointSizeValue, _rotate, _angle);
+        drawPoint(point2D, 
+        		  _mt, 
+        		  _pointColorValue, 
+        		  _pointSizeValue, 
+        		  _rotate, 
+        		  _angle);
     }
 
     /**
@@ -626,7 +724,7 @@ public class SVSpatialLayerDraw {
      */
     protected void drawPoint(JGeometry        _point,
                              String           _label,
-                             String           _pointColorValue,
+                             Color            _pointColorValue,
                              int              _pointSizeValue,
                              Constants.ROTATE _rotate,
                              double           _angle,
@@ -637,6 +735,7 @@ public class SVSpatialLayerDraw {
         // Define variable to hold possible label point
         //
         Point2D labelPoint = new Point.Double(Double.NaN, Double.NaN);
+        
         // get point coordinates
         //
         int dims = _point.getDimensions();
@@ -645,17 +744,22 @@ public class SVSpatialLayerDraw {
 
         // Now draw point or orientedPoint
         //
-        if (_point.isOrientedPoint() == false) {
+        if (_point.isOrientedPoint() == false) 
+        {
             double point[] = _point.getFirstPoint();
             if ((point == null) || (point.length != dims))
                 return;
 
             // Call function that does actual drawing of point
             //
-            labelPoint = this.getWorldToScreenTransform().transform(new Point.Double(point[0],
-                                                                                     point[1]),
-                                                                    null);
-            drawPoint(labelPoint, this.styling.getPointType(), _pointColorValue, _pointSizeValue, _rotate, _angle);
+            labelPoint = this.getWorldToScreenTransform()
+                             .transform(new Point.Double(point[0],point[1]),null);
+            drawPoint(labelPoint, 
+            		  this.layer.getStyling().getPointType(), 
+            		  _pointColorValue, 
+            		  _pointSizeValue, 
+            		  _rotate, 
+            		  _angle);
 
         } else {
             // getLabelPoint/getLabelPointXYZ do not work.
@@ -683,21 +787,30 @@ public class SVSpatialLayerDraw {
 
             // Draw oriented point
             //
-            drawOrientedPoint(point, labelPoint, _pointColorValue, _pointSizeValue, _rotate, _angle);
+            drawOrientedPoint(point, 
+                         labelPoint, 
+                         _pointColorValue, 
+                         _pointSizeValue, 
+                         _rotate, 
+                         _angle);
 
             // Compute rotation for drawString
             //
             leaderRotation = Math.atan2(labelPoint.getY() - point.getY(), labelPoint.getX() - point.getX()) + (Math.PI / 2.0f);
         }
+        
         // Now draw label if required
+        //
         if (!Strings.isEmpty(_label)) {
             // Got point so now draw label
             // if within Scale
             //
             if ( this.isWithinScale() ) {
                 drawString(this.graphics2D,_label,
-                           (int)labelPoint.getX(), (int)labelPoint.getY(),
-                           this.horizPosn, this.vertPosn,
+                           (int)labelPoint.getX(), 
+                           (int)labelPoint.getY(),
+                           this.horizPosn, 
+                           this.vertPosn,
                            _rotate, leaderRotation, _attributes, _offset);
             }
         }
@@ -705,12 +818,17 @@ public class SVSpatialLayerDraw {
 
     private void drawOrientedPoint(Point2D _point,
                                    Point2D _orientedPoint,
-                                   String _pointColorValue,
+                                   Color   _pointColorValue,
                                    int    _pointSizeValue,
                                    Constants.ROTATE _rotate,
                                    double _rotation)
     {
-        drawPoint(_point, this.styling.getPointType(), _pointColorValue, _pointSizeValue, _rotate, _rotation);
+        drawPoint(_point, 
+        		  this.layer.getStyling().getPointType(), 
+        		  _pointColorValue, 
+        		  _pointSizeValue, 
+        		  _rotate, 
+        		  _rotation);
 
         // Draw connecting vector
         //
@@ -718,7 +836,7 @@ public class SVSpatialLayerDraw {
             // Save colour of starting point
             Color oldColor = this.graphics2D.getColor();
             this.graphics2D.setColor(Color.GRAY);
-            this.graphics2D.setStroke(new BasicStroke(this.styling.getLineWidth(),
+            this.graphics2D.setStroke(new BasicStroke(this.layer.getStyling().getLineWidth(),
                                                       BasicStroke.CAP_BUTT,
                                                       BasicStroke.JOIN_MITER,
                                                       10.0f,
@@ -733,7 +851,12 @@ public class SVSpatialLayerDraw {
         }
         // Now draw oriented point
         //
-        drawPoint(_orientedPoint, PointMarker.MARKER_TYPES.CROSS, _pointColorValue, _pointSizeValue, _rotate, 0);
+        drawPoint(_orientedPoint, 
+                  PointMarker.MARKER_TYPES.CROSS, 
+                  _pointColorValue, 
+                  _pointSizeValue, 
+                  _rotate, 
+                  0);
     }
 
     /**
@@ -752,7 +875,7 @@ public class SVSpatialLayerDraw {
      */
     protected void drawMultiPoint(JGeometry        _mpoint,
                                   String           _label,
-                                  String           _pointColorValue,
+                                  Color            _pointColorValue,
                                   int              _pointSizeValue,
                                   Constants.ROTATE _rotate,
                                   double           _angle,
@@ -761,7 +884,8 @@ public class SVSpatialLayerDraw {
     {
         // get point coordinates
         double points[] = _mpoint.getOrdinatesArray();
-        int dim = _mpoint.getDimensions();
+        int         dim = _mpoint.getDimensions();
+        Styling styling = this.layer.getStyling();
 
         // Do I have to do anything if it is a multi oriented point?
         //
@@ -769,17 +893,17 @@ public class SVSpatialLayerDraw {
 
         // Set color once
         //
-        this.graphics2D.setColor(this.styling.getPointColor(_pointColorValue));
-        PointMarker.MARKER_TYPES pointType = this.styling.getPointType();
-        int pointSize = this.styling.getPointSize(_pointSizeValue);
+        this.graphics2D.setColor(_pointColorValue);
+        PointMarker.MARKER_TYPES pointType = styling.getPointType();
+        int pointSize = this.layer.getStyling().getPointSize(_pointSizeValue);
         double angle = (_rotate == Constants.ROTATE.MARKER || _rotate == Constants.ROTATE.BOTH) ? _angle : 0.0f;
 
         Envelope mapWindow = this.layer.getSpatialView().getMBR();
 
         // call function for point draw
-        int coord = 1;
-        Point2D point = new Point2D.Double(Double.NaN, Double.NaN),
-               oPoint = null;
+        int       coord = 1;
+        Point2D   point = new Point2D.Double(Double.NaN, Double.NaN),
+                 oPoint = null;
         for (int i = 0; i < points.length; i += dim) {
             // is this point inside the current display window?
             point.setLocation(points[i], points[i + 1]);
@@ -793,8 +917,8 @@ public class SVSpatialLayerDraw {
                               Constants.ROTATE.LABEL,
                               0.0,
                               _attributes,
-                              this.styling.getMarkLabelPosition(),
-                              this.styling.getMarkLabelOffset());
+                              styling.getMarkLabelPosition(),
+                              styling.getMarkLabelOffset());
                 }
                 if (!isOriented) {
                     drawPoint(PointMarker.getPointShape(pointType,point,pointSize,angle));
@@ -807,9 +931,9 @@ public class SVSpatialLayerDraw {
                             drawString(this.graphics2D,_label,
                                        (int)point.getX(), (int)point.getY(),
                                        this.horizPosn,    this.vertPosn,
-                                       _rotate,  _angle, _attributes, this.styling.getMarkLabelOffset());
+                                       _rotate,  _angle, _attributes, styling.getMarkLabelOffset());
                         }
-                        this.graphics2D.setColor(this.styling.getPointColor(_pointColorValue));
+                        this.graphics2D.setColor(_pointColorValue);
                     }
                 }
             } else /* oriented */ {
@@ -842,9 +966,9 @@ public class SVSpatialLayerDraw {
                         drawString(this.graphics2D,_label,
                                    (int)oPoint.getX(), (int)oPoint.getY(),
                                    this.horizPosn,     this.vertPosn,
-                                   _rotate, rotationRadians, _attributes, this.styling.getLabelOffset());
+                                   _rotate, rotationRadians, _attributes, styling.getLabelOffset());
                     }
-                    this.graphics2D.setColor(this.styling.getPointColor(_pointColorValue));
+                    this.graphics2D.setColor(_pointColorValue);
                 }
             }
             coord++;
@@ -852,12 +976,12 @@ public class SVSpatialLayerDraw {
     }
 
     private void fillShape(Shape  _shp,
-                           String _shadeValue)
+                           Color _shadeValue)
     {
         // Shade polygon and colour line ...
-        if (this.styling.isPerformShade()) {
-            this.graphics2D.setColor(this.styling.getShadeColor(_shadeValue));
-            this.graphics2D.setComposite(this.styling.getShadeAlphaComposite());
+        if (this.layer.getStyling().isPerformShade()) {
+            this.graphics2D.setColor(_shadeValue);
+            this.graphics2D.setComposite(this.layer.getStyling().getShadeAlphaComposite());
             this.graphics2D.fill(_shp);
         }
     }
@@ -869,12 +993,12 @@ public class SVSpatialLayerDraw {
      *          Fixed code to mark start, points and direction
      **/
     private void drawShape(Shape  _shp,
-                           String _lineColorValue)
+                           Color _lineColorValue)
     {
-        if (this.styling.isPerformLine()) {
-            this.graphics2D.setColor(this.styling.getLineColor(_lineColorValue));
-            this.graphics2D.setStroke(this.styling.getLineStroke());
-            this.graphics2D.setComposite(this.styling.getLineAlphaComposite());
+        if (this.layer.getStyling().isPerformLine()) {
+            this.graphics2D.setColor(_lineColorValue);
+            this.graphics2D.setStroke(this.layer.getStyling().getLineStroke());
+            this.graphics2D.setComposite(this.layer.getStyling().getLineAlphaComposite());
             this.graphics2D.draw(_shp);
         }
     }
@@ -1066,7 +1190,8 @@ public class SVSpatialLayerDraw {
             if ( points == null || points.length < 1) {
                 return;
             }
-            
+
+            Styling styling    = this.layer.getStyling();
             int numOrds        = points.length;
             int dim            = _geom.getDimensions();
             int numPoints      = _geom.getNumPoints();
@@ -1075,19 +1200,19 @@ public class SVSpatialLayerDraw {
 
             // Set up and save current styling information
             //
-            MutableAttributeSet styleAttributes = this.styling.getMarkLabelAttributes();
+            MutableAttributeSet styleAttributes = styling.getMarkLabelAttributes();
             if ( StyleConstants.getBackground(styleAttributes)==null ) {
                StyleConstants.setBackground(styleAttributes,this.layer.getView().getMapPanel().getBackground());
             }
 
             Stroke oldStroke = this.graphics2D.getStroke();
-            this.graphics2D.setStroke(LineStyle.getStroke(this.styling.getLineStrokeType(),
-                                                          this.styling.getLineWidth() + 1));
-            Color savePointColor = this.styling.getPointColor(null);
-            String pointColorRGB = Colours.getRGBa(savePointColor);
-            this.styling.setPointColor(null);
-            Styling.STYLING_TYPE savePointColorSource = this.styling.getPointColorType();
-            this.styling.setPointColorType(Styling.STYLING_TYPE.CONSTANT);
+            this.graphics2D.setStroke(LineStyle.getStroke(styling.getLineStrokeType(),
+                                                          styling.getLineWidth() + 1));
+            Color savePointColor = styling.getPointColor(null);
+            Color pointColorRGB = savePointColor;
+            styling.setPointColor(null);
+            Styling.STYLING_TYPE savePointColorSource = styling.getPointColorType();
+            styling.setPointColorType(Styling.STYLING_TYPE.CONSTANT);
 
             // Set up formatter string
             //
@@ -1097,7 +1222,7 @@ public class SVSpatialLayerDraw {
                    bracketStart = RenderTool.getBracketStart(this.layer.getPreferences().getSdoGeometryBracketType(),false),
                    bracketEnd   = RenderTool.getBracketEnd(  this.layer.getPreferences().getSdoGeometryBracketType(),false);
             if ( dim >= 3 ) { coordForm += ",%s"; if ( dim>=4 )  coordForm += ",%s"; }
-            switch ( this.styling.getMarkVertex() ) {
+            switch ( styling.getMarkVertex() ) {
               case ID                : formatter = "<%s>"; break;
               case COORD             : formatter =            bracketStart + coordForm + bracketEnd; break;
               case ID_COORD          : formatter = "<%s> "  + bracketStart + coordForm + bracketEnd; break;
@@ -1157,7 +1282,7 @@ public class SVSpatialLayerDraw {
                     //
                     if ( this.layer.getSpatialView().getMBR().contains(currentPoint) ) 
                     {
-                        switch ( this.styling.getMarkVertex() ) {
+                        switch ( styling.getMarkVertex() ) {
                           case ID          : format = String.format(formatter,String.valueOf(pointNum+1));       break;
                           case ID_COORD    :
                           case ID_CR_COORD : format = getFormattedString(dim,pointNum+1,formatter,currentPoint); break;
@@ -1183,8 +1308,8 @@ public class SVSpatialLayerDraw {
                                   Constants.ROTATE.LABEL,
                                   0.0,
                                   styleAttributes,
-                                  this.styling.getMarkLabelPosition(),
-                                  this.styling.getMarkLabelOffset());
+                                  styling.getMarkLabelPosition(),
+                                  styling.getMarkLabelOffset());
                     }
                 } // For all points
                 return;
@@ -1201,15 +1326,16 @@ public class SVSpatialLayerDraw {
                 //
                 if (this.layer.getSpatialView().getMBR().contains(startPoint) ) 
                 {
-                    if ( this.styling.isMarkGeoStart() )  {
-                        drawPoint(startPoint.getX(),startPoint.getY(),
-                                  this.styling.getMarkGeoStart(),
-                                  Colours.getRGBa(this.styling.getLineColor(Colours.getRGBa(Color.BLUE))),
-                                  this.styling.getPointSize(4),
+                    if ( styling.isMarkGeoStart() )  {
+                        drawPoint(startPoint.getX(),
+                                  startPoint.getY(),
+                                  styling.getMarkGeoStart(),
+                                  styling.getLineColor(Colours.getRGBa(Color.BLUE)),
+                                  styling.getPointSize(4),
                                   Constants.ROTATE.MARKER,
                                   0.0);
                     }
-                    if (this.styling.isMarkVertex() ) {
+                    if (styling.isMarkVertex() ) {
                         markLabelVertex(dim,
                                         geomType,
                                         0,
@@ -1297,7 +1423,7 @@ public class SVSpatialLayerDraw {
                     if ( this.layer.getSpatialView().getMBR().contains(currentPoint) ) {
                         // Do we mark the vertex with an icon (circle, star etc)?
                         //
-                        if ( this.styling.isMarkGeoPoints() ) {
+                        if ( styling.isMarkGeoPoints() ) {
                             // but not where the end vertex is same as start....
                             //
                             if ( pointNum!=maxPointsMinusOne &&
@@ -1307,16 +1433,16 @@ public class SVSpatialLayerDraw {
                             {
                                 drawPoint(currentPoint.getX(),
                                           currentPoint.getY(),
-                                          this.styling.getMarkGeoPoints(),
+                                          styling.getMarkGeoPoints(),
                                           pointColorRGB,
-                                          this.styling.getPointSize(4),
+                                          styling.getPointSize(4),
                                           Constants.ROTATE.MARKER,
                                           0.0);
                             }
                         }
                         // Dow we label the vertex with text?
                         //
-                        if (this.styling.isMarkVertex() ) {
+                        if (styling.isMarkVertex() ) {
                             markLabelVertex(dim,
                                             geomType,
                                             pointNum,
@@ -1334,20 +1460,20 @@ public class SVSpatialLayerDraw {
                     // Now mark line with its direction
                     // Only if end point (current point) is visible
                     //
-                    if ( this.styling.getSegmentArrow() != Constants.SEGMENT_ARROWS_TYPE.NONE &&
-                         this.styling.getSegmentArrow() != Constants.SEGMENT_ARROWS_TYPE.END_ONLY && 
+                    if ( styling.getSegmentArrow() != Constants.SEGMENT_ARROWS_TYPE.NONE &&
+                         styling.getSegmentArrow() != Constants.SEGMENT_ARROWS_TYPE.END_ONLY && 
                          this.layer.getSpatialView().getMBR().contains(currentPoint) )
                     {
                         drawLineDirection(mapWindow,
                                           lineSegment,
-                                          this.styling.getLineColor(Colours.getRGBa(Color.BLUE)),
-                                          this.styling.getSegmentArrow(),
+                                          styling.getLineColor(Colours.getRGBa(Color.BLUE)),
+                                          styling.getSegmentArrow(),
                                           this.markStroke);
                     }
 
                     // ********************** Label segment with bearing/distance? ....
                     // 
-                    if ( this.styling.getMarkSegment() != Constants.SEGMENT_LABEL_TYPE.NONE ) 
+                    if ( styling.getMarkSegment() != Constants.SEGMENT_LABEL_TYPE.NONE ) 
                     {
                         // We will draw this label in the middle of the line
                         //
@@ -1376,20 +1502,20 @@ public class SVSpatialLayerDraw {
                         String  bearingText = "",
                                distanceText = "";
                         
-                        if ( this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.SEGMENT_ID ) {
+                        if ( styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.SEGMENT_ID ) {
                             drawLabel(String.format("<%s>",String.valueOf(pointNum)),
                                       midPointX,
                                       midPointY,
                                       Constants.ROTATE.LABEL,
                                       drawAngle,
-                                      this.styling.getMarkLabelAttributes(),
+                                      styling.getMarkLabelAttributes(),
                                       Constants.TEXT_OFFSET_POSITION.TC,
-                                      this.styling.getMarkLabelOffset() );                            
+                                      styling.getMarkLabelOffset() );                            
                         } else {
                             // Mark bearing
                             //
-                            if (this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING ||
-                                this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING_AND_DISTANCE ) {
+                            if (styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING ||
+                                styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING_AND_DISTANCE ) {
                                 bearingText = COGO.DD2DMS(bearing,1);
                                 // Draw bearing label
                                 //
@@ -1398,17 +1524,17 @@ public class SVSpatialLayerDraw {
                                           midPointY,
                                           Constants.ROTATE.LABEL,
                                           drawAngle,
-                                          this.styling.getMarkLabelAttributes(),
+                                          styling.getMarkLabelAttributes(),
                                           Constants.TEXT_OFFSET_POSITION.BC,
-                                          this.styling.getMarkLabelOffset() );
+                                          styling.getMarkLabelOffset() );
                             }
                             // Mark Distance/length
                             //
-                            if (this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING_AND_DISTANCE ||
-                                this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.SEGMENT_LENGTH       ||
-                                this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.CUMULATIVE_LENGTH ) {
+                            if (styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.BEARING_AND_DISTANCE ||
+                                styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.SEGMENT_LENGTH       ||
+                                styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.CUMULATIVE_LENGTH ) {
                                 
-                                if ( this.styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.CUMULATIVE_LENGTH ) {
+                                if ( styling.getMarkSegment() == Constants.SEGMENT_LABEL_TYPE.CUMULATIVE_LENGTH ) {
                                     distanceText = getFormattedNumber(cumulative_length); 
                                 } else {
                                     distanceText = getFormattedNumber(length); 
@@ -1420,9 +1546,9 @@ public class SVSpatialLayerDraw {
                                           midPointY,
                                           Constants.ROTATE.LABEL,
                                           drawAngle,
-                                          this.styling.getMarkLabelAttributes(),
+                                          styling.getMarkLabelAttributes(),
                                           Constants.TEXT_OFFSET_POSITION.TC,
-                                          this.styling.getMarkLabelOffset() );
+                                          styling.getMarkLabelOffset() );
                             }
                         }
                     }
@@ -1431,32 +1557,32 @@ public class SVSpatialLayerDraw {
                 
                 // Mark last segment's end arrow or end point (if not polygon)
                 //
-                if ( ( this.styling.getSegmentArrow() == Constants.SEGMENT_ARROWS_TYPE.END ||
-                       this.styling.getSegmentArrow() == Constants.SEGMENT_ARROWS_TYPE.END_ONLY ) 
+                if ( ( styling.getSegmentArrow() == Constants.SEGMENT_ARROWS_TYPE.END ||
+                       styling.getSegmentArrow() == Constants.SEGMENT_ARROWS_TYPE.END_ONLY ) 
                     && this.layer.getSpatialView().getMBR().contains(lineSegment))  {
                     drawLineDirection(mapWindow,
                                       lineSegment,
-                                      this.styling.getLineColor(Colours.getRGBa(Color.BLUE)),
-                                      this.styling.getSegmentArrow(),
+                                      styling.getLineColor(Colours.getRGBa(Color.BLUE)),
+                                      styling.getSegmentArrow(),
                                       this.markStroke);
                 }
                 
                 if (    geomType != JGeometry.GTYPE_POLYGON 
                      && geomType != JGeometry.GTYPE_MULTIPOLYGON 
-                     && this.styling.isMarkGeoPoints() 
+                     && styling.isMarkGeoPoints() 
                      && this.layer.getSpatialView().getMBR().contains(lineSegment.getP2()) ) 
                 {
                     drawPoint(lineSegment.getP2().getX(),lineSegment.getP2().getY(),
-                              this.styling.getMarkGeoPoints(),
+                              styling.getMarkGeoPoints(),
                               pointColorRGB,
-                              this.styling.getPointSize(4),
+                              styling.getPointSize(4),
                               Constants.ROTATE.MARKER,
                               0.0);
                 }
             }
             this.graphics2D.setStroke(oldStroke);
-            this.styling.setPointColor(savePointColor );
-            this.styling.setPointColorType(savePointColorSource);
+            styling.setPointColor(savePointColor );
+            styling.setPointColorType(savePointColorSource);
         } catch (Exception e) {
             LOGGER.error("Problem marking GeoPoints() " + e.getMessage());
         }
@@ -1480,7 +1606,7 @@ public class SVSpatialLayerDraw {
         double bearing = 90.0,
                 angle  = 0.0,
                radians = 0.0;
-        if ( this.styling.isMarkOriented() ) {
+        if ( this.layer.getStyling().isMarkOriented() ) {
             double bearingNext = 0.0,
                    bearingPrev = 0.0;
             // Compute mark radians
@@ -1543,7 +1669,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
             bearing = COGO.normalizeDegrees(bearing - 90.0);
             radians = Math.toRadians(bearing);
         }
-        switch ( this.styling.getMarkVertex() ) {
+        switch ( this.layer.getStyling().getMarkVertex() ) {
             case ID                : format = String.format(_formatter,String.valueOf(_pointNum+1)); break;
             case ID_COORD          :
             case ID_CR_COORD       : format = getFormattedString(_dim,_pointNum+1,_formatter,_currentPoint); break;
@@ -1570,9 +1696,9 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
                   _currentPoint,
                   Constants.ROTATE.LABEL,
                   radians,
-                  this.styling.getMarkLabelAttributes(),
-                  this.styling.getMarkLabelPosition(),  // SGG?
-                  this.styling.getMarkLabelOffset() );
+                  this.layer.getStyling().getMarkLabelAttributes(),
+                  this.layer.getStyling().getMarkLabelPosition(),  // SGG?
+                  this.layer.getStyling().getMarkLabelOffset() );
     }
 
     private void markPoint(JGeometry _geo) {
@@ -1597,7 +1723,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
             }
         }
         
-        MutableAttributeSet styleAttributes = this.styling.getMarkLabelAttributes(); // getLabelAttributes();
+        MutableAttributeSet styleAttributes = this.layer.getStyling().getMarkLabelAttributes(); // getLabelAttributes();
         if ( StyleConstants.getBackground(styleAttributes)==null ) {
             StyleConstants.setBackground(styleAttributes,this.layer.getView().getMapPanel().getBackground());
         }
@@ -1615,7 +1741,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
                 coordForm += ",%s"; 
             }
         }
-        switch ( this.styling.getMarkVertex() ) {
+        switch ( this.layer.getStyling().getMarkVertex() ) {
           case ID                : displayString = String.format("<%s>","1");
                                    break;
           case COORD             : displayString = getFormattedString(dim,bracketStart + coordForm + bracketEnd,markPoint);
@@ -1648,8 +1774,8 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
                   Constants.ROTATE.LABEL,
                   0.0f,
                   styleAttributes,
-                  this.styling.getMarkLabelPosition(),
-                  this.styling.getMarkLabelOffset());
+                  this.layer.getStyling().getMarkLabelPosition(),
+                  this.layer.getStyling().getMarkLabelOffset());
     }
 
     private String getFormattedNumber(double _number) {
@@ -1693,11 +1819,11 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
         case START    : // Compensate arrow position
                         double length = MathUtils.pythagoras(point1,point2);
                         Point2D delta = new Point2D.Double(0,0);
-                        if ( (int)length != 0 && length>(double)this.styling.getPointSize(4) ) {
+                        if ( (int)length != 0 && length>(double)this.layer.getStyling().getPointSize(4) ) {
                             delta.setLocation((point2.getX() - point1.getX()) *
-                                              (double)this.styling.getPointSize(4) / length,
+                                              (double)this.layer.getStyling().getPointSize(4) / length,
                                               (point2.getY() - point1.getY()) *
-                                              (double)this.styling.getPointSize(4) / length);
+                                              (double)this.layer.getStyling().getPointSize(4) / length);
                         }
                         drawPoint.setLocation(point1.getX() + delta.getX() / (double)2.0,
                                               point1.getY() + delta.getY() / (double)2.0 );
@@ -1714,7 +1840,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
 
         Shape drawShape = PointMarker.getPointShape(PointMarker.MARKER_TYPES.ARROWHEAD,
                                                     drawPoint,
-                                                    this.styling.getPointSize(4),
+                                                    this.layer.getStyling().getPointSize(4),
                                                     rotationAngle);
         // remember previous settings
         Color  oldColor  = this.graphics2D.getColor();
@@ -1778,8 +1904,8 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
         // Check Scale
         //
         int mapScale = this.layer.getSpatialView().getMapPanel().getMapScale();
-        return ( mapScale >= this.styling.getTextLoScale() && 
-                 mapScale <= this.styling.getTextHiScale() );
+        return ( mapScale >= this.layer.getStyling().getTextLoScale() && 
+                 mapScale <= this.layer.getStyling().getTextHiScale() );
     }
     
     public void drawLabel(String                  _label,

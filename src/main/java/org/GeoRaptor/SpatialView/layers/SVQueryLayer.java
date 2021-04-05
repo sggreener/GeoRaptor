@@ -1,5 +1,6 @@
 package org.GeoRaptor.SpatialView.layers;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
@@ -9,10 +10,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
-import org.GeoRaptor.Constants.GEOMETRY_TYPES;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
@@ -41,6 +39,7 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
+import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
@@ -61,17 +60,41 @@ implements iLayer
 
     private static final Logger     LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
 
+    protected Preferences      preferences = null;
+
+    protected String           layerName   = "";         // Unique layer name. This is the universal unique name for this layer.
+    
+    protected String           visibleName = "";         // This text is write into JTree where we show layers
+
+    protected Styling              styling = new Styling();
+
+    protected SVSpatialLayerDraw drawTools = new SVSpatialLayerDraw(this); // Class used to draw this layer 
+
     protected Constants.SDO_OPERATORS 
-                                   sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
-    protected    String                    sql = "";
-    protected       int              precision = 2;
-    protected JGeometry          queryGeometry = null; 
-    protected    String       relationshipMask = "";
-    protected    double         bufferDistance = 0.0;
-    protected   boolean               buffered = false;
-    protected   boolean           drawGeometry = false;
+                               sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
+    
+    protected    String                sql = "";
+
+    protected int          resultFetchSize = 100;        // Fetch size for ResultSet
+
+    protected       int          precision = 2;
+    
+    protected JGeometry      queryGeometry = null;
+    
+    protected    String   relationshipMask = "";
+    
+    protected    double     bufferDistance = 0.0;
+    
+    protected   boolean           buffered = false;
+    
+    protected   boolean       drawGeometry = false;
+
+    protected Constants.OBJECT_TYPES 
+                                objectType = Constants.OBJECT_TYPES.TABLE;
+
+    protected boolean          indexExists = true;       // Does spatial index exist for this layer
+
     private final String sdoFilterMinResClause = "min_resolution=%f,querytype=WINDOW";
-    private final String       sdoFilterClause = "querytype=WINDOW";
 
     public SVQueryLayer(SpatialView   _sView, 
                         String        _layerName, 
@@ -89,23 +112,23 @@ implements iLayer
         this.drawGeometry = this.preferences.isDrawQueryGeometry();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-        if ( this.preferences.isRandomRendering()) {
-            this.styling.setAllRandom();
-        }
-    }    
+    	this.styling = new Styling();
+    }
+    
     public SVQueryLayer(SpatialView _sView, Node _node) {
       super(_sView, _node);
-      this.fromXMLNode(_node);
+      this.fromXML(_node);
       this.drawGeometry = this.getPreferences().isDrawQueryGeometry();
     }
 
     public SVQueryLayer(SVQueryLayer _qLayer) 
     {
         super(_qLayer.getSpatialView());
-        LOGGER.debug("*********** SVQueryLayer(SVQueryLayer)");
         if ( this.getSpatialView() != null ) {
-            LOGGER.debug("************** this.getSpatialView() != null");
-            // this.setLayerName(this.getSpatialView().checkLayerName(super.getLayerName()));
+            this.setLayerName(this.getSpatialView().checkLayerName(_qLayer.getLayerName()));
+            this.setVisibleName(_qLayer.getVisibleName());
+            this.setDesc(_qLayer.getDesc());
+            this.setDraw(_qLayer.isDraw());
             this.setGeometry(_qLayer.getGeometry());
             this.setBufferDistance(_qLayer.getBufferDistance());
             this.setBuffered(_qLayer.getBufferDistance()!=0.0);
@@ -113,16 +136,33 @@ implements iLayer
             this.setRelationshipMask(_qLayer.getRelationshipMask());
             this.setSdoOperator(_qLayer.getSdoOperator());            
             this.setSQL(_qLayer.getSQL());
+            this.setStyling(_qLayer.getStyling());
         } else {
-            LOGGER.debug("************** this.getSpatialView() == null");
             this.drawGeometry = _qLayer.getPreferences().isDrawQueryGeometry();            
         }
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
-        LOGGER.debug("*********** SVQueryLayer(SVQueryLayer) -- END");
     }
 
-    public SVQueryLayer createCopy(boolean _renderOnly) 
+    public SVQueryLayer(iLayer _sLayer) 
+    {
+        super(_sLayer.getView(), 
+              _sLayer.getMetadataEntry());
+        if ( _sLayer.getSpatialView() != null ) {
+          this.setLayerName(_sLayer.getSpatialView().checkLayerName(_sLayer.getLayerName()));
+        } else {
+          this.setLayerName(_sLayer.getLayerName());
+        }
+        this.setVisibleName(_sLayer.getVisibleName());
+        this.setDesc(_sLayer.getDesc());
+        this.setDraw(_sLayer.isDraw());
+        this.setStyling(_sLayer.getStyling());
+        this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+        // This is an informational query of actual data: filtering would make the result invalid
+        this.setMinResolution(false);
+	}
+
+	public SVQueryLayer createCopy(boolean _renderOnly) 
     {
         LOGGER.debug("SVQueryLayer.createCopy");
         // _renderOnly is ignored for SVQueryLayers
@@ -137,6 +177,11 @@ implements iLayer
         return newLayer;
     }
 
+	@Override
+	public PropertiesManager getPropertyManager() {
+		return super.propertyManager;
+	}
+	
     @Override
     public String getClassName() {
         return SVQueryLayer.CLASS_NAME;
@@ -181,7 +226,6 @@ implements iLayer
     public String generateSQL(boolean _buffered,
     		                  boolean _project)
     {
-System.out.println("<generateSQL>");
     	String sql = "";
         // Get search predicate
         //
@@ -278,9 +322,6 @@ System.out.println("<generateSQL>");
 
         LOGGER.logSQL(sql);
 
-System.out.println(sql);
-System.out.println("</generateSQL>");
-
         return sql;
     }
     
@@ -363,79 +404,149 @@ System.out.println("</generateSQL>");
         return maxSearchRadius;
     }
 
-	private String nnQuery()
-	{
-		return "";
-		
-	}
-	
     public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, 
                                             int     _numSearchPixels) 
     {
-System.out.println("<SVQueryLayer method=queryByPoint");
 
         // Take simple approach:
-    	// 1 Execute normal SQL
-    	// 2. Filter each geometry in its resultSet
-        // 3. Filtering can occur in srid of outer geometry as always same as SpatialView
+    	// 1. Execute normal - buffer search point - SQL
+    	// 2. Filter each resulting geometry by distance to search point 
+        // 3. Filtering can occur in srid layer or SpatialView
         //
         ArrayList<QueryRow> queryList = new ArrayList<QueryRow>(); // list of return rows
         
         String sql = null;
-        sql = this.generateSQL(this.isBuffered(),this.isProjected());
 
-        if ( this.getSRIDAsInteger() == Constants.SRID_NULL)
-          sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/) <= ?";
-        else
-          sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/,?/*unit*/) <= ?";
-
-        // Get distance point and search distance 
+        // Since we force a search based on a buffered search point
+        // We force buffer mode for SQL generation
         //
-        Connection              conn = null;
-        PreparedStatement pStatement = null;
+    	boolean saveBuffered       = this.isBuffered();
+    	double  saveBufferDistance = this.getBufferDistance();
+    	
+        Connection conn = null;
         conn = this.getConnection();
+
+        PreparedStatement pStatement = null;
 
 		String params          = "";
         try {
 			int stmtParamIndex     = 1;
+        	int viewSrid = this.getView().getSRIDAsInteger();
+			
+	        // Get searchPoint from click on screen and compute search distance using searchPixels
+        	//
 	        double     sdoDistance = this.getSearchRadius(_numSearchPixels);	        
 	        Point2D  searchPoint2D = new Point2D.Double(_worldPoint.getX(),_worldPoint.getY());	        
-	        Struct     searchPoint = Queries.projectSdoPoint(conn,searchPoint2D,this.spatialView.getSRIDAsInteger(),this.spatialView.getSRIDAsInteger());
-			//Struct    searchBuffer = Queries.bufferGeom(conn,searchPoint,sdo_distance);
-	        String units_parameter = String.format("unit=%s",Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH));
+	        Struct     searchPoint = Queries.projectSdoPoint(conn,searchPoint2D,viewSrid,this.spatialView.getSRIDAsInteger());
 	        
+	        // Units of measure if srid of layer different from view
+	        //
+	        String units_parameter = String.format("unit=%s",Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH));
+
+	        // Force buffering of search geometry
+	        //
+			this.setBufferDistance(sdoDistance);
+            this.setBuffered(true);
+
+            // Generate SQL
+            //
+            sql = this.generateSQL(this.isBuffered(),this.isProjected());
+            if ( this.getSRIDAsInteger() == Constants.SRID_NULL)
+              sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/) <= ?";
+            else
+              sql += "\n WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.GEOM,?/*DistancePoint*/,?/*tol*/,?/*unit*/) <= ?";
+
+            // Prepare SQL ready for parameter assignment
+            //
             pStatement = super.getConnection().prepareStatement(sql);
 
-	        // WITH sGeom AS (
-	        //	 SELECT MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,?) as geom FROM DUAL
-	        // )
-	        // SELECT f.*
-	        //   FROM (SELECT "ID","LABEL","ANGLEDEGREES",t.GEOM as GEOM 
-	        //	         FROM sGeom a,
-	        //                GEORAPTOR.PROJPOINT2D t 
-	        //          WHERE SDO_ANYINTERACT(t.GEOM,a.geom) = 'TRUE'
-	        //        ) f
-	        //  WHERE MDSYS.SDO_GEOM.SDO_DISTANCE(f.geom,?distancePoint,?tol,?unit) <= distance
-	        
-	        pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);  params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
-	        pStatement.setDouble(stmtParamIndex++, sdoDistance);                        params += String.format("? %s\n",  String.valueOf(sdoDistance));
-	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? %s\n",String.valueOf(this.getTolerance()));
-	        if ( this.getSRIDAsInteger() != Constants.SRID_NULL)
-	          pStatement.setString(stmtParamIndex++, units_parameter);                  params += String.format("? '%s'\n",units_parameter);
-	        
-	        pStatement.setObject(stmtParamIndex++, searchPoint, java.sql.Types.STRUCT); params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
-	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());                params += String.format("? %s\n",  String.valueOf(this.getTolerance()));
-	        if ( this.getSRIDAsInteger() != Constants.SRID_NULL)
-              pStatement.setString(stmtParamIndex++, units_parameter);                  params += String.format("? '%s'\n",units_parameter);
-	        pStatement.setDouble(stmtParamIndex++, sdoDistance);                        params += String.format("? %s\n",  String.valueOf(sdoDistance));
-	        
+        	params = "";
+            if (this.isBuffered() && this.isProjected()) 
+            {
+                /**
+                 * MDSYS.SDO_GEOM.SDO_BUFFER(
+                 *    MDSYS.SDO_CS.TRANSFORM(? geom IN SDO_GEOMETRY, ? Srid ),
+                 *    ? dist IN NUMBER,
+                 *    ? tol IN NUMBER
+                 *    [, ? params IN VARCHAR2]
+                 * ) RETURN SDO_GEOMETRY;
+                **/
+            	pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);
+        	    params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+        	    
+            	pStatement.setInt(stmtParamIndex++, viewSrid );
+        	    params += String.format("? %s\n",  String.valueOf(viewSrid));
+        	    
+            	pStatement.setDouble(stmtParamIndex++, sdoDistance);
+        	    params += String.format("? %s\n",  String.valueOf(sdoDistance));
+        	    
+        	    pStatement.setDouble(stmtParamIndex++, this.getTolerance());
+        	    params += String.format("? %s\n",String.valueOf(this.getTolerance()));
+        	    
+                if ( this.getSRIDAsInteger() != Constants.SRID_NULL) {
+                  pStatement.setString(stmtParamIndex++, units_parameter);
+        	      params += String.format("? '%s'\n",units_parameter);
+                }
+            }
+            else if ( this.isBuffered() ) {
+                /**
+                 * MDSYS.SDO_GEOM.SDO_BUFFER(
+                 *    ? geom IN SDO_GEOMETRY, 
+                 *    ? dist IN NUMBER,
+                 *    ? tol IN NUMBER
+                 *    [, ? params IN VARCHAR2]
+                 * ) RETURN SDO_GEOMETRY;
+                **/
+            	pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);  
+        	    params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+
+            	pStatement.setDouble(stmtParamIndex++, sdoDistance);
+        	    params += String.format("? %s\n",  String.valueOf(sdoDistance));
+        	    
+        	    pStatement.setDouble(stmtParamIndex++, this.getTolerance());
+        	    params += String.format("? %s\n",String.valueOf(this.getTolerance()));
+        	    
+                if ( this.getSRIDAsInteger() != Constants.SRID_NULL) {
+                  pStatement.setString(stmtParamIndex++, units_parameter);
+        	      params += String.format("? '%s'\n",units_parameter);
+                }
+                        	
+            }
+            else if ( this.isProjected() ) {
+                // MDSYS.SDO_CS.TRANSFORM(? geom IN SDO_GEOMETRY, ? Srid )
+            	// Never get here because of forced buffering
+            	pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);  
+        	    params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+        	    pStatement.setInt(stmtParamIndex++, viewSrid);
+        	    params += String.format("? %s\n",  String.valueOf(viewSrid));
+            } else {
+            	// WITH ... AS (SELECT ? as geom FROM DUAL)
+            	// Never get here because of forced buffering
+            	pStatement.setObject(stmtParamIndex++, searchPoint,java.sql.Types.STRUCT);  
+        	    params  = String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));            	
+            }
+
+            // WHERE SDO_DISTANCE
+	        pStatement.setObject(stmtParamIndex++, searchPoint, java.sql.Types.STRUCT);
+	            params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchPoint));
+	        pStatement.setDouble(stmtParamIndex++, this.getTolerance());
+	            params += String.format("? %s\n",  String.valueOf(this.getTolerance()));
+	        if ( this.getSRIDAsInteger() != Constants.SRID_NULL) {
+              pStatement.setString(stmtParamIndex++, units_parameter);
+	            params += String.format("? '%s'\n",units_parameter);
+	        }
+	        pStatement.setDouble(stmtParamIndex++, sdoDistance);
+	            params += String.format("? %s\n",  String.valueOf(sdoDistance));
         } catch (Exception e) {
-        	System.out.println("</SVQueryLayer method=error: " + e.getLocalizedMessage());
+        	this.setBuffered(saveBuffered);
+            this.setBufferDistance(saveBufferDistance);
         	return null;
         }
-
-LOGGER.logSQL(sql + "\n" + params);
-System.out.println("</SVQueryLayer method=execute");	        
+        
+        this.setBuffered(saveBuffered);
+        this.setBufferDistance(saveBufferDistance);
+        
+        LOGGER.logSQL(sql + "\n" + params);
 
         Struct retStruct = null;
         ResultSet    ors = null;
@@ -500,7 +611,6 @@ System.out.println("</SVQueryLayer method=execute");
             }
             ors.close();
             pStatement.close();
-System.out.println(" Total Features Returned = " + totalFeatures);
 
             if ( this.getPreferences().isLogSearchStats() ) {
                 LOGGER.info(super.getSpatialView() + "." + this.layerName + 
@@ -508,9 +618,7 @@ System.out.println(" Total Features Returned = " + totalFeatures);
             }
             
         } catch (SQLException sqle) {
-System.out.println("</SVQueryLayer submethod=executeSQL: " + sqle.getLocalizedMessage());
         }
-System.out.println("</SVQueryLayer method=queryByPoint");	        
         return queryList;        
     }
         
@@ -554,8 +662,13 @@ System.out.println("</SVQueryLayer method=queryByPoint");
                     this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
                     // Draw original geometry before buffering
                     //
-                    this.callDrawFunction(jGeom,(String)null,(String)null,(String)null,(String)null,4,0.0);
-                    
+                    this.drawTools.callDrawFunction(
+                            (JGeometry)jGeom,
+                            (Styling)this.styling,
+                            (String)null,(Color)null,(Color)null,(Color)null,
+                            (int)4,
+                            (double)0.0
+                    );
                     if ( this.isBuffered()) {
                         this.styling.setLineWidth(lw); // set back
                         this.styling.setShadeType(this.getPreferences().isRandomRendering()
@@ -578,7 +691,15 @@ System.out.println("</SVQueryLayer method=queryByPoint");
                             } else  {
                                 jGeom = jGeom.buffer(this.getBufferDistance());
                             }
-                            this.callDrawFunction(jGeom,null,null,null,null,4,0.0);
+                            this.drawTools.callDrawFunction(
+                                    (JGeometry)jGeom,
+                                    (Styling)this.styling,
+                                    (String)null,
+                                    (Color)null,(Color)null,(Color)null,
+                                    (int)4,
+                                    (double)0.0
+                         );
+
                         } catch (Exception e) {
                             LOGGER.error("Failed to buffer query geometry by " + this.getBufferDistance());
                             jGeom = this.getGeometry();
@@ -595,13 +716,14 @@ System.out.println("</SVQueryLayer method=queryByPoint");
 
         LOGGER.logSQL(qSql);
 
-System.out.println("=======================");
-System.out.println(qSql);
-System.out.println("=======================");
-
         // Now execute query
         //
-        return this.executeDrawQuery(pStatement,qSql,_g2);
+        return SVDrawQueries.executeQuery(
+        		this,
+        		pStatement,
+        		qSql,
+        		_g2,
+        		this.drawTools);
     }
 	
     public ArrayList<QueryRow> getCache(Envelope _mbr)
@@ -632,7 +754,6 @@ System.out.println("=======================");
 
         // Set up parameters for host layer 
         //
-System.out.println("getCache() - " + qSql);
         pStatement = this.setParameters(qSql);
         if (pStatement==null) {
             return null;
@@ -744,6 +865,7 @@ System.out.println("getCache() - " + qSql);
     public double getTolerance() {
     	return super.getTolerance();
     }
+    
     public String getRelationshipMask() {
         return this.relationshipMask;
     }
@@ -818,14 +940,19 @@ System.out.println("getCache() - " + qSql);
     public JGeometry getGeometry() {
         return this.queryGeometry;
     }
-
-  private void fromXMLNode(Node _node) {
+    
+    private void fromXML(Node _node)
+    {
       if (_node == null || _node.getNodeName().equals("Layer") == false) {
-          //System.out.println("XML node is null or not a Layer");
-          return; // Should throw error
+          return;
       }
+      
       try {
           XPath xpath = XPathFactory.newInstance().newXPath();
+          this.setLayerName((String)xpath.evaluate("SVQueryLayer/Name/text()",_node,XPathConstants.STRING));
+          this.setVisibleName((String)xpath.evaluate("SVQueryLayer/VisibleName/text()",_node,XPathConstants.STRING));
+          this.setDesc((String)xpath.evaluate("SVQueryLayer/Description/text()",_node, XPathConstants.STRING));
+          this.setDraw(Boolean.valueOf((String)xpath.evaluate("SVQueryLayer/Draw/text()",_node,XPathConstants.STRING)));
           this.setSQL((String)xpath.evaluate("SVQueryLayer/SQL/text()",_node,XPathConstants.STRING));
           this.setBuffered((String)xpath.evaluate("SVQueryLayer/isBuffered/text()",_node,XPathConstants.STRING));
           this.setBufferDistance((String)xpath.evaluate("SVQueryLayer/bufferDistance/text()",_node,XPathConstants.STRING));
@@ -853,8 +980,8 @@ System.out.println("getCache() - " + qSql);
       }
     }
 
-    public String toXML() {
-      String SVLayer_SpatialLayerXML = super.toXML(); 
+    public String toXML() 
+    {      
       // First convert JGeometry to serializable string via byte array
       String jGeomAsByteStr = "";
       try {
@@ -866,15 +993,25 @@ System.out.println("getCache() - " + qSql);
       } catch (Exception e) {
           LOGGER.warn(this.getVisibleName() + ": Could not convert query JGeometry into byte array (" + e.getMessage() + ")");          
       }
-      return SVLayer_SpatialLayerXML + 
-             String.format("<SVQueryLayer><SQL>%s</SQL><isBuffered>%s</isBuffered><bufferDistance>%s</bufferDistance><sdoOperator>%s</sdoOperator><relationshipMask>%s</relationshipMask><geometry>%s</geometry><drawQueryGeometry>%s</drawQueryGeometry></SVQueryLayer>",
-                           this.getSQL(),   
+      
+      String xml = super.toXML();
+      xml += this.getStyling().toString();
+      xml += String.format("<SVQueryLayer><Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><SQL>%s</SQL>",
+    		               this.getLayerName(),
+    		               this.getVisibleName(),
+    		               this.getDesc(),
+    		               this.isDraw(),
+                           this.getSQL()
+                           );
+      
+      xml += String.format("<isBuffered>%s</isBuffered><bufferDistance>%s</bufferDistance><sdoOperator>%s</sdoOperator><relationshipMask>%s</relationshipMask><geometry>%s</geometry><drawQueryGeometry>%s</drawQueryGeometry></SVQueryLayer>",
                            this.isBuffered(),
                            this.getBufferDistance(),
                            this.getSdoOperator(),
                            this.getRelationshipMask(),
                            jGeomAsByteStr,
                            this.isDrawQueryGeometry());
+      return xml;
     }
 
     public void savePropertiesToDisk() {
@@ -936,23 +1073,20 @@ System.out.println("getCache() - " + qSql);
         return super.getSpatialView();
     }    
 
-    protected Styling styling = new Styling();
-
 	@Override
 	public Styling getStyling() {
         return this.styling;
 	}
 
 	public void setStyling(Styling _styling) {
-        this.styling = _styling;
+        this.styling = new Styling(_styling);
 	}
 
 	@Override
 	public String getStylingAsString() {
-        return this.styling.toString(this.getSpatialView().getMapPanel().getMapBackground());
+		// Returns styling as XML string
+        return this.styling.toXML(this.getSpatialView().getMapPanel().getMapBackground());
 	}
-
-    protected Preferences           preferences = null;
 
 	@Override
 	public Preferences getPreferences() {
@@ -961,9 +1095,6 @@ System.out.println("getCache() - " + qSql);
         }
         return this.preferences;
 	}
-
-    protected String layerName   = "";         // Unique layer name. This is the universal unique name for this layer.
-    protected String visibleName = "";         // This text is write into JTree where we show layers
 
 	@Override
 	public String getLayerNameAndConnectionName() {
@@ -1001,10 +1132,6 @@ System.out.println("getCache() - " + qSql);
 
     protected boolean draw = true;       // true - draw layer, false - not draw layer
 
-    public boolean is_draw() {
-        return this.draw;
-    }
-
     public boolean isDraw() {
         return this.draw;
     }
@@ -1012,8 +1139,6 @@ System.out.println("getCache() - " + qSql);
     public void setDraw(boolean _draw) {
         this.draw = _draw;
     }
-
-    protected Constants.OBJECT_TYPES objectType = Constants.OBJECT_TYPES.TABLE;
 
 	public void setObjectType(String _objectType) {
 	    if (Strings.isEmpty(_objectType) ) {
@@ -1036,8 +1161,6 @@ System.out.println("getCache() - " + qSql);
 	public boolean isView() {
 	    return this.objectType.equals(Constants.OBJECT_TYPES.VIEW);
 	}
-
-    protected boolean indexExists = true;       // Does spatial index exist for this layer
 	
 	@Override
 	public void setIndex() {
@@ -1230,11 +1353,6 @@ System.out.println("getCache() - " + qSql);
 
     protected boolean calculateMBR = false;      // When true, recalculates Layer MBR at next draw from actual data
 
-    public GEOMETRY_TYPES getGeometryType()
-    {
-    	return super.getGeometryType();
-    }
-    
     public Envelope getMBR() 
     {
     	return super.getMBR();
@@ -1276,54 +1394,6 @@ System.out.println("getCache() - " + qSql);
 		return null;
 	}
 
-	@Override
-	public void callDrawFunction(Struct _struct, 
-			                     String _label, 
-			                     String _shadeValue, 
-			                     String _pointColorValue,
-			                     String _lineColorValue, 
-			                     int _pointSizeValue, 
-			                     double _rotationAngle) 
-	 throws SQLException, 
-	        IOException 
-	{
-		if (_struct == null) {
-			return;
-		}
-		Struct stGeom = _struct;
-		String sqlTypeName = _struct.getSQLTypeName();
-		if (sqlTypeName.indexOf("MDSYS.ST_") == 0) {
-			stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
-		}
-		if (stGeom == null) {
-			return;
-		}
-		JGeometry geo = JGeometry.loadJS(stGeom);
-		if (geo == null) {
-			return;
-		}
-		this.callDrawFunction(geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue, _rotationAngle);
-	}
-
-	@Override
-	public void callDrawFunction(JGeometry _geo, 
-                                 String _label, 
-                                 String _shadeValue, 
-                                 String _pointColorValue,
-                                 String _lineColorValue, 
-                                 int _pointSizeValue, 
-                                 double _rotationAngle) 
-     throws IOException 
-	{
-		if (_geo == null) {
-			return;
-		}
-		drawTools.drawGeometry(_geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue,
-				this.styling.getRotationTarget(), _rotationAngle,
-				this.styling.getLabelAttributes(this.getSpatialView().getMapPanel().getMapBackground()),
-				this.styling.getLabelPosition(), this.styling.getLabelOffset());
-	}
-
     protected String layerCopySuffix = " (COPY)";  // Should be Tools>Preferences>GeoRaptor
 
 	@Override
@@ -1354,7 +1424,7 @@ System.out.println("getCache() - " + qSql);
         newLayer.setProject(this.getProject(),false);
 
         // Label
-        newLayer.setStyling(new Styling(this.styling));
+        newLayer.setStyling(this.styling);
         
         return newLayer;
 	}
@@ -1383,8 +1453,6 @@ System.out.println("getCache() - " + qSql);
         return this.resultFetchSize;
     }
     
-    protected SVSpatialLayerDraw drawTools = new SVSpatialLayerDraw(this); // Class used to draw this layer 
-
     public SVSpatialLayerDraw getDrawTools() {
         return this.drawTools;
     }
@@ -1410,8 +1478,6 @@ System.out.println("getCache() - " + qSql);
         }
     }
 
-    protected int resultFetchSize = 100;        // Fetch size for ResultSet
-
 	@Override
     public void setFetchSize(int _fetchSize) {
         if (_fetchSize == 0)
@@ -1423,221 +1489,6 @@ System.out.println("getCache() - " + qSql);
 	@Override
     public int getFetchSize() {
         return this.resultFetchSize;
-    }
-
-	@Override
-	public MetadataEntry getMetadataEntry()
-	{
-		return super.getMetadataEntry();
-	}
-
-    @Override
-	public boolean executeDrawQuery(PreparedStatement _pStatement,
-                                    String            _sql2Debug,
-                                    Graphics2D        _g2)
-    {
-        LOGGER.debug("** START: executeDrawQuery\n=======================");
-        if ( _g2 == null ) {
-            LOGGER.debug("**** Graphics2D is null; return;");
-            return false;
-        }
-        // connection needed for 
-        ResultSet    ors = null;
-        Envelope newMBR = new Envelope(this.getDefaultPrecision());
-        String     labelValue = null,
-                   shadeValue = null,
-              pointColorValue = null,
-               lineColorValue = null,
-                  sqlTypeName = "";
-        boolean isFastPickler = this.getPreferences().isFastPicklerConversion();
-        double pointSizeValue = 4,
-                   angleValue = 0.0f;
-        Struct         stGeom = null;
-        JGeometry       jGeom = null;
-        byte[]    geomPickler = null;
-        long    mbrCalcStart  = 0,
-                  mbrCalcTime = 0,
-                totalFeatures = 0,
-                dataReadStart = System.currentTimeMillis(),
-                 dataReadTime = 0,
-                dataDrawStart = 0,
-                 dataDrawTime = 0,
-                 executeStart = 0,
-                  executeTime = 0;    
-        try 
-        {
-            Connection oConn = (Connection)_pStatement.getConnection();
-            // Set graphics2D once for all features
-            drawTools.setGraphics2D(_g2);
-            executeStart = System.currentTimeMillis();
-            ors = _pStatement.executeQuery();
-            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
-            ors.setFetchSize(this.getResultFetchSize());
-            executeTime = ( System.currentTimeMillis() - executeStart );
-            while ((ors.next()) &&
-                   (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
-            {
-                /// reading a geometry from database       
-                sqlTypeName = ((java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
-                if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
-                    geomPickler = ors.getBytes(super.getGeoColumn().replace("\"",""));
-                    if (geomPickler == null) { continue; }
-                    //convert image into a JGeometry object using the SDO pickler
-                    jGeom = JGeometry.load(geomPickler);
-                } else {
-                    stGeom = (java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""));
-                    if (stGeom == null) continue;
-                    // If ST_GEOMETRY, extract SDO_GEOMETRY
-                    if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                        stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
-                    } 
-                    if (stGeom==null) { continue; }
-                    jGeom = JGeometry.loadJS(stGeom);
-                }
-                if (jGeom == null) continue;
-                
-                totalFeatures++;
-                
-                if (this.styling.getLabelColumn() != null) {
-                    labelValue = SQLConversionTools.convertToString(
-                    		oConn,
-                    		this.styling.getLabelColumn(), 
-                    		ors.getObject(this.styling.getLabelColumn().replace("\"","")));
-                }
-                if (this.styling.getRotationColumn() != null) {
-                    try {
-                        angleValue = ors.getDouble(this.styling.getRotationColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        angleValue = 0.0f;
-                    }
-                }
-                if (this.styling.getShadeColumn() != null && 
-                    this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        shadeValue = ors.getString(this.styling.getShadeColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        shadeValue = "255,255,255";
-                    }
-                } 
-                if (this.styling.getPointColorColumn() != null && 
-                    this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        pointColorValue = ors.getString(this.styling.getPointColorColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        pointColorValue = "255,255,255";
-                    }
-                } 
-                if (this.styling.getLineColorColumn() != null && 
-                    this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        lineColorValue = ors.getString(this.styling.getLineColorColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        lineColorValue = "0,0,0";
-                    }
-                }  
-                if (this.styling.getPointSizeColumn() != null && 
-                    this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        pointSizeValue = ors.getDouble(this.styling.getPointSizeColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        pointSizeValue = 4;
-                    }
-                }              
-                // Draw the feature
-                //
-                dataDrawStart = System.currentTimeMillis();
-                callDrawFunction(jGeom, 
-                                 labelValue, 
-                                 shadeValue, 
-                                 pointColorValue,
-                                 lineColorValue,
-                                 (int)(Math.round(pointSizeValue<4.0?4:pointSizeValue) % 72),
-                                 this.styling.getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
-                                 ? COGO.radians(COGO.normalizeDegrees(angleValue - 90.0f)) 
-                                 : angleValue);
-                dataDrawTime += ( System.currentTimeMillis() - dataDrawStart );
-                
-                // Check if we are reccalculating the layer's MBR
-                //
-                if ( this.getMBRRecalculation() ) {
-                    LOGGER.debug("**** MBR Recalculation - processing individual geometry for " + this.getLayerNameAndConnectionName());
-                    mbrCalcStart =  System.currentTimeMillis();
-                    newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
-                    mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );
-                }
-                if ( this.preferences.isQueryLimited() && totalFeatures >= this.preferences.getQueryLimit() ) {
-                    break;
-                }
-            } // while feature to process
-            dataReadTime += (  System.currentTimeMillis() - dataReadStart );
-            this.setNumberOfFeatures(totalFeatures);
-            float featsPerSecond = ( this.getNumberOfFeatures() / (((float)(dataReadTime + executeTime) / (float)Constants.MILLISECONDS) % Constants.SECONDS) );
-            LOGGER.logSQL("\n" + 
-                           super.getSpatialView().getVisibleName() + ">>" + this.getVisibleName() + "\n" + 
-                           ( this.getPreferences().isLogSearchStats() ? 
-                           "SQL Execution Time = " + Tools.milliseconds2Time(executeTime) + "\n" : "" ) + 
-                           "         Draw Time = " + Tools.milliseconds2Time(dataDrawTime)+ "\n" +
-                           ( this.getMBRRecalculation() ? 
-                           "     MBR Calc Time = " + Tools.milliseconds2Time(mbrCalcTime)+ "\n" : "" ) + 
-                           "    Data Read Time = " + Tools.milliseconds2Time(dataReadTime - (dataDrawTime+mbrCalcTime)) + "\n" +
-                           "   Total Read Time = " + Tools.milliseconds2Time(dataReadTime) + "\n" +
-                           " Features Returned = " + this.getNumberOfFeatures()  + "\n" +
-                           "   Features/Second = " + String.format("%10.2f",featsPerSecond));
-            if ( this.getMBRRecalculation() ) {
-                LOGGER.debug("**** MBR Recalculation - Final processing " + newMBR.toString());
-                if (newMBR.getWidth() == newMBR.getHeight()) {
-                  // Must be a single point
-                  //
-                  Point2D.Double pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
-                  double maxBufferSize = Math.max(pixelSize.getX(),pixelSize.getY()) * this.getPreferences().getSearchPixels();
-                  newMBR.setChange(maxBufferSize);
-                }
-                LOGGER.debug("**** MBR Recalculation - setMBR to " + newMBR.toString());
-                super.setMBR(newMBR);
-                this.setMBRRecalculation(false);
-            }
-        } catch (SQLException sqle) {
-            // isView() then say no index
-            if ( this.isView() ) { this.setIndex(false); };
-            String params = "";
-            ParameterMetaData pmd = null;
-            try {
-                pmd = _pStatement.getParameterMetaData();
-                for (int i=1;i<=pmd.getParameterCount();i++) {
-                    params += "\n" + pmd.getParameterTypeName(i);
-                }
-            } catch (SQLException e) {
-            }
-            Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
-                                                               sqle.toString()),
-                                  _sql2Debug + params);
-            return false;
-        } catch (IOException ioe) {
-            JOptionPane.showMessageDialog(null,
-                                          super.propertyManager.getMsg("FILE_IO_ERROR",
-                                                                       ioe.getLocalizedMessage()),
-                                          MainSettings.EXTENSION_NAME,
-                                          JOptionPane.ERROR_MESSAGE);
-            return false;
-        } catch (NullPointerException npe) {
-            LOGGER.debug("**** NullPointerException - " + npe.toString());
-            npe.printStackTrace();
-            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-            return false;
-        } catch (Exception e) {
-            LOGGER.error("SVQueryLayer.executeDrawQuery - general exception");
-            e.printStackTrace();
-            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-            return false;
-        } finally {
-            try { ors.close();        } catch (Exception _e) { }
-            try { _pStatement.close(); } catch (Exception _e) { }
-        }
-        LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-        return true;
     }
 
 }

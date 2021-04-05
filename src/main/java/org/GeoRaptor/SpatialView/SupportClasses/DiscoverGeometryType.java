@@ -2,7 +2,7 @@ package org.GeoRaptor.SpatialView.SupportClasses;
 
 import java.sql.Connection;
 
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;

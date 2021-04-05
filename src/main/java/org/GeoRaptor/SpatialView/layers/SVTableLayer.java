@@ -11,7 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -38,9 +37,10 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.Constants.GEOMETRY_TYPES;
+import org.GeoRaptor.Constants.SDO_OPERATORS;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.Constants.GEOMETRY_TYPES;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -49,7 +49,6 @@ import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
-import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
@@ -75,12 +74,12 @@ import oracle.spatial.geometry.JGeometry;
  * 64 - 2.5 Geometry Examples
  * 75 - 2.5.8 Several Geometry Types
  */
-public class SVSpatialLayer 
+public class SVTableLayer 
      extends SVLayer 
   implements iLayer 
 {
 
-    public final static String CLASS_NAME = Constants.KEY_SVSpatialLayer;
+    public final String CLASS_NAME = Constants.KEY_SVSpatialLayer;
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayer");
 
@@ -109,12 +108,14 @@ public class SVSpatialLayer
 
     /** Constructors...
      **/
-    public SVSpatialLayer(SpatialView _sView) {
+    public SVTableLayer(SpatialView _sView) {
         super(_sView);
-        initialise();
+        this.preferences = MainSettings.getInstance().getPreferences();
+        this.setResultFetchSize(preferences.getFetchSize());
+        this.setPrecision(-1); // force calculation from mbr
     } // SVSpatialLayer
 
-    public SVSpatialLayer(SpatialView   _sView, 
+    public SVTableLayer(SpatialView     _sView, 
                           String        _layerName,
                           String        _visibleName,
                           String        _desc, 
@@ -126,17 +127,17 @@ public class SVSpatialLayer
         this.visibleName = _visibleName;
         this.desc = _desc;
         this.draw = _draw;
-        if ( MainSettings.getInstance().getPreferences().isRandomRendering()) {
-            this.styling.setAllRandom();
-        }
-        initialise();
+        this.styling = new Styling();
+        this.preferences = MainSettings.getInstance().getPreferences();
+        this.setResultFetchSize(preferences.getFetchSize());
+        this.setPrecision(-1); // force calculation from mbr
     } // SVSpatialLayer
 
     /**
      * Read layer properties from given XML Layer object and set class variables
      * @param _XML String XML <Layer>...</Layer>
      */
-    public SVSpatialLayer(SpatialView _sView, String _XML) {
+    public SVTableLayer(SpatialView _sView, String _XML) {
         super(_sView, _XML);
         try {
             Document doc = null;
@@ -157,13 +158,17 @@ public class SVSpatialLayer
         } catch (IOException ioe) {
             LOGGER.error("SVSpatialLayer(XML): IOException " + ioe.toString());
         }
-        initialise();
+        this.preferences = MainSettings.getInstance().getPreferences();
+        this.setResultFetchSize(preferences.getFetchSize());
+        this.setPrecision(-1); // force calculation from mbr
     }
 
-    public SVSpatialLayer(SpatialView _sView, Node _node) {
+    public SVTableLayer(SpatialView _sView, Node _node) {
         super(_sView, _node);
         this.fromXMLNode(_node);
-        initialise();
+        this.preferences = MainSettings.getInstance().getPreferences();
+        this.setResultFetchSize(preferences.getFetchSize());
+        this.setPrecision(-1); // force calculation from mbr
     }
 
     private void fromXMLNode(Node _node) {
@@ -184,6 +189,8 @@ public class SVSpatialLayer
             this.setProject(Boolean.valueOf((String)xpath.evaluate("SVSpatialLayer/isProject/text()",_node,XPathConstants.STRING)),false);
             
             // Label has to be after layerSQL because it checks the SQL for the label
+            if ( this.styling == null )
+            	this.styling = new Styling();
             this.styling.setLabelColumn((String)xpath.evaluate("SVSpatialLayer/Label/text()",_node,XPathConstants.STRING));
             this.styling.setRotationColumn((String)xpath.evaluate("SVSpatialLayer/RotationColumn/text()",_node,XPathConstants.STRING));
             this.styling.setRotationValue((String)xpath.evaluate("SVSpatialLayer/RotationValue/text()",_node,XPathConstants.STRING));
@@ -231,7 +238,7 @@ public class SVSpatialLayer
             this.styling.setSelectionPointSize(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectPointSize/text()",_node,XPathConstants.STRING)));
             this.styling.setSelectionLineWidth(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectLineWidth/text()",_node,XPathConstants.STRING)));
             this.styling.setSelectionColor(new Color(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectionColor/text()",_node,XPathConstants.STRING))));
-            this.styling.setSelectionTransLevel(Float.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectShadeTransLevel/text()",_node,XPathConstants.STRING)));
+            this.styling.setSelectionShadeTransLevel(Float.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectShadeTransLevel/text()",_node,XPathConstants.STRING)));
             this.styling.setSelectionLineStrokeType((String)xpath.evaluate("SVSpatialLayer/SelectLineStrokeType/text()",_node,XPathConstants.STRING));
             
             this.styling.setTextLoScale((String)xpath.evaluate("SVSpatialLayer/TextLoScale/text()",_node,XPathConstants.STRING));
@@ -246,7 +253,7 @@ public class SVSpatialLayer
         }
     }
 
-    public SVSpatialLayer(SVSpatialLayer _sLayer) {
+    public SVTableLayer(SVTableLayer _sLayer) {
         super(_sLayer.getSpatialView(), _sLayer.getMetadataEntry());
         super.setConnectionName(_sLayer.connName);
         String newName = _sLayer.getSpatialView().getSVPanel().getViewLayerTree().checkName(_sLayer.getLayerName());
@@ -264,42 +271,10 @@ public class SVSpatialLayer
         this.setFetchSize(_sLayer.getFetchSize());
         this.setPrecision(_sLayer.getPrecision(false));
         this.setProject(_sLayer.getProject(),false);
-        this.styling = new Styling(_sLayer.getStyling());
-        initialise();
-    }
-
-    private void initialise() {
+        this.setStyling(_sLayer.getStyling());
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-    }
-
-    public String getClassName() {
-        return this.CLASS_NAME;
-    }
-    
-    protected void setStyling(Styling _style) {
-        this.styling = _style;
-    }
-
-    public Styling getStyling() {
-        return this.styling;
-    }
-
-    public String getStylingAsString() {
-        return this.styling.toString(this.getSpatialView().getMapPanel().getMapBackground());
-    }
-    
-    protected PropertiesManager getPropertyManager() {
-        // propertyManager is always set by initialise() method
-        return this.propertyManager;
-    }
-
-    public Preferences getPreferences() {
-        if (this.preferences==null) {
-            this.preferences = MainSettings.getInstance().getPreferences();
-        }
-        return this.preferences;
     }
 
     public String toXML() {
@@ -350,8 +325,10 @@ public class SVSpatialLayer
                         this.styling.getLineTransLevel(),
                         this.styling.getLineColorColumn(), 
                         this.styling.getLineColorType().toString(),
-                        this.styling.getShadeColumn(), this.styling.getShadeType().toString(),
-                        this.styling.getShadeColor(null).getRGB(), this.styling.getShadeTransLevel(),
+                        this.styling.getShadeColumn(), 
+                        this.styling.getShadeType().toString(),
+                        this.styling.getShadeColor(null).getRGB(), 
+                        this.styling.getShadeTransLevel(),
                         String.format("%d", this.styling.getSelectionPointSize()),
                         String.format("%d", this.styling.getSelectionLineWidth()),
                         this.styling.getSelectionColor().getRGB(),
@@ -427,18 +404,46 @@ public class SVSpatialLayer
                     LOGGER.error(this.propertyManager.getMsg("FILE_SAVE_ERROR",file.getName(),e.getMessage()));
                 }
             }
-        }catch (Exception e){//Catch exception if any
+        } catch (Exception e){//Catch exception if any
             LOGGER.error("Error: " + e.getMessage());
         }
     }
+
+    public String getClassName() {
+        return this.CLASS_NAME;
+    }
     
+    public void setStyling(Styling _style) {
+        this.styling = new Styling(_style);
+    }
+
+    public Styling getStyling() {
+        return this.styling;
+    }
+
+    public String getStylingAsString() {
+        return this.styling.toXML(this.getSpatialView().getMapPanel().getMapBackground());
+    }
+    
+    public PropertiesManager getPropertyManager() {
+        // propertyManager is always set by initialise() method
+        return this.propertyManager;
+    }
+
+    public Preferences getPreferences() {
+        if (this.preferences==null) {
+            this.preferences = MainSettings.getInstance().getPreferences();
+        }
+        return this.preferences;
+    }
+
     public boolean equals(Object obj) {
         //if the two objects are equal in reference, they are equal
         if (this == obj) {
             return true;
         }
-        if (obj instanceof SVSpatialLayer) {
-            SVSpatialLayer sLayer = (SVSpatialLayer)obj;
+        if (obj instanceof SVTableLayer) {
+            SVTableLayer sLayer = (SVTableLayer)obj;
             return sLayer.getLayerName().equals(this.getLayerName()) &&
                 sLayer.getVisibleName().equals(this.getVisibleName());
         } else {
@@ -494,10 +499,6 @@ public class SVSpatialLayer
 
     public void setVisibleName(String _visibleName) {
         this.visibleName = _visibleName;
-    }
-
-    public boolean is_draw() {
-        return this.draw;
     }
 
     public boolean isDraw() {
@@ -991,10 +992,7 @@ public class SVSpatialLayer
     
     protected PreparedStatement setParameters(String _sql, 
                                             Envelope _mbr) 
-    {
-//System.out.println("\n\n\nSVSpatialLayer.setParameters()");
-//System.out.println("... " + _sql);
-    	
+    {    	
         boolean project = this.project &&
                 this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL &&
                 this.getSRIDAsInteger()             != Constants.SRID_NULL;
@@ -1108,221 +1106,18 @@ public class SVSpatialLayer
 
         // Now execute query and return result
         //
-        boolean success = executeDrawQuery(pStatement,sql,_g2);
+        boolean success = SVDrawQueries.executeQuery(
+                                        this, 
+                                        pStatement,
+                                        sql,
+                                        _g2,
+                                        this.drawTools);
         return success;
     }
 
-    @Override
-	public boolean executeDrawQuery(PreparedStatement _pStatement,
-                                    String            _sql2Debug,
-                                    Graphics2D        _g2)
-    {
-        LOGGER.debug("** START: executeDrawQuery\n=======================");
-        if ( _g2 == null ) {
-            LOGGER.debug("**** Graphics2D is null; return;");
-            return false;
-        }
-        // connection needed for 
-        ResultSet    ors = null;
-        Envelope newMBR = new Envelope(this.getDefaultPrecision());
-        String     labelValue = null,
-                   shadeValue = null,
-              pointColorValue = null,
-               lineColorValue = null,
-                  sqlTypeName = "";
-        boolean isFastPickler = this.getPreferences().isFastPicklerConversion();
-        double pointSizeValue = 4,
-                   angleValue = 0.0f;
-        Struct         stGeom = null;
-        JGeometry       jGeom = null;
-        byte[]    geomPickler = null;
-        long    mbrCalcStart  = 0,
-                  mbrCalcTime = 0,
-                totalFeatures = 0,
-                dataReadStart = System.currentTimeMillis(),
-                 dataReadTime = 0,
-                dataDrawStart = 0,
-                 dataDrawTime = 0,
-                 executeStart = 0,
-                  executeTime = 0;    
-        try 
-        {
-            Connection oConn = (Connection)_pStatement.getConnection();
-            // Set graphics2D once for all features
-            drawTools.setGraphics2D(_g2);
-            executeStart = System.currentTimeMillis();
-            ors = _pStatement.executeQuery();
-            ors.setFetchDirection(ResultSet.FETCH_FORWARD);
-            ors.setFetchSize(this.getResultFetchSize());
-            executeTime = ( System.currentTimeMillis() - executeStart );
-            while ((ors.next()) &&
-                   (this.getSpatialView().getSVPanel().isCancelOperation() == false)) 
-            {
-                /// reading a geometry from database       
-                sqlTypeName = ((java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""))).getSQLTypeName();
-                if ( isFastPickler && sqlTypeName.indexOf("MDSYS.ST_")==-1) {
-                    geomPickler = ors.getBytes(super.getGeoColumn().replace("\"",""));
-                    if (geomPickler == null) { continue; }
-                    //convert image into a JGeometry object using the SDO pickler
-                    jGeom = JGeometry.load(geomPickler);
-                } else {
-                    stGeom = (java.sql.Struct)ors.getObject(super.getGeoColumn().replace("\"",""));
-                    if (stGeom == null) continue;
-                    // If ST_GEOMETRY, extract SDO_GEOMETRY
-                    if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                        stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
-                    } 
-                    if (stGeom==null) { continue; }
-                    jGeom = JGeometry.loadJS(stGeom);
-                }
-                if (jGeom == null) continue;
-                
-                totalFeatures++;
-                
-                if (this.styling.getLabelColumn() != null) {
-                    labelValue = SQLConversionTools.convertToString(
-                    		oConn,
-                    		this.styling.getLabelColumn(), 
-                    		ors.getObject(this.styling.getLabelColumn().replace("\"","")));
-                }
-                if (this.styling.getRotationColumn() != null) {
-                    try {
-                        angleValue = ors.getDouble(this.styling.getRotationColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        angleValue = 0.0f;
-                    }
-                }
-                if (this.styling.getShadeColumn() != null && 
-                    this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        shadeValue = ors.getString(this.styling.getShadeColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        shadeValue = "255,255,255";
-                    }
-                } 
-                if (this.styling.getPointColorColumn() != null && 
-                    this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        pointColorValue = ors.getString(this.styling.getPointColorColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        pointColorValue = "255,255,255";
-                    }
-                } 
-                if (this.styling.getLineColorColumn() != null && 
-                    this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        lineColorValue = ors.getString(this.styling.getLineColorColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        lineColorValue = "0,0,0";
-                    }
-                }  
-                if (this.styling.getPointSizeColumn() != null && 
-                    this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        pointSizeValue = ors.getDouble(this.styling.getPointSizeColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        pointSizeValue = 4;
-                    }
-                }              
-                // Draw the feature
-                //
-                dataDrawStart = System.currentTimeMillis();
-                callDrawFunction(jGeom, 
-                                 labelValue, 
-                                 shadeValue, 
-                                 pointColorValue,
-                                 lineColorValue,
-                                 (int)(Math.round(pointSizeValue<4.0?4:pointSizeValue) % 72),
-                                 this.styling.getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
-                                 ? COGO.radians(COGO.normalizeDegrees(angleValue - 90.0f)) 
-                                 : angleValue);
-                dataDrawTime += ( System.currentTimeMillis() - dataDrawStart );
-                
-                // Check if we are reccalculating the layer's MBR
-                //
-                if ( this.getMBRRecalculation() ) {
-                    LOGGER.debug("**** MBR Recalculation - processing individual geometry for " + this.getLayerNameAndConnectionName());
-                    mbrCalcStart =  System.currentTimeMillis();
-                    newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
-                    mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );
-                }
-                if ( this.preferences.isQueryLimited() && totalFeatures >= this.preferences.getQueryLimit() ) {
-                    break;
-                }
-            } // while feature to process
-            dataReadTime += (  System.currentTimeMillis() - dataReadStart );
-            this.setNumberOfFeatures(totalFeatures);
-            float featsPerSecond = ( this.getNumberOfFeatures() / (((float)(dataReadTime + executeTime) / (float)Constants.MILLISECONDS) % Constants.SECONDS) );
-            LOGGER.logSQL("\n" + 
-                           super.getSpatialView().getVisibleName() + ">>" + this.getVisibleName() + "\n" + 
-                           ( this.getPreferences().isLogSearchStats() ? 
-                           "SQL Execution Time = " + Tools.milliseconds2Time(executeTime) + "\n" : "" ) + 
-                           "         Draw Time = " + Tools.milliseconds2Time(dataDrawTime)+ "\n" +
-                           ( this.getMBRRecalculation() ? 
-                           "     MBR Calc Time = " + Tools.milliseconds2Time(mbrCalcTime)+ "\n" : "" ) + 
-                           "    Data Read Time = " + Tools.milliseconds2Time(dataReadTime - (dataDrawTime+mbrCalcTime)) + "\n" +
-                           "   Total Read Time = " + Tools.milliseconds2Time(dataReadTime) + "\n" +
-                           " Features Returned = " + this.getNumberOfFeatures()  + "\n" +
-                           "   Features/Second = " + String.format("%10.2f",featsPerSecond));
-            if ( this.getMBRRecalculation() ) {
-                LOGGER.debug("**** MBR Recalculation - Final processing " + newMBR.toString());
-                if (newMBR.getWidth() == newMBR.getHeight()) {
-                  // Must be a single point
-                  //
-                  Point2D.Double pixelSize = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
-                  double maxBufferSize = Math.max(pixelSize.getX(),pixelSize.getY()) * this.getPreferences().getSearchPixels();
-                  newMBR.setChange(maxBufferSize);
-                }
-                LOGGER.debug("**** MBR Recalculation - setMBR to " + newMBR.toString());
-                super.setMBR(newMBR);
-                this.setMBRRecalculation(false);
-            }
-        } catch (SQLException sqle) {
-            // isView() then say no index
-            if ( this.isView() ) { this.setIndex(false); };
-            String params = "";
-            ParameterMetaData pmd = null;
-            try {
-                pmd = _pStatement.getParameterMetaData();
-                for (int i=1;i<=pmd.getParameterCount();i++) {
-                    params += "\n" + pmd.getParameterTypeName(i);
-                }
-            } catch (SQLException e) {
-            }
-            Tools.copyToClipboard(super.propertyManager.getMsg("SQL_QUERY_ERROR",
-                                                               sqle.toString()),
-                                  _sql2Debug + params);
-            return false;
-        } catch (IOException ioe) {
-            JOptionPane.showMessageDialog(null,
-                                          super.propertyManager.getMsg("FILE_IO_ERROR",
-                                                                       ioe.getLocalizedMessage()),
-                                          MainSettings.EXTENSION_NAME,
-                                          JOptionPane.ERROR_MESSAGE);
-            return false;
-        } catch (NullPointerException npe) {
-            LOGGER.debug("**** NullPointerException - " + npe.toString());
-            npe.printStackTrace();
-            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-            return false;
-        } catch (Exception e) {
-            LOGGER.error("SVSpatialLayer.executeDrawQuery - general exception");
-            e.printStackTrace();
-            LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-            return false;
-        } finally {
-            try { ors.close();        } catch (Exception _e) { }
-            try { _pStatement.close(); } catch (Exception _e) { }
-        }
-        LOGGER.debug("** FINISH: executeDrawQuery\n========================");
-        return true;
-    }
-          
-    public LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
-                                                            boolean _fullDataType) 
+    public LinkedHashMap<String, String> 
+           getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
+                              boolean _fullDataType) 
     throws SQLException 
     {
         // Should try and get columns etc from SQL being executed.
@@ -1405,90 +1200,18 @@ public class SVSpatialLayer
     }
 
     /**
-     * Convert STRUCT object to JGeometry and call drawX function base on Geometry type
-     * @history Simon Greener April 2010.
-     *           Added call to draw geometry via new java.awt.Shape aware drawGeometry funciton
-     * @history Simon Greener May 31st 2010.
-     *          Moved setting of graphics2D of drawTools to calling function
-     * @history Simon Greener June 2nd 2010.
-     *          Got rid of super.lastReadLayerMBR.setMBR(geo.getMBR())
-     *          because we are processing single geometries and NOT the whole layer.
-     *          Also, geo.getMBR() returns different arrays depending on whether xy or xyz etc.
-     *          - Also moved setting of temporary layer transparency to own function
-     *          and to before this function is called (for each and all geometries)
-     */
-    public void callDrawFunction(Struct _struct, 
-                                 String _label, 
-                                 String _shadeValue,
-                                 String _pointColorValue,
-                                 String _lineColorValue,
-                                 int    _pointSizeValue,
-                                 double _rotationAngle) 
-    throws SQLException,
-           IOException 
-    {
-        if (_struct == null) {
-            return;
-        }
-        Struct stGeom = _struct;
-        String sqlTypeName = _struct.getSQLTypeName();
-        if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-            stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
-        } 
-        if (stGeom == null) {
-            return;
-        }
-        JGeometry geo = JGeometry.loadJS(stGeom);
-        if (geo == null) {
-            return;
-        }
-        callDrawFunction(geo, 
-                         _label, 
-                         _shadeValue, 
-                         _pointColorValue, 
-                         _lineColorValue, 
-                         _pointSizeValue, 
-                         _rotationAngle);
-    }
-
-    public void callDrawFunction(JGeometry _geo, 
-                                 String    _label,
-                                 String    _shadeValue,
-                                 String    _pointColorValue,
-                                 String    _lineColorValue,
-                                 int       _pointSizeValue,
-                                 double    _rotationAngle) 
-    throws IOException 
-    {
-        if (_geo == null) {
-            return;
-        }
-        drawTools.drawGeometry(_geo, 
-                               _label, 
-                               _shadeValue, 
-                               _pointColorValue, 
-                               _lineColorValue, 
-                               _pointSizeValue,
-                               this.styling.getRotationTarget(), 
-                               _rotationAngle,
-                               this.styling.getLabelAttributes(this.getSpatialView().getMapPanel().getMapBackground()),
-                               this.styling.getLabelPosition(),
-                               this.styling.getLabelOffset());
-    }
-  
-    /**
      * Create copy of current class.
      */
-    public SVSpatialLayer createCopy() 
+    public SVTableLayer createCopy() 
     throws Exception 
     {
         // _renderOnly is ignored for SVSpatialLayers
         //
-        SVSpatialLayer newLayer = null;
+        SVTableLayer newLayer = null;
 
         // Shared SVLayer stuff
         //
-        newLayer = new SVSpatialLayer(super.getSpatialView());
+        newLayer = new SVTableLayer(super.getSpatialView());
         
         // set SVLayer properties (What is a copy? Is it a render layer?)
         newLayer.setMetadataEntry(super.getMetadataEntry());
@@ -1510,7 +1233,7 @@ public class SVSpatialLayer
         newLayer.setProject(this.getProject(),false);
 
         // Label
-        newLayer.setStyling(new Styling(this.styling));
+        newLayer.setStyling(this.getStyling());
         
         return newLayer;
     }
@@ -1734,7 +1457,6 @@ public class SVSpatialLayer
             geoColumn = geoColumn.replace("\"","");
 
             querySQL = this.getIdentifySQL(project);
-System.out.println("SVSpatialLayer queryByPoint: " + querySQL);	        
 
             // Get target SRID and units_parameter in case layer have been drag-and-dropped to a different view/srid
             //
@@ -1954,6 +1676,31 @@ System.out.println("SVSpatialLayer queryByPoint: " + querySQL);
 	public MetadataEntry getMetadataEntry()
 	{
 		return super.getMetadataEntry();
+	}
+
+	@Override
+	public void setGeometry(JGeometry _geometry) {
+		// TODO Auto-generated method stub		
+	}
+
+	@Override
+	public void setBufferDistance(double bufferDistance) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void setBuffered(boolean b) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void setRelationshipMask(String relationshipMask) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void setSdoOperator(SDO_OPERATORS sdoOperator) {
+		// TODO Auto-generated method stub
 	}
 
 } 

@@ -556,9 +556,11 @@ public class SpatialRenderer
         
         boolean colourSDOGeomElems = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
 
-        Constants.geometrySourceType geomSourceType = this.GeoRaptorPrefs.isSdoGeometryProcessingFormat()
-                                                      ? Constants.geometrySourceType.SDO_GEOMETRY
-                                                      : Constants.geometrySourceType.JGEOMETRY;
+        Constants.geometrySourceType geomSourceType = 
+        		this.GeoRaptorPrefs.isSdoGeometryProcessingFormat()
+                ? Constants.geometrySourceType.SDO_GEOMETRY
+                : Constants.geometrySourceType.JGEOMETRY;
+        
         JGeometry jGeo = null;  // Test to see if it will work
         if (  geomSourceType == Constants.geometrySourceType.JGEOMETRY ) {
             try {
@@ -602,7 +604,9 @@ public class SpatialRenderer
                          visualFormat = Constants.renderType.SDO_GEOMETRY;
                 }
             }
-            
+
+System.out.println("visualformat = " + visualFormat.toString());
+
             switch ( visualFormat )
             {
             case SDO_GEOMETRY:
@@ -629,6 +633,7 @@ public class SpatialRenderer
                 }
                 if ( visualFormat == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(stValue) ) {
                     visualFormat = Constants.renderType.WKT;
+System.out.println("WKT");
                     WKT w = new WKT();
                     clipText = new String(w.fromStruct(stValue));
                 } else {
@@ -647,8 +652,9 @@ public class SpatialRenderer
                 }
             }
         } catch (Exception _e) {
-          LOGGER.error("SpatailRenderer.renderGeometry(): Caught exception when rendering geometry as " + visualFormat.toString() + " (" + _e.getMessage() + ")");
+          LOGGER.error("SpatialRenderer.renderGeometry(): Caught exception when rendering geometry as " + visualFormat.toString() + " (" + _e.getMessage() + ")");
         }
+        
         if ( visualFormat != Constants.renderType.SDO_GEOMETRY && Strings.isEmpty(clipText) ) 
         { 
               try 

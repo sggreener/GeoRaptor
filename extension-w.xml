@@ -1,7 +1,7 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <extension xmlns="http://jcp.org/jsr/198/extension-manifest"
               id="org.GeoRaptor" 
-         version="19.1" 
+         version="20.1" 
     esdk-version="2.0"
   rsbundle-class="org.GeoRaptor.Resources">
   <name>GeoRaptor</name>

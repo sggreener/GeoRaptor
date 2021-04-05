@@ -7,7 +7,7 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
@@ -37,7 +37,9 @@ import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.SpatialView.SupportClasses.Preview;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
+import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -554,42 +556,37 @@ extends JPanel
 
     private void showSelected()
     {
-        int rows[] = geoTable.getSelectedRows();
-        int row = -1;        
+    	int rows[] = geoTable.getSelectedRows();
         if ( rows.length == 0 ) {
-            // Process all or process one?
-          Point i = geoPopupMenu.getLocation();
-          row = this.geoTable.rowAtPoint(i);
-          if ( row == -1 ) 
-              row = rows[0];
+          return;
         } 
-        if ( rows.length == 1 ) {
-            row = rows[0];
-        } 
-
-        SpatialRenderer sr = SpatialRenderer.getInstance();
-        JLabel lblGeom = null;
         int modelRow = -1;
         Dimension imageSize = new Dimension(GeoRaptorPrefs.getPreviewImageWidth(),
                                             GeoRaptorPrefs.getPreviewImageHeight());
-        if (row != -1 ) {
-            modelRow = geoTable.convertRowIndexToModel(row);
-            lblGeom = sr.getPreview((Struct)geoTableModel.getValueAt(modelRow,GeoTableModel.GeoValue), 
-                                      imageSize);
-        } else if ( rows.length > 1 ) {
-            List<JGeometry> geoSet = new ArrayList<JGeometry>(rows.length);
-            for (int i=0; i<rows.length; i++) {
-                modelRow = geoTable.convertRowIndexToModel(rows[i]);
-                geoSet.add((JGeometry)geoTableModel.getValueAt(modelRow,GeoTableModel.JGeometry));
-            }
-            lblGeom = sr.getPreview((JGeometry)null, geoSet, imageSize);
+        
+        List<JGeometry> geoSet = new ArrayList<JGeometry>(rows.length);
+        for (int i=0; i<rows.length; i++) {
+          modelRow = geoTable.convertRowIndexToModel(rows[i]);
+          geoSet.add((JGeometry)geoTableModel.getValueAt(modelRow,GeoTableModel.JGeometry));
         }
-        JFrame frame = new JFrame();
-        frame.add(lblGeom);
-        frame.setTitle(Constants.GEORAPTOR);
-        frame.setLocationRelativeTo(svPanel);
+        Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+        SpatialViewPanel  svp = SpatialViewPanel.getInstance();
+        JFrame frame = new JFrame(Constants.GEORAPTOR + 
+                                 (geoSet.size()==1 
+                                 ? " - Preview Selected Geometry" 
+                                 : " - Preview " + geoSet.size() + " Selected Geometries"));
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setLocationRelativeTo(svp);
+        // Add preview object to frame
+        Preview prevObj = new Preview((JGeometry)null, geoSet, imageSize, conn, frame);
+        prevObj.addComponentListener(prevObj);
+        frame.setContentPane(prevObj);
+        frame.setMinimumSize(prevObj.getSize());
         frame.pack();
         frame.setVisible(true);
+        frame = null;
+        prevObj = null;
+        return;
     }
 
     private void geoTableMouseClicked(java.awt.event.MouseEvent evt) 

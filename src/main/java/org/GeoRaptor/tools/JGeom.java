@@ -1,28 +1,24 @@
 package org.GeoRaptor.tools;
 
 import java.awt.geom.Point2D;
+
 import java.math.BigDecimal;
+
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
+
 import java.util.Iterator;
 import java.util.List;
+
+import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.Queries;
-import org.locationtech.jts.io.oracle.OraGeom;
-import org.locationtech.jts.io.oracle.OraUtil;
 
-import oracle.jdbc.OracleConnection;
-import oracle.spatial.geometry.JGeometry;
-import oracle.sql.ARRAY;
-import oracle.sql.ArrayDescriptor;
-import oracle.sql.Datum;
-import oracle.sql.NUMBER;
-import oracle.sql.STRUCT;
-import oracle.sql.StructDescriptor;
+import org.locationtech.jts.io.oracle.OraUtil;
 
 public class JGeom {
 
@@ -78,35 +74,35 @@ public class JGeom {
         			  ? _geom.getPoint() 
                       : _geom.getLabelPointXYZ(); 
         } catch (Exception e) { }
-        StructDescriptor sdo_point_descriptor = StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_POINT_TYPE,_conn);
-        Datum sdo_point_data[] = new Datum[] {
+        oracle.sql.StructDescriptor sdo_point_descriptor = oracle.sql.StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_POINT_TYPE,_conn);
+        oracle.sql.Datum sdo_point_data[] = new oracle.sql.Datum[] {
             OraUtil.toNUMBER(sdo_point[0]),
             OraUtil.toNUMBER(sdo_point[1]), 
             OraUtil.toNUMBER(sdo_point[2])
         };
-        STRUCT SDO_POINT = new STRUCT(sdo_point_descriptor, _conn, sdo_point_data);
+        oracle.sql.STRUCT SDO_POINT = new oracle.sql.STRUCT(sdo_point_descriptor, _conn, sdo_point_data);
         
         int[] iSDO_ELEM_INFO_ARRAY = null;
         try { iSDO_ELEM_INFO_ARRAY = _geom.getElemInfo(); } catch (Exception e) { }
-        ArrayDescriptor sdo_elem_info_array_descriptor = ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ELEM_ARRAY,_conn);
-        ARRAY SDO_ELEM_INFO_ARRAY = new ARRAY(sdo_elem_info_array_descriptor, _conn, iSDO_ELEM_INFO_ARRAY);
+        oracle.sql.ArrayDescriptor sdo_elem_info_array_descriptor = oracle.sql.ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ELEM_ARRAY,_conn);
+        oracle.sql.ARRAY SDO_ELEM_INFO_ARRAY = new oracle.sql.ARRAY(sdo_elem_info_array_descriptor, _conn, iSDO_ELEM_INFO_ARRAY);
         
         double[] dSDO_ORDINATE_ARRAY = null;
         try { dSDO_ORDINATE_ARRAY    = _geom.getOrdinatesArray(); } catch (Exception e) { }
-        ArrayDescriptor sdo_ordinate_array_descriptor = ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ORD_ARRAY,_conn);
-        ARRAY SDO_ORDINATE_ARRAY = new ARRAY(sdo_ordinate_array_descriptor, _conn, dSDO_ORDINATE_ARRAY);
+        oracle.sql.ArrayDescriptor sdo_ordinate_array_descriptor = oracle.sql.ArrayDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_ORD_ARRAY,_conn);
+        oracle.sql.ARRAY SDO_ORDINATE_ARRAY = new oracle.sql.ARRAY(sdo_ordinate_array_descriptor, _conn, dSDO_ORDINATE_ARRAY);
 
         // SDO_GEOMETRY
-        Datum sdo_geometry_data[] = new Datum[] {
-        		  new NUMBER(SDO_GTYPE),
-                  new NUMBER(SDO_SRID),
+        oracle.sql.Datum sdo_geometry_data[] = new oracle.sql.Datum[] {
+        		  new oracle.sql.NUMBER(SDO_GTYPE),
+                  new oracle.sql.NUMBER(SDO_SRID),
                   SDO_POINT,
                   SDO_ELEM_INFO_ARRAY,
                   SDO_ORDINATE_ARRAY
         };
-        StructDescriptor sdo_geometry_descriptor = StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_GEOMETRY,_conn);
+        oracle.sql.StructDescriptor sdo_geometry_descriptor = oracle.sql.StructDescriptor.createDescriptor(Constants.TAG_MDSYS_SDO_GEOMETRY,_conn);
         Struct stGeom = null;
-        stGeom = new STRUCT(sdo_geometry_descriptor, _conn, sdo_geometry_data);
+        stGeom = new oracle.sql.STRUCT(sdo_geometry_descriptor, _conn, sdo_geometry_data);
         return stGeom;
     }
 

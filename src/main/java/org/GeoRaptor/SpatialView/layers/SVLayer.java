@@ -16,6 +16,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.Constants.GEOMETRY_TYPES;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -75,7 +76,7 @@ public class SVLayer {
 
 	public SVLayer(SpatialView _spatialView) {
 		this.spatialView = _spatialView;
-		this.mbr = new Envelope(this.getDefaultPrecision());
+		this.mbr         = new Envelope(Constants.MAX_PRECISION); // this.getDefaultPrecision());
 		this.setSRIDType(Constants.SRID_TYPE.UNKNOWN);
 		this.propertyManager = new PropertiesManager(propertiesFile);
 	}
@@ -104,7 +105,7 @@ public class SVLayer {
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			doc = db.parse(new InputSource(new StringReader(_XML)));
 			XPath xpath = XPathFactory.newInstance().newXPath();
-			this.fromXMLNode((Node) xpath.evaluate("/Layer", doc, XPathConstants.NODE));
+			this.fromXML((Node) xpath.evaluate("/Layer", doc, XPathConstants.NODE));
 		} catch (XPathExpressionException xe) {
 			LOGGER.error("SVLayer(XML): XPathExpressionException " + xe.toString());
 		} catch (ParserConfigurationException pe) {
@@ -118,12 +119,12 @@ public class SVLayer {
 
 	public SVLayer(SpatialView _spatialView, Node _node) {
 		this(_spatialView);
-		this.fromXMLNode(_node);
+		this.fromXML(_node);
 	}
 
-	private void fromXMLNode(Node _node) {
+	private void fromXML(Node _node) {
 		if (_node == null || _node.getNodeName().equals("Layer") == false) {
-			System.out.println("Node is null or not Layer");
+			LOGGER.warn("Node is null or not a Layer");
 			return; // Should throw error
 		}
 		try {
@@ -178,161 +179,30 @@ public class SVLayer {
 		}
 	}
 
+	/**
+	 * Create layer copy. Method is empty because extend class must create new
+	 * instance of his own type
+	 */
+	public SVLayer createCopy() throws Exception {
+		return null;
+	}
+
+	// SpatialView provides functionality for common operations (show error message, etc)
+	public void setSpatialView(SpatialView _spatialView) {
+		this.spatialView = _spatialView;
+	}
+
+	// Synonym
 	public void setView(SpatialView _spatialView) {
 		this.spatialView = _spatialView;
 	}
 
-	public void setSTGeometry(String _value) {
-		if (Strings.isEmpty(_value)) {
-			return;
-		}
-		try {
-			this.isSTGeometry = Boolean.valueOf(_value);
-		} catch (Exception e) {
-			return;
-		}
+	public SpatialView getSpatialView() {
+		return this.spatialView;
 	}
 
-	public void setSTGeometry(boolean _value) {
-		this.isSTGeometry = _value;
-	}
 
-	public boolean isSTGeometry() {
-		return this.isSTGeometry;
-	}
-
-	public void setMetadataEntry(MetadataEntry _mEntry) {
-		this.mEntry = new MetadataEntry(_mEntry);
-		LOGGER.debug("SLayer.setMetadataEntry=" + this.mEntry.toString());
-		try {
-			if (this.getConnection() != null && !Strings.isEmpty(this.mEntry.getObjectName())) {
-				this.isSTGeometry = Queries.isSTGeometry((Connection) this.getConnection(),
-						this.mEntry.getSchemaName(), this.mEntry.getObjectName(), this.mEntry.getColumnName());
-			}
-			LOGGER.debug("SLayer.isSTGeometry=" + this.isSTGeometry);
-		} catch (Exception e) {
-			LOGGER.error("SVLayer.setMetadataEntry(): " + e.getMessage());
-		}
-	}
-
-	public MetadataEntry getMetadataEntry() {
-		LOGGER.debug("SLayer.getMetadataEntry=" + this.mEntry + " copy=" + this.mEntry.copy());
-		return this.mEntry.copy();
-	}
-
-	public int getDefaultPrecision() {
-		return SRIDType.toString().startsWith("GEO") ? Constants.MAX_PRECISION : this.defaultPrecision;
-	}
-
-	public double getTolerance() {
-		return this.mEntry.getMaxTolerance(1 / Math.pow(10.0, this.getDefaultPrecision()));
-	}
-
-	public void setPrecision(int numberFractions) {
-		if (this.precision < 0) {
-			this.precision = this.getPrecision(true);
-		} else {
-			this.precision = numberFractions;
-		}
-	}
-
-	public void setPrecision(String _precision) {
-		if (Strings.isEmpty(_precision)) {
-			this.precision = this.getPrecision(true);
-		} else {
-			try {
-				this.precision = Integer.valueOf(_precision);
-			} catch (Exception e) {
-				// Do nothing
-			}
-		}
-	}
-
-	public int getPrecision(boolean _compute) {
-		if (this.precision < 0 || _compute) {
-			double layerTolerance = this.getTolerance();
-			if (layerTolerance == Double.MAX_VALUE) {
-				this.precision = this.defaultPrecision;
-			} else if (this.getSRIDType().toString().startsWith("GEO")) {
-				/*
-				 * Tolerances are normally expressed in meters Translation is roughly 500 - 3 50
-				 * - 4 5 - 5 0.5 - 6 0.05 - 7 0.005 - 8
-				 */
-				if (layerTolerance == 500.0)
-					return 3;
-				else if (layerTolerance == 50.0)
-					return 4;
-				else if (layerTolerance == 5.0)
-					return 5;
-				else if (layerTolerance == 0.5)
-					return 6;
-				else if (layerTolerance == 0.05)
-					return 7;
-				else if (layerTolerance == 0.005)
-					return 8;
-				else if (layerTolerance == 0.0005)
-					return 9;
-				else if (layerTolerance == 0.00005)
-					return 10;
-				else
-					return this.defaultPrecision;
-			} else {
-				this.precision = (int) Math.rint(Math.log10(1.0 / layerTolerance));
-			}
-		}
-		return this.precision;
-	}
-
-	public String getSchemaName() {
-		return this.mEntry.getSchemaName();
-	}
-
-	public void setSchemaName(String _schemaName) {
-		this.mEntry.setSchemaName(_schemaName);
-	}
-
-	public String getObjectName() {
-		return this.mEntry.getObjectName();
-	}
-
-	public void setObjectName(String _objectName) {
-		this.mEntry.setObjectName(_objectName);
-	}
-
-	public String getFullObjectName() {
-		return this.mEntry.getFullObjectName();
-	}
-
-	public String getFullName() {
-		return this.mEntry.getFullName();
-	}
-
-	public void setGeoColumn(String _geoColumn) {
-		this.mEntry.setColumnName(_geoColumn);
-	}
-
-	public String getGeoColumn() {
-		return this.mEntry.getColumnName();
-	}
-
-	public void setGeometryType(String _geometryType) {
-		try {
-			this.geometryType = Strings.isEmpty(_geometryType) ? Constants.GEOMETRY_TYPES.UNKNOWN
-					: Constants.GEOMETRY_TYPES.valueOf(_geometryType.toUpperCase());
-		} catch (Exception e) {
-			this.geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
-		}
-	}
-
-	public void setGeometryType(Constants.GEOMETRY_TYPES _getGeometryType) {
-		this.geometryType = _getGeometryType;
-	}
-
-	public Constants.GEOMETRY_TYPES getGeometryType() {
-		return this.geometryType;
-	}
-
-	// +++++++++++++++++++++++ Connection Methods
+	// CONNECTION METHODS ***************************************************************
 
 	public void setConnectionName(String _connName) {
 		// No schema checks, just set the name
@@ -445,8 +315,181 @@ public class SVLayer {
         return conn;
 	}
 
-	// +++++++++++++++++++++++ End Connection Methods
+	// BASE OBJECT INFORMATION ************************************
+	
+	public String getSchemaName() {
+		return this.mEntry.getSchemaName();
+	}
 
+	public void setSchemaName(String _schemaName) {
+		this.mEntry.setSchemaName(_schemaName);
+	}
+
+	public String getObjectName() {
+		return this.mEntry.getObjectName();
+	}
+
+	public void setObjectName(String _objectName) {
+		this.mEntry.setObjectName(_objectName);
+	}
+
+	public String getFullObjectName() {
+		return this.mEntry.getFullObjectName();
+	}
+
+	public String getFullName() {
+		return this.mEntry.getFullName();
+	}
+
+	public void setGeoColumn(String _geoColumn) {
+		this.mEntry.setColumnName(_geoColumn);
+	}
+
+	public String getGeoColumn() {
+		return this.mEntry.getColumnName();
+	}
+
+	public void setGeometryType(String _geometryType) {
+		try {
+			this.geometryType = Strings.isEmpty(_geometryType) ? Constants.GEOMETRY_TYPES.UNKNOWN
+					: Constants.GEOMETRY_TYPES.valueOf(_geometryType.toUpperCase());
+		} catch (Exception e) {
+			this.geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
+		}
+	}
+
+	public void setGeometryType(Constants.GEOMETRY_TYPES _geometryType) {
+		this.geometryType = _geometryType;
+	}
+
+	public Constants.GEOMETRY_TYPES getGeometryType() {
+		return this.geometryType;
+	}
+
+	public void setSTGeometry(String _value) {
+		if (Strings.isEmpty(_value)) {
+			return;
+		}
+		try {
+			this.isSTGeometry = Boolean.valueOf(_value);
+		} catch (Exception e) {
+			return;
+		}
+	}
+
+	public void setSTGeometry(boolean _value) {
+		this.isSTGeometry = _value;
+	}
+
+	public boolean isSTGeometry() {
+		return this.isSTGeometry;
+	}
+
+	// METADATA AND MBR *******************************************
+	
+	public void setMetadataEntry(MetadataEntry _mEntry) {
+		this.mEntry = new MetadataEntry(_mEntry);
+		LOGGER.debug("SLayer.setMetadataEntry=" + this.mEntry.toString());
+		try {
+			if (this.getConnection() != null && !Strings.isEmpty(this.mEntry.getObjectName())) {
+				this.isSTGeometry = Queries.isSTGeometry((Connection) this.getConnection(),
+						this.mEntry.getSchemaName(), this.mEntry.getObjectName(), this.mEntry.getColumnName());
+			}
+			LOGGER.debug("SLayer.isSTGeometry=" + this.isSTGeometry);
+		} catch (Exception e) {
+			LOGGER.error("SVLayer.setMetadataEntry(): " + e.getMessage());
+		}
+	}
+
+	public MetadataEntry getMetadataEntry() {
+		LOGGER.debug("SLayer.getMetadataEntry=" + this.mEntry + " copy=" + this.mEntry.copy());
+		return this.mEntry.copy();
+	}
+
+	public void setMBR(double _mbrMinX, double _mbrMinY, double _mbrMaxX, double _mbrMaxY) {
+		this.mbr.setMBR(_mbrMinX, _mbrMinY, _mbrMaxX, _mbrMaxY);
+		LOGGER.debug("SLayer.setMBR(x,y,x,y)=" + this.mbr.toString());
+	}
+
+	public void setMBR(Envelope _mbr) {
+		if (_mbr != null && _mbr.isSet()) {
+			this.mbr.setMBR(_mbr);
+			LOGGER.debug("SLayer.setMBR(RectangleDouble)=" + this.mbr.toString());
+		}
+	}
+
+	public Envelope getMBR() {
+		LOGGER.debug("SLayer.getMBR()=" + (new Envelope(this.mbr)).toString());
+		return new Envelope(this.mbr);
+	}
+
+	// PRECISION *************************************************
+	
+	public int getDefaultPrecision() {
+		return this.SRIDType.toString().startsWith("GEO") ? Constants.MAX_PRECISION : this.defaultPrecision;
+	}
+
+	public double getTolerance() {
+		return this.mEntry.getMaxTolerance(1 / Math.pow(10.0, this.getDefaultPrecision()));
+	}
+
+	public void setPrecision(int numberFractions) {
+		if (this.precision < 0) {
+			this.precision = this.getPrecision(true);
+		} else {
+			this.precision = numberFractions;
+		}
+	}
+
+	public void setPrecision(String _precision) {
+		if (Strings.isEmpty(_precision)) {
+			this.precision = this.getPrecision(true);
+		} else {
+			try {
+				this.precision = Integer.valueOf(_precision);
+			} catch (Exception e) {
+				// Do nothing
+			}
+		}
+	}
+
+	public int getPrecision(boolean _compute) {
+		if (this.precision < 0 || _compute) {
+			double layerTolerance = this.getTolerance();
+			if (layerTolerance == Double.MAX_VALUE) {
+				this.precision = this.defaultPrecision;
+			} else if (this.getSRIDType().toString().startsWith("GEO")) {
+				/*
+				 * Tolerances are normally expressed in meters Translation is roughly 500 - 3 50
+				 * - 4 5 - 5 0.5 - 6 0.05 - 7 0.005 - 8
+				 */
+				if (layerTolerance == 500.0)
+					return 3;
+				else if (layerTolerance == 50.0)
+					return 4;
+				else if (layerTolerance == 5.0)
+					return 5;
+				else if (layerTolerance == 0.5)
+					return 6;
+				else if (layerTolerance == 0.05)
+					return 7;
+				else if (layerTolerance == 0.005)
+					return 8;
+				else if (layerTolerance == 0.0005)
+					return 9;
+				else if (layerTolerance == 0.00005)
+					return 10;
+				else
+					return this.defaultPrecision;
+			} else {
+				this.precision = (int) Math.rint(Math.log10(1.0 / layerTolerance));
+			}
+		}
+		return this.precision;
+	}
+
+    // SRID ***********************************************
+	
 	public int getSRIDAsInteger() {
 		return this.getSRID().equals(Constants.NULL) ? Constants.SRID_NULL : Integer.valueOf(this.getSRID()).intValue();
 	}
@@ -490,39 +533,6 @@ public class SVLayer {
 
 	public void setSRIDType(Constants.SRID_TYPE _SRIDType) {
 		this.SRIDType = _SRIDType;
-	}
-
-	public void setMBR(double _mbrMinX, double _mbrMinY, double _mbrMaxX, double _mbrMaxY) {
-		this.mbr.setMBR(_mbrMinX, _mbrMinY, _mbrMaxX, _mbrMaxY);
-		LOGGER.debug("SLayer.setMBR(x,y,x,y)=" + this.mbr.toString());
-	}
-
-	public void setMBR(Envelope _mbr) {
-		if (_mbr != null && _mbr.isSet()) {
-			this.mbr.setMBR(_mbr);
-			LOGGER.debug("SLayer.setMBR(RectangleDouble)=" + this.mbr.toString());
-		}
-	}
-
-	public Envelope getMBR() {
-		LOGGER.debug("SLayer.getMBR()=" + (new Envelope(this.mbr)).toString());
-		return new Envelope(this.mbr);
-	}
-
-	public void setSpatialView(SpatialView _spatialView) {
-		this.spatialView = _spatialView;
-	}
-
-	public SpatialView getSpatialView() {
-		return this.spatialView;
-	}
-
-	/**
-	 * Create layer copy. Method is empty because extend class must create new
-	 * instance of his own type
-	 */
-	public SVLayer createCopy() throws Exception {
-		return null;
 	}
 
 } // SVLayer

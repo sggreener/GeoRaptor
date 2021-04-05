@@ -76,9 +76,11 @@ import org.GeoRaptor.SpatialView.SupportClasses.MyImageSelection;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
+import org.GeoRaptor.SpatialView.layers.SVDrawQueries;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVSpatialLayerDraw;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;
@@ -95,6 +97,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
@@ -270,10 +274,10 @@ extends JPanel
       
             SpatialViewPanel.classInstance = this;
         } catch (NullPointerException npe) {
-            System.out.println("Caught Null Pointer Exception in SpatialViewPanel()");
+            System.err.println("Caught Null Pointer Exception in SpatialViewPanel()");
             npe.printStackTrace();
         } catch (Exception e) {
-            System.out.println("Caught Exception in SpatialViewPanel() - jbInit()");
+            System.err.println("Caught Exception in SpatialViewPanel() - jbInit()");
         }
         this.viewLayerTree.expandAll();
     }
@@ -1386,7 +1390,7 @@ extends JPanel
         // We have enough information to create a valid layer
         // Need to construct using _objectType ????
         //
-        SVSpatialLayer layer = new SVSpatialLayer(this.activeView,  // Use activeView temporarily
+        SVTableLayer layer = new SVTableLayer(this.activeView,  // Use activeView temporarily
                                                   layerName, 
                                                   SVPanelPreferences.isSchemaPrefix()
                                                      ? layerName : Strings.append(mEntry.getObjectName(),
@@ -1414,7 +1418,7 @@ extends JPanel
         }
         layer.setFetchSize(    this.SVPanelPreferences.getFetchSize());
         layer.setMinResolution(this.SVPanelPreferences.isMinResolution());
-        layer.getStyling().setSelectionTransLevel(Constants.SOLID);
+        layer.getStyling().setSelectionShadeTransLevel(Constants.SOLID);
         layer.getStyling().setShadeTransLevel(Constants.SOLID);
         layer.setIndex();    // Will call MetadataTool.hasSpatialIndex()
         // Set whether ST_GEOMETRY object
@@ -1429,11 +1433,11 @@ extends JPanel
         return b;
     }
 
-  public boolean addLayerToView(SVSpatialLayer _layer,
-                                boolean        _zoom)
+  public boolean addLayerToView(iLayer  _layer,
+                                boolean _zoom)
   {
       SpatialView targetView = null;
-      LOGGER.debug("addLayerToView: "+SVSpatialLayer.CLASS_NAME);
+      LOGGER.debug("addLayerToView: "+iLayer.CLASS_NAME);
       // 1. Does a view exist with same SRID as layer?
       //
       targetView = getViewBySRID(_layer.getSRID());
@@ -1793,7 +1797,7 @@ extends JPanel
                 } else if ( SpatialViewSettings.isOfLayerType(lNode,"SVWorksheetLayer/SQL/text()") ) {
                     newLayer = new SVWorksheetLayer(vNode.getSpatialView(),lNode);
                 } else {
-                    newLayer = new SVSpatialLayer(vNode.getSpatialView(),lNode);
+                    newLayer = new SVTableLayer(vNode.getSpatialView(),lNode);
                 }
                 LOGGER.info(this.propertyManager.getMsg("LOAD_VIEW_FROM_DISK_LOAD_LAYER",newLayer.getLayerName(),vNode.getVisibleName()));                
                 // ignore result as error message has been displayed
@@ -1966,7 +1970,13 @@ extends JPanel
                     //
                     MetadataEntry me = new MetadataEntry(null,"ASCETATE",null,String.valueOf(viewSRID));
                     me.add(mbr);
-                    propertiesLayer = new SVGraphicLayer(mappingView,"Render Layer","Screen Name","A temporary layer for properties only",me,true);
+                    propertiesLayer = new SVGraphicLayer(
+                                            mappingView,
+                                            "Layer Name",
+                                            "Screen Name",
+                                            "A temporary layer for properties only",
+                                            me,
+                                            true);
                     propertiesLayer.setMBR(mbr);
                     propertiesLayer.getStyling().setPointSize(12);
                     propertiesLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.CIRCLE);
@@ -2002,7 +2012,7 @@ extends JPanel
         // create for after draw shade operation
         class ShadeAfterDraw extends AfterLayerDraw 
         {
-            Struct geo;
+            Struct gStruct;
             List<QueryRow> geoSet;
 
             boolean selectionColouring = false;
@@ -2018,7 +2028,7 @@ extends JPanel
             {
                 super(true);  // true means remove after drawing layer
                 this.g2d                = _g2d;
-                this.geo                = _geo;
+                this.gStruct            = _geo;
                 this.geoSet             = _geoSet;
                 this.renderLayer        = _tLayer;
                 this.selectionColouring = _selectionColouring;
@@ -2045,15 +2055,30 @@ extends JPanel
                 }
                 // draw geometry
                 try {
-                    if ( this.geo != null ) {
-                        renderLayer.callDrawFunction(this.geo,"","","","",renderLayer.getStyling().getPointSize(4),0.0f);
+                	Styling              styling = renderLayer.getStyling();
+                	SVSpatialLayerDraw drawTools = renderLayer.getDrawTools();
+                    if ( this.gStruct != null ) {
+                        drawTools.callDrawFunction(
+                                (Struct)this.gStruct,
+                                (Styling)styling,
+                                (String)"",
+                                (Color)null,(Color)null,(Color)null,
+                                (int)styling.getPointSize(4),
+                                (double)0.0
+                        );
                     } else {
                         for (QueryRow geo : this.geoSet) {
-                            renderLayer.callDrawFunction(geo.getJGeom(),"","","","",renderLayer.getStyling().getPointSize(4),0.0f);
+                            drawTools.callDrawFunction(
+                                       (JGeometry)geo.getJGeom(),
+                                       (Styling)styling,
+                                       (String)"",
+                                       (Color)null,(Color)null,(Color)null,
+                                       (int)renderLayer.getStyling().getPointSize(4),
+                                       (double)0.0f);
                         }
                     }
                 } catch (Exception _e) {
-                    System.out.println("ShadeAfterDraw.Draw Function failed (" + _e.getMessage() + ")");
+                    System.err.println("ShadeAfterDraw.Draw Function failed (" + _e.getMessage() + ")");
                 }
             }
         }
@@ -2252,7 +2277,7 @@ extends JPanel
         return this.getActiveView().getMapPanel();
     }
 
-    public void setActiveLayer(SVSpatialLayer _activeLayer) {
+    public void setActiveLayer(iLayer _activeLayer) {
         this.activeView.setActiveLayer(_activeLayer);
     }
  

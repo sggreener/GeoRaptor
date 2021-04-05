@@ -7,9 +7,15 @@ import java.util.Random;
 
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.tools.Colours;
@@ -63,7 +69,7 @@ public class Styling {
 	protected Styling.STYLING_TYPE pointSizeType = Styling.STYLING_TYPE.CONSTANT;
 	protected Styling.STYLING_TYPE shadeType = Styling.STYLING_TYPE.RANDOM;
 
-	protected float selectShadeTransLevel = 1.0f;
+	protected float selectionShadeTransLevel = 1.0f;
 	protected float lineTransLevel = 1.0f;
 	protected float shadeTransLevel = 1.0f;
 	protected int markOffset = 2;
@@ -79,14 +85,22 @@ public class Styling {
 
 	protected boolean orientVertexMark = false;
 	protected boolean selectionActive = false;
+	
+    protected Preferences preferences = null;
 
 	public Styling() {
 		this.setLineSeparator(System.getProperty("line.separator"));
+        this.preferences = MainSettings.getInstance().getPreferences();
+        if ( this.preferences.isRandomRendering()) {
+          this.setAllRandom();
+        }
 	}
 
 	// Copy constructor
 	public Styling(Styling _style) {
 		this();
+		if (_style == null )
+			return;
 		// Point
 		this.setPointColorColumn(_style.getPointColorColumn());
 		this.setPointColorType(_style.getPointColorType());
@@ -108,7 +122,7 @@ public class Styling {
 		// shade
 		this.setShadeType(_style.getShadeType());
 		this.setShadeColor(new Color(_style.getShadeColor(null).getRed(), this.getShadeColor(null).getBlue(),
-				this.getShadeColor(null).getGreen(), this.getShadeColor(null).getAlpha()));
+        this.getShadeColor(null).getGreen(), this.getShadeColor(null).getAlpha()));
 		this.setShadeColumn(_style.getShadeColumn());
 		this.setShadeTransLevel(_style.getShadeTransLevel());
 
@@ -133,7 +147,7 @@ public class Styling {
 		this.setSegmentArrow(_style.getSegmentArrow());
 		this.setMarkOriented(_style.isMarkOriented());
 		this.setMarkSegment(_style.getMarkSegment());
-		this.setMarkLabelAttributes(_style.getMarkLabelAttributes(Color.WHITE));
+		this.setMarkLabelAttributes(_style.getMarkLabelAttributes(Color.BLACK));
 		this.setMarkLabelOffset(_style.getMarkLabelOffset());
 		this.setMarkLabelPosition(_style.getMarkLabelPosition());
 
@@ -141,7 +155,7 @@ public class Styling {
 		this.setSelectionLineStrokeType(_style.getSelectionLineStrokeType());
 		this.setSelectionLineWidth(_style.getSelectionLineWidth());
 		this.setSelectionColor(_style.getSelectionColor());
-		this.setSelectionTransLevel(_style.getSelectionTransLevel());
+		this.setSelectionShadeTransLevel(_style.getSelectionShadeTransLevel());
 	}
 
 	public int getTextLoScale() {
@@ -326,7 +340,7 @@ public class Styling {
 	}
 
 	public SimpleAttributeSet getLabelAttributes() {
-		return getLabelAttributes(Color.WHITE);
+		return getLabelAttributes(Color.BLACK);
 	}
 
 	public SimpleAttributeSet getLabelAttributes(Color _mapBackground) {
@@ -375,7 +389,7 @@ public class Styling {
 	}
 
 	public SimpleAttributeSet getMarkLabelAttributes() {
-		return this.getMarkLabelAttributes(Color.WHITE);
+		return this.getMarkLabelAttributes(Color.BLACK);
 	}
 
 	public SimpleAttributeSet getMarkLabelAttributes(Color _mapBackground) {
@@ -455,7 +469,7 @@ public class Styling {
 		// Set all trans levels to SOLID
 		this.setLineTransLevel(1.0f);
 		this.setShadeTransLevel(1.0f);
-		this.setSelectionTransLevel(1.0f);
+		this.setSelectionShadeTransLevel(1.0f);
 	}
 
 	/**
@@ -514,13 +528,13 @@ public class Styling {
 		}
 	}
 
-	public int getPointSize(int _columnValue) {
+	public int getPointSize(int _defaultSize) {
 		if (this.isSelectionActive()) {
 			return this.selectPointSize;
 		} else if (this.getPointSizeType() == Styling.STYLING_TYPE.CONSTANT) {
 			return this.pointSize;
 		} else if (this.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
-			return _columnValue;
+			return _defaultSize;
 		}
 		return this.pointSize;
 	}
@@ -820,13 +834,16 @@ public class Styling {
 			this.shadeColor = _shadeColor;
 	}
 
-	public Color getShadeColor(String _columnValue) {
+	public Color getShadeColor(String _columnValue) 
+	{
 		if (this.isSelectionActive()) {
 			return this.getSelectionColor();
 		} else {
 			if (this.getShadeType() == Styling.STYLING_TYPE.RANDOM) {
 				// To try and be a little faster we don't use Tools.getRandomColor()
-				return new Color(this.randomColorGenerator.nextInt(256), this.randomColorGenerator.nextInt(256),
+				return new Color(
+						this.randomColorGenerator.nextInt(256), 
+						this.randomColorGenerator.nextInt(256),
 						this.randomColorGenerator.nextInt(256));
 			} else {
 				Color retColor = Color.BLACK;
@@ -863,7 +880,7 @@ public class Styling {
 
 	public AlphaComposite getShadeAlphaComposite() {
 		if (this.isSelectionActive())
-			return Styling.getAlphaComposite(this.selectShadeTransLevel);
+			return Styling.getAlphaComposite(this.selectionShadeTransLevel);
 		else
 			return Styling.getAlphaComposite(this.shadeTransLevel);
 	}
@@ -894,7 +911,7 @@ public class Styling {
 	}
 
 	public boolean isPerformSelectionShadeTrans() {
-		return this.selectShadeTransLevel != 1.0f;
+		return this.selectionShadeTransLevel != 1.0f;
 	}
 
 	public void setSelectionLineWidth(int _selectLineWidth) {
@@ -958,27 +975,23 @@ public class Styling {
 		return new Color(this.selectionColor.getRGB());
 	}
 
-	public void setSelectionTransLevel(float _selectShadeTransLevel) {
-		this.selectShadeTransLevel = _selectShadeTransLevel;
+	public void setSelectionShadeTransLevel(float _selectShadeTransLevel) {
+		this.selectionShadeTransLevel = _selectShadeTransLevel;
 	}
 
 	public int getSelectionShadeTransLevelAsPercent() {
-		return Math.round(this.getSelectionTransLevel() * 100.0f);
-	}
-
-	public float getSelectionTransLevel() {
-		return this.selectShadeTransLevel;
+		return Math.round(this.getSelectionShadeTransLevel() * 100.0f);
 	}
 
 	public float getSelectionShadeTransLevel() {
-		return this.selectShadeTransLevel;
+		return this.selectionShadeTransLevel;
 	}
 
 	public AlphaComposite getSelectionAlphaComposite() {
-		return Styling.getAlphaComposite(this.selectShadeTransLevel);
+		return Styling.getAlphaComposite(this.selectionShadeTransLevel);
 	}
 
-	public String toString(Color _mapBackground) {
+	public String toXML(Color _mapBackground) {
 		try {
 			return String.format("<Styling>"
 					+ "<Label>%s</Label><RotationColumn>%s</RotationColumn><RotationValue>%s</RotationValue><RotationTarget>%s</RotationTarget>"
@@ -990,35 +1003,123 @@ public class Styling {
 					+ "<SelectPointSize>%s</SelectPointSize><SelectLineWidth>%s</SelectLineWidth><SelectionColor>%d</SelectionColor><SelectShadeTransLevel>%s</SelectShadeTransLevel>"
 					+ "<MarkGeoStart>%s</MarkGeoStart><MarkGeoPoints>%s</MarkGeoPoints><MarkVertex>%s</MarkVertex><MarkOriented>%s</MarkOriented><MarkLineDir>%s</MarkLineDir><MarkPosition>%s</MarkPosition>"
 					+ "<MarkOffset>%s</MarkOffset><MarkLabelAttributes>%s</MarkLabelAttributes><MarkSegment>%s</MarkSegment>"
-					+ "</Styling>", this.getLabelColumn(), this.getRotationColumn(), this.getRotationValue().toString(),
-					this.getRotationTarget().toString(), this.getLabelPosition().toString(),
-					String.valueOf(this.getLabelOffset()), LabelStyler.toXML(this.getLabelAttributes()),
-					this.getLabelPosition().toString(), String.format("%d", this.getPointSize(4)),
-					this.getPointSizeType().toString(), this.getPointSizeColumn(), this.getPointColor(null).getRGB(),
-					this.getPointType().toString(), this.getPointColorColumn(), this.getPointColorType().toString(),
-					String.format("%d", this.getLineWidth()), this.getLineColor(null).getRGB(),
-					this.getLineStrokeType().toString(), this.getLineTransLevel(), this.getLineColorColumn(),
-					this.getLineColorType().toString(), this.getShadeColumn(), this.getShadeType().toString(),
-					this.getShadeColor(null).getRGB(), this.getShadeTransLevel(),
+					+ "</Styling>", 
+					this.getLabelColumn(), 
+					this.getRotationColumn(), 
+					this.getRotationValue().toString(), 
+					this.getRotationTarget().toString(),
+					
+					this.getLabelPosition().toString(), 
+					String.valueOf(this.getLabelOffset()), 
+					LabelStyler.toXML(this.getLabelAttributes()),
+					this.getLabelPosition().toString(), 
+					
+					String.format("%d", this.getPointSize(4)),
+					this.getPointSizeType().toString(), 
+					this.getPointSizeColumn(), 
+					this.getPointColor(null).getRGB(),
+					this.getPointType().toString(), 
+					this.getPointColorColumn(), 
+					this.getPointColorType().toString(),
+					
+					String.format("%d", this.getLineWidth()), 
+					this.getLineColor(null).getRGB(),
+					this.getLineStrokeType().toString(), 
+					this.getLineTransLevel(), 
+					this.getLineColorColumn(),
+					this.getLineColorType().toString(),
+					
+					this.getShadeColumn(), 
+					this.getShadeType().toString(),
+					this.getShadeColor(null).getRGB(), 
+					this.getShadeTransLevel(),
+					
 					String.format("%d", this.getSelectionPointSize()),
-					String.format("%d", this.getSelectionLineWidth()), this.getSelectionColor().getRGB(),
-					this.getSelectionShadeTransLevel(), String.valueOf(this.getMarkGeoStart()),
-					String.valueOf(this.getMarkGeoPoints()), this.getMarkVertex().toString(),
-					String.valueOf(this.isMarkOriented()), this.getSegmentArrow().toString(),
-					this.getMarkLabelPosition().toString(), String.valueOf(this.getMarkLabelOffset()),
-					LabelStyler.toXML(this.getMarkLabelAttributes(_mapBackground)), this.getMarkSegment().toString());
+					String.format("%d", this.getSelectionLineWidth()), 
+					this.getSelectionColor().getRGB(),
+					this.getSelectionShadeTransLevel(),
+					
+					String.valueOf(this.getMarkGeoStart()),
+					String.valueOf(this.getMarkGeoPoints()), 
+					this.getMarkVertex().toString(),
+					String.valueOf(this.isMarkOriented()),
+					this.getSegmentArrow().toString(),
+					this.getMarkLabelPosition().toString(), 
+					String.valueOf(this.getMarkLabelOffset()),
+					LabelStyler.toXML(this.getMarkLabelAttributes(_mapBackground)), 
+					this.getMarkSegment().toString());
 		} catch (Exception e) {
 			LOGGER.error("Error converting styling to text " + e.toString());
 			return "";
 		}
 	}
 
+	public void fromXML(Node _node) {
+        //To Be Done
+		if (_node == null || _node.getNodeName().equals("Styling") == false) {
+			System.out.println("Node is null or does not contain Styling");
+			return; // Could throw error?
+		}
+		try {
+			XPath xpath = XPathFactory.newInstance().newXPath();
+			this.setLabelColumn((String) xpath.evaluate("Styling/Label/text()", _node, XPathConstants.STRING));
+			this.setRotationColumn((String)xpath.evaluate("Styling/RotationColumn/text()",_node,XPathConstants.STRING));
+			this.setRotationValue((String)xpath.evaluate("Styling/RotationValue/text()",_node,XPathConstants.STRING));
+			this.setRotationTarget((String)xpath.evaluate("Styling/RotationTarget/text()",_node,XPathConstants.STRING));
+
+			this.setLabelPosition((String)xpath.evaluate("Styling/LabelPosition/text()",_node,XPathConstants.STRING));
+			this.setLabelOffset((String)xpath.evaluate("Styling/LabelOffset/text()",_node,XPathConstants.STRING));
+			this.setLabelAttributes(LabelStyler.fromXML((Node)xpath.evaluate("Styling/LabelAttributes/text()",_node,XPathConstants.NODE)));
+			this.setLabelPosition((String)xpath.evaluate("Styling/GeometryLabelPoint/text()",_node,XPathConstants.STRING));
+			
+			this.setPointSize(Integer.valueOf((String)xpath.evaluate("Styling/PointSize/text()",_node,XPathConstants.STRING)).intValue());
+			this.setPointSizeType((String)xpath.evaluate("Styling/PointSizeType/text()",_node,XPathConstants.STRING));
+			this.setPointSizeColumn((String)xpath.evaluate("Styling/PointSizeTypeColumn/text()",_node,XPathConstants.STRING));
+			this.setPointColor(Colours.fromRGBa((String)xpath.evaluate("Styling/PointColor/text()",_node,XPathConstants.STRING)));
+			this.setPointType((String)xpath.evaluate("Styling/PointType/text()",_node,XPathConstants.STRING));
+			this.setPointColorColumn((String)xpath.evaluate("Styling/PointColorColumn/text()",_node,XPathConstants.STRING));
+			this.setPointColorType((String)xpath.evaluate("Styling/PointColorType/text()",_node,XPathConstants.STRING));
+
+			this.setLineWidth(Integer.valueOf((String)xpath.evaluate("Styling/LineWidth/text()",_node,XPathConstants.STRING)).intValue()); 
+			this.setLineColor(Colours.fromRGBa((String)xpath.evaluate("Styling/LineColor/text()",_node,XPathConstants.STRING)));
+			this.setLineStrokeType((String)xpath.evaluate("Styling/LineStrokeType/text()",_node,XPathConstants.STRING)); 
+			this.setLineTransLevel(Integer.valueOf((String)xpath.evaluate("Styling/LineTransLevel/text()",_node,XPathConstants.STRING)).intValue());
+			this.setLineColorColumn((String)xpath.evaluate("Styling/LineColorColumn/text()",_node,XPathConstants.STRING));
+			this.setLineColorType((String)xpath.evaluate("Styling/LineColorType/text()",_node,XPathConstants.STRING));
+
+			this.setShadeColumn((String)xpath.evaluate("Styling/ShadeColumn/text()",_node,XPathConstants.STRING));
+			this.setShadeType((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setShadeColor(Colours.fromRGBa((String)xpath.evaluate("Styling/ShadeColor/text()",_node,XPathConstants.STRING))); 
+			this.setShadeTransLevel(Integer.valueOf((String)xpath.evaluate("Styling/ShadeTransLevel/text()",_node,XPathConstants.STRING)).intValue());
+
+			this.setSelectionPointSize(Integer.valueOf((String)xpath.evaluate("Styling/SelectPointSize/text()",_node,XPathConstants.STRING)).intValue());
+			this.setSelectionLineWidth(Integer.valueOf((String)xpath.evaluate("Styling/SelectLineWidth/text()",_node,XPathConstants.STRING)).intValue());
+			this.setSelectionColor(Colours.fromRGBa((String)xpath.evaluate("Styling/SelectionColor/text()",_node,XPathConstants.STRING)));
+			this.setSelectionShadeTransLevel(Double.valueOf((String)xpath.evaluate("Styling/SelectShadeTransLevel/text()",_node,XPathConstants.STRING)).floatValue());
+
+			this.setMarkGeoStart((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setMarkGeoPoints((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setMarkVertex((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setMarkOriented(Boolean.valueOf((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING)).booleanValue());
+			this.setSegmentArrow((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setMarkLabelPosition((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+			this.setMarkLabelOffset((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+            this.setMarkLabelAttributes(LabelStyler.fromXML((Node)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.NODE))); 
+			this.setMarkSegment((String)xpath.evaluate("Styling/ShadeType/text()",_node,XPathConstants.STRING));
+
+		} catch (XPathExpressionException xe) {
+			LOGGER.error("SVLayer.fromXMLNode: XPathExpressionException " + xe.toString());
+		}
+
+
+	}
+	
 	@Override
 	public String toString() {
 		Preferences mainPrefs;
 		oracle.ide.config.Preferences prefs = oracle.ide.config.Preferences.getPreferences();
 		mainPrefs = Preferences.getInstance(prefs);
-		return this.toString(mainPrefs.getMapBackground());
+		return this.toXML(mainPrefs.getMapBackground());
 	}
 
 }

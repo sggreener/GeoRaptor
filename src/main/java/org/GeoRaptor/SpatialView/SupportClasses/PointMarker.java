@@ -94,7 +94,7 @@ public class PointMarker {
           case TICK      : return tick(_point.getX(),             _point.getY(), (int)_pointSize,     _rotation);
           case TRIANGLE  : return triangle(_point.getX(),         _point.getY(),      _pointSize,     _rotation);        
           case CIRCLE    :
-          default        : return circle(_point.getX(), _point.getY(),     _pointSize);
+          default        : return circle(_point.getX(),           _point.getY(),      _pointSize);
         }
     }
 
@@ -713,9 +713,11 @@ public class PointMarker {
         return shape==null 
                ? _unknown
                : Tools.createIcon(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,2),
-                                  _iconWidth,_iconHeight,
+                                  _iconWidth,
+                                  _iconHeight,
                                   shape,
-                                  _fillColor, _drawColor);
+                                  _fillColor, 
+                                  _drawColor);
     }
     
     class CreatePointTypeRenderer extends DefaultListCellRenderer 

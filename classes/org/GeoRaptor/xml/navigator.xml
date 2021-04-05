@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="iso-8859-15" ?>
+<navigator RESOURCE_FILE="org.GeoRaptor.navigator.GeoRaptorNavigatorResource"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="navigator.xsd">
+    <objectType connType="Oracle" id="SPATIAL_NETWORK" weight="800" includesSyns="true">
+        <folder type="SPATIAL_NETWORK_FOLDER" currentSchemaOnly="true">
+            <icon RSKEY="NETWORK_FOLDER_ICON"/>
+            <label RSKEY="NETWORK_LABEL"/>
+            <queries>
+                <query minversion="10">
+                    <sql constrained="true">
+                        <![CDATA[select network, owner 
+                                   from all_sdo_network_metadata
+                                  where owner = :SCHEMA]]>
+                    </sql>
+                </query>
+                <columns>
+                    <column filterable="true" sortable="true" id="NETWORKNAME">
+                        <colName>
+                            <![CDATA[NETWORK]]>
+                        </colName>
+                    </column>
+                    <column filterable="true" sortable="true" id="NAME">
+                        <colName>
+                            <![CDATA[NETWORK]]>
+                        </colName>
+                    </column>
+                    <column filterable="false" sortable="false" id="SCHEMA">
+                      <colName>
+                        <![CDATA[OWNER]]>
+                      </colName>
+                    </column>
+		    
+                </columns>
+            </queries>
+        </folder>
+        <node>
+          <icon RSKEY="NETWORK_THEME_ICON"/>
+          <childType id="TABLE"> 
+            <icon RSKEY="OracleIcons.TABLE"/>
+            <queries>
+              <query>
+                <sql>
+                  <![CDATA[
+                   SELECT path_table_name as table_name from all_sdo_network_metadata
+		   WHERE owner = :SCHEMA and network = :NETWORKNAME
+                   UNION
+                   SELECT path_link_table_name from all_sdo_network_metadata
+	           WHERE owner = :SCHEMA and network = :NETWORKNAME 
+                   UNION
+                   SELECT link_table_name from all_sdo_network_metadata
+		   WHERE owner = :SCHEMA and network = :NETWORKNAME 
+                   UNION
+                   SELECT node_table_name from all_sdo_network_metadata
+		   WHERE owner = :SCHEMA and network = :NETWORKNAME]]>
+              </sql>
+              <columns>
+                <column id="NAME">
+                  <colName>
+                    <![CDATA[TABLE_NAME]]>
+                  </colName>
+                </column>
+              </columns>      
+            </query>
+        </queries>
+      </childType>	    
+        </node>
+    </objectType>
+</navigator>

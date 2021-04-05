@@ -31,40 +31,46 @@ public class Colours {
         return String.format("%d,%d,%d,%d",_c.getRed(),_c.getGreen(),_c.getBlue(),_c.getAlpha());
     }
 
-
+    public static String toRGBa(Color _c) {
+        return getRGBa(_c);
+    }
+    
     public static Color fromRGBa(String _rgba) 
     {
         if (Strings.isEmpty(_rgba) )
             return Color.BLACK;
+        
         if ( _rgba.indexOf(",")==-1 )
             return new Color(Integer.parseInt(_rgba));
-        StringTokenizer st = new StringTokenizer(_rgba,",",false);
+
+        int red = 0, 
+          green = 0, 
+           blue = 0, 
+          alpha = 0;
+        
         String tok = ""; 
-        int red = 255, 
-            green = 255, 
-            blue = 255, 
-            alpha = 255;
-        int i = 0;
-        while ( st.hasMoreTokens() ) {
-            i++;
-            tok = st.nextToken();
-            try {
-                switch ( i ) {
+        String [] st = _rgba.split(",");
+        for (int i=0; i<st.length; i++) 
+        {
+        	tok = st[i];
+            try 
+            {
+            	switch ( i ) {
                   case 1 : red   = Integer.parseInt(tok); break;
                   case 2 : green = Integer.parseInt(tok); break; 
                   case 3 : blue  = Integer.parseInt(tok); break;
                   case 4 : alpha = Integer.parseInt(tok);  
-                } 
+                }
             } catch (NumberFormatException e) {
-                switch ( i ) {
-                  case 1 : red   = 255; break;
-                  case 2 : green = 255; break; 
-                  case 3 : blue  = 255; break;
-                  case 4 : alpha = 255;  
+            	switch ( i ) {
+                  case 1 : red   = 0; break;
+                  case 2 : green = 0; break; 
+                  case 3 : blue  = 0; break;
+                  case 4 : alpha = 0;  
                 }               
-            }  
-          }
-      return new Color(red,green,blue,alpha);
+            }
+        } // FOR
+        return new Color(red,green,blue,alpha);
     }
     
     /**

@@ -24,12 +24,18 @@ import javax.swing.SwingUtilities;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.SpatialView.SpatialView;
+import org.GeoRaptor.SpatialView.layers.iLayer;
+import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
+import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.util.logging.Logger;
+
+import oracle.spatial.geometry.JGeometry;
 
 
 /**
@@ -52,7 +58,11 @@ public class SpatialQueryReview extends JDialog {
      * Reference to data structure with properties
      */
     protected iLayer layer;
-    
+
+    protected JGeometry geometry = null;
+
+    protected SpatialView spatialView = null;
+
     protected Constants.SDO_OPERATORS sdoOperator;
 
     private String originalSdoGeometryString;
@@ -61,14 +71,23 @@ public class SpatialQueryReview extends JDialog {
     
     protected boolean CANCELLED;
 
-    private ActionListener okCancelListener;
+    private ActionListener createCloseListener;
 
     /** Creates new form SpatialQueryReview */
-    public SpatialQueryReview(JFrame parent, boolean modal) {
-        super(parent, modal);
+    public SpatialQueryReview(JFrame      _parent, 
+    		                  boolean     _modal,
+    		                  iLayer      _sLayer, 
+    		                  JGeometry   _geometry,
+    		                  SpatialView _spatialView) {
+        super(_parent, _modal);
         try {
             this.propertyManager = new PropertiesManager(propertiesFile);
+       		this.geometry        = _geometry;
+       		this.spatialView     = _spatialView;
+       		this.layer           = _sLayer; 
+
             initComponents();
+            
             setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
             this.setResizable(false);
             this.addWindowListener(new WindowAdapter() {
@@ -76,11 +95,13 @@ public class SpatialQueryReview extends JDialog {
                         close(true);
                     }
                 });
-            okCancelListener = new ActionListener() {
+            
+            createCloseListener = new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        close(e.getSource() == btnCancel);
+                        close(e.getSource() == btnClose);
                     }
                 };
+                
             this.tfBufferDistance.setInputVerifier(new InputVerifier() {
                     public boolean verify(JComponent comp) {
                         boolean returnValue = true;
@@ -98,10 +119,83 @@ public class SpatialQueryReview extends JDialog {
                         return returnValue;
                     }
                 });
+            
         } catch (Exception e) {
+        	e.printStackTrace();
         }
     }
 
+    private void createLayer() 
+    {
+        SVGraphicLayer sGraphicLayer = null;
+        SVQueryLayer sQueryLayer = null;
+        iLayer gqLayer = null;
+        try {
+            if (targetGraphic()) {
+                sGraphicLayer = new SVGraphicLayer(this.layer);
+                gqLayer = sGraphicLayer;
+            } else {
+                sQueryLayer = new SVQueryLayer(this.layer);
+                gqLayer = sQueryLayer;
+            }
+            gqLayer.setVisibleName(this.sdoOperator.toString()
+                         + " - " + this.layer.getVisibleName());
+            gqLayer.setSQL(null);
+            gqLayer.setDraw(true);
+            gqLayer.setMBRRecalculation(true);
+            gqLayer.setGeometry(this.geometry);
+            gqLayer.setGeometryType(this.layer.getGeometryType());
+            gqLayer.setBufferDistance(getBufferDistance());
+            gqLayer.setBuffered(getBufferDistance() != 0.0);
+            gqLayer.setRelationshipMask(getRelationshipMask(this.layer.hasIndex()));
+            gqLayer.setSdoOperator(getSdoOperator());
+            gqLayer.setPrecision(getPrecision());
+
+            boolean success = false;
+
+            // Add to view and ignore return
+            if (gqLayer instanceof SVQueryLayer) {
+                success = spatialView.addLayer(
+                        /*_layer*/sQueryLayer,
+                        /*_isDrawn*/ true,
+                        /*_isActive*/ true,
+                        /*_zoom*/ false
+                );
+                if (success) {
+                    spatialView.getSVPanel().redraw();
+                }
+            } else if (gqLayer instanceof SVGraphicLayer) {
+                try {
+                    // Load data into cache using initial SQL
+                    sGraphicLayer.setCache();
+
+                    // Now that they cache is filled, compute its extent
+                    sGraphicLayer.setLayerMBR();
+
+                    // Display cache.                          
+                    //success = spatialView.getSVPanel().addLayerToView(sGraphicLayer,false /*zoom*/);
+                    success = spatialView.addLayer(
+                            /*_layer*/    sGraphicLayer,
+                            /*_isDrawn*/  true,
+                            /*_isActive*/ true,
+                            /*_zoom*/     false
+                    );
+
+                    if (success) {
+                        // show attrib and geometry data in bottom tabbed pane
+                        spatialView.getSVPanel().getAttDataView().showData(sGraphicLayer.getCache());
+                        spatialView.getSVPanel().redraw();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -140,8 +234,8 @@ public class SpatialQueryReview extends JDialog {
         cbOverlapBdyIntersect = new javax.swing.JCheckBox();
         cbOverlaps = new javax.swing.JCheckBox();
         cbTouch = new javax.swing.JCheckBox();
-        btnOK = new javax.swing.JButton();
-        btnCancel = new javax.swing.JButton();
+        btnCreate = new javax.swing.JButton();
+        btnClose = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -159,7 +253,7 @@ public class SpatialQueryReview extends JDialog {
         scrollTaGeometry.setPreferredSize(new java.awt.Dimension(556, 119));
 
         taGeometry.setColumns(1);
-        taGeometry.setFont(new java.awt.Font("Courier New", 1, 12));
+        taGeometry.setFont(new java.awt.Font("Courier New", 1, 12)); // NOI18N
         taGeometry.setRows(30);
         taGeometry.setTabSize(4);
         scrollTaGeometry.setViewportView(taGeometry);
@@ -174,7 +268,7 @@ public class SpatialQueryReview extends JDialog {
             }
         });
 
-        cbEditGeometry.setText("Edit SQL");
+        cbEditGeometry.setText("Edit Geometry");
         cbEditGeometry.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
 
         bgPrecision.add(rbPrecisionLayer);
@@ -216,7 +310,7 @@ public class SpatialQueryReview extends JDialog {
 
         rgCreateLayer.add(rbGeometry);
         rbGeometry.setSelected(true);
-        rbGeometry.setText("Query Geometry");
+        rbGeometry.setText("SQL");
         rbGeometry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rbGeometryActionPerformed(evt);
@@ -234,7 +328,7 @@ public class SpatialQueryReview extends JDialog {
         javax.swing.GroupLayout pnlGeometryLayout = new javax.swing.GroupLayout(pnlGeometry);
         pnlGeometry.setLayout(pnlGeometryLayout);
         pnlGeometryLayout.setHorizontalGroup(
-        		pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pnlGeometryLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -265,7 +359,7 @@ public class SpatialQueryReview extends JDialog {
                 .addContainerGap())
         );
         pnlGeometryLayout.setVerticalGroup(
-        		pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            pnlGeometryLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlGeometryLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(scrollTaGeometry, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -424,32 +518,37 @@ public class SpatialQueryReview extends JDialog {
 
         tpReview.addTab("SDO_RELATE", pnlRelate);
 
-        btnOK.setMnemonic('O');
-        btnOK.setText("Execute");
+        btnCreate.setMnemonic('E');
+        btnCreate.setText("Create Layer");
+        btnCreate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCreateActionPerformed(evt);
+            }
+        });
 
-        btnCancel.setMnemonic('C');
-        btnCancel.setText("Cancel");
+        btnClose.setMnemonic('C');
+        btnClose.setText("Close");
 
         javax.swing.GroupLayout pnlReviewLayout = new javax.swing.GroupLayout(pnlReview);
         pnlReview.setLayout(pnlReviewLayout);
         pnlReviewLayout.setHorizontalGroup(
             pnlReviewLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tpReview, javax.swing.GroupLayout.DEFAULT_SIZE, 669, Short.MAX_VALUE)
+            .addComponent(tpReview)
             .addGroup(pnlReviewLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(btnOK)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 513, Short.MAX_VALUE)
-                .addComponent(btnCancel)
+                .addComponent(btnCreate)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnClose)
                 .addContainerGap())
         );
         pnlReviewLayout.setVerticalGroup(
             pnlReviewLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlReviewLayout.createSequentialGroup()
-                .addComponent(tpReview, javax.swing.GroupLayout.PREFERRED_SIZE, 281, Short.MAX_VALUE)
+                .addComponent(tpReview, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(pnlReviewLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnOK)
-                    .addComponent(btnCancel)))
+                    .addComponent(btnCreate)
+                    .addComponent(btnClose)))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -464,8 +563,8 @@ public class SpatialQueryReview extends JDialog {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(pnlReview, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(pnlReview, javax.swing.GroupLayout.PREFERRED_SIZE, 337, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
@@ -543,11 +642,15 @@ public class SpatialQueryReview extends JDialog {
         modifySQL();
     }//GEN-LAST:event_rbGeometryActionPerformed
 
+    private void btnCreateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCreateActionPerformed
+        createLayer(); // Create layer using current settings.
+    }//GEN-LAST:event_btnCreateActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup bgPrecision;
-    private javax.swing.JButton btnCancel;
+    private javax.swing.JButton btnClose;
     private javax.swing.JButton btnCopyClipboard;
-    private javax.swing.JButton btnOK;
+    private javax.swing.JButton btnCreate;
     private javax.swing.JCheckBox cbAnyInteract;
     private javax.swing.JCheckBox cbContains;
     private javax.swing.JCheckBox cbCoveredBy;
@@ -563,14 +666,14 @@ public class SpatialQueryReview extends JDialog {
     private javax.swing.JLabel lblBufferDistance;
     private javax.swing.JLabel lblCreateLayer;
     private javax.swing.JLabel lblPrecision;
+    private javax.swing.JPanel pnlGeometry;
     private javax.swing.JPanel pnlRelate;
     private javax.swing.JPanel pnlReview;
-    private javax.swing.JPanel pnlGeometry;
+    private javax.swing.JRadioButton rbGeometry;
     private javax.swing.JRadioButton rbGraphic;
     private javax.swing.JRadioButton rbPrecisionLayer;
     private javax.swing.JRadioButton rbPrecisionNone;
     private javax.swing.JRadioButton rbPrecisionView;
-    private javax.swing.JRadioButton rbGeometry;
     private javax.swing.ButtonGroup rgCreateLayer;
     private javax.swing.JScrollPane scrollTaGeometry;
     private javax.swing.JTextArea taGeometry;
@@ -586,8 +689,8 @@ public class SpatialQueryReview extends JDialog {
         this.sdoOperator               = _operator;
         this.filterGeometry            = _filterGeometry;
         this.originalSdoGeometryString = _filterGeometry;
-        btnOK.addActionListener(okCancelListener);
-        btnCancel.addActionListener(okCancelListener);
+        // btnCreate.addActionListener(createCloseListener);
+        btnClose.addActionListener(createCloseListener);
 
         pnlReview.setBorder(javax.swing.BorderFactory.createTitledBorder(this.propertyManager.getMsg("pnlReview")));
         lblBufferDistance.setText(this.propertyManager.getMsg("lblBufferDistance"));
@@ -596,8 +699,8 @@ public class SpatialQueryReview extends JDialog {
         rbPrecisionLayer.setText(this.propertyManager.getMsg("rbPrecisionLayer") + " (" + layer.getPrecision(false) + ")");
         rbPrecisionView.setText(this.propertyManager.getMsg("rbPrecisionView")   + " (" + layer.getSpatialView().getPrecision(false) + ")");
         rbPrecisionNone.setText(this.propertyManager.getMsg("rbPrecisionNone"));
-        btnOK.setText(this.propertyManager.getMsg("btnOK"));
-        btnCancel.setText(this.propertyManager.getMsg("btnCancel"));
+        btnCreate.setText(this.propertyManager.getMsg("btnCreateLayer"));
+        btnClose.setText(this.propertyManager.getMsg("btnClose"));
         tpReview.setTitleAt(0, this.propertyManager.getMsg("tpReviewGeometry"));
         tpReview.setTitleAt(1, this.propertyManager.getMsg("tpReviewRelate"));
         btnCopyClipboard.setText(this.propertyManager.getMsg("btnCopyClipboard"));

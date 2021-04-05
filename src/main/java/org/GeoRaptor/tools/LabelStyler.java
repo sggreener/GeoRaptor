@@ -544,15 +544,15 @@ public class LabelStyler extends JDialog {
   public static SimpleAttributeSet fromNode(Node _node) 
   {
       if ( _node == null ) {
-          System.out.println("XML is null");
+    	  LOGGER.warn("XML is null");
           return null;  // Should throw error         
       }
       if (_node.getNodeName().equalsIgnoreCase("LabelAttributes")==false ) {
-          System.out.println("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
+    	  LOGGER.warn("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
           return null;  // Should throw error
       }
       if ( _node.getFirstChild()==null ) {
-          System.out.println("LabelAttributes has no child nodes");
+          LOGGER.warn("LabelAttributes has no child nodes");
           return null;  // Should throw error
       }
       SimpleAttributeSet attributes = null; 
@@ -581,7 +581,7 @@ public class LabelStyler extends JDialog {
           }  // for each node....
           return attributes;
       } catch (Exception e) {
-         System.out.println("Exception fromNode - " + e.toString());
+    	  LOGGER.error("Exception fromNode - " + e.toString());
       }
       return attributes;
   }
@@ -589,18 +589,15 @@ public class LabelStyler extends JDialog {
   public static SimpleAttributeSet fromXML(Node _node) 
   {
       if ( _node == null ) {
-          System.out.println("XML is null"); 
-          Messages.log("XML is null"); 
+          LOGGER.warn("XML is null"); 
           return null;  // Should throw error 
       }
       if (_node.getNodeName().equalsIgnoreCase("LabelAttributes")==false ) {
-          System.out.println("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
-          Messages.log("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
+          LOGGER.warn("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
           return null;  // Should throw error
       }
       if ( _node.getFirstChild()==null ) {
-          System.out.println("LabelAttributes has no child nodes");
-          Messages.log("LabelAttributes has no child nodes");
+          LOGGER.warn("LabelAttributes has no child nodes");
           return null;  // Should throw error
       }
       // return fromNode(_node);
@@ -632,7 +629,7 @@ public class LabelStyler extends JDialog {
           StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"255,255,255,255":nodeValue));
           return attributes;
       } catch (Exception e) {
-         System.out.println("Exception fromXML - " + e.toString());
+    	  LOGGER.error("Exception fromXML - " + e.toString());
       }
       return attributes;
   }

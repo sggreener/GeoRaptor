@@ -78,7 +78,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.ScaleBar;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SpatialQueryReview;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;
@@ -90,6 +90,7 @@ import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
@@ -239,7 +240,8 @@ public class MapPanel
     REDRAW_BI redrawBIOnly = REDRAW_BI.UNDEFINE;
 
     /**
-     * List of classes with additional draw object logic. For example : shade select object after image draw.
+     * List of classes with additional draw object logic. 
+     * For example : shade select object after image draw.
      */
     protected ArrayList<AfterLayerDraw> afterLayerDrawList = new ArrayList<AfterLayerDraw>();
 
@@ -634,7 +636,12 @@ public class MapPanel
         
         // Now get coordinates
         //
-        double[] ordinates = new double[numCoords*2];
+        double[] ordinates;
+        if ( bArea ) {
+          // Allow for polygon to be closed
+          ordinates = new double[(numCoords+1)*2];
+        } else 
+          ordinates = new double[numCoords*2];
         int ordCount = 0;
         try 
         {
@@ -681,10 +688,16 @@ public class MapPanel
         }
         if ( ordCount != (numCoords*2) )
             return null;
-        return new JGeometry(gtype,
+        // Close polygon
+        if ( bArea ) {
+        	ordinates[ordCount++] = ordinates[0];
+            ordinates[ordCount]   = ordinates[1];
+        }
+        JGeometry jGeom = new JGeometry(gtype,
                              this.spatialView.getSRIDAsInteger(),
                              elemInfo,
                              ordinates);
+        return jGeom;
     }
     
     @SuppressWarnings("unused")
@@ -849,7 +862,9 @@ public class MapPanel
                         this.getBiG2D().setStroke(new BasicStroke(2,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));
                         this.getBiG2D().draw(PointMarker.cross(this.startScreen, 8, 0 ));
                         this.getBiG2D().setStroke(oldStroke);                    
-                        final JGeometry geometry = new JGeometry(this.startWorld.getX(), this.startWorld.getY(),spatialView.getSRIDAsInteger());
+                        final JGeometry geometry = new JGeometry(this.startWorld.getX(), 
+                        		                                 this.startWorld.getY(),
+                        		                                 spatialView.getSRIDAsInteger());
                         if (svo==ViewOperationListener.VIEW_OPERATION.CREATE_POINT) {
                             presentShapeForFinalReview(geometry);
                         } else {
@@ -1008,7 +1023,7 @@ public class MapPanel
                 // LOGGER.info("spatialViewMBR("+this.spatialView.getMBR().toString());
                 this.spatialView.getSVPanel().updateMouseMove(currentWorld,this.spatialView.getPrecision(false));
             } catch (NoninvertibleTransformException nte) {
-                // LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvalid()=" + this.spatialView.getMBR().isInvalid());
+LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvalid()=" + this.spatialView.getMBR().isInvalid());
                 if ( this.spatialView.getLayerCount()!=0 && 
                      this.spatialView.getMBR().isInvalid()==false) {
                     LOGGER.warn("(MapPanel.mouseMoved)" +this.ERROR_SCREEN2WORLD_TRANSFORM + " = " + nte.getLocalizedMessage());
@@ -1591,10 +1606,10 @@ public class MapPanel
                                     JGeometry mbr = new JGeometry(getWindow().minX, getWindow().minY,
                                                                   getWindow().maxX, getWindow().maxY,
                                                                   spatialView.getSRIDAsInteger());
-                                    String sGeom = RenderTool.renderGeometryAsPlainText(mbr,
-                                                                                        Constants.TAG_MDSYS_SDO_GEOMETRY,
-                                                                                        Constants.bracketType.NONE,
-                                                                                        spatialView.getPrecision(false));
+                                	Connection conn = spatialView.getActiveLayer().getConnection();
+                                    Struct stGeom = null; try {stGeom = JGeom.toStruct(mbr,conn);} catch (Exception e1) {return;}
+                                    SpatialRenderer srTool = SpatialRenderer.getInstance();
+                                    String sGeom = srTool.renderSdoGeometry(stGeom,false);
                                     Tools.doClipboardCopy(sGeom);
                                     spatialView.getSVPanel().setMessage("MBR copied...",false);
                                 }
@@ -1609,10 +1624,10 @@ public class MapPanel
                                     JGeometry jGeom = new JGeometry(worldCentre.getX(),
                                                                     worldCentre.getY(),
                                                                     spatialView.getSRIDAsInteger());
-                                    String sGeom = RenderTool.renderGeometryAsPlainText(jGeom,
-                                                                                        Constants.TAG_MDSYS_SDO_GEOMETRY,
-                                                                                        Constants.bracketType.NONE,
-                                                                                        spatialView.getPrecision(false));
+                                	Connection conn = spatialView.getActiveLayer().getConnection();
+                                    Struct stGeom = null; try {stGeom = JGeom.toStruct(jGeom,conn);} catch (Exception e1) {return;}
+                                    SpatialRenderer srTool = SpatialRenderer.getInstance();
+                                    String sGeom = srTool.renderSdoGeometry(stGeom,false);
                                     Tools.doClipboardCopy(sGeom);
                                     spatialView.getSVPanel().setMessage("Center point copied...",false);
                                 }
@@ -1625,8 +1640,11 @@ public class MapPanel
 								private static final long serialVersionUID = 5360802700419296750L;
 
 								public void actionPerformed(ActionEvent e) {
+                                	Connection conn = spatialView.getActiveLayer().getConnection();
                                     JGeometry jGeom = new JGeometry(mPoint.getX(),mPoint.getY(),spatialView.getSRIDAsInteger());
-                                    String sGeom = RenderTool.renderGeometryAsPlainText(jGeom,Constants.TAG_MDSYS_SDO_GEOMETRY,Constants.bracketType.NONE,spatialView.getDefaultPrecision());
+                                    Struct stGeom = null; try {stGeom = JGeom.toStruct(jGeom,conn);} catch (Exception e1) {return;}
+                                    SpatialRenderer srTool = SpatialRenderer.getInstance();
+                                    String sGeom = srTool.renderSdoGeometry(stGeom,false);
                                     Tools.doClipboardCopy(sGeom);
                                     spatialView.getSVPanel().setMessage("XY Point copied...",false);
                             }
@@ -1639,13 +1657,21 @@ public class MapPanel
 									private static final long serialVersionUID = 2909522653798726186L;
 
 									public void actionPerformed(ActionEvent e) {
-                                        try {
-                                            Point2D pPoint = Queries.projectPoint(spatialView.getActiveLayer().getConnection(), mPoint, spatialView.getSRIDAsInteger(), 4326);
-                                            JGeometry jGeom = new JGeometry(pPoint.getX(),pPoint.getY(),4326);
-                                            String sGeom = RenderTool.renderGeometryAsPlainText(jGeom,Constants.TAG_MDSYS_SDO_GEOMETRY,Constants.bracketType.NONE,8);
-                                            Tools.doClipboardCopy(sGeom);
-                                            spatialView.getSVPanel().setMessage("Lat/Long Point copied...",false);
-                                        } catch (SQLException sqle) {
+                                        try 
+                                        {
+                                        	if ( spatialView.getSRIDAsInteger() == Constants.SRID_NULL ) {
+                                        	  LOGGER.info("Can't project source geoemtries with NULL SRID.");
+                                        	} else {
+                                        	  Connection conn = spatialView.getActiveLayer().getConnection();
+                                              Point2D pPoint = Queries.projectPoint(conn, mPoint, spatialView.getSRIDAsInteger(), 4326);
+                                              JGeometry jGeom = new JGeometry(pPoint.getX(),pPoint.getY(),4326);
+                                              Struct stGeom = JGeom.toStruct(jGeom,conn);
+                                              SpatialRenderer srTool = SpatialRenderer.getInstance();
+                                              String sGeom = srTool.renderSdoGeometry(stGeom,false);
+                                              Tools.doClipboardCopy(sGeom);
+                                              spatialView.getSVPanel().setMessage("Lat/Long Point copied...",false);
+                                        	}
+                                        } catch (Exception sqle) {
                                             LOGGER.warn("Projection of point to geodetic failed: " + sqle.getMessage());
                                         }
                                 }
@@ -1714,7 +1740,6 @@ public class MapPanel
         if ( this.window==null || 
              this.window.isNull() ||
              this.window.isInvalid() )  {
-            //LOGGER.debug("refreshALL(): window is null so initialize from view");
             if (this.spatialView.initializeMBR(null) == false) {
                 return;
             }
@@ -1808,7 +1833,6 @@ public class MapPanel
     }
 
     private void checkLayerConnections() {
-        //LOGGER.debug("------------------------------------\nSTART: checkLayerConnections");
         String connName = "",
                nameList = "";
         Iterator<iLayer> iter = this.spatialView.getLayerList().values().iterator();
@@ -1818,7 +1842,6 @@ public class MapPanel
             if ( ( !Strings.isEmpty(connName) ) && 
                  ( ! nameList.contains(connName) ) ) {
                 try {
-                    //LOGGER.debug("checkLayerConnections. Checking " + connName);
                     // Make sure layer's connection exists...
                     if ( ! DatabaseConnections.getInstance().connectionExists(connName)) {
                         DatabaseConnections.getInstance().addConnection(connName);
@@ -1826,18 +1849,16 @@ public class MapPanel
                     // Make sure layer's connection is open 
                     if ( ! layer.isConnectionOpen() ) {
                         boolean oc = layer.openConnection();
-                        //LOGGER.debug("Connection " + connName + " " + (oc?"opened":"closed."));
                     }
                 } catch (IllegalStateException ise) {
                     // Thrown by super.getConnection() indicates starting up, so we do nothing
-                    LOGGER.debug("checkLayerConnections exception " + ise.toString());
+                    LOGGER.warn("checkLayerConnections exception " + ise.toString());
                 }
                 // Already checked it, don't do it again
                 //
                 nameList = " " + connName;
             }
         }
-        //LOGGER.debug("End: checkLayerConnections\n------------------------------------");
     }
     
     public void paintComponent(Graphics g) 
@@ -1934,7 +1955,7 @@ public class MapPanel
                 this.windowNavigator.add(this.window);                
             }
             
-            // Draw border around mapoverview
+            // Draw border around map overview
             this.biG2D.setColor(this.mapBackground);
             this.biG2D.drawRect(0, 0, 
                                 g2.getClipBounds().width - 1, 
@@ -1948,9 +1969,7 @@ public class MapPanel
 
             // Do drawing and save window only at end of the draw
             // 
-            //LOGGER.debug(" ******* this.drawTimer.schedule(...)");
             this.drawTimer.schedule(new DrawTask(g2,this.spatialView), 0);
-            //LOGGER.debug(" ***** END: MapPanel.paintComponent() this.redrawBIOnly="+this.redrawBIOnly.toString());
             return;
 
         case IMAGE_MOUSE_MOVE : 
@@ -2208,8 +2227,10 @@ public class MapPanel
     {
         if ( _geometry == null )
             return;
+        
         Connection conn = null;
         conn = spatialView.getActiveLayer().getConnection();
+        
         Struct stGeom = null;
         try {
            stGeom = JGeom.toStruct(_geometry,conn);
@@ -2218,65 +2239,92 @@ public class MapPanel
         }
         final String geometry = SDO_GEOMETRY.getGeometryAsString(stGeom);
         SwingUtilities.invokeLater(new Runnable() {
-              public void run() {
-                  final ViewLayerTree         vlt = spatialView.getSVPanel().getViewLayerTree();
-                  final iLayer             sLayer = vlt.getQueryTarget();
-                  SVGraphicLayer    sGraphicLayer = null;
-                  SVQueryLayer        sQueryLayer = null;
-                  final SpatialQueryReview dialog = new SpatialQueryReview(new JFrame(), true);
-                  boolean                 success = false;
+              public void run() 
+              {
+                  final ViewLayerTree vlt = spatialView.getSVPanel().getViewLayerTree();
+                  final iLayer     sLayer = vlt.getQueryTarget();
+	
+                  final SpatialQueryReview dialog = 
+                		  new SpatialQueryReview(new JFrame(), 
+                                                 false, /* Wait */
+                                                 sLayer,
+                                                 _geometry,
+                                                 spatialView);
                   dialog.initDialog(sLayer, vlt.getSpatialOperator(), geometry);
                   dialog.setVisible(true);
-                  if ( dialog.isCanceled() ) {
-                      spatialView.getSVPanel().setNone();
-                      return;
-                  }
-                  sQueryLayer = new SVQueryLayer(sLayer.getSpatialView(),
-                		                         sLayer.getLayerName(),
-                		                         sLayer.getVisibleName(),
-                		                         sLayer.getDesc(),
-                		                         sLayer.getMetadataEntry(),
-                		                         sLayer.isDraw()
-                                     ); // Create from base spatial layer in view
-                  sQueryLayer.setVisibleName(vlt.getSpatialOperator().toString() + " - " + sLayer.getVisibleName());
-                  sQueryLayer.setPrecision(dialog.getPrecision());
-                  sQueryLayer.setGeometry(_geometry);
-                  sQueryLayer.setBufferDistance(dialog.getBufferDistance());
-                  sQueryLayer.setBuffered(sQueryLayer.getBufferDistance()!=0.0);
-                  sQueryLayer.setRelationshipMask(dialog.getRelationshipMask(sLayer.hasIndex()));
-                  sQueryLayer.setSdoOperator(dialog.getSdoOperator());
-                  // Both Query and Graphic layers use same SQL so force its creation 
-                  sQueryLayer.setSQL(null); 
-                  if ( dialog.targetGraphic() ) {
-                      sGraphicLayer = new SVGraphicLayer((SVSpatialLayer) sLayer);  // Create from existing superclass
-                      sGraphicLayer.setVisibleName(sQueryLayer.getVisibleName());
-                      // Load data into cache
-                      sGraphicLayer.add(sQueryLayer.getCache(window));
-                      sGraphicLayer.setLayerMBR();
-                      if ( mainPrefs.isRandomRendering()) {
-                          sGraphicLayer.getStyling().setAllRandom();
-                      }
-                      success = spatialView.getSVPanel().addLayerToView(sGraphicLayer,false /*zoom*/);
-                  } else {
-                      sQueryLayer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE);
-                      sQueryLayer.setDraw(true);
-                      if ( mainPrefs.isRandomRendering() ) {
-                          sQueryLayer.getStyling().setAllRandom();
-                      }
-                      sQueryLayer.setMBRRecalculation(true);
-                      // Add to view and ignore return
-                      success = spatialView.addLayer(sQueryLayer,true,true,false /*zoom*/);
-                  }
-                  if ( success ) {
-                      // repaint whole image as we have more to show
-                      spatialView.getSVPanel().redraw();
-                      if ( dialog.targetGraphic() ) {
-                          // show attrib and geometry data in bottom tabbed pane
-                          //
-                          spatialView.getSVPanel().getAttDataView().showData(sGraphicLayer.getCache());
-                          spatialView.getSVPanel().redraw();
-                      } 
-                  }
+//                  if ( dialog.isCanceled() ) {
+//                      spatialView.getSVPanel().setNone();
+//                      return;
+//                  }
+//                SVGraphicLayer sGraphicLayer = null;
+//                SVQueryLayer     sQueryLayer = null;
+//                iLayer               gqLayer = null;
+//                try 
+//                {
+//	                  if ( dialog.targetGraphic() ) {
+//	                      sGraphicLayer = new SVGraphicLayer(sLayer); 
+//	                      gqLayer = sGraphicLayer;
+//	                  } else {
+//	                      sQueryLayer = new SVQueryLayer(sLayer);
+//	                      gqLayer = sQueryLayer;
+//	                  }
+//	                  gqLayer.setVisibleName(vlt.getSpatialOperator().toString() + 
+//	                                         " - " + 
+//	                                         sLayer.getVisibleName());
+//	                  gqLayer.setSQL(null);
+//	                  gqLayer.setDraw(true);
+//	                  gqLayer.setMBRRecalculation(true);
+//                    gqLayer.setGeometry(_geometry);
+//                    gqLayer.setGeometryType(sLayer.getGeometryType());
+//	                  gqLayer.setBufferDistance(dialog.getBufferDistance());
+//	                  gqLayer.setBuffered(dialog.getBufferDistance()!=0.0);
+//	                  gqLayer.setRelationshipMask(dialog.getRelationshipMask(sLayer.hasIndex()));
+//	                  gqLayer.setSdoOperator(dialog.getSdoOperator());
+//	                  gqLayer.setPrecision(dialog.getPrecision());
+//
+//	                  boolean success = false;
+//	
+//	                  // Add to view and ignore return
+//	                  if ( gqLayer instanceof SVQueryLayer ) {
+//                      success = spatialView.addLayer(
+//			                        /*_layer*/    sQueryLayer,
+//			                        /*_isDrawn*/  true,
+//			                        /*_isActive*/ true,
+//			                        /*_zoom*/     false 
+//			                      ); 
+//                      if ( success )
+//	                      spatialView.getSVPanel().redraw();
+//	                  } else if ( gqLayer instanceof SVGraphicLayer ) {
+//	                    try 
+//	                    {
+//                        // Load data into cache using initial SQL
+//	                      sGraphicLayer.setCache();
+//	                      
+//	                      // Now that they cache is filled, compute its extent
+//                        sGraphicLayer.setLayerMBR();
+//                        
+//                        // Display cache.                          
+//	                      //success = spatialView.getSVPanel().addLayerToView(sGraphicLayer,false /*zoom*/);
+//                        success = spatialView.addLayer(
+//		  	                          /*_layer*/    sGraphicLayer,
+//			                          /*_isDrawn*/  true,
+//			                          /*_isActive*/ true,
+//			                          /*_zoom*/     false 
+//			                      ); 
+//
+//		                  if ( success ) {
+//		                    // show attrib and geometry data in bottom tabbed pane
+//		                    spatialView.getSVPanel().getAttDataView().showData(sGraphicLayer.getCache());
+//		                    spatialView.getSVPanel().redraw();
+//			              }
+//	                    } catch (Exception e) {
+//	                    	e.printStackTrace();
+//	                    }
+//	                  }
+//
+//                } catch (Exception e) {
+//              	  e.printStackTrace();
+//                }
               } 
         });
     }
@@ -2336,7 +2384,7 @@ public class MapPanel
             // allow selection if only one layer in list
             //
             if ( this.spatialView.getLayerCount() == 1 ) {
-                sLayer = (SVSpatialLayer)this.spatialView.getLayerList().values().toArray()[0];
+                sLayer = (SVTableLayer)this.spatialView.getLayerList().values().toArray()[0];
                 this.spatialView.setActiveLayer(sLayer);
             } 
         }

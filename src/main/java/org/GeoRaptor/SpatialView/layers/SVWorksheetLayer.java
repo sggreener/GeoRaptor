@@ -1,5 +1,6 @@
 package org.GeoRaptor.SpatialView.layers;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.NoninvertibleTransformException;
@@ -34,6 +35,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
@@ -49,11 +51,12 @@ import oracle.spatial.geometry.JGeometry;
 
 
 public class SVWorksheetLayer 
-extends SVSpatialLayer
+extends SVTableLayer
 {
     public static final String CLASS_NAME = Constants.KEY_SVWorksheetLayer;
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVWorksheetLayer");
+    
     private String sql = "";
     
     public SVWorksheetLayer(SpatialView   _sView, 
@@ -180,6 +183,9 @@ extends SVSpatialLayer
                    shadeValue = null,
               pointColorValue = null,
                lineColorValue = null;
+        Color      shadeColor = null,
+        		   pointColor = null,
+        		    lineColor = null; 
         boolean isFastPickler = this.getPreferences().isFastPicklerConversion();
         double pointSizeValue = 4,
                    angleValue = 0.0f;
@@ -236,6 +242,7 @@ extends SVSpatialLayer
                 if ( ! _mbr.intersects(geoMBR) ) {
                     continue;
                 }
+                
                 if ( this.getMBRRecalculation() ) {
                     mbrCalcStart =  System.currentTimeMillis();
                     newLayerMBR.setMaxMBR(geoMBR);
@@ -254,30 +261,37 @@ extends SVSpatialLayer
                         angleValue = 0.0f;
                     }
                 }
-                if (this.styling.getShadeColumn() != null && this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
-                    try {
-                        // regardless as to whether RGB or Integer, get colour as a string.
-                        shadeValue = rSet.getString(this.styling.getShadeColumn().replace("\"",""));
-                    } catch (Exception e) {
-                        shadeValue = "255,255,255";
-                    }
-                } 
+                
                 if (this.styling.getPointColorColumn() != null && this.styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = rSet.getString(this.styling.getPointColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        pointColorValue = "255,255,255";
+                        pointColorValue = "0,0,0,255";
                     }
-                } 
+                    pointColor = Colours.fromRGBa(shadeValue);
+                }
+                
                 if (this.styling.getLineColorColumn() != null && this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = rSet.getString(this.styling.getLineColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        lineColorValue = "0,0,0";
+                        lineColorValue = "0,0,0,255";
                     }
+                    lineColor = Colours.fromRGBa(shadeValue);
                 }  
+
+                if (this.styling.getShadeColumn() != null && this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                    try {
+                        // regardless as to whether RGB or Integer, get colour as a string.
+                        shadeValue = rSet.getString(this.styling.getShadeColumn().replace("\"",""));
+                    } catch (Exception e) {
+                        shadeValue = "0,0,0,255";
+                    }
+                    shadeColor = Colours.fromRGBa(shadeValue);
+                }
+
                 if (this.styling.getPointSizeColumn() != null && this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         pointSizeValue = rSet.getDouble(this.styling.getPointSizeColumn().replace("\"",""));
@@ -285,16 +299,20 @@ extends SVSpatialLayer
                         pointSizeValue = 4;
                     }
                 } 
+                
                 dataDrawStart = System.currentTimeMillis();
-                callDrawFunction(jgeom, 
-                                 labelValue, 
-                                 shadeValue, 
-                                 pointColorValue,
-                                 lineColorValue,
-                                 (int)(Math.round(pointSizeValue<4.0?4:pointSizeValue) % 72),
-                                 this.styling.getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
-                                 ? COGO.radians(COGO.normalizeDegrees(angleValue - 90.0f)) 
-                                 : angleValue);
+                this.drawTools.callDrawFunction(
+                        (JGeometry)jgeom,
+                        (Styling)this.styling,
+                        (String)labelValue, 
+                        (Color)shadeColor, 
+                        (Color)pointColor,
+                        (Color)lineColor,
+                        (int)(Math.round(pointSizeValue<4.0?4:pointSizeValue) % 72),
+                        (double)(this.styling.getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
+                                    ? COGO.radians(COGO.normalizeDegrees(angleValue - 90.0f)) 
+                                    : angleValue)
+                );
                 dataDrawTime += ( System.currentTimeMillis() - dataDrawStart );
                 if ( super.preferences.isQueryLimited() && totalFeatures >= super.preferences.getQueryLimit() ) {
                     break;

@@ -17,7 +17,7 @@ import javax.xml.xpath.XPathFactory;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
@@ -84,7 +84,7 @@ final public class SpatialViewSettings {
                 // Now process View's layers
                 //
                 iLayer            iLayer = null;
-                SVSpatialLayer    sLayer = null;
+                SVTableLayer    sLayer = null;
                 SVQueryLayer      qLayer = null;
                 SVWorksheetLayer  wLayer = null;
                 NodeList lList = (NodeList) xpath.evaluate("Layers/Layer",vList.item(i),XPathConstants.NODESET);
@@ -103,7 +103,7 @@ final public class SpatialViewSettings {
                                        wLayer.isDraw(), /* isDrawn */
                                        wLayer.getLayerName().equals(activeLayerName));
                     } else /* SVSpatialLayer */ {
-                        sLayer = new SVSpatialLayer(loadedView,lNode);
+                        sLayer = new SVTableLayer(loadedView,lNode);
                         vNode.addLayer(sLayer,
                                        sLayer.isDraw(), /* isDrawn */
                                        sLayer.getLayerName().equals(activeLayerName));

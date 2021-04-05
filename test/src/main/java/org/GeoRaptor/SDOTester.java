@@ -10,6 +10,7 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.NClob;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -17,16 +18,17 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.sql.Types;
 import java.text.DecimalFormat;
-import java.util.Properties;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.ResourceBundle;
 
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataTool;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
-import org.GeoRaptor.io.PrintGeometry;
+import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.JGeom;
+import org.GeoRaptor.tools.PrintGeometry;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Tools;
@@ -38,9 +40,7 @@ import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.jdbc.OracleTypes;
-import oracle.jdbc.driver.OracleConnection;
 import oracle.spatial.geometry.JGeometry;
-import oracle.dbtools.raptor.utils.Connections;
 
 public class SDOTester
 {
@@ -68,8 +68,17 @@ public class SDOTester
               }
               */
             //testBundle();
-            testJMbr(new Envelope(0,0,10,10));
-//            getLayerGType(); 
+            //testJMbr(new Envelope(0,0,10,10));
+            //getLayerGType();
+            //getRowid();
+        	//inspectStruct();
+            //testParameterCount();
+            
+	        String sql = "SELECT ? AS geom FROM DUAL";
+	        sql = sql.replace("SELECT ? AS geom FROM DUAL",
+  		          "SELECT MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,?) as geom FROM DUAL");
+ System.out.println(sql);
+            
             System.out.println("Finished");
         }
         catch(Exception e)
@@ -77,6 +86,33 @@ public class SDOTester
             e.printStackTrace();
         }
     }
+	
+	public static void testParameterCount() 
+			throws Exception
+	{
+        Class.forName("oracle.jdbc.driver.OracleDriver");
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+        PreparedStatement ps = conn.prepareStatement("SELECT ? as id, ? as id2 FROM DUAL");
+        int alreadySetParameters = ps.getParameterMetaData().getParameterCount();
+        System.out.println("Parameter Count: " + alreadySetParameters);
+        ps.close();
+        ps = conn.prepareStatement("SELECT ? as id FROM DUAL");
+        ps.setInt(1,1);
+        ps.close(); conn.close();
+	}
+
+	public static void getRowid() throws SQLException, ClassNotFoundException
+	{
+        Class.forName("oracle.jdbc.driver.OracleDriver");
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+        Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
+        ResultSet   results = statement.executeQuery("select rowid from projpoint2d where rownum < 2");
+        if (results.next()) {
+        	java.sql.RowId rid = results.getRowId("rowid");
+        	System.out.println(rid.toString());
+        }
+        results.close(); statement.close(); conn.close();
+	}
 
 	public static void testJMbr(Envelope _mbr)
 	throws SQLException, Exception
@@ -91,7 +127,7 @@ public class SDOTester
                         		                                3));
 
         Struct s;
-        s = JGeom.fromGeometry(jGeom,conn);
+        s = JGeom.toStruct(jGeom,conn);
         
         System.out.println(RenderTool.renderStructAsPlainText(s, 
                                                               Constants.bracketType.NONE, 
@@ -113,6 +149,29 @@ public class SDOTester
         System.out.println("</TestMetadata>");
 	}
 
+	public static void inspectStruct() 
+			throws SQLException
+	{
+        Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+        Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
+        ResultSet   results = statement.executeQuery(
+        "select SDO_GEOMETRY(2003,29182,MDSYS.SDO_POINT_TYPE(638254,7954500,NULL),SDO_ELEM_INFO_ARRAY(1,1003,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09,638235.33,7954554.09,638231.54,7954554.09,638231.54,7954538.73)) as geom from dual");
+        Struct sdoGeom = null;
+        if (results.next()) {
+           sdoGeom = (Struct)results.getObject("GEOM");
+        }
+        if ( sdoGeom != null) 
+        {
+        	Object[] o = sdoGeom.getAttributes();
+        	System.out.println(o[0].getClass().toString());
+        	System.out.println(o[1].getClass().toString());
+        	System.out.println(o[2].getClass().toString());
+        	System.out.println(o[3].getClass().toString());
+        	System.out.println(o[4].getClass().toString());
+        }
+        results.close(); statement.close(); database.close();
+	}
+	
 	public static void TestStruct()
     {
         System.out.println("<TestStruct>");
@@ -468,7 +527,7 @@ public class SDOTester
                     geo = or.read(SdoGeom);                    
                     System.out.println(" WKT: " + wWkt.write(geo)); 
 
-                    System.out.println("            " + SDO_GEOMETRY.getGeometryAsString(SdoGeom,database)); 
+                    System.out.println("            " + SDO_GEOMETRY.getGeometryAsString(SdoGeom)); 
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.out.println("    Conversion error " + e.toString());
@@ -733,7 +792,7 @@ public class SDOTester
 				if (meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY)
 						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE)
 						|| meta.getColumnTypeName(_col).equalsIgnoreCase(Constants.TAG_MDSYS_VERTEX_TYPE)) {
-					value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col),_conn);
+					value = SDO_GEOMETRY.getGeometryAsString((Struct)_rSet.getObject(_col));
 				    // renderer.renderGeoObject(_ors.getOracleObject(_col), false);
 				}
 				break;
@@ -830,37 +889,37 @@ public class SDOTester
         Class.forName("oracle.jdbc.driver.OracleDriver");
         Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "codesys", "c0d3mgr");
 
-        boolean isGeodetic = MetadataTool.querySridGeodetic(conn,"4326");
+        boolean isGeodetic = Queries.querySridGeodetic(conn,"4326");
         System.out.println("Is SRID 4326 geodetic? " + String.valueOf(isGeodetic));
         
-        String wkt = MetadataTool.getSRIDWKT(conn,"4326");
+        String wkt = Queries.getSRIDWKT(conn,"4326");
         System.out.println("SRID as WKT " + wkt);        
         
-        String refSys = MetadataTool.getSRIDRefSysKind(conn,"4326");
+        String refSys = Queries.getSRIDRefSysKind(conn,"4326");
         System.out.println("SRID RefSysKind " + refSys);        
        
-        String uom = MetadataTool.getSRIDBaseUnitOfMeasure(conn,"4326");
+        String uom = Queries.getSRIDBaseUnitOfMeasure(conn,"4326");
         System.out.println("SRID Unit Of Measure " + uom);        
 
-        int layerSRID = MetadataTool.getLayerSRID( conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");
+        int layerSRID = Queries.getLayerSRID( conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");
         System.out.println("Layer SRID for AUSTRALIAN_QUAD " + String.valueOf(layerSRID));
 
-        int rowCount = MetadataTool.getRowCount( conn,"CODESYS","AUSTRALIAN_QUAD",null);
+        int rowCount = Queries.getRowCount( conn,"CODESYS","AUSTRALIAN_QUAD",null);
         System.out.println("Number Rows n AUSTRALIAN_QUAD " + String.valueOf(rowCount));
                 
-        String spName = MetadataTool.getSpatialIndexName(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");  
+        String spName = Queries.getSpatialIndexName(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");  
         System.out.println("Layer Geometry Spatial Index name " + spName);
 
-        int dims = MetadataTool.getSpatialIndexDims(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");  
+        int dims = Queries.getSpatialIndexDims(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");  
         System.out.println("Spatial DIms " + String.valueOf(dims));
         		
-        boolean hasIndex = MetadataTool.hasSpatialIndex(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM",true);
+        boolean hasIndex = Queries.hasSpatialIndex(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM",true);
         System.out.println("Has Spatial index " + String.valueOf(hasIndex));
         
-        boolean spIndex = MetadataTool.isSpatiallyIndexed(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM","4326");
+        boolean spIndex = Queries.isSpatiallyIndexed(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM","4326");
         System.out.println("Spatally indexed " + String.valueOf(spIndex));
 
-        String gType = MetadataTool.getLayerGeometryType(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM",10,10);
+        String gType = Queries.getLayerGeometryType(conn,"CODESYS","AUSTRALIAN_QUAD","GEOM",10,10);
         System.out.println("Layer Geometry Type " + gType);
 	}
 	
@@ -868,19 +927,14 @@ public class SDOTester
 	{
 		 final String FILENAME = "org.GeoRaptor.Resources";
 
-System.out.println("Opening " + FILENAME);
-
          try {
         	 URL resUrl = SDOTester.class.getClassLoader().getResource( FILENAME );
-System.out.println(resUrl==null?"resUrl is null":resUrl.toString());
          	Properties props = new Properties();
 			props.load( resUrl.openStream() );
 		 } catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		 }
-        	 
-System.out.println("Opening2 " + FILENAME + " Locale= "+Locale.getDefault());
 
 		 ResourceBundle resourceBundle = ResourceBundle.getBundle(FILENAME,Locale.getDefault());
 

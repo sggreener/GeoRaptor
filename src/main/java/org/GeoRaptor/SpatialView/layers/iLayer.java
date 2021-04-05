@@ -2,26 +2,23 @@ package org.GeoRaptor.SpatialView.layers;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Struct;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.GeoRaptor.Constants;
+import org.GeoRaptor.Constants.SDO_OPERATORS;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
+import org.GeoRaptor.tools.PropertiesManager;
 
 import oracle.spatial.geometry.JGeometry;
 
-public interface iLayer {
+public interface iLayer  {
     static final String CLASS_NAME = null;
 
     String getClassName();
@@ -56,8 +53,6 @@ public interface iLayer {
 
     void setVisibleName(String _visibleName);
 
-    boolean is_draw();
-
     boolean isDraw();
 
     void setDraw(boolean _draw);
@@ -85,22 +80,10 @@ public interface iLayer {
 
     String getSDOFilterClause();
 
-    /**wrapSQL
-     * Takes basic SQL statement and wraps it in an inline view for use in querying and identifying geometry objects.
-     * @param _sql
-     * @return wrapped SQL statement.
-     */
     String wrapSQL(String _sql);
 
-    /**
-     * @param SQL
-     */
     void setSQL(String _SQL);
 
-    /**
-     * getLayerSQL - for XML use only
-     * @return String
-     */
     String getLayerSQL();
 
     String getSQL();
@@ -120,14 +103,7 @@ public interface iLayer {
     LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
                                                      boolean _fullDataType) throws SQLException;
 
-    void callDrawFunction(Struct _struct, String _label, String _shadeValue, String _pointColorValue,
-                          String _lineColorValue, int _pointSizeValue, double _rotationAngle) throws SQLException,
-                                                                                                     IOException;
-
-    void callDrawFunction(JGeometry _geo, String _label, String _shadeValue, String _pointColorValue,
-                          String _lineColorValue, int _pointSizeValue, double _rotationAngle) throws IOException;
-
-    org.GeoRaptor.SpatialView.layers.iLayer createCopy() throws Exception;
+    iLayer createCopy() throws Exception;
 
     void setMinResolution(boolean _minResolution);
 
@@ -157,8 +133,10 @@ public interface iLayer {
     
 	Constants.GEOMETRY_TYPES getGeometryType();
 
-	// Wrappers over SVLayer
-    //	
+	void setGeometryType(String string);
+	
+	void setGeometryType(Constants.GEOMETRY_TYPES _geometryType);
+
  	int getSRIDAsInteger();
 
 	Connection getConnection();
@@ -193,13 +171,25 @@ public interface iLayer {
 
 	void setSRIDType(String string);
 
-	void setGeometryType(String string);
-
 	void setConnectionName(String connectionName);
 
 	MetadataEntry getMetadataEntry();
 
-	boolean executeDrawQuery(PreparedStatement _pStatement, String _sql2Debug, Graphics2D _g2);
+	void setStyling(Styling _styling);
+
+	public PropertiesManager getPropertyManager();
+
+	void setGeometry(JGeometry _geometry);
+
+	void setBufferDistance(double bufferDistance);
+
+	void setBuffered(boolean b);
+
+	void setRelationshipMask(String relationshipMask);
+
+	void setSdoOperator(SDO_OPERATORS sdoOperator);
+
+	void setPrecision(int precision);
 
 }
 

@@ -33,9 +33,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
-
 import java.io.IOException;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
@@ -75,29 +74,19 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import oracle.dbtools.raptor.controls.RaptorDnD;
-import oracle.dbtools.raptor.navigator.db.DatabaseConnection;
-import oracle.dbtools.raptor.utils.Connections;
-
-import oracle.ide.util.dnd.TransferableTreeNode;
-
-import oracle.ideimpl.explorer.dnd.MultiTransferable;
-
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
+import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Colours;
@@ -106,10 +95,14 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.DriverManager;
+
+import oracle.dbtools.raptor.controls.RaptorDnD;
+import oracle.dbtools.raptor.navigator.db.DatabaseConnection;
+import oracle.dbtools.raptor.utils.Connections;
+import oracle.ide.util.dnd.TransferableTreeNode;
+import oracle.ideimpl.explorer.dnd.MultiTransferable;
+import oracle.spatial.geometry.JGeometry;
 
 
 /**
@@ -166,11 +159,11 @@ public class ViewLayerTree
 
     private final static int CTRL_LEFT_MOUSE = InputEvent.CTRL_MASK + InputEvent.BUTTON1_MASK;  
 
-    Color selectionBorderColor, 
-          selectionForeground, 
-          selectionBackground,
-          textForeground, 
-          textBackground;
+    Color selectionBorderColor;
+    Color selectionForeground;
+    Color selectionBackground;
+    Color textForeground = Color.BLACK;
+    Color textBackground = Color.WHITE;
 
     private final String iconDirectory = "org/GeoRaptor/SpatialView/images/";
     
@@ -845,13 +838,10 @@ public class ViewLayerTree
                                   long   _numFeats) 
     {
         try {
-LOGGER.debug("refreshLayerCount("+_layer.getLayerName()+" " + _numFeats);
             // find layer by name
             DefaultMutableTreeNode node = getNodeByName(_layer.getLayerName());
-LOGGER.debug("node is "+(node==null?"null":"not null"));
             if ( node instanceof LayerNode ) {
                 LayerNode lNode = (LayerNode)node;
-LOGGER.debug("setting lNode to "+String.format("(%d) %s",_numFeats,_layer.getVisibleName()));
                 lNode.setText(String.format("(%d) %s",_numFeats,_layer.getVisibleName()));
                 DefaultTreeModel model = ((DefaultTreeModel) this.getModel());
                 if (model!=null) {
@@ -861,24 +851,19 @@ LOGGER.debug("setting lNode to "+String.format("(%d) %s",_numFeats,_layer.getVis
         } catch (NullPointerException npe) {
         } catch (ArrayIndexOutOfBoundsException obe) {
         }
-LOGGER.debug("End refreshLayerCount " + _layer.getLayerName());
     }
 
     public void removeLayerCount(iLayer _layer) {
-LOGGER.debug("start removeLayerCount " + _layer.getLayerName());
         // find layer by name
         DefaultMutableTreeNode node = getNodeByName(_layer.getLayerName());
         if ( node instanceof LayerNode ) {
             LayerNode lNode = (LayerNode)node;
-LOGGER.debug("Old text = " + lNode.getText());
             lNode.setText(_layer.getVisibleName());
-LOGGER.debug("New text = " + lNode.getText());
             DefaultTreeModel model = ((DefaultTreeModel) this.getModel());
             if (model!=null) {
                 model.nodeChanged(node);
             }
         }
-LOGGER.debug("End removeLayerCount " + _layer.getLayerName());
     }
 
     public SpatialView getViewAt(int _viewNumber) {
@@ -1226,17 +1211,15 @@ LOGGER.debug("removeLayer: " + _layerName);
       */
     public String checkName(String _name) 
     {
-        String newName = _name.trim();
-LOGGER.debug("ViewLayerTree.checkName " + newName);
+        String newName = new String( _name.trim());
         int count = 1;
         while (true) {
             // find node
             Object node = getNodeByName(newName);
-LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is unique":"already exists"));
             if ( node == null) {
                 return newName;
             }
-            newName = _name.trim() + "_" + count++;
+            newName += "_" + count++;
         }
     }
   
@@ -1597,9 +1580,9 @@ LOGGER.debug("ViewLayerTree.getNodeByName("+newName+") " + (node==null?"is uniqu
 			private static final long serialVersionUID = 1L;
 
 			public void actionPerformed(ActionEvent e) {
-                  SpatialViewProperties svp = new SpatialViewProperties(null,true,_viewNode.getSpatialView());
-                  svp.initDialog(false);
-                  svp.setVisible(true);
+                  SpatialViewProperties svProp = new SpatialViewProperties(null,true,_viewNode.getSpatialView());
+                  svProp.initDialog(false);
+                  svProp.setVisible(true);
                   DefaultTreeModel model = ((DefaultTreeModel)getModel());
                   // Force refresh of possibly change views's name 
                   model.nodeChanged(_viewNode);
@@ -2044,7 +2027,6 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
 				public void actionPerformed(ActionEvent e) {
                     SVSpatialLayerProps slp = new SVSpatialLayerProps(null,"",false);
                     slp.initDialog(fLayerNode.getSpatialLayer());
-                    // show dialog
                     slp.setVisible(true);
                 }
             };
@@ -2716,7 +2698,7 @@ LOGGER.debug("ViewLayerTree.createLayerCopy - SVGraphicLayer");
                     this.addLayer(gLayer,_lNode.isDraw(),false);
                 } else {
 LOGGER.debug("ViewLayerTree.createLayerCopy - SVSpatialLayer");
-                    SVSpatialLayer sLayer = new SVSpatialLayer((SVSpatialLayer)_lNode.getSpatialLayer());
+                    SVTableLayer sLayer = new SVTableLayer((SVTableLayer)_lNode.getSpatialLayer());
                     this.addLayer(sLayer,_lNode.isDraw(),false);
                 }
             } catch (Exception e) {
@@ -2835,13 +2817,6 @@ LOGGER.debug("viewLayerTree.addLayer adjustedName =" + adjustedName);
             @Override
             public int compare(LayerNode _layerOne, 
                                LayerNode _layerTwo) {
-/*
-System.out.println("_layerOne.getSpatialLayer(" + _layerOne.getSpatialLayer().getLayerName() + ").getGeometryType(" +
-_layerOne.getSpatialLayer().getGeometryType().toString() + 
-").ordinal() - _layerTwo.getSpatialLayer(\" + _layerTwo.getSpatialLayer().getLayerName() + \").getGeometryType().ordinal(" + 
-_layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " + 
-(_layerTwo.getSpatialLayer().getGeometryType().ordinal() < _layerOne.getSpatialLayer().getGeometryType().ordinal() ? -1 : (_layerTwo.getSpatialLayer().getGeometryType().ordinal() == _layerOne.getSpatialLayer().getGeometryType().ordinal() ? 0 : 1)));
-*/
                 return (_layerTwo.getSpatialLayer().getGeometryType().ordinal() < 
                         _layerOne.getSpatialLayer().getGeometryType().ordinal() 
                         ? -1 
@@ -3026,9 +3001,10 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
           this.sLayer = null;
       }
   
-      public void setTextForeground() {
-          // Mark layer according to whether it is indexed or not
-          if ( this.sLayer instanceof SVSpatialLayer ) {
+      public void setTextForeground() 
+      {
+    	  // Mark layer according to whether it is indexed or not
+          if ( this.sLayer instanceof SVTableLayer ) {
               Font lFont = this.leafText.getFont();
               if ( this.sLayer.hasIndex() ) { 
                   this.leafText.setFont(new Font(lFont.getName(), Font.PLAIN, lFont.getSize()));
@@ -3042,11 +3018,11 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
               switch ( this.sLayer.getGeometryType() ) { 
                 case POINT:
                 case MULTIPOINT:
-                    this.leafText.setForeground(this.sLayer.getStyling().getPointColor("0,0,1"));
+                    this.leafText.setForeground(this.sLayer.getStyling().getPointColor("0,0,255,0"));
                     break;
                 case LINE:
                 case MULTILINE:
-                    this.leafText.setForeground(this.sLayer.getStyling().getLineColor("0,1,0"));
+                    this.leafText.setForeground(this.sLayer.getStyling().getLineColor("0,255,0,0"));
                     break;
                 case SOLID:
                 case MULTISOLID:
@@ -3115,7 +3091,8 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
           } 
           return PointMarker.getGeometryTypeIcon(this.sLayer.getGeometryType(),
                                                  18,18,
-                                                 fillColor, drawColor,
+                                                 fillColor, 
+                                                 drawColor,
                                                  iconQuestionMark); 
       }
       
@@ -3196,6 +3173,7 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
         this.leafText.setForeground(textForeground);
         // Override if user has changed color properties.
         this.setTextForeground();
+        this.leafText.setForeground(textForeground);
         this.leafText.setBackground(textBackground);
         this.leafText.repaint();
         this.leafRenderer.setForeground(textForeground);
@@ -3212,11 +3190,6 @@ _layerTwo.getSpatialLayer().getGeometryType().toString() + ") = " +
       
       public JPanel getLeafRenderer() {
           return this.leafRenderer;
-          /**
-           * System.out.println("leafRenderer (" + node.getLeafRenderer().getWidth() +"," +node.getLeafRenderer().getWidth()+")");
-           * for (int i=0; i<node.getLeafRenderer().getComponents().length; i++)
-           *    System.out.println(node.getLeafRenderer().getComponents()[i].getName() + " - " + node.getLeafRenderer().getComponents()[i].getWidth() + "," + node.getLeafRenderer().getComponents()[i].getHeight());
-           */
       }
       
       int viewNodeSortPosition = -1;
