@@ -806,7 +806,8 @@ implements iLayer
     }
 
     @Override
-    public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, int _numSearchPixels) 
+    public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint,
+                                                int _numSearchPixels) 
     {
         if (this.cache.size() == 0) {
             return (ArrayList<QueryRow>)null;

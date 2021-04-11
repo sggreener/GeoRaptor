@@ -67,7 +67,7 @@ public class MainSettings {
 		MainSettings.MENU_ITEM = this.propertyManager.getMsg("MENU_ITEM");
 		MainSettings.EXTENSION_NAME = this.propertyManager.getMsg("EXTENSION_NAME");
 		MainSettings.XML_VERSION_MESSAGE = this.propertyManager.getMsg("XML_VERSION_MESSAGE");
-		MainSettings.VERSION = "1.0.0"; //Tools.getVersion();
+		MainSettings.VERSION = "20.0.0"; //Tools.getVersion();
 	}
 
 	/**

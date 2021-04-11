@@ -49,6 +49,7 @@ import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
@@ -79,9 +80,9 @@ public class SVTableLayer
   implements iLayer 
 {
 
-    public final String CLASS_NAME = Constants.KEY_SVSpatialLayer;
+    public final String CLASS_NAME = Constants.KEY_SVTableLayer;
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayer");
+    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVTableLayer");
 
     protected Preferences           preferences = null;
     protected Styling                   styling = new Styling();
@@ -113,7 +114,7 @@ public class SVTableLayer
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-    } // SVSpatialLayer
+    } // SVTableLayer
 
     public SVTableLayer(SpatialView     _sView, 
                           String        _layerName,
@@ -131,7 +132,7 @@ public class SVTableLayer
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-    } // SVSpatialLayer
+    } // SVTableLayer
 
     /**
      * Read layer properties from given XML Layer object and set class variables
@@ -147,16 +148,16 @@ public class SVTableLayer
             DocumentBuilder db = dbf.newDocumentBuilder();
             doc = db.parse(new InputSource(new StringReader(_XML)));
             XPath xpath = XPathFactory.newInstance().newXPath();
-            this.fromXMLNode((Node)xpath.evaluate("/Layer", doc,
+            this.fromXML((Node)xpath.evaluate("/Layer", doc,
                                                   XPathConstants.NODE));
         } catch (XPathExpressionException xe) {
-            LOGGER.error("SVSpatialLayer(XML): XPathExpressionException " + xe.toString());
+            LOGGER.error("SVTableLayer(XML): XPathExpressionException " + xe.toString());
         } catch (ParserConfigurationException pe) {
-            LOGGER.error("SVSpatialLayer(XML): ParserConfigurationException " + pe.toString());
+            LOGGER.error("SVTableLayer(XML): ParserConfigurationException " + pe.toString());
         } catch (SAXException se) {
-            LOGGER.error("SVSpatialLayer(XML): SAXException " + se.toString());
+            LOGGER.error("SVTableLayer(XML): SAXException " + se.toString());
         } catch (IOException ioe) {
-            LOGGER.error("SVSpatialLayer(XML): IOException " + ioe.toString());
+            LOGGER.error("SVTableLayer(XML): IOException " + ioe.toString());
         }
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
@@ -165,92 +166,10 @@ public class SVTableLayer
 
     public SVTableLayer(SpatialView _sView, Node _node) {
         super(_sView, _node);
-        this.fromXMLNode(_node);
+        this.fromXML(_node);
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-    }
-
-    private void fromXMLNode(Node _node) {
-        if (_node == null || _node.getNodeName().equals("Layer") == false) {
-            return; // Should throw error
-        }
-        try {
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            this.setLayerName((String)xpath.evaluate("SVSpatialLayer/Name/text()",_node,XPathConstants.STRING));
-            this.setVisibleName((String)xpath.evaluate("SVSpatialLayer/ScreenName/text()",_node,XPathConstants.STRING));  // Temporary due to name change.
-            this.setVisibleName((String)xpath.evaluate("SVSpatialLayer/VisibleName/text()",_node,XPathConstants.STRING));
-            this.setDesc((String)xpath.evaluate("SVSpatialLayer/Description/text()",_node, XPathConstants.STRING));
-            this.setDraw(Boolean.valueOf((String)xpath.evaluate("SVSpatialLayer/Draw/text()",_node,XPathConstants.STRING)));
-            this.setSQL((String)xpath.evaluate("SVSpatialLayer/LayerSQL/text()",_node,XPathConstants.STRING));
-            this.setResultFetchSize(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/ResultFetchSize/text()",_node,XPathConstants.STRING)));
-            this.setMinResolution(Boolean.valueOf((String)xpath.evaluate("SVSpatialLayer/MinResolution/text()",_node,XPathConstants.STRING)));
-            this.setIndex((String)xpath.evaluate("SVSpatialLayer/hasIndex/text()",_node,XPathConstants.STRING));
-            this.setProject(Boolean.valueOf((String)xpath.evaluate("SVSpatialLayer/isProject/text()",_node,XPathConstants.STRING)),false);
-            
-            // Label has to be after layerSQL because it checks the SQL for the label
-            if ( this.styling == null )
-            	this.styling = new Styling();
-            this.styling.setLabelColumn((String)xpath.evaluate("SVSpatialLayer/Label/text()",_node,XPathConstants.STRING));
-            this.styling.setRotationColumn((String)xpath.evaluate("SVSpatialLayer/RotationColumn/text()",_node,XPathConstants.STRING));
-            this.styling.setRotationValue((String)xpath.evaluate("SVSpatialLayer/RotationValue/text()",_node,XPathConstants.STRING));
-            this.styling.setRotationTarget((String)xpath.evaluate("SVSpatialLayer/RotationTarget/text()",_node,XPathConstants.STRING));
-            
-            this.styling.setTextOffsetPosition((String)xpath.evaluate("SVSpatialLayer/LabelPosition/text()",_node,XPathConstants.STRING));
-            this.styling.setLabelOffset((String)xpath.evaluate("SVSpatialLayer/LabelOffset/text()",_node,XPathConstants.STRING));
-            Node labelAttributes = (Node)xpath.evaluate("SVSpatialLayer/LabelAttributes", _node,XPathConstants.NODE);
-            this.styling.setLabelAttributes(labelAttributes);
-            this.styling.setGeometryLabelPosition((String)xpath.evaluate("SVSpatialLayer/GeometryLabelPoint/text()",_node,XPathConstants.STRING));            
-            
-            this.styling.setPointSize(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/PointSize/text()",_node,XPathConstants.STRING)));
-            this.styling.setPointSizeType((String)xpath.evaluate("SVSpatialLayer/PointSizeType/text()",_node,XPathConstants.STRING));
-            this.styling.setPointSizeColumn((String)xpath.evaluate("SVSpatialLayer/PointSizeTypeColumn/text()",_node,XPathConstants.STRING));
-            this.styling.setPointColor(new Color(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/PointColor/text()",_node,XPathConstants.STRING))));
-            this.styling.setPointType((String)xpath.evaluate("SVSpatialLayer/PointType/text()",_node,XPathConstants.STRING));
-            this.styling.setPointColorType((String)xpath.evaluate("SVSpatialLayer/PointColorType/text()",_node,XPathConstants.STRING));
-            this.styling.setPointColorColumn((String)xpath.evaluate("SVSpatialLayer/PointColorColumn/text()",_node,XPathConstants.STRING));
-            
-            this.styling.setLineWidth(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/LineWidth/text()",_node,XPathConstants.STRING)));
-            this.styling.setLineColor(new Color(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/LineColor/text()",_node,XPathConstants.STRING))));
-            this.styling.setLineStrokeType((String)xpath.evaluate("SVSpatialLayer/LineStrokeType/text()",_node,XPathConstants.STRING));
-            this.styling.setLineColorColumn((String)xpath.evaluate("SVSpatialLayer/LineColorColumn/text()",_node,XPathConstants.STRING));
-            this.styling.setLineColorType((String)xpath.evaluate("SVSpatialLayer/LineColorType/text()",_node,XPathConstants.STRING));
-            this.styling.setLineTransLevel(Float.valueOf(Strings.isEmpty((String)xpath.evaluate("SVSpatialLayer/LineTransLevel/text()",_node,XPathConstants.STRING))
-                                                                ?"1.0":(String)xpath.evaluate("SVSpatialLayer/LineTransLevel/text()",_node,XPathConstants.STRING)));
-            
-            this.styling.setMarkGeoStart((String)xpath.evaluate("SVSpatialLayer/MarkGeoStart/text()",_node,XPathConstants.STRING));
-            this.styling.setMarkGeoPoints((String)xpath.evaluate("SVSpatialLayer/MarkGeoPoints/text()",_node,XPathConstants.STRING));
-            this.styling.setSegmentArrow((String)xpath.evaluate("SVSpatialLayer/MarkLineDir/text()",_node,XPathConstants.STRING));
-            this.styling.setMarkVertex((String)xpath.evaluate("SVSpatialLayer/MarkVertex/text()",_node,XPathConstants.STRING));
-            this.styling.setMarkOriented(Boolean.valueOf((String)xpath.evaluate("SVSpatialLayer/MarkOriented/text()",_node,XPathConstants.STRING)));
-            this.styling.setTextOffsetPosition((String)xpath.evaluate("SVSpatialLayer/MarkPosition/text()",_node,XPathConstants.STRING));
-            this.styling.setMarkLabelOffset((String)xpath.evaluate("SVSpatialLayer/MarkOffset/text()",_node,XPathConstants.STRING));
-            Node markLabelAttributes = (Node)xpath.evaluate("SVSpatialLayer/MarkLabelAttributes",_node,XPathConstants.NODE);
-            this.styling.setMarkLabelAttributes(markLabelAttributes,this.getSpatialView().getMapPanel().getMapBackground()); // .cloneNode(true));            
-            this.styling.setMarkSegment((String)xpath.evaluate("SVSpatialLayer/MarkSegment/text()",_node,XPathConstants.STRING));
-
-            this.styling.setShadeColumn((String)xpath.evaluate("SVSpatialLayer/ShadeColumn/text()",_node,XPathConstants.STRING));
-            this.styling.setShadeType((String)xpath.evaluate("SVSpatialLayer/ShadeType/text()",_node,XPathConstants.STRING));
-            this.styling.setShadeColor(new Color(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/ShadeColor/text()",_node,XPathConstants.STRING))));
-            this.styling.setShadeTransLevel(Float.valueOf(Strings.isEmpty((String)xpath.evaluate("SVSpatialLayer/ShadeTransLevel/text()",_node,XPathConstants.STRING))
-                                                                 ?"1.0":(String)xpath.evaluate("SVSpatialLayer/ShadeTransLevel/text()",_node,XPathConstants.STRING)));
-            
-            this.styling.setSelectionPointSize(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectPointSize/text()",_node,XPathConstants.STRING)));
-            this.styling.setSelectionLineWidth(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectLineWidth/text()",_node,XPathConstants.STRING)));
-            this.styling.setSelectionColor(new Color(Integer.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectionColor/text()",_node,XPathConstants.STRING))));
-            this.styling.setSelectionShadeTransLevel(Float.valueOf((String)xpath.evaluate("SVSpatialLayer/SelectShadeTransLevel/text()",_node,XPathConstants.STRING)));
-            this.styling.setSelectionLineStrokeType((String)xpath.evaluate("SVSpatialLayer/SelectLineStrokeType/text()",_node,XPathConstants.STRING));
-            
-            this.styling.setTextLoScale((String)xpath.evaluate("SVSpatialLayer/TextLoScale/text()",_node,XPathConstants.STRING));
-            this.styling.setTextHiScale((String)xpath.evaluate("SVSpatialLayer/TextHiScale/text()",_node,XPathConstants.STRING));
-            // Some other stuff
-            this.setProject(!(this.getSRID().equals(Constants.NULL) ||
-                              this.spatialView.getSRID().equals(Constants.NULL) ||
-                              this.getSRID().equals(this.spatialView.getSRID())),
-                            false) /* Don't recalc MBR */;
-        } catch (XPathExpressionException xe) {
-            LOGGER.error("fromXMLNode(): XPathExpressionException " + xe.toString());
-        }
     }
 
     public SVTableLayer(SVTableLayer _sLayer) {
@@ -277,79 +196,66 @@ public class SVTableLayer
         this.setPrecision(-1); // force calculation from mbr
     }
 
-    public String toXML() {
-        String SVLayerXML = super.toXML();
-        String SVSpatialLayerXML = "";
+    private void fromXML(Node _node) {
+        if (_node == null || _node.getNodeName().equals("Layer") == false) {
+            return; // Should throw error
+        }
         try {
-            SVSpatialLayerXML =
-                    String.format("<SVSpatialLayer><Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><LayerSQL>%s</LayerSQL>" +
-                                      "<Label>%s</Label><RotationColumn>%s</RotationColumn><RotationValue>%s</RotationValue><RotationTarget>%s</RotationTarget>"+
-                                      "<LabelPosition>%s</LabelPosition><LabelOffset>%s</LabelOffset><LabelAttributes>%s</LabelAttributes><GeometryLabelPoint>%s</GeometryLabelPoint>" + 
-                                      "<ResultFetchSize>%s</ResultFetchSize><MinResolution>%s</MinResolution><hasIndex>%s</hasIndex><isProject>%s</isProject>" +
-                                      "<PointSize>%s</PointSize><PointSizeType>%s</PointSizeType><PointSizeTypeColumn>%s</PointSizeTypeColumn>" +
-                                      "<PointColor>%d</PointColor><PointType>%s</PointType><PointColorColumn>%s</PointColorColumn><PointColorType>%s</PointColorType>" +
-                                      "<LineWidth>%s</LineWidth><LineColor>%d</LineColor><LineStrokeType>%s</LineStrokeType><LineTransLevel>%s</LineTransLevel><LineColorColumn>%s</LineColorColumn><LineColorType>%s</LineColorType>" +
-                                      "<ShadeColumn>%s</ShadeColumn><ShadeType>%s</ShadeType><ShadeColor>%d</ShadeColor><ShadeTransLevel>%s</ShadeTransLevel>" +
-                                      "<SelectPointSize>%s</SelectPointSize><SelectLineWidth>%s</SelectLineWidth><SelectionColor>%d</SelectionColor><SelectShadeTransLevel>%s</SelectShadeTransLevel>" +
-                                      "<MarkGeoStart>%s</MarkGeoStart><MarkGeoPoints>%s</MarkGeoPoints><MarkVertex>%s</MarkVertex><MarkOriented>%s</MarkOriented><MarkLineDir>%s</MarkLineDir><MarkPosition>%s</MarkPosition><MarkOffset>%s</MarkOffset>" + 
-                                      "<MarkLabelAttributes>%s</MarkLabelAttributes><MarkSegment>%s</MarkSegment>" +
-                                      "<TextLoScale>%s</TextLoScale><TextHiScale>%s</TextHiScale>" +
-                                  "</SVSpatialLayer>",
-                        this.layerName, // should always be not null
-                        this.getVisibleName(), // Could be empty but shouldn't
-                        this.getDesc(), // Could be empty
-                        String.valueOf(this.draw), 
-                        this.getLayerSQL(),
-                        this.styling.getLabelColumn(), this.styling.getRotationColumn(),
-                        this.styling.getRotationValue().toString(),
-                        this.styling.getRotationTarget().toString(),
-                        this.styling.getLabelPosition().toString(),
-                        String.valueOf(this.styling.getLabelOffset()),
-                        LabelStyler.toXML(this.styling.getLabelAttributes()),
-                        this.styling.getGeometryLabelPosition().toString(),
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            
+            this.setLayerName(           (String)xpath.evaluate("SVTableLayer/Name/text()",_node,XPathConstants.STRING));
+            this.setVisibleName(         (String)xpath.evaluate("SVTableLayer/VisibleName/text()",_node,XPathConstants.STRING));
+            this.setDesc(                (String)xpath.evaluate("SVTableLayer/Description/text()",_node, XPathConstants.STRING));
+            this.setDraw(Boolean.valueOf((String)xpath.evaluate("SVTableLayer/Draw/text()",_node,XPathConstants.STRING)));
+            this.setResultFetchSize(
+                 Integer.valueOf(
+                         Strings.isEmpty((String)xpath.evaluate("SVTableLayer/ResultFetchSize/text()",_node,XPathConstants.STRING))
+                         ? "0" :         (String)xpath.evaluate("SVTableLayer/ResultFetchSize/text()",_node,XPathConstants.STRING)));
+            this.setMinResolution(
+                         Boolean.valueOf((String)xpath.evaluate("SVTableLayer/MinResolution/text()",_node,XPathConstants.STRING)));
+            this.setIndex(               (String)xpath.evaluate("SVTableLayer/hasIndex/text()",_node,XPathConstants.STRING));
+            this.setProject(
+                         Boolean.valueOf((String)xpath.evaluate("SVTableLayer/isProject/text()",_node,XPathConstants.STRING)),false);
+            /*
+            this.setProject(!(this.getSRID().equals(Constants.NULL) ||
+                              this.spatialView.getSRID().equals(Constants.NULL) ||
+                              this.getSRID().equals(this.spatialView.getSRID())),
+                             false);
+            */
+            this.setSQL((String)xpath.evaluate("SVTableLayer/SQL/text()",_node,XPathConstants.STRING));
 
-                        String.format("%d", this.resultFetchSize),
-                        String.valueOf(this.minResolution),
-                        String.valueOf(this.hasIndex()),
-                        String.valueOf(this.getProject()),
-                        String.format("%d", this.styling.getPointSize(4)),
-                        this.styling.getPointSizeType().toString(),
-                        this.styling.getPointSizeColumn(),          
-                        this.styling.getPointColor(null).getRGB(),
-                        this.styling.getPointType().toString(),
-                        this.styling.getPointColorColumn(), 
-                        this.styling.getPointColorType().toString(),
-                        String.format("%d", this.styling.getLineWidth()),
-                        this.styling.getLineColor(null).getRGB(),
-                        this.styling.getLineStrokeType().toString(),
-                        this.styling.getLineTransLevel(),
-                        this.styling.getLineColorColumn(), 
-                        this.styling.getLineColorType().toString(),
-                        this.styling.getShadeColumn(), 
-                        this.styling.getShadeType().toString(),
-                        this.styling.getShadeColor(null).getRGB(), 
-                        this.styling.getShadeTransLevel(),
-                        String.format("%d", this.styling.getSelectionPointSize()),
-                        String.format("%d", this.styling.getSelectionLineWidth()),
-                        this.styling.getSelectionColor().getRGB(),
-                        this.styling.getSelectionShadeTransLevel(),
-                        String.valueOf(this.styling.getMarkGeoStart()),
-                        String.valueOf(this.styling.getMarkGeoPoints()),
-                        this.styling.getMarkVertex().toString(),
-                        String.valueOf(this.styling.isMarkOriented()),
-                        this.styling.getSegmentArrow().toString(),
-                        this.styling.getLabelPosition().toString(),
-                        String.valueOf(this.styling.getMarkLabelOffset()),
-                        LabelStyler.toXML(this.styling.getMarkLabelAttributes(this.getSpatialView().getMapPanel().getMapBackground())),
-                        this.styling.getMarkSegment().toString(),
-                        String.valueOf(this.styling.getTextLoScale()),
-                        String.valueOf(this.styling.getTextHiScale()));
+            Node stylingNode = (Node)xpath.evaluate("SVTableLayer/Styling",_node,XPathConstants.NODE);
+            this.styling = new Styling(stylingNode);
+
+        } catch (XPathExpressionException xe) {
+            LOGGER.error("fromXMLNode(): XPathExpressionException " + xe.toString());
+        }
+    }
+
+    public String toXML() {
+        String xml = super.toXML();
+        try {
+            xml += "<SVTableLayer>";
+            xml += String.format("<Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><SQL>%s</SQL>",
+          		               this.getLayerName(),
+          		               this.getVisibleName(),
+          		               this.getDesc(),
+                               String.valueOf(this.draw), 
+                               this.getLayerSQL()
+                   );
+            xml += String.format("<ResultFetchSize>%s</ResultFetchSize><MinResolution>%s</MinResolution><hasIndex>%s</hasIndex><isProject>%s</isProject>",
+                                 String.format("%d", this.resultFetchSize),
+                                 String.valueOf(this.minResolution),
+                                 String.valueOf(this.hasIndex()),
+                                 String.valueOf(this.getProject()));            
+            xml += this.styling.toXML(Preferences.getInstance().getMapBackground());
+            xml += "</SVTableLayer>";
         } catch (Exception e) {
             LOGGER.error("Error saving " + this.getVisibleName() + " (" +
                                this.getLayerName() + ") : " +
                                e.getCause().getLocalizedMessage());
         }
-        return SVLayerXML + SVSpatialLayerXML;
+        return xml;
     }
 
     public void savePropertiesToDisk() {
@@ -475,7 +381,7 @@ public class SVTableLayer
         super.setConnection(_connName);
         // Check if connection/schema has changed
         if ( ! oldSchema.equalsIgnoreCase(super.getSchemaName()) ) {
-            // Should change SVSpatialLayer SQL if has schema name?
+            // Should change SVTableLayer SQL if has schema name?
             String sql = this.getSQL();
             if (sql.contains(oldSchema+".")) {
                 this.layerSQL = sql.replace(oldSchema+".", super.getSchemaName()+".");
@@ -542,7 +448,7 @@ public class SVTableLayer
             this.indexExists = false;
         }
         try {
-            LOGGER.debug("SVSpatialLayer(" + 
+            LOGGER.debug("SVTableLayer(" + 
                          this.getLayerNameAndConnectionName() + 
                          ").setIndex.isSpatiallyIndexed()");
             this.indexExists = Queries.isSpatiallyIndexed(conn,
@@ -550,9 +456,9 @@ public class SVTableLayer
                                                                super.getObjectName(),
                                                                super.getGeoColumn(),
                                                                super.getSRID());                
-            LOGGER.debug("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
+            LOGGER.debug("SVTableLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
         } catch (IllegalArgumentException iae) {
-            LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
+            LOGGER.warn("SVTableLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
             this.indexExists = false;
         }
     }
@@ -585,7 +491,7 @@ public class SVTableLayer
         //
         Envelope lMBR = new Envelope(this.getDefaultPrecision());
         
-        LOGGER.debug("SVSpatialLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
+        LOGGER.debug("SVTableLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
                    "\nSRIDTYPE=" + this.getSRIDType().toString()+
                    "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
         
@@ -603,7 +509,7 @@ public class SVTableLayer
                                                        this.getGeoColumn(),
                                                        this.getSRID(),
                                                        String.valueOf(_targetSRID))); 
-                LOGGER.debug("SVSpatialLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
+                LOGGER.debug("SVTableLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
                 if ( lMBR.isSet() ) {
                     super.setMBR(lMBR);
                     return true;
@@ -668,7 +574,7 @@ public class SVTableLayer
             LOGGER.warn("Failed to get MBR Through Sampling (" + e.getMessage() + ").");
         }
         
-        LOGGER.debug("SVSpatialLayer.setLayerMBR() setMBR=" + lMBR.toString());        
+        LOGGER.debug("SVTableLayer.setLayerMBR() setMBR=" + lMBR.toString());        
         if ( _defaultMBR!=null && 
              _defaultMBR.isSet() ) {
             super.setMBR(_defaultMBR);
@@ -693,7 +599,7 @@ public class SVTableLayer
                                        super.getObjectName(),
                                        true /* _supportedDataTypes */ );
         } catch (Exception e) {
-            LOGGER.error("SVSpatialLayer.getInitSQL GetColumns Exception: " + e.getMessage());
+            LOGGER.error("SVTableLayer.getInitSQL GetColumns Exception: " + e.getMessage());
             return null;
         }
         
@@ -939,14 +845,14 @@ public class SVTableLayer
      * @param SQL
      */
     public void setSQL(String _SQL) {
-        LOGGER.debug("SVSpatialLayer.setSQL(" + _SQL +") - START");
+        LOGGER.debug("SVTableLayer.setSQL(" + _SQL +") - START");
         if (Strings.isEmpty(_SQL) ||
             (!_SQL.equalsIgnoreCase(this.layerSQL))) {
             LOGGER.debug("this.layerSQL = _SQL");
             this.layerSQL = _SQL;
             this.wrappedSQL = "";
         }
-        LOGGER.debug("SVSpatialLayer.setSQL() finished");
+        LOGGER.debug("SVTableLayer.setSQL() finished");
     }
 
     /**
@@ -958,12 +864,12 @@ public class SVTableLayer
     }
     
     public String getSQL() {
-        LOGGER.debug("SVSpatialLayer.getSQL() - layerSQL (BEFORE)= " + this.layerSQL);
+        LOGGER.debug("SVTableLayer.getSQL() - layerSQL (BEFORE)= " + this.layerSQL);
         if (Strings.isEmpty(this.layerSQL)) {
             this.setInitSQL();
             this.wrappedSQL = "";
         }
-        LOGGER.debug("SVSpatialLayer.getSQL() - layerSQL (AFTER)= " + this.layerSQL);
+        LOGGER.debug("SVTableLayer.getSQL() - layerSQL (AFTER)= " + this.layerSQL);
         return this.layerSQL;
     }
 
@@ -1059,12 +965,12 @@ public class SVTableLayer
             // Make sure layer's connection has not been lost
             conn = super.getConnection();
             if ( conn == null ) {
-                LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's database connection.");
+                LOGGER.warn("SVTableLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's database connection.");
                 return false;
             }
         } catch (IllegalStateException ise) {
             // Thrown by super.getConnection() indicates starting up, so we do nothing
-            LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getVisibleName() + "). Exception getting layer's database connection." + ise.toString());
+            LOGGER.warn("SVTableLayer.drawLayer(" + this.getVisibleName() + "). Exception getting layer's database connection." + ise.toString());
             return false;
         }
         
@@ -1083,7 +989,7 @@ public class SVTableLayer
         //
         String sql = this.getSQL();
         if (Strings.isEmpty(sql)) {
-            LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's SQL statement.");
+            LOGGER.warn("SVTableLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's SQL statement.");
             return false;
         }
         
@@ -1095,7 +1001,7 @@ public class SVTableLayer
         }
         
         if (Strings.isEmpty(sql)) {
-            LOGGER.warn("SVSpatialLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Wrapping of layer's SQL statement failed.");
+            LOGGER.warn("SVTableLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Wrapping of layer's SQL statement failed.");
             return false;
         }
 
@@ -1125,37 +1031,56 @@ public class SVTableLayer
         //
         try {
             Connection conn = super.getConnection();
+            
             String layerSql = this.getSQL();
             if (Strings.isEmpty(layerSql)) {
-                return new LinkedHashMap<String, String>(Queries.getColumnsAndTypes(conn,
-                                                                                         this.getSchemaName(),
-                                                                                         this.getObjectName(),
-                                                                                         _onlyNumbersDatesAndStrings,
-                                                                                         _fullDataType));
+            	// No SQL, so no possible modification of columns by user
+                LinkedHashMap<String, String> colsAndTypes =
+                              Queries.getColumnsAndTypes(conn,
+                                                         this.getSchemaName(),
+                                                         this.getObjectName(),
+                                                         _onlyNumbersDatesAndStrings,
+                                                         _fullDataType);
+                return colsAndTypes;
             }
+            // User may have modified the SQL, so execute it and discover columns and types...
+            // We have to remove all spatial WHERE clause predicates by replacing them with 1=0.
+            // The use of the PrepareStatement metadata is a cool way of accessing actual columns
+            // but it is dangerous as it has to assume that certain where clause predicates exist
+            // with exact string value. 
+            // If user has not modified SQL in any way the processing could fail. User should limit
+            // themselves to only adding or deleting columns not join information at all.
+            //
             LinkedHashMap<String, String> columnsTypes = new LinkedHashMap<String,String>(255);
             try {
-                LOGGER.debug("SQL Before="+layerSql + "\nTReplacing"+"SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'");
-                String sql = ""; 
-                if ( this.isSTGeometry() ) {
-                    sql = layerSql.replace("SDO_FILTER(t." + this.getGeoColumn() + ",?) = 'TRUE'","1=0");
+            	
+                String sql = "";
+                
+                if ( this.hasIndex() ) {
+                  LOGGER.debug("SQL Before="+layerSql + "\nReplacing"+"SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'");
+                  if ( this.isSTGeometry() )
+                      sql = layerSql.replace("SDO_FILTER(t." + this.getGeoColumn() + ",?) = 'TRUE'","1=0");
+                  else
+                    sql = layerSql.replace("SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'","1=0");                  
                 } else {
-                    sql = layerSql.replace("SDO_FILTER(t." + this.getGeoColumn() + ",?,?) = 'TRUE'","1=0");
+                    LOGGER.debug("SQL Before="+layerSql + "\nReplacing"+"MDSYS.SDO_GEOM.RELATE(t." + this.getGeoColumn() + ",'ANYINTERACT',?,"+this.getTolerance()+") = 'TRUE' with 1=0");
+                    sql = layerSql.replace("MDSYS.SDO_GEOM.RELATE(t." + this.getGeoColumn() + ",'ANYINTERACT',?,"+this.getTolerance()+") = 'TRUE'","1=0");
                 }
-                LOGGER.debug("SQL After ="+sql);
+
+                boolean include = false;
+                String  colName = "",
+                    colTypeName = "";
+
                 OraclePreparedStatement pstmt;
                 pstmt = (OraclePreparedStatement)conn.prepareStatement(sql);
-                LOGGER.debug("prepared");
-                boolean include = false;
-                String colName = "",
-                       colTypeName = "";
-                ResultSetMetaData rsmd = pstmt.getMetaData();
-                LOGGER.debug("getMetaData()");
+                ResultSetMetaData rsmd = pstmt.getMetaData();                
+                
                 for (int col=1;col<=rsmd.getColumnCount();col++) {
+                	
                     include     = false;
                     colName     = rsmd.getColumnLabel(col);
                     colTypeName = rsmd.getColumnTypeName(col);
-                    LOGGER.debug("columnsTypes.put("+colName+","+colTypeName+")");
+                    
                     if ( _onlyNumbersDatesAndStrings ) {
                         include = colTypeName.startsWith("TIMESTAMP") ||
                                   colTypeName.startsWith("INTERVAL")  ||
@@ -1172,6 +1097,7 @@ public class SVTableLayer
                     } else {
                         include = true;
                     }
+                    
                     if ( include ) {
                         if ( _fullDataType ) {
                             if (rsmd.getPrecision(col)==0) {
@@ -1188,7 +1114,13 @@ public class SVTableLayer
                 }
                 pstmt.close();
             } catch (SQLException e) {
-                LOGGER.debug("Problem checking draw SQL - " + e.toString());
+                LOGGER.info("Can't identify columns in SQL");
+                e.printStackTrace();
+                return Queries.getColumnsAndTypes(conn,
+                          this.getSchemaName(),
+                          this.getObjectName(),
+                               _onlyNumbersDatesAndStrings,
+                               _fullDataType);
             }
             return columnsTypes;
         } catch (Exception ex) {
@@ -1205,7 +1137,7 @@ public class SVTableLayer
     public SVTableLayer createCopy() 
     throws Exception 
     {
-        // _renderOnly is ignored for SVSpatialLayers
+        // _renderOnly is ignored for SVTableLayers
         //
         SVTableLayer newLayer = null;
 

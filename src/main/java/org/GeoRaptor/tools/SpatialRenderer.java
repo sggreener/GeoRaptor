@@ -605,8 +605,6 @@ public class SpatialRenderer
                 }
             }
 
-System.out.println("visualformat = " + visualFormat.toString());
-
             switch ( visualFormat )
             {
             case SDO_GEOMETRY:
@@ -633,7 +631,6 @@ System.out.println("visualformat = " + visualFormat.toString());
                 }
                 if ( visualFormat == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(stValue) ) {
                     visualFormat = Constants.renderType.WKT;
-System.out.println("WKT");
                     WKT w = new WKT();
                     clipText = new String(w.fromStruct(stValue));
                 } else {

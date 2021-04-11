@@ -68,7 +68,12 @@ extends SVTableLayer
                             String        _querySQL,
                             boolean       _computeMBR) 
     {
-        super(_sView, _name, _screenName, _desc, _me, _draw);
+        super(_sView, 
+              _name, 
+              _screenName, 
+              _desc, 
+              _me, 
+              _draw);
         this.setSQL(_querySQL);
         super.setMBRRecalculation(_computeMBR);
         super.objectType = Constants.OBJECT_TYPES.ADHOCSQL;
@@ -83,7 +88,7 @@ extends SVTableLayer
      */
     public SVWorksheetLayer(SpatialView _sView, Node _node) {
         super(_sView, _node);
-        this.fromXMLNode(_node);
+        this.fromXML(_node);
     }
 
     /** Copy constructor
@@ -142,8 +147,8 @@ extends SVTableLayer
      * @return if return false, something was wrong (for example, Connection with DB faild)
      */
     @Override
-    public boolean drawLayer(Envelope _mbr, 
-                             Graphics2D      _g2) 
+    public boolean drawLayer(Envelope   _mbr, 
+                             Graphics2D _g2) 
     {
         Envelope layerMBR = super.getMBR();
         LOGGER.debug("WorksheetLayer.drawLayer(" + _mbr.toString());
@@ -180,7 +185,7 @@ extends SVTableLayer
         Envelope geoMBR = new Envelope(super.getDefaultPrecision()),
                    newLayerMBR = new Envelope(super.getDefaultPrecision());
         String     labelValue = null,
-                   shadeValue = null,
+              shadeColorValue = null,
               pointColorValue = null,
                lineColorValue = null;
         Color      shadeColor = null,
@@ -266,30 +271,30 @@ extends SVTableLayer
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = rSet.getString(this.styling.getPointColorColumn().replace("\"",""));
+                        pointColor = Colours.fromRGBa(pointColorValue);
                     } catch (Exception e) {
-                        pointColorValue = "0,0,0,255";
+                        pointColor = Color.BLACK;
                     }
-                    pointColor = Colours.fromRGBa(shadeValue);
                 }
                 
                 if (this.styling.getLineColorColumn() != null && this.styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = rSet.getString(this.styling.getLineColorColumn().replace("\"",""));
+                        lineColor = Colours.fromRGBa(lineColorValue);
                     } catch (Exception e) {
-                        lineColorValue = "0,0,0,255";
+                        lineColor = Color.BLACK;
                     }
-                    lineColor = Colours.fromRGBa(shadeValue);
                 }  
 
                 if (this.styling.getShadeColumn() != null && this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
-                        shadeValue = rSet.getString(this.styling.getShadeColumn().replace("\"",""));
+                    	shadeColorValue = rSet.getString(this.styling.getShadeColumn().replace("\"",""));
+                        shadeColor = Colours.fromRGBa(shadeColorValue);
                     } catch (Exception e) {
-                        shadeValue = "0,0,0,255";
+                        shadeColor = Color.BLACK;
                     }
-                    shadeColor = Colours.fromRGBa(shadeValue);
                 }
 
                 if (this.styling.getPointSizeColumn() != null && this.styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
@@ -457,11 +462,9 @@ extends SVTableLayer
         }
     }
 
-    //@Override
     public ArrayList<QueryRow> queryByPoint(Point2D _worldPoint, 
                                             int     _numSearchPixels) 
     {
-        LOGGER.debug("queryByPoint");
         int numPixels = _numSearchPixels == 0 ? 3 : _numSearchPixels;
 
         // list of return rows
@@ -489,19 +492,16 @@ extends SVTableLayer
             // in X and Y squared (ie pythagoras)
             //
             Point.Double pixelSize = this.spatialView.getMapPanel().getPixelSize();
-LOGGER.debug("queryByPoint pixelSize: "+pixelSize.toString());
             mbr.setMBR(_worldPoint.getX() - pixelSize.getX() * numPixels,
                        _worldPoint.getY() - pixelSize.getY() * numPixels,
                        _worldPoint.getX() + pixelSize.getX() * numPixels,
                        _worldPoint.getY() + pixelSize.getY() * numPixels);
-LOGGER.debug("queryByPoint mbr: "+mbr.toString());
             // Get SQL
             //
             String qSql = this.getSQL();
             if (Strings.isEmpty(qSql)) {
                 return null;
             }
-LOGGER.debug("queryByPoint sql: "+qSql);
 
             long executeStart = 0,
                   executeTime = 0;
@@ -515,20 +515,17 @@ LOGGER.debug("queryByPoint sql: "+qSql);
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)rSet.getMetaData(); // for column name
 
             executeTime = ( System.currentTimeMillis() - executeStart );
-
-LOGGER.debug("SQL executed in " + executeTime);
             
             Struct     stGeom = null;
             long dataReadTime = 0,
                 dataReadStart = 0,
                 totalFeatures = 0;
-            RowId      rid = null;
-            String   rowID = "",
-                     value = "",
-                columnName = "",
-            columnTypeName = "";
-            String geoColumn = super.getGeoColumn();
-            Object objValue = null;
+            String      rowID = "",
+                        value = "",
+                   columnName = "",
+               columnTypeName = "";
+            String  geoColumn = super.getGeoColumn();
+            Object   objValue = null;
             
             // Process Rows
             while ((rSet.next()) &&
@@ -565,9 +562,6 @@ LOGGER.debug("SQL executed in " + executeTime);
                                   } else {
                                       if ( rSetM.getColumnType(col) == Types.ROWID ) {
                                     	  continue;
-                                          //rid   = rSet.getRowId(col); 
-                                          //rowID = rid.toString();
-                                          //value = rowID;
                                       } else {
                                           value = SQLConversionTools.convertToString(oConn, columnName, objValue);
                                           if (value == null) {
@@ -620,7 +614,7 @@ LOGGER.debug("SQL executed in " + executeTime);
         return this.minResolution;
     }
 
-    private void fromXMLNode(Node _node) {
+    private void fromXML(Node _node) {
         if (_node == null || _node.getNodeName().equals("Layer") == false) {
             //System.out.println("XML node is null or not a Layer");
             return; // Should throw error
@@ -635,8 +629,20 @@ LOGGER.debug("SQL executed in " + executeTime);
 
     @Override
     public String toXML() {
-        String SVLayer_SpatialLayerXML = super.toXML();
-        return SVLayer_SpatialLayerXML + String.format("<SVWorksheetLayer><SQL>%s</SQL></SVWorksheetLayer>",this.getSQL());
+        String xml = super.toXML();
+        xml += "<SVWorksheetLayer>";
+        xml += String.format("<SQL>%s</SQL>",this.getSQL());
+        /*
+        xml += String.format("<Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><SQL>%s</SQL>",
+	               this.getLayerName(),
+	               this.getVisibleName(),
+	               this.getDesc(),
+                   String.valueOf(this.draw), 
+                   this.getSQL()
+        );
+        */
+        xml += "</SVWorksheetLayer>";
+        return xml;
     }
 
     @Override

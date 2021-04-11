@@ -113,9 +113,9 @@ public class SVDrawQueries {
                 
                 if (styling.getLabelColumn() != null) {
                     labelValue = SQLConversionTools.convertToString(
-                    		oConn,
-                    		styling.getLabelColumn(), 
-                    		ors.getObject(styling.getLabelColumn().replace("\"","")));
+                    		        oConn,
+                    		        styling.getLabelColumn(), 
+                    		        ors.getObject(styling.getLabelColumn().replace("\"","")));
                 }
                 
                 if (styling.getRotationColumn() != null) {

@@ -3,6 +3,7 @@ package org.GeoRaptor.sql;
 import java.awt.geom.Point2D;
 import java.sql.Array;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -222,7 +223,6 @@ public class Queries {
           throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
                                              propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
       }
-      
       String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
       String columns = "";
       String sql = 
@@ -276,6 +276,7 @@ public class Queries {
       throws IllegalArgumentException,
              SQLException
     {
+
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
         }
@@ -350,6 +351,7 @@ public class Queries {
         } 
         entriesRSet.close();
         entriesRSet = null;
+        
         return new LinkedHashMap<String, String>(columnTypes);
     }
     
@@ -1312,6 +1314,18 @@ public class Queries {
           throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
                                              propertyManager.getMsg("METADATA_TABLE_COLUMN_3")));
         }
+        
+        // From 19 onwards SDO_FILTER etc will work even if column not indexed
+        // If so, treat as if indexed (to minimise code complexity)
+        int dbVersion;
+		try {
+			dbVersion = Queries.getDBVersion(_conn);
+	        if ( dbVersion >= 19 )
+	        	return true;
+		} catch (SQLException e) {
+			// fall through to alternate detection method. 
+		}
+
         String fullName =
             Strings.isEmpty(_schemaName) 
                           ? _objectName :
@@ -1342,7 +1356,7 @@ public class Queries {
             String msg = sqle.getMessage();
             if ( !Strings.isEmpty(msg) ) {
                 msg = msg.startsWith("ORA-13226: interface not supported without a spatial index") 
-                      ? "ORA-13226: interface not supported without a spatial index"
+                      ? fullName + " has no spatial index."
                       : msg;
             }
             LOGGER.warn(msg);
@@ -2166,6 +2180,7 @@ LOGGER.debug("=================execute SQL====================");
         
         if ( _conn==null )
             throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","RTree Extent SQL"));
+        
         if (Strings.isEmpty(_schemaName) ) 
             throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
                                                                       propertyManager.getMsg("METADATA_TABLE_COLUMN_0")));
@@ -2204,6 +2219,40 @@ LOGGER.debug("=================execute SQL====================");
         return totalRows;
     }
 
+    public static int getDBVersion(Connection _conn) 
+    throws SQLException
+    {
+        if ( propertyManager == null ) 
+            propertyManager = new PropertiesManager(propertiesFile);
+        
+        if (_conn == null)
+            throw new IllegalArgumentException(propertyManager.getMsg(propertyManager.getMsg("MD_NO_CONNECTION_FOR","SRID WKT SQL")));
+
+        DatabaseMetaData meta = _conn.getMetaData();
+        
+        int majorVersion = -1;
+   	    try 
+   	    {
+   	    	majorVersion = meta.getDatabaseMajorVersion();
+   	   	    return majorVersion;
+   	    } catch (Exception e) {
+   	      // Do nothing as we will fall through to running SQL
+   	    }
+        Statement st = _conn.createStatement();
+        String sql = "select to_number(substr(version,1,INSTR(version,'.')-1)) from product_component_version where product like 'Oracle Database%'";
+        ResultSet rSet = st.executeQuery(sql);
+        if (!rSet.isBeforeFirst() ) {    
+        	majorVersion = -1;
+        } else if (rSet.next()) {
+        	majorVersion = rSet.getInt(1);
+            if ( rSet.wasNull() )
+            	majorVersion = -1;
+        } 
+        rSet.close(); rSet = null;
+        st.close();     st = null;
+   	    return majorVersion;
+
+    }
     /**
      * @method getSdoVersion
      * @param _conn

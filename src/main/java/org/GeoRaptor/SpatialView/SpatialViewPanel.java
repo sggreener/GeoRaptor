@@ -1326,9 +1326,9 @@ extends JPanel
         //
         String schemaTableColumn =
             Strings.append(_schemaName, Strings.append(_objectName,
-                                                             columnName,
-                                                             Constants.TABLE_COLUMN_SEPARATOR),
-                                                Constants.TABLE_COLUMN_SEPARATOR);
+                                                       columnName,
+                                                       Constants.TABLE_COLUMN_SEPARATOR),
+                           Constants.TABLE_COLUMN_SEPARATOR);
         MetadataEntry mEntry = null;
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
@@ -1360,6 +1360,7 @@ extends JPanel
                 return LayerReturnCode.Fail;
             }
         }
+        
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                 mEntry.getObjectName(), 
                                                 mEntry.getColumnName());
@@ -1391,13 +1392,16 @@ extends JPanel
         // Need to construct using _objectType ????
         //
         SVTableLayer layer = new SVTableLayer(this.activeView,  // Use activeView temporarily
-                                                  layerName, 
-                                                  SVPanelPreferences.isSchemaPrefix()
-                                                     ? layerName : Strings.append(mEntry.getObjectName(),
-                                                                                  mEntry.getColumnName(),"."), 
-                                                  layerName,
-                                                  mEntry,
-                                                  true /* draw - should be GeoRaptor Property */);
+                                              layerName, 
+                                              SVPanelPreferences.isSchemaPrefix()
+                                                ? layerName 
+                                                : Strings.append(mEntry.getObjectName(),
+                                                                 mEntry.getColumnName(),
+                                                                 "."), 
+                                              layerName,
+                                              mEntry,
+                                              true /* draw - should be GeoRaptor Property */
+                                              );
         
         // See if we can discover a better MBR than that derived from metadata.
         if (layer.setLayerMBR(mEntry.getMBR(),

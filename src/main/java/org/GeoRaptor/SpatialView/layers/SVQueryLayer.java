@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.geotools.util.logging.Logger;
 import org.w3c.dom.Node;
 
+import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
@@ -73,6 +75,8 @@ implements iLayer
     protected Constants.SDO_OPERATORS 
                                sdoOperator = Constants.SDO_OPERATORS.ANYINTERACT;
     
+    protected String layerCopySuffix = " (COPY)";  // Should be Tools>Preferences>GeoRaptor
+
     protected    String                sql = "";
 
     protected int          resultFetchSize = 100;        // Fetch size for ResultSet
@@ -158,6 +162,7 @@ implements iLayer
         this.setDraw(_sLayer.isDraw());
         this.setStyling(_sLayer.getStyling());
         this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+        this.styling.setTextHiScale(null); // Set to max scale
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
 	}
@@ -203,6 +208,12 @@ implements iLayer
         return this.sdoOperator;
     }
 
+    private boolean isProjected() {
+        boolean project = super.spatialView.getSRID().equals(Constants.NULL) == false && 
+                          super.getSRID().equals(Constants.NULL) == false;
+		return project;
+    }
+    
     public void setSQL(String _layerSQL) {
         if ( Strings.isEmpty(_layerSQL))
         	this.sql = this.generateSQL(this.isBuffered(),this.isProjected());
@@ -217,11 +228,15 @@ implements iLayer
     	return this.sql;
     }
 
-    private boolean isProjected() {
-        boolean project = super.spatialView.getSRID().equals(Constants.NULL) == false && 
-                          super.getSRID().equals(Constants.NULL) == false;
-		return project;
-    }
+	@Override
+	public String getInitSQL(String _geoColumn) {
+		return this.getSQL();
+	}
+
+	@Override
+	public void setInitSQL() {
+        this.setSQL(this.generateSQL(this.isBuffered(),this.isProjected()));
+	}
     
     public String generateSQL(boolean _buffered,
     		                  boolean _project)
@@ -940,7 +955,7 @@ implements iLayer
     public JGeometry getGeometry() {
         return this.queryGeometry;
     }
-    
+
     private void fromXML(Node _node)
     {
       if (_node == null || _node.getNodeName().equals("Layer") == false) {
@@ -949,16 +964,31 @@ implements iLayer
       
       try {
           XPath xpath = XPathFactory.newInstance().newXPath();
-          this.setLayerName((String)xpath.evaluate("SVQueryLayer/Name/text()",_node,XPathConstants.STRING));
-          this.setVisibleName((String)xpath.evaluate("SVQueryLayer/VisibleName/text()",_node,XPathConstants.STRING));
-          this.setDesc((String)xpath.evaluate("SVQueryLayer/Description/text()",_node, XPathConstants.STRING));
-          this.setDraw(Boolean.valueOf((String)xpath.evaluate("SVQueryLayer/Draw/text()",_node,XPathConstants.STRING)));
-          this.setSQL((String)xpath.evaluate("SVQueryLayer/SQL/text()",_node,XPathConstants.STRING));
-          this.setBuffered((String)xpath.evaluate("SVQueryLayer/isBuffered/text()",_node,XPathConstants.STRING));
-          this.setBufferDistance((String)xpath.evaluate("SVQueryLayer/bufferDistance/text()",_node,XPathConstants.STRING));
-          this.setSdoOperator((String)xpath.evaluate("SVQueryLayer/sdoOperator/text()",_node,XPathConstants.STRING));
+                  		  
+          this.setLayerName(       (String)xpath.evaluate("SVQueryLayer/Name/text()",_node,XPathConstants.STRING));
+          this.setVisibleName(     (String)xpath.evaluate("SVQueryLayer/VisibleName/text()",_node,XPathConstants.STRING));
+          this.setDesc(            (String)xpath.evaluate("SVQueryLayer/Description/text()",_node, XPathConstants.STRING));
+          this.setDraw(
+        		  Boolean.valueOf( (String)xpath.evaluate("SVQueryLayer/Draw/text()",_node,XPathConstants.STRING)));
+          this.setSQL(             (String)xpath.evaluate("SVQueryLayer/SQL/text()",_node,XPathConstants.STRING));
+          this.setResultFetchSize(
+                Integer.valueOf(
+                   Strings.isEmpty((String)xpath.evaluate("SVQueryLayer/ResultFetchSize/text()",_node,XPathConstants.STRING))
+                   ? "0" :         (String)xpath.evaluate("SVQueryLayer/ResultFetchSize/text()",_node,XPathConstants.STRING)));
+          this.setMinResolution(
+                   Boolean.valueOf((String)xpath.evaluate("SVQueryLayer/MinResolution/text()",_node,XPathConstants.STRING)));
+          this.setIndex(           (String)xpath.evaluate("SVQueryLayer/hasIndex/text()",_node,XPathConstants.STRING));
+          this.setProject(
+                   Boolean.valueOf((String)xpath.evaluate("SVQueryLayer/isProject/text()",_node,XPathConstants.STRING)),false);
+          this.setBuffered(        (String)xpath.evaluate("SVQueryLayer/isBuffered/text()",_node,XPathConstants.STRING));
+          this.setBufferDistance(  (String)xpath.evaluate("SVQueryLayer/bufferDistance/text()",_node,XPathConstants.STRING));
+          this.setSdoOperator(     (String)xpath.evaluate("SVQueryLayer/sdoOperator/text()",_node,XPathConstants.STRING));
           this.setRelationshipMask((String)xpath.evaluate("SVQueryLayer/relationshipMask/text()",_node,XPathConstants.STRING));
-          String jGeomAsByteStr = (String)xpath.evaluate("SVQueryLayer/geometry/text()",_node,XPathConstants.STRING);
+                    
+          Node stylingNode = (Node)xpath.evaluate("SVQueryLayer/Styling",_node,XPathConstants.NODE);
+          this.styling = new Styling(stylingNode);
+          
+          String jGeomAsByteStr =  (String)xpath.evaluate("SVQueryLayer/geometry/text()",_node,XPathConstants.STRING);          
           // Convert string back to JGeometry
           if ( !Strings.isEmpty(jGeomAsByteStr) ) 
           {
@@ -975,6 +1005,7 @@ implements iLayer
               }
           }
           this.setDrawQueryGeometry((String)xpath.evaluate("SVQueryLayer/drawQueryGeometry/text()",_node,XPathConstants.STRING));
+
       } catch (XPathExpressionException xe) {
           LOGGER.error("Error loading Query layer XML (" +xe.getMessage() + ")");
       }
@@ -993,24 +1024,32 @@ implements iLayer
       } catch (Exception e) {
           LOGGER.warn(this.getVisibleName() + ": Could not convert query JGeometry into byte array (" + e.getMessage() + ")");          
       }
-      
+
       String xml = super.toXML();
-      xml += this.getStyling().toString();
-      xml += String.format("<SVQueryLayer><Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><SQL>%s</SQL>",
+      xml += "<SVQueryLayer>";
+      xml += String.format("<Name>%s</Name><VisibleName>%s</VisibleName><Description>%s</Description><Draw>%s</Draw><SQL>%s</SQL>",
     		               this.getLayerName(),
     		               this.getVisibleName(),
     		               this.getDesc(),
-    		               this.isDraw(),
-                           this.getSQL()
-                           );
-      
-      xml += String.format("<isBuffered>%s</isBuffered><bufferDistance>%s</bufferDistance><sdoOperator>%s</sdoOperator><relationshipMask>%s</relationshipMask><geometry>%s</geometry><drawQueryGeometry>%s</drawQueryGeometry></SVQueryLayer>",
+                           String.valueOf(this.draw), 
+                           this.getLayerSQL()
+      );
+      xml += String.format("<ResultFetchSize>%s</ResultFetchSize><MinResolution>%s</MinResolution><hasIndex>%s</hasIndex><isProject>%s</isProject>",
+                           String.format("%d", this.resultFetchSize),
+                           String.valueOf(this.minResolution),
+                           String.valueOf(this.hasIndex()),
+                           String.valueOf(this.getProject())
+      );
+      xml += String.format("<isBuffered>%s</isBuffered><bufferDistance>%s</bufferDistance><sdoOperator>%s</sdoOperator><relationshipMask>%s</relationshipMask><geometry>%s</geometry><drawQueryGeometry>%s</drawQueryGeometry>",
                            this.isBuffered(),
                            this.getBufferDistance(),
                            this.getSdoOperator(),
                            this.getRelationshipMask(),
                            jGeomAsByteStr,
-                           this.isDrawQueryGeometry());
+                           this.isDrawQueryGeometry()
+      );
+      xml += this.styling.toXML(Preferences.getInstance().getMapBackground());
+      xml += "</SVQueryLayer>";
       return xml;
     }
 
@@ -1311,16 +1350,6 @@ implements iLayer
     }
 
 	@Override
-	public String getInitSQL(String _geoColumn) {
-		return this.getSQL();
-	}
-
-	@Override
-	public void setInitSQL() {
-		this.setSQL("");
-	}
-
-	@Override
 	public String getSDOFilterClause() 
     {
         String sdoFilterClause = this.getSDOFilterClause();
@@ -1388,13 +1417,29 @@ implements iLayer
 	}
 
 	@Override
-	public LinkedHashMap<String, String> getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings, boolean _fullDataType)
-			throws SQLException {
-		// TODO Auto-generated method stub
+    public LinkedHashMap<String, String> 
+    getColumnsAndTypes(boolean _onlyNumbersDatesAndStrings,
+                       boolean _fullDataType) 
+	throws SQLException 
+	{
+		// Should try and get columns etc from SQL being executed.
+        // Until that day get columns and types directly from underlying object
+		//
+		try
+	    {
+			Connection conn = super.getConnection();	     
+			LinkedHashMap<String, String> colsAndTypes =
+	                       Queries.getColumnsAndTypes(conn,
+	                                                  this.getSchemaName(),
+	                                                  this.getObjectName(),
+	                                                  _onlyNumbersDatesAndStrings,
+	                                                  _fullDataType);
+			return colsAndTypes;
+		} catch (SQLException e) {
+			LOGGER.debug("Problem retrieving attributes and types - " + e.toString());
+	    }
 		return null;
 	}
-
-    protected String layerCopySuffix = " (COPY)";  // Should be Tools>Preferences>GeoRaptor
 
 	@Override
 	public SVQueryLayer createCopy() throws Exception {

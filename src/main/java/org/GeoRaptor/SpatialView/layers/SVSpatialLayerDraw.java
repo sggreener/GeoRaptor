@@ -296,7 +296,7 @@ public class SVSpatialLayerDraw {
                 // Now draw label if required
                 //
                 if ( !Strings.isEmpty(_label) ) {
-                    if (layer.getStyling().getGeometryLabelPosition()==Constants.GEOMETRY_LABEL_POSITION.LABEL_ALONG ) {
+                    if (layer.getStyling().getGeometryLabelPoint()==Constants.GEOMETRY_LABEL_POINT.LABEL_ALONG ) {
                         labelAlongLine(shp,_geo.getNumPoints(),_label,_attributes,/*_repeattrue*/   false);
                         //textAlongLine(shp,_label,_attributes);
                     } else {
@@ -344,9 +344,7 @@ public class SVSpatialLayerDraw {
         Color foregroundColour;
         Color backgroundColour;
         foregroundColour = StyleConstants.getForeground(_attributes);
-        // LOGGER.info ("foregroundColour ="+(foregroundColour==null?"NULL":foregroundColour.toString()));
         backgroundColour = StyleConstants.getBackground(_attributes);
-        // LOGGER.info ("backgroundColour ="+(backgroundColour==null?"NULL":backgroundColour.toString()));
         
         // LOGGER.info("Name: " + _label);
         TextStroke ts = new TextStroke(_label, 
@@ -440,7 +438,7 @@ public class SVSpatialLayerDraw {
 				boolean hasCircularArcs = element.hasCircularArcs();
                 // DEBUG LOGGER.info("labelLineAndPolygonSegments: hasCircularArcs(): " + hasCircularArcs);
                 // DEBUG LOGGER.info("labelLineAndPolygonSegments: element type is: " + element.getType());
-                switch (this.layer.getStyling().getGeometryLabelPosition()) {
+                switch (this.layer.getStyling().getGeometryLabelPoint()) {
                     case SDO_POINT:
                         // DEBUG LOGGER.info("labelLineAndPolygonSegments: SDO_POINT");
                         cPoint = element.getLabelPoint()==null
@@ -798,7 +796,7 @@ public class SVSpatialLayerDraw {
             //
             leaderRotation = Math.atan2(labelPoint.getY() - point.getY(), labelPoint.getX() - point.getX()) + (Math.PI / 2.0f);
         }
-        
+
         // Now draw label if required
         //
         if (!Strings.isEmpty(_label)) {
@@ -2040,6 +2038,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
 
         Color foreColour = StyleConstants.getForeground(_attributes);
         Color backColour = StyleConstants.getBackground(_attributes);
+        // _g2d.setColor(foreColour);
 
         AttributedString label = new AttributedString(_string);
         label.addAttribute(TextAttribute.FONT, renderFont);
@@ -2068,7 +2067,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
 
         int deltaX = x2 - _x;
         int deltaY = y2 - _y;
-        // DEBUG LOGGER.info("drawString(" + _string + " (_x,_y)("+_x+","+_y+")(x2,y2)(" + x2+ "," + y2+")(w,h)("+w+","+h+")=>(deltaX,deltaY)("+deltaX+","+deltaY+")");
+        // System.out.println("drawString(" + _string + " (_x,_y)("+_x+","+_y+")(x2,y2)(" + x2+ "," + y2+")(w,h)("+w+","+h+")=>(deltaX,deltaY)("+deltaX+","+deltaY+")");
         if ( _string.indexOf("\n")==-1 ) {
           drawTransformedString(_g2d,
                                 label,

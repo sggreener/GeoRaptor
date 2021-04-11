@@ -35,6 +35,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.LabelStyler;
@@ -684,8 +685,8 @@ public class SVSpatialLayerProps extends JDialog {
 
                     // Geometry Label
                     //
-                    cmbGeometryLabelPosition.setModel(Constants.getGeometryLabelPositionCombo());
-                    String geometryLabelPoint = _iLayer.getStyling().getGeometryLabelPosition().toString();
+                    cmbGeometryLabelPosition.setModel(Constants.getGeometryLabelPointCombo());
+                    String geometryLabelPoint = _iLayer.getStyling().getGeometryLabelPoint().toString();
                     for (int i = 0; i < cmbGeometryLabelPosition.getItemCount(); i++) {
                         if (cmbGeometryLabelPosition.getItemAt(i).toString().equals(geometryLabelPoint)) {
                             cmbGeometryLabelPosition.setSelectedIndex(i);
@@ -898,9 +899,23 @@ public class SVSpatialLayerProps extends JDialog {
 
                         // Get labelColumnsAndTypes only if SQL filled in and not SVWorksheetLayer
                         //
-                        if ( ! (Strings.isEmpty(sqlTA.getText()) && _iLayer instanceof SVWorksheetLayer ) ) {
+                        if ( ! (Strings.isEmpty(sqlTA.getText()) 
+                        		&& 
+                        		_iLayer instanceof SVWorksheetLayer) ) {
                             labelColumnsAndTypes = _iLayer.getColumnsAndTypes(true, /* Only numbers strings etc */
-                                                                             true) /* full DataType wanted */;
+                                                                              true); /* full DataType wanted */
+                            if ( labelColumnsAndTypes != null && labelColumnsAndTypes.size() == 0 )
+                            {
+                            	// The _iLayer version is supposed to look at the columns in the SQL in case the user has modified the SQL.
+                            	labelColumnsAndTypes =                            
+                                    Queries.getColumnsAndTypes(
+                                    		_iLayer.getConnection(),
+                                    		_iLayer.getSchemaName(),
+                                    		_iLayer.getObjectName(),
+                                            true, /* Only numbers strings etc */
+                                            true) /* full DataType wanted */;
+                            }
+
                             if (labelColumnsAndTypes != null &&
                                 labelColumnsAndTypes.size() > 0) {
                                 Iterator<String> it = labelColumnsAndTypes.keySet().iterator();
@@ -3648,7 +3663,7 @@ public class SVSpatialLayerProps extends JDialog {
         this.layer.getStyling().setLabelColumn(this.cmbLabelColumns.getSelectedItem().toString().equals(this.LABEL_NONE) 
                                   ? null 
                                   : this.cmbLabelColumns.getSelectedItem().toString());
-        this.layer.getStyling().setGeometryLabelPosition(this.cmbGeometryLabelPosition.getSelectedItem().toString());
+        this.layer.getStyling().setGeometryLabelPoint(this.cmbGeometryLabelPosition.getSelectedItem().toString());
         
         this.layer.getStyling().setMarkLabelAttributes(new SimpleAttributeSet(this.markLabelAttributes));
         this.layer.getStyling().setMarkLabelPosition(this.markLabelPosition);
@@ -4270,26 +4285,26 @@ public class SVSpatialLayerProps extends JDialog {
     private javax.swing.JCheckBox cbRecalculateMBR;
     private javax.swing.JCheckBox cbSelectionActive;
     private javax.swing.JCheckBox chkMinResolution;
-    private javax.swing.JComboBox cmbConnections;
-    private javax.swing.JComboBox cmbGTypes;
-    private javax.swing.JComboBox cmbGeometryLabelPosition;
-    private javax.swing.JComboBox cmbLabelColumns;
-    private javax.swing.JComboBox cmbLineStyles;
-    private javax.swing.JComboBox cmbMarkGeoPoints;
-    private javax.swing.JComboBox cmbMarkGeoStart;
-    private javax.swing.JComboBox cmbMarkSegment;
-    private javax.swing.JComboBox cmbPointColorColumns;
-    private javax.swing.JComboBox cmbPointSizeColumns;
-    private javax.swing.JComboBox cmbPointTypes;
-    private javax.swing.JComboBox cmbRotationColumns;
-    private javax.swing.JComboBox cmbRotationTarget;
-    private javax.swing.JComboBox cmbSRIDType;
-    private javax.swing.JComboBox cmbSdoOperators;
-    private javax.swing.JComboBox cmbSegmentArrows;
-    private javax.swing.JComboBox cmbSelectionLineStyles;
-    private javax.swing.JComboBox cmbShadeColumns;
-    private javax.swing.JComboBox cmbStrokeColorColumns;
-    private javax.swing.JComboBox cmbVertexLabelContent;
+    private javax.swing.JComboBox<String> cmbConnections;
+    private javax.swing.JComboBox<String> cmbGTypes;
+    private javax.swing.JComboBox<String> cmbGeometryLabelPosition;
+    private javax.swing.JComboBox<String> cmbLabelColumns;
+    private javax.swing.JComboBox<String> cmbLineStyles;
+    private javax.swing.JComboBox<String> cmbMarkGeoPoints;
+    private javax.swing.JComboBox<String> cmbMarkGeoStart;
+    private javax.swing.JComboBox<String> cmbMarkSegment;
+    private javax.swing.JComboBox<String> cmbPointColorColumns;
+    private javax.swing.JComboBox<String> cmbPointSizeColumns;
+    private javax.swing.JComboBox<String> cmbPointTypes;
+    private javax.swing.JComboBox<String> cmbRotationColumns;
+    private javax.swing.JComboBox<String> cmbRotationTarget;
+    private javax.swing.JComboBox<String> cmbSRIDType;
+    private javax.swing.JComboBox<String> cmbSdoOperators;
+    private javax.swing.JComboBox<String> cmbSegmentArrows;
+    private javax.swing.JComboBox<String> cmbSelectionLineStyles;
+    private javax.swing.JComboBox<String> cmbShadeColumns;
+    private javax.swing.JComboBox<String> cmbStrokeColorColumns;
+    private javax.swing.JComboBox<String> cmbVertexLabelContent;
     private javax.swing.JRadioButton columnShadeColorRB;
     private javax.swing.JTextField fetchSizeTF;
     private javax.swing.JButton fixShadeColorB;
@@ -4480,9 +4495,10 @@ public class SVSpatialLayerProps extends JDialog {
 
         // ============== SQL Properties
 
-        this.layer.setResultFetchSize(Integer.parseInt(Strings.isEmpty(this.fetchSizeTF.getText()) ?
-                                                       String.valueOf(this.SVSpatialLayerPreferences.getFetchSize()) :
-                                                       this.fetchSizeTF.getText()));
+        this.layer.setResultFetchSize(
+                   Integer.parseInt(Strings.isEmpty(this.fetchSizeTF.getText()) 
+                                    ? String.valueOf(this.SVSpatialLayerPreferences.getFetchSize()) 
+                                    : this.fetchSizeTF.getText()));
         if ( ! cmbGTypes.getSelectedItem().toString().toUpperCase().contains(Constants.GEOMETRY_TYPES.POINT.toString().toUpperCase()) )
             this.layer.setMinResolution(this.chkMinResolution.isSelected());
         

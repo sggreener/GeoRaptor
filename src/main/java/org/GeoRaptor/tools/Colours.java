@@ -46,7 +46,7 @@ public class Colours {
         int red = 0, 
           green = 0, 
            blue = 0, 
-          alpha = 0;
+          alpha = 255;
         
         String tok = ""; 
         String [] st = _rgba.split(",");
@@ -66,7 +66,7 @@ public class Colours {
                   case 1 : red   = 0; break;
                   case 2 : green = 0; break; 
                   case 3 : blue  = 0; break;
-                  case 4 : alpha = 0;  
+                  case 4 : alpha = 255;  
                 }               
             }
         } // FOR

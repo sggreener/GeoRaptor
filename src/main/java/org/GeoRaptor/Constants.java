@@ -101,18 +101,18 @@ public class Constants {
 		}
 	};
 
-	public static enum GEOMETRY_LABEL_POSITION {
+	public static enum GEOMETRY_LABEL_POINT {
 		FIRST_VERTEX, MIDDLE_VERTEX, END_VERTEX, JTS_CENTROID, SDO_POINT, LABEL_ALONG
 	};
 
-	public static javax.swing.DefaultComboBoxModel<String> getGeometryLabelPositionCombo() {
+	public static javax.swing.DefaultComboBoxModel<String> getGeometryLabelPointCombo() {
 		return new javax.swing.DefaultComboBoxModel<String>(
-				new String[] { Constants.GEOMETRY_LABEL_POSITION.FIRST_VERTEX.toString(),
-						Constants.GEOMETRY_LABEL_POSITION.MIDDLE_VERTEX.toString(),
-						Constants.GEOMETRY_LABEL_POSITION.END_VERTEX.toString(),
-						Constants.GEOMETRY_LABEL_POSITION.JTS_CENTROID.toString(),
-						Constants.GEOMETRY_LABEL_POSITION.SDO_POINT.toString(),
-						Constants.GEOMETRY_LABEL_POSITION.LABEL_ALONG.toString() });
+				new String[] { Constants.GEOMETRY_LABEL_POINT.FIRST_VERTEX.toString(),
+						Constants.GEOMETRY_LABEL_POINT.MIDDLE_VERTEX.toString(),
+						Constants.GEOMETRY_LABEL_POINT.END_VERTEX.toString(),
+						Constants.GEOMETRY_LABEL_POINT.JTS_CENTROID.toString(),
+						Constants.GEOMETRY_LABEL_POINT.SDO_POINT.toString(),
+						Constants.GEOMETRY_LABEL_POINT.LABEL_ALONG.toString() });
 	}
 
 	public static enum SRID_TYPE {
@@ -478,7 +478,7 @@ public class Constants {
 
 	public static final String KEY_SVLAYER = "SVLayer";
 	public static final String KEY_SVSpatialLayer = "SVSpatialLayer";
-	public static final String KEY_SVDBObjectLayer = "SVDBObjectLayer";
+	public static final String KEY_SVTableLayer = "SVTableLayer";
 	public static final String KEY_SVQueryLayer = "SVQueryLayer";
 	public static final String KEY_SVGraphicLayer = "SVGraphicLayer";
 	public static final String KEY_SVWorksheetLayer = "SVWorksheetLayer";

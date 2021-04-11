@@ -240,18 +240,18 @@ public class SpatialView {
               this.createMapPanel();
           }
           XPath xpath = XPathFactory.newInstance().newXPath();
-          this.setSRID((String)xpath.evaluate("SRID/text()",_node,XPathConstants.STRING));
-          this.setViewName((String)xpath.evaluate("Name/text()",_node,XPathConstants.STRING));
-          this.setVisibleName((String)xpath.evaluate("VisibleName/text()",_node,XPathConstants.STRING));
-          this.setSRIDType((String)xpath.evaluate("SRIDType/text()",_node,XPathConstants.STRING));
+          this.setSRID(            (String)xpath.evaluate("SRID/text()",_node,XPathConstants.STRING));
+          this.setViewName(        (String)xpath.evaluate("Name/text()",_node,XPathConstants.STRING));
+          this.setVisibleName(     (String)xpath.evaluate("VisibleName/text()",_node,XPathConstants.STRING));
+          this.setSRIDType(        (String)xpath.evaluate("SRIDType/text()",_node,XPathConstants.STRING));
           this.setSRIDBaseUnitType((String)xpath.evaluate("SRIDBaseUnitType/text()",_node,XPathConstants.STRING));
           this.setDistanceUnitType((String)xpath.evaluate("DistanceUnitType/text()",_node,XPathConstants.STRING));
-          this.setAreaUnitType((String)xpath.evaluate("AreaUnitType/text()",_node,XPathConstants.STRING));
-          this.setPrecision((String)xpath.evaluate("MaxFractionDigits/text()",_node,XPathConstants.STRING));  // Deprecated
-          this.setPrecision((String)xpath.evaluate("Precision/text()",_node,XPathConstants.STRING));
+          this.setAreaUnitType(    (String)xpath.evaluate("AreaUnitType/text()",_node,XPathConstants.STRING));
+          this.setPrecision(       (String)xpath.evaluate("MaxFractionDigits/text()",_node,XPathConstants.STRING));  // Deprecated
+          this.setPrecision(       (String)xpath.evaluate("Precision/text()",_node,XPathConstants.STRING));
           this.getMapPanel().setRenderHint((String)xpath.evaluate("RenderingHint/text()",_node,XPathConstants.STRING));
           this.setMBR(new Envelope((Node)xpath.evaluate("MBR",_node,XPathConstants.NODE)));
-          String mapBackground = (String)xpath.evaluate("MapBackground/text()",_node,XPathConstants.STRING);
+          String mapBackground =   (String)xpath.evaluate("MapBackground/text()",_node,XPathConstants.STRING);
           this.getMapPanel().setMapBackground(mapBackground);
 //          if ( this.getViewName().equals("SRID:2872") )
 //Tools.doClipboardCopy("SpatialView " + this.getViewName() + " mapBackground="+mapBackground + " = String = " + this.getMapPanel().getMapBackground().toString() + " MBR " + this.getMBR().toString());

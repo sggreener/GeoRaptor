@@ -526,7 +526,7 @@ public class LabelStyler extends JDialog {
           return "";
       }
       StringBuffer sb = new StringBuffer();
-      sb.append("<LabelAttributes>");
+      sb.append("<LabelStyler>");
       sb.append("<FontFamily>"    + StyleConstants.getFontFamily(a)          + "</FontFamily>");
       sb.append("<FontSize>"      + StyleConstants.getFontSize(a)            + "</FontSize>");
       sb.append("<Bold>"          + StyleConstants.isBold(a)                 + "</Bold>");
@@ -537,23 +537,23 @@ public class LabelStyler extends JDialog {
       sb.append("<Superscript>"   + StyleConstants.isSuperscript(a)          + "</Superscript>");
       sb.append("<Foreground>"    + Colours.getRGBa(StyleConstants.getForeground(a)) + "</Foreground>");
       sb.append("<Background>"    + Colours.getRGBa(StyleConstants.getBackground(a)) + "</Background>");
-      sb.append("</LabelAttributes>");
+      sb.append("</LabelStyler>");
       return sb.toString();
   }
  
   public static SimpleAttributeSet fromNode(Node _node) 
   {
       if ( _node == null ) {
-    	  LOGGER.warn("XML is null");
-          return null;  // Should throw error         
+    	  LOGGER.warn("Attribute Set XML node is null");
+          return new SimpleAttributeSet();  // Should throw error         
       }
-      if (_node.getNodeName().equalsIgnoreCase("LabelAttributes")==false ) {
+      if (_node.getNodeName().equalsIgnoreCase("LabelStyler")==false ) {
     	  LOGGER.warn("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
-          return null;  // Should throw error
+          return new SimpleAttributeSet();  // Should throw error
       }
       if ( _node.getFirstChild()==null ) {
-          LOGGER.warn("LabelAttributes has no child nodes");
-          return null;  // Should throw error
+          LOGGER.warn("LabelStyler has no child nodes");
+          return new SimpleAttributeSet();  // Should throw error
       }
       SimpleAttributeSet attributes = null; 
       String nodeValue = "";
@@ -589,16 +589,16 @@ public class LabelStyler extends JDialog {
   public static SimpleAttributeSet fromXML(Node _node) 
   {
       if ( _node == null ) {
-          LOGGER.warn("XML is null"); 
-          return null;  // Should throw error 
+          LOGGER.warn("SimpleAttributeSet: XML node is null"); 
+          return new SimpleAttributeSet();  // Should throw error 
       }
-      if (_node.getNodeName().equalsIgnoreCase("LabelAttributes")==false ) {
-          LOGGER.warn("XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
-          return null;  // Should throw error
+      if (_node.getNodeName().equalsIgnoreCase("LabelStyler")==false ) {
+          LOGGER.warn("SimpleAttributeSet: XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
+          return new SimpleAttributeSet();  // Should throw error 
       }
       if ( _node.getFirstChild()==null ) {
-          LOGGER.warn("LabelAttributes has no child nodes");
-          return null;  // Should throw error
+          LOGGER.warn("SimpleAttributeSet: LabelStyler has no children");
+          return new SimpleAttributeSet();  // Should throw error 
       }
       // return fromNode(_node);
       SimpleAttributeSet attributes = null; 
@@ -607,26 +607,37 @@ public class LabelStyler extends JDialog {
       {
           XPath xpath = XPathFactory.newInstance().newXPath();
           attributes = new SimpleAttributeSet();
-          nodeValue = (String)xpath.evaluate("LabelAttributes/FontFamily/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("FontFamily/text()",_node,XPathConstants.STRING);
           StyleConstants.setFontFamily(   attributes, Strings.isEmpty(nodeValue)?"Arial":nodeValue);
-          nodeValue = (String)xpath.evaluate("LabelAttributes/FontSize/text()",_node,XPathConstants.STRING);
-          StyleConstants.setFontSize(     attributes, Integer.valueOf(Strings.isEmpty(nodeValue)?"10":nodeValue).intValue());  
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Bold/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("FontSize/text()",_node,XPathConstants.STRING);
+          StyleConstants.setFontSize(     attributes, Integer.valueOf(Strings.isEmpty(nodeValue)?"10":nodeValue).intValue());
+          
+          nodeValue = (String)xpath.evaluate("Bold/text()",_node,XPathConstants.STRING);
           StyleConstants.setBold(         attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Italic/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Italic/text()",_node,XPathConstants.STRING);
           StyleConstants.setItalic(       attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Underline/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Underline/text()",_node,XPathConstants.STRING);
           StyleConstants.setUnderline(    attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/StrikeThrough/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("StrikeThrough/text()",_node,XPathConstants.STRING);
           StyleConstants.setStrikeThrough(attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Subscript/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Subscript/text()",_node,XPathConstants.STRING);
           StyleConstants.setSubscript(    attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Superscript/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Superscript/text()",_node,XPathConstants.STRING);
           StyleConstants.setSuperscript(  attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Foreground/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Foreground/text()",_node,XPathConstants.STRING);
           StyleConstants.setForeground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"00,00,00,255":nodeValue));
-          nodeValue = (String)xpath.evaluate("LabelAttributes/Background/text()",_node,XPathConstants.STRING);
+          
+          nodeValue = (String)xpath.evaluate("Background/text()",_node,XPathConstants.STRING);
           StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"255,255,255,255":nodeValue));
+          
           return attributes;
       } catch (Exception e) {
     	  LOGGER.error("Exception fromXML - " + e.toString());

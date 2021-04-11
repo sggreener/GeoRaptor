@@ -353,7 +353,7 @@ public class MapPanel
         }
         Color tempColor;
         if ( _color.contains(",") ) {
-            tempColor = Colours.stringToColor(_color);
+            tempColor = Colours.fromRGBa(_color);
         } else {
             tempColor = new Color(Integer.valueOf(_color));
         }
@@ -362,11 +362,16 @@ public class MapPanel
     
     public void setMapBackground(Color _color) {
         this.mapBackground = _color;
+        final Color mapBackgroundColour = _color;
+        
+        this.setBackground( mapBackgroundColour );
+        
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                setBackground( mapBackground ); 
+                setBackground( mapBackgroundColour ); 
             }
         });
+        
         if ( this.scaleBar != null ) {
            this.scaleBar.setBackground(this.mapBackground);
         }
@@ -2252,79 +2257,6 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                                  spatialView);
                   dialog.initDialog(sLayer, vlt.getSpatialOperator(), geometry);
                   dialog.setVisible(true);
-//                  if ( dialog.isCanceled() ) {
-//                      spatialView.getSVPanel().setNone();
-//                      return;
-//                  }
-//                SVGraphicLayer sGraphicLayer = null;
-//                SVQueryLayer     sQueryLayer = null;
-//                iLayer               gqLayer = null;
-//                try 
-//                {
-//	                  if ( dialog.targetGraphic() ) {
-//	                      sGraphicLayer = new SVGraphicLayer(sLayer); 
-//	                      gqLayer = sGraphicLayer;
-//	                  } else {
-//	                      sQueryLayer = new SVQueryLayer(sLayer);
-//	                      gqLayer = sQueryLayer;
-//	                  }
-//	                  gqLayer.setVisibleName(vlt.getSpatialOperator().toString() + 
-//	                                         " - " + 
-//	                                         sLayer.getVisibleName());
-//	                  gqLayer.setSQL(null);
-//	                  gqLayer.setDraw(true);
-//	                  gqLayer.setMBRRecalculation(true);
-//                    gqLayer.setGeometry(_geometry);
-//                    gqLayer.setGeometryType(sLayer.getGeometryType());
-//	                  gqLayer.setBufferDistance(dialog.getBufferDistance());
-//	                  gqLayer.setBuffered(dialog.getBufferDistance()!=0.0);
-//	                  gqLayer.setRelationshipMask(dialog.getRelationshipMask(sLayer.hasIndex()));
-//	                  gqLayer.setSdoOperator(dialog.getSdoOperator());
-//	                  gqLayer.setPrecision(dialog.getPrecision());
-//
-//	                  boolean success = false;
-//	
-//	                  // Add to view and ignore return
-//	                  if ( gqLayer instanceof SVQueryLayer ) {
-//                      success = spatialView.addLayer(
-//			                        /*_layer*/    sQueryLayer,
-//			                        /*_isDrawn*/  true,
-//			                        /*_isActive*/ true,
-//			                        /*_zoom*/     false 
-//			                      ); 
-//                      if ( success )
-//	                      spatialView.getSVPanel().redraw();
-//	                  } else if ( gqLayer instanceof SVGraphicLayer ) {
-//	                    try 
-//	                    {
-//                        // Load data into cache using initial SQL
-//	                      sGraphicLayer.setCache();
-//	                      
-//	                      // Now that they cache is filled, compute its extent
-//                        sGraphicLayer.setLayerMBR();
-//                        
-//                        // Display cache.                          
-//	                      //success = spatialView.getSVPanel().addLayerToView(sGraphicLayer,false /*zoom*/);
-//                        success = spatialView.addLayer(
-//		  	                          /*_layer*/    sGraphicLayer,
-//			                          /*_isDrawn*/  true,
-//			                          /*_isActive*/ true,
-//			                          /*_zoom*/     false 
-//			                      ); 
-//
-//		                  if ( success ) {
-//		                    // show attrib and geometry data in bottom tabbed pane
-//		                    spatialView.getSVPanel().getAttDataView().showData(sGraphicLayer.getCache());
-//		                    spatialView.getSVPanel().redraw();
-//			              }
-//	                    } catch (Exception e) {
-//	                    	e.printStackTrace();
-//	                    }
-//	                  }
-//
-//                } catch (Exception e) {
-//              	  e.printStackTrace();
-//                }
               } 
         });
     }
