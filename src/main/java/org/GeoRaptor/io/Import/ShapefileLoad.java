@@ -1554,11 +1554,19 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			if (dbConn.isOpen() == false) {
 				dbConn.reOpen();
 			}
-			batchLoader work = new batchLoader(dbConn.getConnectionName(), dbConn.getUserName(),
-					this.tfTablename.getText(), this.cmbFID.getSelectedItem().toString(),
-					this.tfGeometryColumn.getText(), this.getSRID(), this.sNone, this.totalRecords,
-					this.sldrCommitInterval.getValue(), roundNumber, this.cbMetadata.isSelected(),
-					this.cbSpatialIndex.isSelected());
+			batchLoader work = new batchLoader(
+                                   dbConn.getConnectionName(), 
+                                   dbConn.getUserName(),
+                                   this.tfTablename.getText(), 
+                                   this.cmbFID.getSelectedItem().toString(),
+                                   this.tfGeometryColumn.getText(), 
+                                   this.getSRID(), 
+                                   this.sNone, 
+                                   this.totalRecords,
+                                   this.sldrCommitInterval.getValue(), 
+                                   roundNumber, 
+                                   this.cbMetadata.isSelected(),
+                                   this.cbSpatialIndex.isSelected());
 			ProgressBar progress = new ProgressBar(this, this.TITLE, work, false);
 			progress.setCancelable(true);
 			this.setAlwaysOnTop(false);
@@ -1619,9 +1627,20 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		private String layerGType = null;
 		MetadataEntry me = null;
 
-		public batchLoader(String _connName, String _user, String _tableName, String _userFID, String _geomCol,
-				String _srid, String _none, int _totalRecords, int _commitInterval, int _roundNumber,
-				boolean _createMetadata, boolean _createSpatialIndex) {
+		public batchLoader(
+				String _connName, 
+				String _user, 
+				String _tableName, 
+				String _userFID, 
+				String _geomCol,
+				String _srid, 
+				String _none, 
+				int _totalRecords, 
+				int _commitInterval, 
+				int _roundNumber,
+				boolean _createMetadata, 
+				boolean _createSpatialIndex) 
+		{
 			this.connName = _connName;
 			this.errorCount = 0;
 			this.successCount = 0;
@@ -2200,8 +2219,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					// Use Oracle conversion utility to get feature Get record (i)
 					// NOTE: this approach by the Oracle Utility does not handle DATES!
 					//
-					ht = ShapefileFeatureJGeom.fromRecordToFeature(dbfr, sfh, fieldTypes, numFields, (rec - 1),
-							getSRIDAsInteger());
+					ht = ShapefileFeatureJGeom.fromRecordToFeature(
+							                       dbfr, 
+							                       sfh, 
+							                       fieldTypes, 
+							                       numFields, 
+							                       (rec - 1),
+							                       getSRIDAsInteger());
 				} catch (IOException ioe) {
 					this.errorMessage = ioe.getMessage();
 					// printHashtable(ht);

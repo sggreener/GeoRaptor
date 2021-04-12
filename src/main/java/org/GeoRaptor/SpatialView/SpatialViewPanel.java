@@ -274,10 +274,10 @@ extends JPanel
       
             SpatialViewPanel.classInstance = this;
         } catch (NullPointerException npe) {
-            System.err.println("Caught Null Pointer Exception in SpatialViewPanel()");
+            System.err.println("Null Pointer Exception in SpatialViewPanel");
             npe.printStackTrace();
         } catch (Exception e) {
-            System.err.println("Caught Exception in SpatialViewPanel() - jbInit()");
+            System.err.println("Exception in SpatialViewPanel: " + e.getLocalizedMessage());
         }
         this.viewLayerTree.expandAll();
     }
