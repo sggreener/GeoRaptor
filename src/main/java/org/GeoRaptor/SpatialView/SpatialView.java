@@ -133,23 +133,20 @@ public class SpatialView {
           // So, layerList must be declared as insertion-ordered
           //
           this.createMapPanel();
+          
           this.setVisible();
+          
           // Set all toolbar buttons to be disabled until first layer added
           //
           this.svp.setToolbarEnabled(false);
+          
           // Make sure status bar is reset to display nothing.
-          this.svp.updateViewStatusMBR(new Envelope(this.getDefaultPrecision()),this.defaultPrecision);          
+          this.svp.updateViewStatusMBR(new Envelope(this.getDefaultPrecision()),this.defaultPrecision);
+          
       } catch (NullPointerException npe) {
          LOGGER.error("Caught Null Pointer Exception in SpatialView(SpatialViewPanel)");
          // npe.printStackTrace();
       }
-  }
-
-  private void createMapPanel() {
-    this.mPanel = new MapPanel(this /*this.svp*/);
-    this.mPanel.addMouseListener(this.mPanel);
-    this.mPanel.addMouseMotionListener(this.mPanel);
-    this.mPanel.addMouseWheelListener(this.mPanel); 
   }
 
   public SpatialView(SpatialViewPanel _svp,
@@ -175,7 +172,7 @@ public class SpatialView {
           DocumentBuilder db = dbf.newDocumentBuilder();
           doc = db.parse(new InputSource(new StringReader(_XML)));          
           XPath xpath = XPathFactory.newInstance().newXPath();
-          this.fromXMLNode((Node)xpath.evaluate("/View",doc,XPathConstants.NODE));
+          this.fromXML((Node)xpath.evaluate("/View",doc,XPathConstants.NODE));
       } catch (XPathExpressionException xe) {
           System.out.println("XPathExpressionException " + xe.toString());
       } catch (ParserConfigurationException pe) {
@@ -191,7 +188,7 @@ public class SpatialView {
                      Node             _node)
   {
       this(_svp);
-      this.fromXMLNode(_node);
+      this.fromXML(_node);
   }
   
     // Copy constructor
@@ -227,7 +224,7 @@ public class SpatialView {
     }
   }
 
-  private void fromXMLNode(Node _node)
+  private void fromXML(Node _node)
   {
       if ( _node == null || _node.getNodeName().equals("View")==false) {
           System.out.println("Node is null or not View");
@@ -253,13 +250,38 @@ public class SpatialView {
           this.setMBR(new Envelope((Node)xpath.evaluate("MBR",_node,XPathConstants.NODE)));
           String mapBackground =   (String)xpath.evaluate("MapBackground/text()",_node,XPathConstants.STRING);
           this.getMapPanel().setMapBackground(mapBackground);
-//          if ( this.getViewName().equals("SRID:2872") )
-//Tools.doClipboardCopy("SpatialView " + this.getViewName() + " mapBackground="+mapBackground + " = String = " + this.getMapPanel().getMapBackground().toString() + " MBR " + this.getMBR().toString());
           this.setScaleBar((String)xpath.evaluate("ScaleBar/text()",_node,XPathConstants.STRING));
       } catch (XPathExpressionException xe) {
           LOGGER.error("SpatialView.fromXMLNode()" + xe.getMessage());
           xe.printStackTrace();
       }
+  }
+  
+  public String toXML(boolean _noActiveLayer) 
+  {
+      // Note, no wrapping tags
+      return String.format("<ID>%s</ID><Name>%s</Name><VisibleName>%s</VisibleName><SRID>%s</SRID><SRIDType>%s</SRIDType><DistanceUnitType>%s</DistanceUnitType><AreaUnitType>%s</AreaUnitType><Precision>%s</Precision><ActiveLayer>%s</ActiveLayer><RenderingHint>%s</RenderingHint>%s<MapBackground>%s</MapBackground><ScaleBar>%s</ScaleBar><SRIDBaseUnitType>%s</SRIDBaseUnitType>",
+                           this.viewID,
+                           this.name,
+                           this.visibleName,
+                           this.SRID,
+                           this.SRIDType.toString(),
+                           this.distanceUnitType,
+                           this.areaUnitType,
+                           this.getPrecision(false),
+                           (_noActiveLayer||this.getActiveLayer()==null)?"null":this.getActiveLayer().getLayerName(),
+                           this.getMapPanel().getRenderHint().toString(),
+                           this.getMBR().toXML(),
+                           this.getMapPanel().getMapBackground().getRGB(),
+                           String.valueOf(this.isScaleBar()),
+                           this.SRIDBaseUnitType);
+  }
+  
+  private void createMapPanel() {
+	    this.mPanel = new MapPanel(this);
+	    this.mPanel.addMouseListener(this.mPanel);
+	    this.mPanel.addMouseMotionListener(this.mPanel);
+	    this.mPanel.addMouseWheelListener(this.mPanel); 
   }
 
   public boolean isActive() {
@@ -277,7 +299,7 @@ public class SpatialView {
       return this.svp.getViewLayerTree().getActiveLayer(this.getViewName());
   }
 
-  public windowNavigator getWindowNavigator() {
+  public WindowNavigator getWindowNavigator() {
     return this.mPanel.windowNavigator;
   }
 
@@ -770,30 +792,6 @@ LOGGER.debug("*** Removing " + _layerName);
 
     public int getDefaultPrecision() {
       return SRIDType.toString().startsWith("GEO") ? Constants.MAX_PRECISION : this.defaultPrecision;
-    }
-    
-    public String toXML(boolean _noActiveLayer) 
-    {
-LOGGER.debug("<toXML>");
-LOGGER.debug("  getMapBackground="+this.getMapPanel().getMapBackground().toString());
-//Tools.doClipboardCopy(this.getMapPanel().getMapBackground().toString() + " - " + this.getMapPanel().getMapBackground().getRGB());
-LOGGER.debug("</toXML>");
-        // Note, no wrapping tags
-        return String.format("<ID>%s</ID><Name>%s</Name><VisibleName>%s</VisibleName><SRID>%s</SRID><SRIDType>%s</SRIDType><DistanceUnitType>%s</DistanceUnitType><AreaUnitType>%s</AreaUnitType><Precision>%s</Precision><ActiveLayer>%s</ActiveLayer><RenderingHint>%s</RenderingHint>%s<MapBackground>%s</MapBackground><ScaleBar>%s</ScaleBar><SRIDBaseUnitType>%s</SRIDBaseUnitType>",
-                             this.viewID,
-                             this.name,
-                             this.visibleName,
-                             this.SRID,
-                             this.SRIDType.toString(),
-                             this.distanceUnitType,
-                             this.areaUnitType,
-                             this.getPrecision(false),
-                             (_noActiveLayer||this.getActiveLayer()==null)?"null":this.getActiveLayer().getLayerName(),
-                             this.getMapPanel().getRenderHint().toString(),
-                             this.getMBR().toXML(),
-                             this.getMapPanel().getMapBackground().getRGB(),
-                             String.valueOf(this.isScaleBar()),
-                             this.SRIDBaseUnitType);
     }
     
     public void saveToDisk(LinkedHashMap<String,iLayer> _selected) {

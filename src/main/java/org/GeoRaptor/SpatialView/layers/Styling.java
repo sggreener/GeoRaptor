@@ -33,60 +33,60 @@ public class Styling {
 		NONE, CONSTANT, COLUMN, RANDOM
 	};
 
-	protected Color lineColor = Color.BLACK;
-	protected Color pointColor = Color.BLACK;
-	protected Color selectionColor = new Color(255, 255, 0); // Yellow
-	protected Color shadeColor = Color.WHITE;
+	protected Color lineColor      = Color.BLACK;
+	protected Color pointColor     = Color.BLACK;
+	protected Color selectionColor = new Color(255, 255, 0, 80); // Yellow
+	protected Color shadeColor     = Color.WHITE;
 
 	protected Constants.GEOMETRY_LABEL_POINT geometryLabelPoint = Constants.GEOMETRY_LABEL_POINT.MIDDLE_VERTEX;
 	protected Constants.TEXT_OFFSET_POSITION textOffsetPosition = Constants.TEXT_OFFSET_POSITION.BL;
-	protected Constants.ROTATE rotationTarget = Constants.ROTATE.NONE;
-	protected Constants.ROTATION_VALUES rotationValue = Constants.ROTATION_VALUES.DEGREES;
+	protected Constants.ROTATE rotationTarget                   = Constants.ROTATE.NONE;
+	protected Constants.ROTATION_VALUES rotationValue           = Constants.ROTATION_VALUES.DEGREES;
 
-	protected Constants.SEGMENT_ARROWS_TYPE segmentArrow = Constants.SEGMENT_ARROWS_TYPE.NONE;
-	protected Constants.SEGMENT_LABEL_TYPE markSegment = Constants.SEGMENT_LABEL_TYPE.NONE;
-	protected Constants.VERTEX_LABEL_TYPE markVertex = Constants.VERTEX_LABEL_TYPE.NONE;
+	protected Constants.SEGMENT_ARROWS_TYPE segmentArrow  = Constants.SEGMENT_ARROWS_TYPE.NONE;
+	protected Constants.SEGMENT_LABEL_TYPE markSegment    = Constants.SEGMENT_LABEL_TYPE.NONE;
+	protected Constants.VERTEX_LABEL_TYPE markVertex      = Constants.VERTEX_LABEL_TYPE.NONE;
 	protected Constants.TEXT_OFFSET_POSITION markPosition = Constants.TEXT_OFFSET_POSITION.CL;
-	protected LineStyle.LINE_STROKES lineStrokeType = LineStyle.LINE_STROKES.LINE_SOLID;
+	protected LineStyle.LINE_STROKES lineStrokeType       = LineStyle.LINE_STROKES.LINE_SOLID;
 	protected LineStyle.LINE_STROKES selectLineStrokeType = LineStyle.LINE_STROKES.LINE_DASH;
 
 	protected PointMarker.MARKER_TYPES markGeoPoints = PointMarker.MARKER_TYPES.NONE;
-	protected PointMarker.MARKER_TYPES markGeoStart = PointMarker.MARKER_TYPES.NONE;
-	protected PointMarker.MARKER_TYPES pointType = PointMarker.MARKER_TYPES.CROSS;
-	protected Random randomColorGenerator = new Random();
-	protected SimpleAttributeSet labelAttributes = null;
+	protected PointMarker.MARKER_TYPES markGeoStart  = PointMarker.MARKER_TYPES.NONE;
+	protected PointMarker.MARKER_TYPES pointType     = PointMarker.MARKER_TYPES.CROSS;
+	protected Random randomColorGenerator            = new Random();
+	protected SimpleAttributeSet labelAttributes     = null;
 	protected SimpleAttributeSet markLabelAttributes = null;
-	protected String labelColumn = null;
+	protected String labelColumn                     = null;
 
-	protected String lineColorColumn = null;
-	protected String lineSeparator = null;
+	protected String lineColorColumn  = null;
+	protected String lineSeparator    = null;
 	protected String pointColorColumn = null;
-	protected String pointSizeColumn = null;
-	protected String rotationColumn = null;
-	protected String shadeColumn = null;
-	protected Styling.STYLING_TYPE lineColorType = Styling.STYLING_TYPE.CONSTANT;
+	protected String pointSizeColumn  = null;
+	protected String rotationColumn   = null;
+	protected String shadeColumn      = null;
+	protected Styling.STYLING_TYPE lineColorType  = Styling.STYLING_TYPE.CONSTANT;
 	protected Styling.STYLING_TYPE pointColorType = Styling.STYLING_TYPE.CONSTANT;
-	protected Styling.STYLING_TYPE pointSizeType = Styling.STYLING_TYPE.CONSTANT;
-	protected Styling.STYLING_TYPE shadeType = Styling.STYLING_TYPE.RANDOM;
+	protected Styling.STYLING_TYPE pointSizeType  = Styling.STYLING_TYPE.CONSTANT;
+	protected Styling.STYLING_TYPE shadeType      = Styling.STYLING_TYPE.RANDOM;
 
 	protected float selectionShadeTransLevel = 1.0f;
-	protected float lineTransLevel = 1.0f;
-	protected float shadeTransLevel = 1.0f;
-	protected int markOffset = 2;
-	protected int labelOffset = 4;
-	protected int lineWidth = 1;
-	protected int pointSize = 4;
-	protected int selectLineWidth = 3;
-	protected Stroke lineStroke = LineStyle.getStroke(lineStrokeType, lineWidth);
+	protected float lineTransLevel           = 1.0f;
+	protected float shadeTransLevel          = 1.0f;
+	protected int markOffset          = 2;
+	protected int labelOffset         = 4;
+	protected int lineWidth           = 1;
+	protected int pointSize           = 4;
+	protected int selectLineWidth     = 3;
+	protected Stroke lineStroke       = LineStyle.getStroke(lineStrokeType, lineWidth);
 	protected Stroke selectLineStroke = LineStyle.getStroke(selectLineStrokeType, selectLineWidth);
-	protected int selectPointSize = 6;
-	protected int textHiScale = Integer.MAX_VALUE;
-	protected int textLoScale = 0;
+	protected int selectPointSize     = 6;
+	protected int textHiScale         = Integer.MAX_VALUE;
+	protected int textLoScale         = 0;
 
 	protected boolean orientVertexMark = false;
-	protected boolean selectionActive = false;
+	protected boolean selectionActive  = false;
 	
-    protected Preferences preferences = null;
+    protected Preferences preferences  = null;
 
 	public Styling() {
 		this.setLineSeparator(System.getProperty("line.separator"));
@@ -164,8 +164,12 @@ public class Styling {
 	public Styling(Node _node) 
 	{
 		this();
-		if (_node == null || _node.getNodeName().equals("Styling") == false) {
-            System.out.println("Styling Node is null or does not contain Styling");
+		if (_node == null ) {
+            System.out.println("Styling Constructor's Node is null");
+			return; // Could throw error?
+		}
+		if ( ! _node.getNodeName().equals("Styling") ) {
+            System.out.println("Styling Constructor's Node is " + _node.getNodeName());
 			return; // Could throw error?
 		}
 		try {
@@ -684,7 +688,8 @@ public class Styling {
 	 * @history Simon Greener, 8th January 2011, Fixed bug with COLUMN based
 	 *          rendering
 	 */
-	public Color getPointColor(String _columnValue) {
+	public Color getPointColor(String _columnValue)
+	{
 		if (this.isSelectionActive()) {
 			return this.getSelectionColor();
 		} else if (this.getPointColorType() == Styling.STYLING_TYPE.CONSTANT) {
@@ -733,7 +738,8 @@ public class Styling {
 		}
 	}
 
-	public int getPointSize(int _defaultSize) {
+	public int getPointSize(int _defaultSize) 
+	{
 		if (this.isSelectionActive()) {
 			return this.selectPointSize;
 		} else if (this.getPointSizeType() == Styling.STYLING_TYPE.CONSTANT) {
@@ -835,7 +841,8 @@ public class Styling {
 			return this.lineWidth < 1 ? 1 : this.lineWidth;
 	}
 
-	public Color getLineColor(String _columnValue) {
+	public Color getLineColor(String _columnValue) 
+	{
 		if (this.isSelectionActive()) {
 			return this.getSelectionColor();
 		} else if (this.getLineColorType() == Styling.STYLING_TYPE.CONSTANT) {
@@ -1043,6 +1050,9 @@ public class Styling {
 			this.shadeColor = _shadeColor;
 	}
 
+	/* @tobedone: handle alpha
+	 * 
+	 */
 	public Color getShadeColor(String _columnValue) 
 	{
 		if (this.isSelectionActive()) {
@@ -1056,10 +1066,12 @@ public class Styling {
 						this.randomColorGenerator.nextInt(256));
 			} else {
 				Color retColor = Color.BLACK;
-				if (this.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+				if (this.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
+				{
 					try {
 						if (Strings.isEmpty(_columnValue)) {
-							retColor = Color.GRAY; // Hint that the colour of the objects is not fixed.
+							// Hint that the colour of the objects is not fixed.
+							retColor = Color.GRAY; 
 						} else {
 							// from RGBa also handles integer colours
 							retColor = Colours.fromRGBa(_columnValue);
@@ -1119,10 +1131,6 @@ public class Styling {
 		return this.lineColorType != Styling.STYLING_TYPE.NONE && this.shadeTransLevel != 1.0f;
 	}
 
-	public boolean isPerformSelectionShadeTrans() {
-		return this.selectionShadeTransLevel != 1.0f;
-	}
-
 	public void setSelectionLineWidth(int _selectLineWidth) {
 		if (this.selectLineWidth != _selectLineWidth) {
 			this.selectLineWidth = _selectLineWidth;
@@ -1177,11 +1185,25 @@ public class Styling {
 	}
 
 	public void setSelectionColor(Color _selectionColor) {
-		this.selectionColor = _selectionColor == null ? Color.YELLOW : new Color(_selectionColor.getRGB());
+		this.selectionColor = _selectionColor == null
+				              ? Color.YELLOW
+                              : new Color(_selectionColor.getRGB());
+		this.selectionColor = Colours.setAlpha(this.selectionColor,
+				                               this.selectionShadeTransLevel);
+	}
+
+	public int getSelectionShadeTransLevelAs255() {
+		return Math.abs(this.selectionShadeTransLevel) > 1.0
+				? 255
+                : (int)(Math.abs(this.selectionShadeTransLevel) * 255.0);
 	}
 
 	public Color getSelectionColor() {
-		return new Color(this.selectionColor.getRGB());
+		return new Color(this.selectionColor.getRed(),
+				         this.selectionColor.getGreen(),
+				         this.selectionColor.getBlue(),
+				         this.getSelectionShadeTransLevelAs255()
+				        );
 	}
 
 	public void setSelectionShadeTransLevel(float _selectShadeTransLevel) {

@@ -333,7 +333,7 @@ extends JPanel
               for (int i=0; i<rows.length; i++) {
                   geoSet.add((QueryRow)geoTableModel.getRow(i));
               }
-              this.svPanel.showGeometry(null,null,geoSet,new Envelope(geoSet),false,false,false);
+              this.svPanel.showGeometry(null,(Struct)null,geoSet,new Envelope(geoSet),false,false,false);
           }
           this.svPanel.activeView.getActiveLayer().getStyling().setMarkVertex(slt);
           this.svPanel.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
@@ -550,7 +550,7 @@ extends JPanel
             for (int i=0; i<rows.length; i++) {
                 geoSet.add((QueryRow)geoTableModel.getRow(rows[i]));
             }
-            this.svPanel.showGeometry(null,null,geoSet,new Envelope(geoSet),_highlight,_zoom,false);
+            this.svPanel.showGeometry(null,(Struct)null,geoSet,new Envelope(geoSet),_highlight,_zoom,false);
         }
     }
 

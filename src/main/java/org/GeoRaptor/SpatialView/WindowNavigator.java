@@ -12,7 +12,7 @@ import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
 
-public class windowNavigator {
+public class WindowNavigator {
 
     private final Logger LOGGER = Logging.getLogger("org.GeoRaptor.SpatialView.windowNavigator");
     
@@ -22,7 +22,7 @@ public class windowNavigator {
     /**
      * @param _entries Number of entries in array list
      */
-    public windowNavigator(int _entries) 
+    public WindowNavigator(int _entries) 
     {
         int entries = Math.abs(_entries);
         if (entries==0) {
@@ -84,19 +84,22 @@ public class windowNavigator {
         }
         
         double diff = mbrCurrent.difference(_mbr);
-        if ( diff < 10.0 ) {
+        if ( diff < 1.0 ) {
             LOGGER.debug("MBR Percentage Change " + diff + " does not warrant recording of the new window");
             return;
         }
         
-        if (hasNext()) {
+        if (hasNext()) 
+        {
             // OK, set next array position with passed in value
             this.current++;
             this.mbrs.set(this.current,
                           new Envelope(_mbr));
             // LOGGER.debug("windowNavigator.add(" + this.current + ")="+_mbr.toString());
             return;
-        } else {
+        } 
+        else 
+        {
           // There is no more room for the mbr
           LOGGER.debug("windowNavigator is FULL Remove First (0)");
           this.mbrs.remove(0); // Remove oldest

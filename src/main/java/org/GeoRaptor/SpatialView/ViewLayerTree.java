@@ -1748,18 +1748,24 @@ LOGGER.debug("removeLayer: " + _layerName);
                         // Get Layer MBR 
                         mbr = fLayerNode.getSpatialLayer().getMBR();
                     }
-                    JGeometry geom = new JGeometry(mbr.getMinX(), 
-                                                   mbr.getMinY(), 
-                                                   mbr.getMaxX(), 
-                                                   mbr.getMaxY(), 
-                                                   fLayerNode.getSpatialLayer().getSRIDAsInteger());
-					Struct stGeom;
-                    try {
-                    	Connection conn = fLayerNode.getSpatialLayer().getConnection();
-                        //stGeom = (Struct) JGeometry.storeJS(geom,conn);
-                        stGeom = JGeom.toStruct(geom,conn);
-                        svp.showGeometry(fLayerNode.getSpatialLayer(),stGeom, null, SDO_GEOMETRY.getGeoMBR(stGeom), true, true, false);
-                        /* ??? */ sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
+                    JGeometry jGeom = new JGeometry(
+                                           mbr.getMinX(), 
+                                           mbr.getMinY(), 
+                                           mbr.getMaxX(), 
+                                           mbr.getMaxY(), 
+                                           fLayerNode.getSpatialLayer().getSRIDAsInteger());
+					try {
+                        svp.showGeometry(
+                                fLayerNode.getSpatialLayer(),
+                                jGeom, 
+                        		null /* _geoSet */, 
+                        		JGeom.getGeoMBR(jGeom), 
+                        		true  /* _selectionColouring */, 
+                        		true  /* _zoom               */, 
+                        		false /* _drawAfter          */
+                        );
+                        /* ??? */ 
+                        sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
                     } catch (Exception f) {
                         JOptionPane.showMessageDialog(null, 
                                                       propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_MBR_ERROR",

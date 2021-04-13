@@ -16,17 +16,33 @@ public class Colours {
         return new Color(numGen.nextInt(256), numGen.nextInt(256), numGen.nextInt(256));
     }
     
-    public static Color setAlpha(Color _c,
-                                 int _a) 
+    public static Color setAlpha(Color _color,
+                                 int   _alpha) 
     {
-        if (_c == null )
+        if (_color == null )
             return null;
-        return new Color(_c.getRed(),
-                         _c.getGreen(),
-                         _c.getBlue(),
-                         _a);    
+        return new Color(_color.getRed(),
+        		         _color.getGreen(),
+        		         _color.getBlue(),
+                         Math.abs(_alpha) <= 255 ? _alpha : 255
+                   );
     }
-    
+
+	public static Color setAlpha(Color  _color, 
+			                     double _alpha) 
+	{
+		if (_color == null)
+			return null;
+		int alpha = ( Math.abs(_alpha) > 1.0 )
+				    ? Math.abs(_alpha) <= 255.0 ? (int)_alpha : 255
+                    : (int)(255.0 * Math.abs(_alpha));
+		return new Color(_color.getRed(), 
+                         _color.getGreen(), 
+                         _color.getBlue(), 
+                         alpha
+                   );
+	}
+
     public static String getRGBa(Color _c) {
         return String.format("%d,%d,%d,%d",_c.getRed(),_c.getGreen(),_c.getBlue(),_c.getAlpha());
     }

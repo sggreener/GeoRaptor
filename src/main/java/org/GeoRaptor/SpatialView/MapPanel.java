@@ -141,7 +141,7 @@ public class MapPanel
     /** 
      * Each view's mapPanel maintains a set of navigation MBRs in the view SRID's coordinate system
      */
-    protected windowNavigator windowNavigator  = null;
+    protected WindowNavigator windowNavigator  = null;
 
     /**
      * Screen size of map panel
@@ -310,7 +310,7 @@ public class MapPanel
         this.clientView    = new Dimension(0,0);
         this.lastScreen    = new Point.Double(0,0);
         
-        this.windowNavigator = new windowNavigator(MapPanel.mainPrefs.getMBRSaveSize()); 
+        this.windowNavigator = new WindowNavigator(MapPanel.mainPrefs.getMBRSaveSize()); 
         // Set up default rendering hint
         qualityHints.put(RenderingHints.KEY_RENDERING,
                          RenderingHints.VALUE_RENDER_DEFAULT);
@@ -2277,7 +2277,12 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
         }
         String returnVal = "";
         JFrame frame = new JFrame ();
-        ShapeReviewDialog srd = new ShapeReviewDialog(frame, SDO_GEOMETRY.getGeometryAsString(stGeom));
+        ShapeReviewDialog srd = new ShapeReviewDialog(
+        		                         frame, 
+        		                         SDO_GEOMETRY.getGeometryAsString(stGeom),
+        		                         this.propertyManager,
+        		                         this.spatialView
+                                );
         srd.pack();
         srd.setVisible(true);
         if ( ! srd.isCancelled() ) 
@@ -2320,6 +2325,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                 this.spatialView.setActiveLayer(sLayer);
             } 
         }
+        
         if ( sLayer == null || ( ! sLayer.isDraw() ) ) {
             JOptionPane.showMessageDialog(null,
                                           messageNoQueryableLayer,
@@ -2340,7 +2346,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
         // Show geometry objects
         //
         this.spatialView.getSVPanel().showGeometry(sLayer,
-                                                   null, 
+        		                                   (JGeometry)null, 
                                                    aList, 
                                                    new Envelope(aList),
                                                    true /* Selection Colouring*/, 
@@ -2369,7 +2375,9 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
     /**
      * Timer to perform paint of buffered image to screen image every X miliseconds
      */
-    class RefreshBFTask extends TimerTask {
+    class RefreshBFTask 
+    extends TimerTask 
+    {
         //public static final int REFRESH_BF_SLEEP_TIME = 1000;
         protected Graphics2D g2d;
 
@@ -2399,8 +2407,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
         protected SpatialView      spatialView;
         protected MapPanel         mapPanel;
 
-        public DrawTask(Graphics2D      _g2d,
-                        SpatialView     _spatialView) 
+        public DrawTask(Graphics2D  _g2d,
+                        SpatialView _spatialView) 
         {
             this.g2d         = _g2d;
             this.spatialView = _spatialView;
@@ -2408,13 +2416,10 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             this.mapPanel    = _spatialView.getMapPanel();
         }
 
-        public void run() {
-            //LOGGER.debug(" ****** START DrawTask.run()");
-            //LOGGER.debug(" ******** WorldToScreen ? " + this.mapPanel.isWorldToScreenSet());
+        public void run() 
+        {
             if ( ! this.mapPanel.isWorldToScreenSet() ) {
-                //LOGGER.debug(" ******** Setting World To Screen with " + this.spatialView.getMBR().toString());
                 this.mapPanel.setWindow(this.spatialView.getMBR());
-                //LOGGER.debug(" ******** World To Screen is set ? " + this.mapPanel.isWorldToScreenSet());
             }
 
             // we are in read data mode
@@ -2444,14 +2449,12 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                 return;
             }
             
-            //LOGGER.debug("******** tempAR.size "+(tempAR==null?"null":tempAR.size()));
             ListIterator<iLayer> litr = tempAR.listIterator(tempAR.size());
             int currentlLayer = 0,
             maxDrawableLayers = svp.getViewLayerTree().getDrawableLayerCount(this.spatialView.getViewName());
             svp.setMessage(this.spatialView.getViewName(),false);
             while (litr.hasPrevious() && (this.svp.isCancelOperation() == false)) {
                 iLayer layer = litr.previous();
-                //LOGGER.debug("******** MapPanel.drawTask: " + layer.getLayerName() + " isDraw=" + layer.isDraw());
                 if (layer.isDraw()) 
                 {
                     // update progress bar
@@ -2474,7 +2477,6 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             if (afterLayerDrawList != null && 
                 afterLayerDrawList.size()>0) 
             {
-                //LOGGER.debug("******** AfterLayerDraw of " + afterLayerDrawList.size() + " layers.");
                 AfterLayerDraw ald = null;
                 Iterator<AfterLayerDraw> iter = afterLayerDrawList.iterator();
                 while (iter.hasNext()) {
@@ -2521,195 +2523,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             // Make sure next/prev etc buttons are correct
             this.svp.setToolbarStatus();
             refreshAll();
-            //LOGGER.debug(" ****** FINISH DrawTask.run()");
         }
     }
-    
-    class ShapeReviewDialog extends JDialog
-    {   
-      private static final long serialVersionUID = 7068062067910673449L;
       
-      private String originalSdoGeometryString = "";
-    
-      private JPanel createPanel = new JPanel(new VerticalFlowLayout());
-      private JLabel lblQuestion = new  JLabel();
-      private JTextArea displayText = new JTextArea();
-      private JScrollPane scrollPane = new JScrollPane(displayText);
-      
-      private JPanel pnlPrecision = new JPanel();
-      private JLabel lblPrecision = new JLabel();
-      private JRadioButton rbPrecisionView = new JRadioButton();
-      private JRadioButton rbPrecisionNone = new JRadioButton();
-      private ButtonGroup bgPrecision = new ButtonGroup();
-    
-      private JTextField tfBufferDistance = new JTextField("0");
-      private JLabel lblBuffer = new JLabel("Buffer Distance:");
-      private JPanel  pnlButtons       = new JPanel(new GridLayout(1,2));
-      private JButton btnCopyClipboard = new JButton();
-      private JButton btnCancel        = new JButton();
-      
-      private DecimalFormat dFormat    = null;
-    
-      private boolean CANCELLED = false;
-      
-      /** Creates the reusable dialog. */
-      public ShapeReviewDialog(Frame   _aFrame,
-                               String  _text) 
-      {
-          super(_aFrame, true);
-          
-          setTitle(propertyManager.getMsg("COPY_TO_CLIPBOARD_TITLE"));
-    
-          this.originalSdoGeometryString = _text;
-          
-          this.dFormat = Tools.getDecimalFormatter(spatialView.getPrecision(false),false);
-          
-          this.lblQuestion.setText(propertyManager.getMsg("COPY_TO_CLIPBOARD_TITLE"));
-          this.displayText.setEditable(false);
-          this.displayText.setEnabled(true);
-          this.displayText.setLineWrap(true);
-          this.displayText.setText(SDO_GEOMETRY.applyPrecision(_text,dFormat,8 /* 2D * 4 coords = 8 ordinates */));
-          this.displayText.setWrapStyleWord(true);
-          
-          this.scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-          this.scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-          this.scrollPane.setViewportView(this.displayText);
-          this.scrollPane.setPreferredSize(new java.awt.Dimension(350,300));
-          this.scrollPane.setAutoscrolls(true);
-            
-          bgPrecision.add(rbPrecisionView);
-          rbPrecisionView.setText(propertyManager.getMsg("rbPrecisionView") + " (" + spatialView.getPrecision(false) + ")");
-          rbPrecisionView.setSelected(true);
-          rbPrecisionView.addActionListener(new java.awt.event.ActionListener() {
-              public void actionPerformed(java.awt.event.ActionEvent evt) {
-                  modifyGeometry();
-              }
-          });
-    
-          bgPrecision.add(rbPrecisionNone);
-          rbPrecisionNone.setText(propertyManager.getMsg("rbPrecisionNone"));
-          rbPrecisionNone.addActionListener(new java.awt.event.ActionListener() {
-              public void actionPerformed(java.awt.event.ActionEvent evt) {
-                  modifyGeometry();
-              }
-          });
-          lblPrecision.setLabelFor(rbPrecisionView);
-          lblPrecision.setText(propertyManager.getMsg("lblPrecision"));
-          pnlPrecision.add(lblPrecision);
-          pnlPrecision.add(rbPrecisionView);
-          pnlPrecision.add(rbPrecisionNone);
-        
-          this.lblBuffer.setText(propertyManager.getMsg("BUFFER_DISTANCE"));
-          this.lblBuffer.setLabelFor(this.tfBufferDistance);
-          
-          this.tfBufferDistance.setText(String.valueOf(0));
-          this.tfBufferDistance.setMinimumSize(new Dimension(30,22));
-          this.tfBufferDistance.setPreferredSize(new Dimension(30,22));
-          this.tfBufferDistance.setMaximumSize(new Dimension(30,22));
-          this.tfBufferDistance.setInputVerifier(new InputVerifier() {
-              public boolean verify(JComponent comp) {
-                  boolean returnValue = true;
-                  JTextField textField = (JTextField)comp;
-                  try {
-                      // This will throw an exception if the value is not an integer
-                      double size = Double.parseDouble(textField.getText());
-                      if ( size < 0 )
-                          throw new NumberFormatException(propertyManager.getMsg("ERROR_BUFFER_SIZE"));
-                      modifyGeometry();
-                  } catch (NumberFormatException e) {
-                      JOptionPane.showMessageDialog(null,
-                                                    e.getMessage(),
-                                                    MainSettings.EXTENSION_NAME,
-                                                    JOptionPane.ERROR_MESSAGE);
-                      returnValue = false;
-                  }
-                  return returnValue;
-              }
-          });
-    
-          this.btnCopyClipboard.setText(propertyManager.getMsg("BUTTON_COPY_TO_CLIPBOARD"));
-          this.btnCancel.setText(propertyManager.getMsg("BUTTON_CANCEL"));
-          this.pnlButtons.add(this.btnCopyClipboard);
-          this.pnlButtons.add(this.btnCancel);
-          
-          createPanel.add(this.lblQuestion      );
-          createPanel.add(this.scrollPane       );
-          createPanel.add(this.pnlPrecision     );
-          createPanel.add(this.lblBuffer        );
-          createPanel.add(this.tfBufferDistance );
-          createPanel.add(this.pnlButtons       );
-          
-          // Apply defaults
-          modifyGeometry();
-          
-          //Make this dialog display it.
-          this.setContentPane(this.createPanel);
-          this.setSize(360,350);
-          this.setResizable(false);
-          this.setAlwaysOnTop(true);
-          this.pack();
-    
-          //Handle window closing correctly.
-          this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-    
-          //Register an event handler that reacts to buttons being pressed
-          btnCopyClipboard.addActionListener(new java.awt.event.ActionListener() {
-              public void actionPerformed(java.awt.event.ActionEvent evt) {
-                  CANCELLED = false;
-                  setVisible(false);
-              }
-          });
-    
-          btnCancel.addActionListener(new java.awt.event.ActionListener() {
-              public void actionPerformed(java.awt.event.ActionEvent evt) {
-                  CANCELLED = true;
-                  setVisible(false);
-              }
-          });
-          
-      }
-      
-      public boolean isCancelled () {
-          return this.CANCELLED;        
-      }
-      
-      private void modifyGeometry() 
-      {
-        String displayString = this.originalSdoGeometryString;
-        if ( this.rbPrecisionView.isSelected() ) {
-          displayString =
-                    SDO_GEOMETRY.applyPrecision(displayString,dFormat,8 /* 2D * 4 coords = 8 ordinates */ );
-        }
-        
-        if ( Double.valueOf(this.tfBufferDistance.getText()) > 0 ) {
-          String lengthUnits  = Tools.getViewUnits(spatialView,Constants.MEASURE.LENGTH);
-          String bufferParams = ( ( spatialView.getSRID().equals(Constants.NULL) || Strings.isEmpty(lengthUnits) )
-                                  ?   ")"
-                                  : ",'unit="+lengthUnits  + "')" );
-          /** 
-           * SDO_GEOM.SDO_BUFFER(geom IN SDO_GEOMETRY,
-           *                     dist IN NUMBER,
-           *                     tol IN NUMBER
-           *                     [, params IN VARCHAR2]
-           *                    ) RETURN SDO_GEOMETRY;
-           */
-          displayString = "MDSYS.SDO_GEOM.SDO_BUFFER(" + 
-                              displayString + "," + 
-                              this.tfBufferDistance.getText() + "," + 
-                              String.format("%f",(float)(1f/Math.pow(10,dFormat.getMaximumFractionDigits()))) +
-                              bufferParams;
-        }
-        this.displayText.setText(displayString);
-      }
-      
-      public String getCopyButtonText() {
-        return this.btnCopyClipboard.getText();
-      }
-    
-      public String getFinalText() {
-          return this.displayText.getText();        
-      }
-      
-    }
-  
 }

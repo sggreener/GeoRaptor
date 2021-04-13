@@ -1329,7 +1329,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             // Show geometry objects
             //
             svp.showGeometry(this.validationLayer,
-                             null  /* geo */,
+            		         (Struct)null  /* geo */,
                              geoSet,
                              new Envelope(geoSet),
                              false /* Selection Colouring*/,
@@ -1765,7 +1765,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         if ( geoSet.size() != 0 ) {
             this.svp.getViewLayerTree().refreshNode(this.validationLayer.getLayerName());
             svp.showGeometry(this.validationLayer,
-                             null,
+            		         (Struct)null,
                              geoSet,
                              new Envelope(geoSet),
                              _selectionColouring,

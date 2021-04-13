@@ -86,6 +86,7 @@ import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.tools.Colours;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
@@ -1839,7 +1840,7 @@ extends JPanel
 
     /**
     * @method  showGeometry
-    * @param   _geo
+    * @param   _stGeom
     * @param   _zoomToGeometry
     * @author Simon Greener May 31st 2010
     *          Added call
@@ -1859,16 +1860,43 @@ extends JPanel
     *            to display a selection.
     * @author Simon Greener June 17th 2010
     *          Added improved selection colouring based on geometry or layer type
-    */  
+    */
+    public void showGeometry(
+    		final iLayer         _iLayer,
+            final Struct         _stGeom, 
+            final List<QueryRow> _geomSet,
+            final Envelope       _mbr,
+            final boolean        _selectionColouring,
+            final boolean        _zoom,
+            boolean              _drawAfter) 
+    {
+    	JGeometry jGeom = null;
+    	if ( _stGeom != null )
+			try {
+				jGeom = JGeometry.loadJS(_stGeom);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+   		this.showGeometry(
+    				_iLayer,
+    				jGeom, 
+    	            _geomSet,
+    	            _mbr,
+    	            _selectionColouring,
+    	            _zoom,
+    	            _drawAfter); 
+    }
+    
     public void showGeometry(final iLayer         _iLayer,
-                             final Struct         _geo, 
-                             final List<QueryRow> _geoSet,
+                             final JGeometry      _jGeom, 
+                             final List<QueryRow> _geomSet,
                              final Envelope       _mbr,
                              final boolean        _selectionColouring,
                              final boolean        _zoom,
                              boolean              _drawAfter) 
     {
-        if ( _geo == null && _geoSet == null) {
+        if ( _jGeom == null && _geomSet == null) {
             JOptionPane.showMessageDialog(null,
                                           this.SHOW_GEOMETRY_PARAMETER_ERROR,
                                           MainSettings.EXTENSION_NAME,
@@ -1876,7 +1904,7 @@ extends JPanel
             return;
         }
         
-        if ( _geoSet!=null && _geoSet.size()==0 ) {
+        if ( _geomSet!=null && _geomSet.size()==0 ) {
             JOptionPane.showMessageDialog(null,
                                           this.SHOW_GEOMETRYSET_PARAMETER_ERROR,
                                           MainSettings.EXTENSION_NAME,
@@ -1887,12 +1915,17 @@ extends JPanel
         // Get right view to draw geometries in by checking SRID compatibility
         // Question: What if passed in _layer is not null and has a layer?
         //
-        int geometrySRID = (_geo!=null ? SDO_GEOMETRY.getSRID(_geo,Constants.SRID_NULL) :
-             SDO_GEOMETRY.getSRID(_geoSet.get(0).getGeoValue(),Constants.SRID_NULL) );
+        int geomSRID = (_jGeom!=null 
+                        ? _jGeom.getSRID() 
+                        : SDO_GEOMETRY.getSRID(_geomSet.get(0).getGeoValue(),Constants.SRID_NULL) 
+                       );
+        if ( geomSRID == 0 )
+        	geomSRID = Constants.NULL_SRID;
+        
         SpatialView mappingView = null;
-        mappingView = this.getMostSuitableView(geometrySRID);
+        mappingView = this.getMostSuitableView(geomSRID);
         if ( mappingView==null ) {
-            String srid = geometrySRID==Constants.SRID_NULL?Constants.NULL:String.valueOf(geometrySRID);
+            String srid = geomSRID==Constants.SRID_NULL?Constants.NULL:String.valueOf(geomSRID);
             // geometry incompatible with active view
             JOptionPane.showMessageDialog(null,
                                           this.propertyManager.getMsg("SHOW_GEOMETRY_SRID_MISMATCH",
@@ -1915,20 +1948,21 @@ extends JPanel
         //
         Envelope mbr = null;
         if ( _mbr == null || _mbr.isNull() ) {
-            mbr = ( _geoSet == null ) 
-                  ? new Envelope(SDO_GEOMETRY.getGeoMBR(_geo))
-                  : new Envelope(_geoSet);
+            mbr = ( _geomSet == null ) 
+                  ? JGeom.getGeoMBR(_jGeom)
+                  : new Envelope(_geomSet);
         } else {
             mbr = new Envelope(_mbr);
         }
 
-        // If a Point is being drawn (point's width/height may be 0 pixels)
-        // then we can't expand by 10% but have to add simply 4 pixels
-        //
         if ( mbr == null || mbr.isNull() ) {
             LOGGER.error("Invalid object MBR");
             return;
         }
+        
+        // If a Point is being drawn (point's width/height may be 0 pixels)
+        // then we can't expand by 10% but have to add simply 4 pixels
+        //
         if ( mbr.getWidth() == 0 && mbr.getHeight() == 0 ) {
             Point2D.Double p = null;
             try {
@@ -1947,6 +1981,7 @@ extends JPanel
         } else { 
             mbr.setIncreaseByPercent(10); // add 10% around MBR
         }
+        
         // Set MBR of new view (regardless as to whether we are zooming or not)
         // because if we need world to screen transformation set to be able to
         // view anything. Also, if processing a single point then we can't getPixelSize 
@@ -1998,6 +2033,7 @@ extends JPanel
         } else {
             propertiesLayer = _iLayer;
         }
+        
         if ( propertiesLayer.getConnection()==null ) {
             propertiesLayer.setConnection(mappingView.getConnectionName());
         }
@@ -2010,13 +2046,15 @@ extends JPanel
             tLayer = propertiesLayer.createCopy( );
         } catch (Exception e) {
             LOGGER.error("Error creating copy of propertiesLayer used for rendering geometries");
+            e.printStackTrace();
             return;
         }
 
         // create for after draw shade operation
-        class ShadeAfterDraw extends AfterLayerDraw 
+        class ShadeAfterDraw 
+        extends AfterLayerDraw 
         {
-            Struct gStruct;
+            JGeometry jGeom;
             List<QueryRow> geoSet;
 
             boolean selectionColouring = false;
@@ -2025,14 +2063,14 @@ extends JPanel
             iLayer         renderLayer = null;
             
             public ShadeAfterDraw(Graphics2D     _g2d,
-                                  Struct         _geo, 
+                                  JGeometry      _geo,
                                   List<QueryRow> _geoSet,
                                   iLayer         _tLayer,
                                   boolean        _selectionColouring)
             {
                 super(true);  // true means remove after drawing layer
                 this.g2d                = _g2d;
-                this.gStruct            = _geo;
+                this.jGeom              = _geo;
                 this.geoSet             = _geoSet;
                 this.renderLayer        = _tLayer;
                 this.selectionColouring = _selectionColouring;
@@ -2041,11 +2079,14 @@ extends JPanel
             
             public void initialize() 
             {
-                renderLayer.getStyling().setSelectionActive(this.selectionColouring);
-                if ( renderLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.NONE ) {
-                    renderLayer.getStyling().setShadeType(Styling.STYLING_TYPE.CONSTANT );
-                    renderLayer.getStyling().setShadeTransLevel(0.5f);
+            	Styling styling = renderLayer.getStyling();
+                styling.setSelectionActive(this.selectionColouring);
+                if ( styling.getShadeType() == Styling.STYLING_TYPE.NONE ) {
+                	styling.setShadeType(Styling.STYLING_TYPE.CONSTANT );
+                	styling.setShadeTransLevel(0.25f);
                 }
+                if ( this.selectionColouring ) 
+                	styling.setShadeTransLevel(0.25f);
                 renderLayer.getDrawTools().setGraphics2D(this.g2d);
             }
             
@@ -2061,9 +2102,9 @@ extends JPanel
                 try {
                 	Styling              styling = renderLayer.getStyling();
                 	SVSpatialLayerDraw drawTools = renderLayer.getDrawTools();
-                    if ( this.gStruct != null ) {
+                	if ( this.jGeom != null ) {
                         drawTools.callDrawFunction(
-                                (Struct)this.gStruct,
+                                (JGeometry)this.jGeom,
                                 (Styling)styling,
                                 (String)"",
                                 (Color)null,(Color)null,(Color)null,
@@ -2090,11 +2131,13 @@ extends JPanel
         // Let everyone know what selection mode we are in for drawing 
         // Is this needed in all cases?
         //
-        ShadeAfterDraw shadeAfterClass = new ShadeAfterDraw(mappingView.getMapPanel().getBiG2D(), 
-                                                            _geo,
-                                                            _geoSet,
-                                                            tLayer,
-                                                            _selectionColouring);
+        ShadeAfterDraw shadeAfterClass = new ShadeAfterDraw(
+        		mappingView.getMapPanel().getBiG2D(), 
+                _jGeom,
+                _geomSet,
+                tLayer,
+                _selectionColouring
+        );
 
         // create copy of background image
         //
@@ -2165,8 +2208,8 @@ extends JPanel
     }
     
     public void setToolbarStatus(final ViewOperationListener.VIEW_OPERATION _viewOperation,
-                                 final windowNavigator                      _windowNavigator,
-                                 final Envelope                      _mbr) 
+                                 final WindowNavigator                      _windowNavigator,
+                                 final Envelope                             _mbr) 
     {
         SwingUtilities.invokeLater(new Runnable() {
             
