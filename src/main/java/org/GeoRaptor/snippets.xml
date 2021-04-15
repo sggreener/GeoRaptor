@@ -1,37 +1,500 @@
 ﻿<?xml version = '1.0' encoding = 'UTF-8'?>
 <snippets>
-  <group category="GeoRaptor" language="PLSQL">
-    <snippet name="Create spatial index">
-      <code>
-        <![CDATA[CREATE INDEX states_idx ON demo_states(geom) INDEXTYPE IS MDSYS.SPATIAL_INDEX;]]>
-      </code>
+  <group category="GeoRaptor - Sample Spatial Tables" language="PLSQL">
+    <snippet name="ORACLE_TEST_GEOMETRIES Table and Data" description="Test geometries From Oracle documentation">
+	    <code><![CDATA[
+DROP TABLE ORACLE_TEST_GEOMETRIES;
+DELETE FROM user_sdo_geom_metadata
+      WHERE table_name = 'ORACLE_TEST_GEOMETRIES'
+        AND column_name = 'GEOMETRY';
+COMMIT;
+CREATE TABLE ORACLE_TEST_GEOMETRIES (
+   ID       NUMBER,
+   NAME     VARCHAR2(100),
+   GEOMETRY SDO_GEOMETRY
+);
+INSERT INTO user_sdo_geom_metadata (table_name,column_name,diminfo,srid)
+VALUES ('ORACLE_TEST_GEOMETRIES','GEOMETRY',SDO_DIM_ARRAY(SDO_DIM_ELEMENT('X',9.95,75,0.005),SDO_DIM_ELEMENT('Y',5,188,0.005)),NULL);
+COMMIT;
+INSERT ALL
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (01,'Point (sdo_ordinate encoding)',  SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1),SDO_ORDINATE_ARRAY(10,5)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (02,'Point (sdo_point encoding)',     SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(10,5,NULL),NULL,NULL))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (03,'Oriented Point',                 SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1, 3,1,0),SDO_ORDINATE_ARRAY(12,14, 0.3,0.2)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (04,'Line (2 Vertices, 1 Segment)',   SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,10,20,10)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (05,'Line (1 Circular Arc)',          SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(10,15,15,20,20,15)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (06,'Line (4 Vertices, 3 Segments)',  SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,25,20,30,25,25,30,30)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (07,'Line (3 Circular Arcs)',         SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(10,35,15,40,20,35,25,30,30,35)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (08,'Line (Compound)',                SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,3,1,2,1,3,2,2,7,2,1),SDO_ORDINATE_ARRAY(10,45,20,45,23,48,20,51,10,51)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (09,'Line (Compound 2)',              SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,2, 1,2,1, 3,2,2),SDO_ORDINATE_ARRAY(10,10, 10,14, 6,10, 14,10)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (10,'Line (Vertex Connected, Closed)',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,55,15,55,20,60,10,60,10,55)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (11,'Line (Compound Closed)',         SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,2,1,2,1,7,2,2),SDO_ORDINATE_ARRAY(10,78,10,75,20,75,20,78,15,80,10,78)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (12,'Line (2 Arcs Closed)',           SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(15,65,10,68, 15,70,20,68,15,65)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (13,'Line (Self-crossing)',           SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,85,20,90,20,85,10,90,10,85)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (14,'Polygon (No Hole)',              SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1),SDO_ORDINATE_ARRAY(10,105,15,105,20,110,10,110,10,105)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (15,'Polygon (Hole)',                 SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 19,2003,1),SDO_ORDINATE_ARRAY(2,4, 4,3, 10,3, 13,5, 13,9, 11,13, 5,13, 2,11, 2,4, 7,5, 7,10, 10,10, 10,5, 7,5)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (16,'Polygon (Rectangle, No Hole)',   SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(10,135,20,140)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (17,'Polygon (Rectangle + Hole)',     SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3,5,2003,3),SDO_ORDINATE_ARRAY(50,135,60,140,51,136,59,139)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (18,'Polygon (Circle)',               SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4),SDO_ORDINATE_ARRAY(15,145,10,150,20,150)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (19,'Polygon (Circle + Hole)',        SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4,7,2003,4),SDO_ORDINATE_ARRAY(15,145,10,150,20,150, 13,151,14.5,149.5,16,151)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (20,'Polygon (Circular Arcs)',        SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,2),SDO_ORDINATE_ARRAY(15,115,20,118,15,120,10,118,15,115)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (21,'Polygon (Compound Boundary)',    SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1005,2, 1,2,1, 5,2,2),SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14, 6,10)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (22,'Heterogeneous collection',       SDO_GEOMETRY(2004,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1,3,2,1,7,1003,1),SDO_ORDINATE_ARRAY(10,5,10,10,20,10,10,105,15,105,20,110,10,110,10,105)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (23,'MultiPoint',                     SDO_GEOMETRY(2005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,3),SDO_ORDINATE_ARRAY(50,5,55,7,60,5)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (24,'MultiPoint (alternate)',         SDO_GEOMETRY(2005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1,3,1,1,5,1,1),SDO_ORDINATE_ARRAY(65,5,70,7,75,5)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (25,'MultiLine (2 parts, 1 segment each)',        SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1,5,2,1),SDO_ORDINATE_ARRAY(50,15,55,15,60,15,65,15)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (26,'MultiLine (2 parts, 1 Circular Arc Each)',   SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2,7,2,2),SDO_ORDINATE_ARRAY(50,35,55,40,60,35,65,35,70,30,75,35)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (27,'MultiLine (2 Parts Each Closed)',            SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1,9,2,1),SDO_ORDINATE_ARRAY(50,55,50,60,55,58,50,55,56,58,60,55,60,60,56,58)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (28,'MultiLine (2 Parts Which Cross)',            SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1,5,2,1),SDO_ORDINATE_ARRAY(50,22,60,22, 55,20,55,25)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (29,'Multiline (2 Circular Arc Parts That Touch)',SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2,7,2,2),SDO_ORDINATE_ARRAY(50,65,50,70,55,68,55,68,60,65,60,70)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (30,'MultiPolygon (2 Rectangles, No Holes)',      SDO_GEOMETRY(2007,null,nulL,SDO_ELEM_INFO_ARRAY(1,1003,3,5,1003,3),SDO_ORDINATE_ARRAY(0,0,100,100, 110,110,210,210)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (31,'MultiPolygon (3 Polygons, No Holes)',        SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 11,1003,3, 15,1003,1),SDO_ORDINATE_ARRAY(50,105, 55,105, 60,110, 50,110, 50,105, 62,108, 65,112, 55.2,113.5, 59.6,110.4, 60.7,114.4, 55.2,113.5)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (32,'MultiPolygon (2 Rectangles Touching)',        SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3,5,1003,3),SDO_ORDINATE_ARRAY(50,115,55,120,55,120,58,122)))
+INTO ORACLE_TEST_GEOMETRIES (ID,NAME,GEOMETRY) values (33,'MultiPolygon (2 Parts Touching @ Many Points)',SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1,17,1003,1),SDO_ORDINATE_ARRAY(50,95,55,95,53,96,55,97,53,98,55,99,50,99,50,95,55,100,55,95,60,95,60,100,55,100)))
+INTO ORACLE_TEST_GEOMETRIES (Id,Name,Geometry) Values (34,'MultiPolygon (2 Touching Parts, 1 With Hole)', SDO_GEOMETRY(2007,Null,Null,Sdo_Elem_Info_Array(1,1003,1,11,2003,1,31,1003,1),Sdo_Ordinate_Array(50,168,50,160,55,160,55,168,50,168,51,167,54,167,54,161,51,161,51,162,52,163,51,164,51,165,51,166,51,167,52,166,52,162,53,162,53,166,52,166)))
+INTO ORACLE_TEST_GEOMETRIES (Id,Name,Geometry) Values (35,'MultiPolygon (3 Parts with Holes)',            SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0)))
+INTO ORACLE_TEST_GEOMETRIES (Id,Name,Geometry) Values (36,'MultiPolygon (2 Compound Parts One With Compound Hole)',SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1005,2, 1,2,1, 5,2,2,11,2005,2, 11,2,1, 15,2,2,21,1005,2, 21,2,1, 25,2,2),SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14,  6,10,13,10, 10,2,  7,10, 10,13, 13,10,106,110, 110,101, 114,110, 110,114,106,110)))
+SELECT * FROM DUAL;
+COMMIT;
+CREATE INDEX ORA_TEST_GEOM_GEOMETRY_IDX
+          ON ORACLE_TEST_GEOMETRIES(GEOMETRY)
+          INDEXTYPE IS SPATIAL_INDEX
+          PARAMETERS('sdo_indx_dims=2, layer_gtype=COLLECTION');]]>
+        </code>
     </snippet>
-    <snippet name="Validate using tolerance">
-      <code>
-        <![CDATA[SELECT s.state, SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT(s.geom, 0.005) FROM demo_states s WHERE s.state = 'California';]]>
-      </code>
+    <snippet name="CUSTOMERS and STORES Point Tables" description="Point data for Customers and Stores tables.">
+	    <code><![CDATA[
+DROP TABLE customers;
+DROP TABLE stores;
+DELETE FROM USER_SDO_GEOM_METADATA 
+   WHERE TABLE_NAME = 'CUSTOMERS' AND COLUMN_NAME = 'CUST_GEO_LOCATION';
+DELETE FROM USER_SDO_GEOM_METADATA 
+   WHERE TABLE_NAME = 'STORES' AND COLUMN_NAME = 'STORE_GEO_LOCATION';
+COMMIT;
+-- Create table for customer information.
+DROP   TABLE customers;
+CREATE TABLE customers (
+  customer_id         NUMBER,
+  last_name           VARCHAR2(30),
+  first_name          VARCHAR2(30),
+  street_address      VARCHAR2(40),
+  city                VARCHAR2(30),
+  state_province_code VARCHAR2(2),
+  postal_code         VARCHAR2(9),
+  cust_geo_location   SDO_GEOMETRY
+); 
+-- Create table for store information.
+DROP   TABLE stores;
+CREATE TABLE stores (
+  store_id            NUMBER,
+  description         VARCHAR2(100),
+  street_address      VARCHAR2(40),
+  city                VARCHAR2(30),
+  state_province_code VARCHAR2(2),
+  postal_code         VARCHAR2(9),
+  store_geo_location  SDO_GEOMETRY
+);
+-- Insert customer data.
+INSERT INTO customers VALUES (1001,'Nichols', 'Alexandra', '17 Maple Drive', 'Nashua', 'NH','03062', SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-71.48923,42.72347,NULL), NULL, NULL));
+INSERT INTO customers VALUES (1002,'Harris', 'Melvin',  '5543 Harrison Blvd', 'Reston', 'VA', '20190', SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE(-70.120133,44.795766,NULL), NULL, NULL));
+INSERT INTO customers VALUES (1003,'Chang', 'Marian', '294 Main St', 'Concord', 'MA','01742', SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-71.351,42.4598,NULL), NULL, NULL));
+INSERT INTO customers VALUES (1004,'Williams', 'Thomas', '84 Hayward Rd', 'Acton', 'MA','01720',SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-71.4559,42.4748,NULL), NULL, NULL));
+INSERT INTO customers VALUES (1005,'Rodriguez', 'Carla',  '9876 Pine Lane', 'Sudbury', 'MA','01776', SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-71.4242,42.3826,NULL), NULL, NULL));
+INSERT INTO customers VALUES (1006,'Adnani', 'Ramesh', '1357 Appletree Ct', 'Falls Church', 'VA','22042 ',SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-77.1745,38.88505,NULL),NULL,NULL));
+COMMIT';
+-- Insert stores data.
+INSERT INTO stores VALUES (101,'Nashua megastore', '123 Commercial Way', 'Nashua', 'NH','03062',SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-71.49074,42.7229,NULL),NULL,NULL));
+INSERT INTO stores VALUES (102,'Reston store', '99 Main Blvd', 'Reston', 'VA','22070',SDO_GEOMETRY(2001, 8307, SDO_POINT_TYPE (-77.34511,38.9521,NULL),NULL,NULL));
+COMMIT;
+-- Add metadata to spatial view USER_SDO_GEOM_METADATA.
+DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME IN ('CUSTOMERS', 'STORES');
+COMMIT;
+INSERT INTO USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) 
+   VALUES ('CUSTOMERS', 'CUST_GEO_LOCATION', SDO_DIM_ARRAY (SDO_DIM_ELEMENT('LONG', -180.0, 180.0, 0.5), SDO_DIM_ELEMENT('LAT', -90.0, 90.0, 0.5)), 8307);
+INSERT INTO USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) 
+   VALUES ('STORES', 'STORE_GEO_LOCATION', SDO_DIM_ARRAY (SDO_DIM_ELEMENT('LONG', -180.0, 180.0, 0.5), SDO_DIM_ELEMENT('LAT', -90.0, 90.0, 0.5)), 8307); 
+COMMIT;
+-- Create spatial indexes.
+CREATE INDEX customers_sidx ON customers(cust_geo_location) INDEXTYPE IS spatial_index PARAMETERS ('sdo_indx_dims=2 layer_gtype=POINT');
+CREATE INDEX stores_sidx ON stores(store_geo_location)      INDEXTYPE IS spatial_index PARAMETERS ('sdo_indx_dims=2 layer_gtype=POINT');
+-- Check selections
+SELECT customer_id, last_name, SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT (cust_geo_location, 0.5) FROM customers;
+SELECT store_id, description, SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT (STORE_GEO_LOCATION, 0.5) FROM stores;
+PROMPT "--- End of Customer - Store Demo ---"
+]]></code>
     </snippet>
-    <snippet name="Calculate MBR">
-      <code>
-        <![CDATA[SELECT SDO_GEOM.SDO_MBR(s.geom, m.diminfo) 
-	  FROM demo_states s, user_sdo_geom_metadata m
-	  WHERE m.table_name = 'DEMO_STATES' AND m.column_name = 'GEOM' 
-	  AND s.state = 'California';]]>
-      </code>
-    </snippet>
-    <snippet name="Objects within distance">
-          <code>
-            <![CDATA[SELECT c.city FROM demo_cities c WHERE SDO_WITHIN_DISTANCE(c.location,
-                MDSYS.SDO_GEOMETRY(2001,8265,MDSYS.SDO_POINT_TYPE(-118.411201,34.112101,null),null,null),
-                'distance=10') = 'TRUE';]]>
-          </code>
+    <snippet name="COLA_MARKETS Table and Data" description="Cola_Markets geometries from Oracle documentation">
+      <code><![CDATA[
+-- Create a table for cola (soft drink) markets in a given geography (such as city or state).
+DROP   TABLE COLA_MARKETS;
+CREATE TABLE COLA_MARKETS (
+  mkt_id NUMBER PRIMARY KEY,
+  name   VARCHAR2(32),
+  shape  SDO_GEOMETRY
+);
+-- The next INSERT statement creates an area of interest for 
+-- Cola A. This area happens to be a rectangle.
+-- The area could represent any user-defined criterion: for
+-- example, where Cola A is the preferred drink, where
+-- Cola A is under competitive pressure, where Cola A
+-- has strong growth potential, and so on.
+INSERT INTO COLA_MARKETS VALUES(
+  1,
+  'cola_a',
+ SDO_GEOMETRY(
+    2003,  -- two-dimensional polygon
+    8307,  -- SRID for 'Longitude / Latitude (WGS 84)' coordinate system
+    NULL,
+   SDO_ELEM_INFO_ARRAY(1,1003,1), -- polygon
+   SDO_ORDINATE_ARRAY(1,1, 5,1, 5,7, 1,7, 1,1) -- All vertices must
+              -- be defined for rectangle with geodetic data.
+  )
+);
+-- The next two INSERT statements create areas of interest for 
+-- Cola B and Cola C. These areas are simple polygons (but not
+-- rectangles).
+INSERT INTO COLA_MARKETS VALUES(
+  2,
+  'cola_b',
+ SDO_GEOMETRY(
+    2003,  -- two-dimensional polygon
+    8307,
+    NULL,
+   SDO_ELEM_INFO_ARRAY(1,1003,1), -- one polygon (exterior polygon ring)
+   SDO_ORDINATE_ARRAY(5,1, 8,1, 8,6, 5,7, 5,1)
+  )
+);
+INSERT INTO COLA_MARKETS VALUES(
+  3,
+  'cola_c',
+ SDO_GEOMETRY(
+    2003,  -- two-dimensional polygon
+    8307,
+    NULL,
+   SDO_ELEM_INFO_ARRAY(1,1003,1), --one polygon (exterior polygon ring)
+   SDO_ORDINATE_ARRAY(3,3, 6,3, 6,5, 4,5, 3,3)
+  )
+);
+-- Insert a rectangle (here, square) instead of a circle as in the original,
+-- because arcs are not supported with geodetic coordinate systems.
+INSERT INTO COLA_MARKETS VALUES(
+  4,
+  'cola_d',
+ SDO_GEOMETRY(
+    2003,  -- two-dimensional polygon
+    8307,  -- SRID for 'Longitude / Latitude (WGS 84)' coordinate system
+    NULL,
+   SDO_ELEM_INFO_ARRAY(1,1003,1), -- polygon
+   SDO_ORDINATE_ARRAY(10,9, 11,9, 11,10, 10,10, 10,9) -- All vertices must
+              -- be defined for rectangle with geodetic data.
+  )
+);
+COMMIT;
+---------------------------------------------------------------------------
+-- UPDATE METADATA VIEW --
+---------------------------------------------------------------------------
+-- Update the USER_SDO_GEOM_METADATA view. This is required
+-- before the Spatial index can be created. Do this only once for each
+-- layer (table-column combination; here: COLA_MARKETS and shape).
+DELETE FROM user_sdo_geom_metadata 
+ WHERE TABLE_NAME = 'COLA_MARKETS' 
+   AND COLUMN_NAME = 'SHAPE';
+COMMIT;
+INSERT INTO user_sdo_geom_metadata (
+  TABLE_NAME,
+  COLUMN_NAME,
+  DIMINFO,
+  SRID
+) VALUES (
+  'COLA_MARKETS',
+  'SHAPE',
+  SDO_DIM_ARRAY(
+    SDO_DIM_ELEMENT('Longitude', -180, 180, 10),  -- 10 meters tolerance
+    SDO_DIM_ELEMENT('Latitude', -90, 90, 10)  -- 10 meters tolerance
+  ),
+  8307   -- SRID for 'Longitude / Latitude (WGS 84)' coordinate system
+);
+COMMIT;
+-------------------------------------------------------------------
+-- CREATE THE SPATIAL INDEX --
+-------------------------------------------------------------------
+CREATE INDEX cola_spatial_idx_cs
+          ON COLA_MARKETS(shape)
+   INDEXTYPE IS SPATIAL_INDEX;
+-------------------------------------------------------------------
+-- TEST COORDINATE SYSTEM TRANSFORMATION --
+-------------------------------------------------------------------
+-- Return the transformation of cola_c using to_srid 8199 
+-- ('Longitude / Latitude (Arc 1950)')
+SELECT c.name,SDO_CS.TRANSFORM(c.shape, 8199) 
+  FROM COLA_MARKETS c 
+ WHERE c.name = 'cola_c';
+-- Same as preceding, but using to_srname parameter.
+SELECT c.name,SDO_CS.TRANSFORM(c.shape, 'Longitude / Latitude (Arc 1950)') 
+  FROM COLA_MARKETS c
+ WHERE c.name = 'cola_c';
+-- Transform the entire SHAPE layer and put results in the table
+-- named COLA_MARKETS_8199, which the procedure will create.
+CALL SDO_CS.TRANSFORM_LAYER('COLA_MARKETS','SHAPE','COLA_MARKETS_8199',8199);
+-- Select all from the old (existing) table.
+SELECT * FROM COLA_MARKETS;
+-- Select all from the new (layer transformed) table.
+SELECT * FROM COLA_MARKETS_8199;
+-- Show metadata for the new (layer transformed) table.
+DESCRIBE COLA_MARKETS_8199;
+-- Use a geodetic MBR with SDO_FILTER.
+SELECT c.name 
+  FROM COLA_MARKETS c 
+ WHERE SDO_FILTER(c.shape,SDO_GEOMETRY(2003,8307,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(6,5, 10,10))) = 'TRUE';]]></code>
     </snippet> 
-    <snippet name="Transform co-ordinate system of geometry column">
-              <code>
-                <![CDATA[EXECUTE SDO_CS.TRANSFORM_LAYER('DEMO_CITIES','LOCATION','DEMO_CITIES_8199',8199);]]>
-              </code>
+  </group>
+  <group category="GeoRaptor - Individual Geometry Type Examples" language="PLSQL">
+    <snippet name="Point (sdo_ordinate encoding)" description="Point with coordinate stored in SDO_ORDINATE_ARRAY"> <code><![CDATA[SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1),SDO_ORDINATE_ARRAY(10,5))]]></code></snippet>
+    <snippet name="Point (sdo_point encoding)"    description="Point with coordinate stored in SDO_POINT_TYPE object."> <code><![CDATA[SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(10,5,NULL),NULL,NULL)]]></code></snippet>
+    <snippet name="Oriented point" description="Oriented point"> <code><![CDATA[SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1, 3,1,0),SDO_ORDINATE_ARRAY(12,14, 0.3,0.2))]]></code></snippet>
+    <snippet name="Line (2 Vertices, 1 Segment)"  description="Line string with 1 segment between 2 vertices."><code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,10,20,10)))]]></code></snippet>
+    <snippet name="Line (1 Circular Arc)"         description="Line describe by a single circular arc segment"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(10,15, 15,20, 20,15))]]></code></snippet>
+    <snippet name="Line (4 Vertices, 3 Segments)" description="Line described by 3 segments between 4 Vertices"><code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,25, 20,30, 25,25, 30,30)))]]></code></snippet>
+    <snippet name="Line (3 Circular Arcs)" description="Line described by 3 Circular Arcs"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(10,35, 15,40, 20,35, 25,30, 30,35))]]></code></snippet>
+    <snippet name="Line (Compound)"        description="Compound line string"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,3, 1,2,1, 3,2,2, 7,2,1),SDO_ORDINATE_ARRAY(10,45, 20,45, 23,48, 20,51, 10,51))]]></code></snippet>
+    <snippet name="Line (Compound 2)"      description="Line string described by circular arcs and vertex connected linestrings."> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,2, 1,2,1, 3,2,2),SDO_ORDINATE_ARRAY(10,10, 10,14, 6,10, 14,10))]]></code></snippet>
+    <snippet name="Line (Vertex Connected, Closed)" description="Closed vertex connected linestring"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,55, 15,55, 20,60, 10,60, 10,55))]]></code></snippet>
+    <snippet name="Line (Compound Closed)" description="Closed mixed line"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,2, 1,2,1, 7,2,2),SDO_ORDINATE_ARRAY(10,78, 10,75, 20,75, 20,78, 15,80, 10,78))]]></code></snippet>
+    <snippet name="Line (2 Arcs Closed)"   description="Closed arc string"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(15,65, 10,68, 15,70, 20,68, 15,65))]]></code></snippet>
+    <snippet name="Line (Self-crossing)" description="Self-crossing line"> <code><![CDATA[SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(10,85, 20,90, 20,85, 10,90, 10,85))]]></code></snippet>
+    <snippet name="Polygon (No Hole)" description="Polygon with no holes"> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1),SDO_ORDINATE_ARRAY(10,105, 15,105, 20,110, 10,110, 10,105))]]></code></snippet>
+    <snippet name="Polygon (Hole)"    description="Polygon with a single hole"> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 19,2003,1),SDO_ORDINATE_ARRAY(2,4, 4,3, 10,3, 13,5, 13,9, 11,13, 5,13, 2,11, 2,4, 7,5, 7,10, 10,10, 10,5, 7,5))]]></code></snippet>
+    <snippet name="Polygon (Rectangle, No Hole)" description="Rectangle polygon with no hole."> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(10,135, 20,140))]]></code></snippet>
+    <snippet name="Polygon (Rectangle + Hole)" description="Rectangle polygon with rectangular hole."> <code><![CDATA[SDO_GEOMETRY(2003,Null,Null,SDO_ELEM_INFO_ARRAY(1,1003,3,5,2003,3),SDO_ORDINATE_ARRAY(10,135,20,140,30,100,70,100))]]></code></snippet>
+    <snippet name="Polygon (Circle)" description="Circular polygon"> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4),SDO_ORDINATE_ARRAY(15,145, 10,150, 20,150))]]></code></snippet>
+    <snippet name="Polygon (Circle + Hole)" description="Circular polygon with circular hole"> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4,7,2003,4),SDO_ORDINATE_ARRAY(15,145,10,150,20,150, 13,151,14.5,149.5,16,151))]]></code></snippet>
+    <snippet name="Polygon (Circular Arcs)" description="Polygon whose outer boundary is described only by circular arcs."> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,2),SDO_ORDINATE_ARRAY(15,115, 20,118, 15,120, 10,118, 15,115))]]></code></snippet>
+    <snippet name="Polygon (Compound Boundary)" description="Polygon whose outer boundary is described by circular arc and vertex connected segments."> <code><![CDATA[SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1005,2, 1,2,1, 5,2,2),SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14, 6,10))]]></code></snippet>
+    <snippet name="Heterogeneous Collection" description="Heterogeneous Collection: a point, line and a polygon"><code><![CDATA[SDO_GEOMETRY(2004,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1, 3,2,1, 7,1003,1),SDO_ORDINATE_ARRAY(10,5, 10,10, 20,10, 10,105, 15,105, 20,110, 10,110,10,105))]]></code></snippet>
+    <snippet name="MultiPoint" description="Points described by single SDO_ELEM_INFO_ARRAY triplet."><code><![CDATA[SDO_GEOMETRY(2005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,3),SDO_ORDINATE_ARRAY(50,5, 55,7, 60,5))]]></code></snippet>
+    <snippet name="Multipoint (Alternate)" description="Points described by one ElemInfo triplet per point."><code><![CDATA[SDO_GEOMETRY(2005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1, 3,1,1, 5,1,1),SDO_ORDINATE_ARRAY(65,5, 70,7, 75,5))]]></code></snippet>
+    <snippet name="MultiLine (2 parts, 1 segment each)" description="Multiline described by one segment each."> <code><![CDATA[SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1, 5,2,1),SDO_ORDINATE_ARRAY(50,15, 55,15, 60,15, 65,15))]]></code></snippet>
+    <snippet name="MultiLine (2 parts, 1 Circular Arc Each)" description="Multiline composed only of circular arc segments."> <code><![CDATA[SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2, 7,2,2),SDO_ORDINATE_ARRAY(50,35, 55,40, 60,35, 65,35, 70,30, 75,35))]]></code></snippet>
+    <snippet name="MultiLine (2 Parts, Each Closed)" description="MultiLine with two vertex connected parts each of which close."> <code><![CDATA[SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1, 9,2,1),SDO_ORDINATE_ARRAY(50,55, 50,60, 55,58, 50,55, 56,58, 60,55, 60,60, 56,58))]]></code></snippet>
+    <snippet name="MultiLine (2 Parts Which Cross)" description="MultiLine where segments cross"> <code><![CDATA[SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1, 5,2,1),SDO_ORDINATE_ARRAY(50,22, 60,22, 55,20, 55,25))]]></code></snippet>
+    <snippet name="MultiLine (2 parts, 1 Circular Arc Each That Touch)" description="MultiLine composed only of 2 circular arc segments that have a start/end touch relationship."><code><![CDATA[SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2,7,2,2),SDO_ORDINATE_ARRAY(50,65,50,70,55,68,55,68,60,65,60,70))]]></code></snippet>
+    <snippet name="MultiPolygon (3 Polygons, No Holes)" description="Multi polygon made up of 2 vertex connected and 1 rectangular polygons."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 11,1003,3, 15,1003,1),SDO_ORDINATE_ARRAY(50,105, 55,105, 60,110, 50,110, 50,105, 62,108, 65,112, 55.2,113.5, 59.6,110.4, 60.7,114.4, 55.2,113.5))]]></code></snippet>
+    <snippet name="MultiPolygon (2 Rectangles, No Holes)" description="Multi polygon made up of two rectangles."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3,5,1003,3),sdo_ordinate_array(0,0,100,100, 110,110,210,210))]]></code></snippet>
+    <snippet name="MultiPolygon (2 Touching Rectangles)" description="Multi polygon made up of two rectangles that touch @ a single point."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3,5,1003,3),SDO_ORDINATE_ARRAY(50,115,55,120,55,120,58,122))]]></code></snippet>
+    <snippet name="MultiPolygon (2 Parts Touching @ Many Points)" description="Multi polygon made up of two polygons touching @ many places."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1,17,1003,1),SDO_ORDINATE_ARRAY(50,95,55,95,53,96,55,97,53,98,55,99,50,99,50,95,55,100,55,95,60,95,60,100,55,100))]]></code></snippet>
+    <snippet name="MultiPolygon (2 Touching Parts, 1 With Hole)" description="Multi polygon made up of two polygons, one with hole, touching."> <code><![CDATA[SDO_GEOMETRY(2007,nULL,nULL,SDO_ELEM_INFO_ARRAY(1,1003,1,11,2003,1,31,1003,1),SDO_ORDINATE_ARRAY(50,168,50,160,55,160,55,168,50,168,51,167,54,167,54,161,51,161,51,162,52,163,51,164,51,165,51,166,51,167,52,166,52,162,53,162,53,166,52,166))]]></code></snippet>
+    <snippet name="MultiPolygon (3 Parts with Holes)" description="Multipolygon made up of three parts with holes nested inside each other."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0))]]></code></snippet>
+    <snippet name="MultiPolygon (2 Compound Parts One With A Compound Hole)" description="Multipolygon made up of two compound parts one with a compound hole."> <code><![CDATA[SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1005,2, 1,2,1, 5,2,2,11,2005,2, 11,2,1, 15,2,2,21,1005,2, 21,2,1, 25,2,2),SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14,  6,10,13,10, 10,2,  7,10, 10,13, 13,10,106,110, 110,101, 114,110, 110,114,106,110))]]></code></snippet>
+  </group>
+  <group category="GeoRaptor - Spatial Search Operators" language="PLSQL">
+    <snippet name="SDO_FILTER" description="Specifies which geometries may interact with a given geometry. An MBR search function.">
+        <code><![CDATA[SDO_FILTER(A.Geometry, B.Geometry) = 'TRUE']]></code>
     </snippet>
-    </group>
+    <snippet name="SDO_ANYINTERACT" description="Returns TRUE if the objects are not disjoint.">
+        <code><![CDATA[SDO_ANYINTERACT(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_CONTAINS" description="Returns CONTAINS if the second object is entirely within the first object and the object boundaries do not touch; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_CONTAINS(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_COVEREDBY" description="Returns COVEREDBY if the first object is entirely within the second object and the object boundaries touch at one or more points; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_COVEREDBY(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_COVERS" description="Returns COVERS if the second object is entirely within the first object and the boundaries touch in one or more places; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_COVERS(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_DISJOINT" description="Returns DISJOINT if the objects have no common boundary or interior points; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_DISJOINT(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_EQUAL" description="Returns EQUAL if the objects share every point of their boundaries and interior, including any holes in the objects; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_EQUAL(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_INSIDE" description="Returns INSIDE if the first object is entirely within the second object and the object boundaries do not touch; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_INSIDE(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_ON" description="Returns ON if the boundary and interior of a line (the first object) is completely on the boundary of a polygon (the second object); otherwise, returns FALSE.">
+        <code><![CDATA[SDO_ON(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_OVERLAPBDYDISJOINT" description="Returns OVERLAPBDYDISJOINT if the objects overlap, but their boundaries do not interact; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_OVERLAPBDYDISJOINT(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_OVERLAPBDYINTERSECT" description="Returns OVERLAPBDYINTERSECT if the objects overlap, and their boundaries intersect in one or more places; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_OVERLAPBDYINTERSECT(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_TOUCH" description="Returns TOUCH if the two objects share a common boundary point, but no interior points; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_TOUCH(A.Geometry, B.Geometry) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_WITHIN_DISTANCE" description="Returns TOUCH if the two objects share a common boundary point, but no interior points; otherwise, returns FALSE.">
+        <code><![CDATA[SDO_WITHIN_DISTANCE(A.Geometry, B.Geometry, 'distance = <some_dist_val>') = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_NN" description="Determines the nearest neighbor geometries to a geometry.">
+        <code><![CDATA[SDO_NN(A.Geometry, B.Geometry, param [, number]) = 'TRUE']]></code>
+    </snippet>
+    <snippet name="SDO_RELATE" description="Allows for many topological searches in one search.">
+        <code><![CDATA[SDO_RELATE(A.Geometry, B.Geometry, param VARCHAR2) = 'TRUE'
+/** param is a quoted string with the mask keyword and a valid mask value, and optionally either or both of the min_resolution and max_resolution keywords
+*** Valid mask keyword values are one or more of the following:
+***   TOUCH
+***   OVERLAPBDYDISJOINT
+***   OVERLAPBDYINTERSECT
+***   EQUAL
+***   INSIDE
+***   COVEREDBY
+***   CONTAINS
+***   COVERS
+***   ANYINTERACT
+***   ON
+*** Multiple masks are combined with the logical Boolean operator OR, for example, 'mask=inside+touch'.
+***
+*** min_resolution can be used to exclude geometries that are too small to be of interest.
+*** max_resolution can be used to exclude geometries that are too large to be of interest.
+*/
+]]></code>
+    </snippet>
+  </group>
+  <group category="GeoRaptor - Spatial Search Query and Operator Examples" language="PLSQL">
+	<snippet name= "Point-Inside-Polygon" description="Find all Points within a Polygon">
+		<code><![CDATA[
+SELECT /*+ORDERED*/
+       pt.*
+  FROM polygons py,
+       points   pt
+ WHERE sdo_inside(pt.geom,py.geom) = 'TRUE';
+	]]></code>
+	 </snippet>
+	<snippet name= "Polygon-Contains-Point" description="Find the polygon that contains a specific point">
+				<code><![CDATA[
+SELECT /*+ORDERED*/
+       py.*
+  FROM points   pt,
+       polygons py
+ WHERE pt.id = <1>
+   AND sdo_contains(py.geom,pt.geom) = 'TRUE';
+	]]></code>
+    </snippet>
+	<snippet name= "Calculate MBR of geometry" description="Shows how to calculate the minimum bounding rectangle (MBR) of a geometry object (no diminfo).">
+		<code><![CDATA[
+SELECT SDO_GEOM.SDO_MBR(a.geom) as mbr
+  FROM <table> a
+ WHERE <predicate> /* eg a.state = 'Tasmania' */;
+	]]></code>
+    </snippet>
+ </group>
+  <group category="GeoRaptor - SDO_GEOM GeoProcessing Functions" language="PLSQL">
+    <snippet name="SDO_GEOM.SDO_CENTROID" description="Generates Centroid for Polygon (not guaranteed to fall within)">
+        <code><![CDATA[SELECT sdo_geom.sdo_centroid(sdo_geometry(2003,null,null,sdo_elem_info_array(1,1003,3),sdo_ordinate_array(0,0,10,10)) as cgeom FROM dual;]]></code>
+    </snippet>
+	<snippet name="SDO_GEOM.SDO_BUFFER" description="Generate a buffer of 1 unit around a point geometry">
+		<code><![CDATA[SELECT c.name,SDO_GEOM.SDO_BUFFER(c.geometry, m.diminfo, 1) FROM ORACLE_TEST_GEOMETRIES c, user_sdo_geom_metadata m WHERE m.table_name = 'ORACLE_TEST_GEOMETRIES' AND m.column_name = 'GEOMETRY' AND c.name = 'Point';]]></code>
+	</snippet>
+	<snippet name="SDO_GEOM.SDO_INTERSECTION" description="Return the topological intersection of two geometries">
+		<code><![CDATA[SELECT SDO_GEOM.SDO_INTERSECTION(c_a.shape, c_c.shape, 0.005) FROM cola_markets c_a, cola_markets c_c WHERE c_a.name = 'cola_a' AND c_c.name = 'cola_c';]]></code>
+	</snippet>
+	<snippet name="SDO_GEOM.RELATE" description="Do two geometries have any spatial relationship?">
+		<code><![CDATA[SELECT SDO_GEOM.RELATE(c_b.shape, 'anyinteract', c_d.shape, 0.005) FROM cola_markets c_b, cola_markets c_d WHERE c_b.name = 'cola_b' AND c_d.name = 'cola_d';]]></code>
+	</snippet>
+	<snippet name="SDO_GEOM.SDO_DISTANCE" description="Return the distance between two geometries.">
+		<code><![CDATA[SELECT SDO_GEOM.SDO_DISTANCE(c_b.shape, c_d.shape, 0.005) FROM cola_markets c_b, cola_markets c_d WHERE c_b.name = 'cola_b' AND c_d.name = 'cola_d;']]></code>
+	</snippet>
+	<snippet name="SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT" description="Is a geometry valid?">
+		<code><![CDATA[SELECT c.name,SDO_GEOM.VALIDATE_GEOMETRY_WITH_CONTEXT(c.shape, 0.005) FROM cola_markets c WHERE c.name = 'cola_c';]]></code>
+	</snippet>
+ </group>
+  <group category="GeoRaptor - SDO_GEOMETRY Methods" language="PLSQL">
+	<snippet name="Get_Dims()" description="Returns the number of dimensions of a geometry object, as specified in itsSDO_GTYPE value.">
+		<code><![CDATA[SELECT c.shape.Get_Dims() FROM cola_markets c WHERE c.name = 'cola_b']]></code>
+	</snippet>
+	<snippet name="Get_GType()" description="Returns the geometry type of a geometry object, as specified in itsSDO_GTYPE value.">
+		<code><![CDATA[SELECT c.shape.Get_GType() FROM cola_markets c WHERE c.name = 'cola_b']]></code>
+	</snippet>
+	<snippet name="Get_LRS_Dim()" description="Returns the measure dimension of an LRS geometry object, as specified in itsSDO_GTYPE value.">
+		<code><![CDATA[SELECT a.route_geometry.Get_LRS_Dim() FROM lrs_routes a WHERE a.route_id = 1;]]></code>
+	</snippet>
+	<snippet name="Get_WKT()" description="Returns the well-known text (WKT) format of a geometry object.">
+		<code><![CDATA[SELECT c.shape.Get_WKT() FROM cola_markets c WHERE c.name = 'cola_b';]]></code>
+	</snippet>
+	<snippet name="ST_CoordDim()" description="Returns the coordinate dimension (as defined by the ISO/IEC SQL Multimedia standard) of a geometry object.">
+		<code><![CDATA[SELECT c.shape.ST_CoordDim() FROM cola_markets c WHERE c.name = 'cola_b';]]></code>
+	</snippet>
+	<snippet name="ST_IsValid()" description="Returns 0 if a geometry object is invalid or 1 if it is valid.">
+		<code><![CDATA[SELECT c.shape.ST_IsValid() FROM cola_markets c WHERE c.name = 'cola_b';]]></code>
+	</snippet>
+ </group>
+  <group category="GeoRaptor - Spatial Aggregation Operators and Examples" language="PLSQL">
+	<snippet name="SDO_AGGR_MBR Operator" description="Returns the minimum bounding rectangle of the specified geometries.">
+		<code><![CDATA[SDO_AGGR_MBR( geomSDO_GEOMETRY )]]></code>
+	</snippet>
+	<snippet name="SDO_AGGR_MBR Example" description="Shows how to calculate the minimum bounding rectangle (MBR) of all geometry objects in a table.">
+		<code><![CDATA[
+SELECT SDO_AGGR_MBR( a.geom ) as mbr 
+  FROM <table> a;
+	]]></code></snippet>
+	<snippet name="SDO_AGGR_UNION Operator" description="Returns a geometry object that is the topological union (OR operation) of the specified geometry objects.">
+		<code><![CDATA[SDO_AGGR_UNION( AggregateGeometry SDOAGGRTYPE )]]></code>
+	</snippet>
+	<snippet name="SDOAGGRTYPE Operator Type" description="Object Type required by some spatial aggregate operators such as SDO_AGGR_UNION">
+		<code><![CDATA[SDOAGGRTYPE(geometrySDO_GEOMETRY,tolerance NUMBER)]]></code>
+	</snippet>
+   	<snippet name="SDO_AGGR_UNION Example" description="Union polygons together for a specific attribute (tolerance 0.05)">
+		<code><![CDATA[
+SELECT c.state,
+      SDO_AGGR_UNION( SDOAGGRTYPE( c.geom, 0.005 ) ) as geom
+  FROM countries c
+ GROUP BY c.state;]]></code></snippet>
+	<snippet name="SDO_AGGR_SET_UNION Operator" description="Takes a VARRAY ofSDO_GEOMETRY objects as input, and returns the aggregate union of all geometry objects in the array.">
+		<code><![CDATA[SDO_AGGR_SET_UNION( geometrySDO_GEOMETRY_ARRAY tol NUMBER )]]></code>
+	</snippet>
+	<snippet name="SDO_AGGR_CENTROID Operator" description="Returns a geometry object that is the centroid (center of gravity) of the specified geometry objects.">
+		<code><![CDATA[SDO_AGGR_CENTROID( AggregateGeometry SDOAGGRTYPE )]]></code>
+	</snippet>
+	<snippet name="SDO_AGGR_CONVEXHULL Operator" description="Returns a geometry object that is the convex hull of the specified geometry objects.">
+		<code><![CDATA[SDO_AGGR_CONVEXHULL( AggregateGeometry SDOAGGRTYPE ) ]]></code>
+	</snippet>
+	<snippet name="SDO_AGGR_CONCAT_LINES Operator" description="Returns a geometry that concatenates the specified line or multiline geometries.">
+		<code><![CDATA[SDO_AGGR_CONCAT_LINES( geomSDO_GEOMETRY )]]></code>
+	</snippet>
+	<snippet name="SDO_AGGR_LRS_CONCAT Operator" description="Returns an LRS geometry object that concatenates specified LRS geometry objects.">
+		<code><![CDATA[SDO_AGGR_LRS_CONCAT( AggregateGeometry SDOAGGRTYPE )]]></code>
+	</snippet>
+  </group>
+  <group category="GeoRaptor - SDO_UTIL Utility Functions" language="PLSQL">
+	<snippet name="SDO_UTIL.GetElems"       description="Number of elements in a geometry"><code><![CDATA[
+WITH data As (
+  SELECT SDO_GEOMETRY(2007,NULL,NULL,
+                      SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),\
+                      SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0)) as shape
+    FROM dual
+)
+SELECT SDO_UTIL.SDO_UTIL.GETNUMELEM(a.shape) "N_OF_ELEMS" 
+  FROM data;]]></code></snippet>
+	<snippet name="SDO_UTIL.GetNumVertices" description="Number of points in geometry"><code><![CDATA[
+WITH data As (
+  SELECT SDO_GEOMETRY(2007,NULL,NULL,
+                      SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),\
+                      SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0)) as shape
+    FROM dual
+)
+SELECT SDO_UTIL.GETNUMVERTICES(a.shape) "N_OF_POINTS" 
+  FROM data;]]></code></snippet>
+	<snippet name="SDO_UTIL.GetVertices"    description="Number actual geometry's vertices."><code><![CDATA[
+WITH data As (
+  SELECT SDO_GEOMETRY(2007,NULL,NULL,
+                      SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),\
+                      SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0)) as shape
+    FROM dual
+)
+SELECT t.X, t.Y, t.id
+  FROM data a,
+       TABLE(SDO_UTIL.GETVERTICES(a.shape)) t
+ ORDER BY t.id;]]></code>
+    </snippet>
+	<snippet name="SDO_UTIL.Extract"        description="Returns the two-dimensional geometry that represents a specified element (and optionally a ring) of the input two-dimensional geometry."><code><![CDATA[
+WITH data As (
+  SELECT SDO_GEOMETRY(2007,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 11,2003,1, 21,1003,1, 31,2003,1, 41,1003,1, 51,2003,1),SDO_ORDINATE_ARRAY(25,35, 25,25, 35,25, 35,35, 25,35, 27.5,27.5, 27.5,32.5, 32.5,32.5, 32.5,27.5, 27.5,27.5, 10,50, 10,10, 50,10, 50,50, 10,50, 20,20, 20,40, 40,40, 40,20, 20,20, -10,70, -10,-10, 70,-10, 70,70, -10,70, 0,0, 0,60, 60,60, 60,0, 0,0.0)) as shape
+    FROM dual
+)
+SELECT SDO_UTIL.extract(a.shape, level, 0)
+  FROM data a
+ CONNECT BY LEVEL < mdsys.sdo_util.GETNUMELEM(a.shape);]]></code>
+    </snippet>
+  </group>
 </snippets>
-
 
