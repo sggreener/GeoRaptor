@@ -189,7 +189,12 @@ public class ViewLayerTree
     private ImageIcon iconQuestionMark     = new ImageIcon(cl.getResource(iconDirectory + "icon_question_mark.png"));
     private ImageIcon iconSaveFile         = new ImageIcon(cl.getResource(iconDirectory + "icon_save_file.gif"));
     private ImageIcon iconLoadFile         = new ImageIcon(cl.getResource(iconDirectory + "icon_load_file.gif"));
-
+    
+    private ImageIcon iconViewCreate       = new ImageIcon(cl.getResource(iconDirectory + "view_create.png"));
+    private ImageIcon iconViewExpandAll    = new ImageIcon(cl.getResource(iconDirectory + "view_expand_all.png"));
+    private ImageIcon iconViewCollapseAll  = new ImageIcon(cl.getResource(iconDirectory + "view_collapse_all.png"));
+    private ImageIcon iconViewLayerCount   = new ImageIcon(cl.getResource(iconDirectory + "view_layer_count.png"));
+    
     // We have an icon per feature/topological operator eg line/sdo_inside
     //
     private LinkedHashMap<String, ImageIcon> iconsTopological  = new LinkedHashMap<String,ImageIcon>();
@@ -1292,7 +1297,7 @@ LOGGER.debug("removeLayer: " + _layerName);
         JPopupMenu popup = new JPopupMenu();
        
         AbstractAction collapseAllViews = 
-            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_COLLAPSE_ALL_VIEWS"),iconLayerRemoveAll) {
+            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_COLLAPSE_ALL_VIEWS"),iconViewCollapseAll) {
                 /**
 				 * 
 				 */
@@ -1305,7 +1310,7 @@ LOGGER.debug("removeLayer: " + _layerName);
         popup.add(collapseAllViews);
 
         AbstractAction expandAll = 
-            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_EXPAND_ALL_VIEWS"),iconLayerRemoveAll) {
+            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_EXPAND_ALL_VIEWS"),iconViewExpandAll) {
                 /**
 				 * 
 				 */
@@ -1339,7 +1344,7 @@ LOGGER.debug("removeLayer: " + _layerName);
         popup.add(removeAllViews);
 
         AbstractAction createNewView = 
-            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_CREATE_NEW_VIEW"),iconLayerRemoveAll) {
+            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_CREATE_NEW_VIEW"),iconViewCreate) {
                 /**
 				 * 
 				 */
@@ -1365,7 +1370,7 @@ LOGGER.debug("removeLayer: " + _layerName);
                            ? this.propertyManager.getMsg("VALUE_OFF") 
                            : this.propertyManager.getMsg("VALUE_ON");
         AbstractAction layerFeatureCount= 
-            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_LAYER_FEATURE_COUNT",switchValue),iconLayerRemoveAll) {
+            new AbstractAction(this.propertyManager.getMsg("ROOT_MENU_LAYER_FEATURE_COUNT",switchValue),iconViewLayerCount) {
                 /**
 				 * 
 				 */
@@ -1748,12 +1753,25 @@ LOGGER.debug("removeLayer: " + _layerName);
                         // Get Layer MBR 
                         mbr = fLayerNode.getSpatialLayer().getMBR();
                     }
-                    JGeometry jGeom = new JGeometry(
-                                           mbr.getMinX(), 
-                                           mbr.getMinY(), 
-                                           mbr.getMaxX(), 
-                                           mbr.getMaxY(), 
-                                           fLayerNode.getSpatialLayer().getSRIDAsInteger());
+                    JGeometry jGeom = null;
+                    /*
+                    jGeom = new JGeometry(mbr.getMinX(), 
+                                          mbr.getMinY(), 
+                                          mbr.getMaxX(), 
+                                          mbr.getMaxY(), 
+                                          fLayerNode.getSpatialLayer().getSRIDAsInteger());
+                    */
+                    // Linestring instead of polygon.
+                    double[] coords = {mbr.getMinX(), mbr.getMinY(),
+                                       mbr.getMaxX(), mbr.getMinY(),
+                                       mbr.getMaxX(), mbr.getMaxY(), 
+                                       mbr.getMinX(), mbr.getMaxY(), 
+                                       mbr.getMinX(), mbr.getMinY()
+                                       };
+                    jGeom = JGeometry.createLinearLineString(
+                    		          coords,
+                    		          2,
+                    		          fLayerNode.getSpatialLayer().getSRIDAsInteger());
 					try {
                         svp.showGeometry(
                                 fLayerNode.getSpatialLayer(),
@@ -2690,23 +2708,19 @@ LOGGER.debug("START: drop");
         public void createLayerCopy(LayerNode _lNode)  
         {
             try {
+            	// Use appropriate Copy Constructor
+            	iLayer cLayer = null;
                 if ( _lNode.getSpatialLayer() instanceof SVQueryLayer ) {
-LOGGER.debug("ViewLayerTree.createLayerCopy - SVQueryLayer");
-                    SVQueryLayer qLayer = new SVQueryLayer((SVQueryLayer)_lNode.getSpatialLayer());
-                    this.addLayer(qLayer,_lNode.isDraw(),false);
+                    cLayer = new SVQueryLayer((SVQueryLayer)_lNode.getSpatialLayer());
                 } else if ( _lNode.getSpatialLayer() instanceof SVWorksheetLayer ) {
-LOGGER.debug("ViewLayerTree.createLayerCopy - SVWorksheetLayer");
-                    SVWorksheetLayer wLayer = new SVWorksheetLayer((SVWorksheetLayer)_lNode.getSpatialLayer());
-                    this.addLayer(wLayer,_lNode.isDraw(),false);
+                    cLayer = new SVWorksheetLayer((SVWorksheetLayer)_lNode.getSpatialLayer());
                 } else if ( _lNode.getSpatialLayer() instanceof SVGraphicLayer ) {
-LOGGER.debug("ViewLayerTree.createLayerCopy - SVGraphicLayer");
-                    SVGraphicLayer gLayer = new SVGraphicLayer((SVGraphicLayer)_lNode.getSpatialLayer());
-                    this.addLayer(gLayer,_lNode.isDraw(),false);
+                    cLayer = new SVGraphicLayer((SVGraphicLayer)_lNode.getSpatialLayer());
                 } else {
-LOGGER.debug("ViewLayerTree.createLayerCopy - SVSpatialLayer");
-                    SVTableLayer sLayer = new SVTableLayer((SVTableLayer)_lNode.getSpatialLayer());
-                    this.addLayer(sLayer,_lNode.isDraw(),false);
+                    cLayer = new SVTableLayer((SVTableLayer)_lNode.getSpatialLayer());
                 }
+                // Add layer to view, set icons etc.
+                this.addLayer(cLayer,_lNode,false);
             } catch (Exception e) {
                 // Throws message from createCopy() in SVGraphicTheme will be
                 // throw new Exception(super.getPropertyManager().getMsg("GRAPHIC_THEME_COPY"));
@@ -2718,25 +2732,48 @@ LOGGER.debug("ViewLayerTree.createLayerCopy - SVSpatialLayer");
             }
         }
         
-        public void addLayer(iLayer _layer,
-                             boolean        _isDraw,
-                             boolean        _isActive) 
+        public void addLayer(iLayer    _layer,
+                             LayerNode _node,
+                             boolean   _isActive) 
         {
-LOGGER.debug("ViewLayerTree.addlayer: " + _layer.getLayerName());
               int insertPosition = 0;
               if ( mainPreferences.getNewLayerPosition().equalsIgnoreCase(Constants.layerPositionType.BOTTOM.toString()) ) {
                   insertPosition = this.getChildCount();
               }
               String adjustedName = checkName(_layer.getLayerName());
-LOGGER.debug("viewLayerTree.addLayer adjustedName =" + adjustedName);
               if ( ! adjustedName.equalsIgnoreCase(_layer.getLayerName())) {
                   _layer.setLayerName(adjustedName);
                   _layer.setVisibleName(_layer.getLayerName().replace("_"," "));
               }
-              MutableTreeNode newLayerNode = new LayerNode(_layer,_isDraw,_isActive,this.btnGroupViewLayers,fontValue);
+              MutableTreeNode newLayerNode = new LayerNode(
+                                             _layer,
+                                             _node.isDraw(),
+                                             _isActive,
+                                             this.btnGroupViewLayers,
+                                             fontValue);
+              ((LayerNode)newLayerNode).setIcon();
               this.insert(newLayerNode,insertPosition);
         }
-        
+
+        public void addLayer(iLayer    _layer,
+                boolean _isDraw,
+                boolean   _isActive) 
+		{
+			int insertPosition = 0;
+			if (mainPreferences.getNewLayerPosition().equalsIgnoreCase(Constants.layerPositionType.BOTTOM.toString())) {
+				insertPosition = this.getChildCount();
+			}
+			String adjustedName = checkName(_layer.getLayerName());
+			if (!adjustedName.equalsIgnoreCase(_layer.getLayerName())) {
+				_layer.setLayerName(adjustedName);
+				_layer.setVisibleName(_layer.getLayerName().replace("_", " "));
+			}
+			MutableTreeNode newLayerNode = new LayerNode(_layer, _isDraw, _isActive, this.btnGroupViewLayers,
+					fontValue);
+			((LayerNode) newLayerNode).setIcon();
+			this.insert(newLayerNode, insertPosition);
+		}
+
         public LayerNode getLayerAt(int _layerNumber) 
         {
             int layerCount = 0;

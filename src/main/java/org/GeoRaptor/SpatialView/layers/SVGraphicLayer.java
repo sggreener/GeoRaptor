@@ -119,30 +119,42 @@ implements iLayer
         this.styling = new Styling();
     }
 
+    /** Copy constructor
+    *
+    **/
     public SVGraphicLayer(iLayer _sLayer) 
     {
         super(_sLayer.getSpatialView(), 
               _sLayer.getMetadataEntry());
+
         this.preferences = MainSettings.getInstance().getPreferences();
+
+        this.setConnectionName(_sLayer.getConnectionName());
+
         // Change base name
         String layerName = _sLayer.getSpatialView().checkLayerName(_sLayer.getLayerName());
         this.setLayerName(layerName);
-        this.setVisibleName(_sLayer.getVisibleName());
+        this.setVisibleName(_sLayer.getVisibleName()+layerCopySuffix);
         this.setDesc(_sLayer.getDesc());
         this.setDraw(_sLayer.isDraw());
-        this.setMinResolution(false);
+        this.setSQL(_sLayer.getSQL());
+
+        this.setMinResolution(_sLayer.getMinResolution());
         this.drawGeometry = this.preferences.isDrawQueryGeometry();
         this.setResultFetchSize(this.preferences.getFetchSize());
         this.setPrecision(_sLayer.getPrecision(false)); // force calculation from mbr
+        this.setProject(_sLayer.getProject(),false);
         this.setStyling(_sLayer.getStyling());
         if ( _sLayer instanceof SVGraphicLayer )
         {
         	this.setMBR(_sLayer.getMBR());
         	this.setSRIDType(_sLayer.getSRIDType());
+            this.setGeometry(((SVGraphicLayer)_sLayer).getGeometry());
         	this.setGeometryType(_sLayer.getGeometryType());
         	this.setPrecision(_sLayer.getPrecision(false));
         	this.setIndex(_sLayer.hasIndex());
             this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+            this.setSdoOperator(((SVGraphicLayer)_sLayer).getSdoOperator());
             this.add(((SVGraphicLayer)_sLayer).cache);
         }
     }
@@ -152,39 +164,7 @@ implements iLayer
     {
         // _renderOnly is ignored for SVSpatialLayers
         //
-        SVGraphicLayer newLayer = null;
-
-        // Shared SVLayer stuff
-        //
-        newLayer = new SVGraphicLayer(
-        		         super.getSpatialView(),
-                         this.getLayerName(),
-                         this.getVisibleName(),
-                         this.getDesc(),
-                         super.getMetadataEntry(),
-                         this.isDraw()
-        		);
-                
-        // set SVLayer properties (What is a copy? Is it a render layer?)
-        newLayer.setSRIDType(super.getSRIDType());
-        newLayer.setGeometryType(super.getGeometryType());
-        newLayer.setConnectionName(super.connName);
-        newLayer.setIndex(this.hasIndex());
-        newLayer.setMBR(this.getMBR());
-        String newName = super.getSpatialView().getSVPanel().getViewLayerTree().checkName(this.getLayerName());
-        newLayer.setLayerName(newName);
-        newLayer.setVisibleName(this.getVisibleName()+layerCopySuffix);
-        newLayer.setDesc(this.getDesc());
-        newLayer.setDraw(this.isDraw());
-        newLayer.setSQL(this.getSQL());
-        newLayer.setMinResolution(this.getMinResolution());
-        newLayer.setFetchSize(this.getFetchSize());
-        newLayer.setPrecision(this.getPrecision(false));
-        newLayer.setProject(this.getProject(),false);
-        newLayer.setSdoOperator(this.getSdoOperator());
-        newLayer.setGeometry(this.getGeometry());
-        newLayer.setStyling(this.styling);        
-        return newLayer;
+        return new SVGraphicLayer(this);
     }
 
     public SVGraphicLayer createCopy(boolean _renderCopy) 

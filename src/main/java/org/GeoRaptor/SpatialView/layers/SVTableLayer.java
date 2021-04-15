@@ -172,15 +172,22 @@ public class SVTableLayer
         this.setPrecision(-1); // force calculation from mbr
     }
 
-    public SVTableLayer(SVTableLayer _sLayer) {
-        super(_sLayer.getSpatialView(), _sLayer.getMetadataEntry());
+    /**
+     * Copy Constructor
+     * 
+     */
+    public SVTableLayer(SVTableLayer _sLayer) 
+    {
+        super(_sLayer.getSpatialView(), 
+              _sLayer.getMetadataEntry());
+        
         super.setConnectionName(_sLayer.connName);
-        String newName = _sLayer.getSpatialView().getSVPanel().getViewLayerTree().checkName(_sLayer.getLayerName());
-        this.setLayerName(newName);
+        this.setLayerName(_sLayer.getSpatialView().getSVPanel().getViewLayerTree().checkName(_sLayer.getLayerName()));
         this.setVisibleName(_sLayer.getVisibleName()+layerCopySuffix);
         this.setDesc(_sLayer.getDesc());
         this.setDraw(_sLayer.isDraw());
         this.setSQL(_sLayer.getSQL());
+        
         this.setSRIDType(_sLayer.getSRIDType());
         this.setGeometryType(_sLayer.getGeometryType());
         this.setSTGeometry(_sLayer.isSTGeometry());
@@ -194,6 +201,17 @@ public class SVTableLayer
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
+    }
+
+    /**
+     * Create copy of current class.
+     */
+    public SVTableLayer createCopy() 
+    throws Exception 
+    {
+        // _renderOnly is ignored for SVTableLayers
+        //
+        return new SVTableLayer(this);
     }
 
     private void fromXML(Node _node) {
@@ -1129,45 +1147,6 @@ public class SVTableLayer
                                                       ex.getMessage()));
             return null;
         }
-    }
-
-    /**
-     * Create copy of current class.
-     */
-    public SVTableLayer createCopy() 
-    throws Exception 
-    {
-        // _renderOnly is ignored for SVTableLayers
-        //
-        SVTableLayer newLayer = null;
-
-        // Shared SVLayer stuff
-        //
-        newLayer = new SVTableLayer(super.getSpatialView());
-        
-        // set SVLayer properties (What is a copy? Is it a render layer?)
-        newLayer.setMetadataEntry(super.getMetadataEntry());
-        newLayer.setSRIDType(super.getSRIDType());
-        newLayer.setGeometryType(this.getGeometryType());
-        newLayer.setConnectionName(super.connName);
-        newLayer.setIndex(this.hasIndex());
-
-        newLayer.setMBR(this.getMBR());
-        String newName = super.getSpatialView().getSVPanel().getViewLayerTree().checkName(this.getLayerName());
-        newLayer.setLayerName(newName);
-        newLayer.setVisibleName(this.getVisibleName()+layerCopySuffix);
-        newLayer.setDesc(this.getDesc());
-        newLayer.setDraw(this.isDraw());
-        newLayer.setSQL(this.getSQL());
-        newLayer.setMinResolution(this.getMinResolution());
-        newLayer.setFetchSize(this.getFetchSize());
-        newLayer.setPrecision(this.getPrecision(false));
-        newLayer.setProject(this.getProject(),false);
-
-        // Label
-        newLayer.setStyling(this.getStyling());
-        
-        return newLayer;
     }
 
     public void setMinResolution(boolean _minResolution) {

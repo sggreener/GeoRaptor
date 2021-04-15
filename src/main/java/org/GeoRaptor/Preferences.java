@@ -548,7 +548,8 @@ public class Preferences extends HashStructureAdapter {
     }
     
     public Color getMapBackground() {
-        return new Color(_hash.getInt(Constants.KEY_MAP_BACKGROUND, Constants.VAL_MAP_BACKGROUND ));
+        return new Color(_hash.getInt(Constants.KEY_MAP_BACKGROUND, 
+        		                      Constants.VAL_MAP_BACKGROUND ));
     }
 
     public void setFeatureColour(Color _featureColour) {

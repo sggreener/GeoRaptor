@@ -821,18 +821,24 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             this.validationLayer.getStyling().setSelectionLineWidth(2);
             this.validationLayer.getStyling().setSelectionLineStroke(LineStyle.LINE_STROKES.LINE_DASHDOT);
 
-            if ( this.newView != null ) {
-                this.svp.setActiveView(this.newView);
+            if ( this.newView != null ) 
+            {
+            	this.svp.setActiveView(this.newView);
                 this.newView.addLayer(this.validationLayer,true /*isDraw*/,false/*active*/,false /*zoom*/);
+                
             } else if ( this.existingView != null ) {
+            	
                 this.svp.setActiveView(this.existingView);
                 this.existingView.addLayer(this.validationLayer,true /*isDraw*/,false/*active*/,false /*zoom*/);
                 // Save its current MBR
                 this.usedViewMBR = new Envelope(this.existingView.getMBR());
+                
             } else {
+            	
                 this.currentActiveView.addLayer(this.validationLayer,true /*isDraw*/,false/*active*/,false /*zoom*/);
                 // Save its current MBR
                 this.usedViewMBR = new Envelope(this.currentActiveView.getMBR());
+                
             }
             this.svp.setActiveLayer(this.validationLayer);
         } catch (Exception e) {

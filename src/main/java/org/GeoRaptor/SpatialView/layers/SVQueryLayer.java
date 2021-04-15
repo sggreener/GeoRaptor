@@ -125,61 +125,72 @@ implements iLayer
       this.drawGeometry = this.getPreferences().isDrawQueryGeometry();
     }
 
+    /** Copy constructors
+    *
+    **/
     public SVQueryLayer(SVQueryLayer _qLayer) 
     {
-        super(_qLayer.getSpatialView());
-        if ( this.getSpatialView() != null ) {
-            this.setLayerName(this.getSpatialView().checkLayerName(_qLayer.getLayerName()));
-            this.setVisibleName(_qLayer.getVisibleName());
-            this.setDesc(_qLayer.getDesc());
-            this.setDraw(_qLayer.isDraw());
-            this.setGeometry(_qLayer.getGeometry());
-            this.setBufferDistance(_qLayer.getBufferDistance());
-            this.setBuffered(_qLayer.getBufferDistance()!=0.0);
-            this.setDrawQueryGeometry(_qLayer.isDrawQueryGeometry());
-            this.setRelationshipMask(_qLayer.getRelationshipMask());
-            this.setSdoOperator(_qLayer.getSdoOperator());            
-            this.setSQL(_qLayer.getSQL());
-            this.setStyling(_qLayer.getStyling());
-        } else {
-            this.drawGeometry = _qLayer.getPreferences().isDrawQueryGeometry();            
+        super(_qLayer.getSpatialView(),
+              _qLayer.getMetadataEntry());
+        this.setLayerName(_qLayer.getLayerName());
+        if ( _qLayer.getSpatialView() != null ) {
+          this.setLayerName(_qLayer.getSpatialView().checkLayerName(this.getLayerName()));
         }
+        this.setVisibleName(_qLayer.getVisibleName());
+        this.setDesc(_qLayer.getDesc());
+        this.setDraw(_qLayer.isDraw());
+        this.setSQL(_qLayer.getSQL());
+        
+        this.setStyling(_qLayer.getStyling());
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
+            
+        this.setBuffered(_qLayer.getBufferDistance()!=0.0);
+        this.setBufferDistance(_qLayer.getBufferDistance());
+        this.setDrawQueryGeometry(_qLayer.isDrawQueryGeometry());
+        this.setGeometry(_qLayer.getGeometry());
+        this.setRelationshipMask(_qLayer.getRelationshipMask());
+        this.setSdoOperator(_qLayer.getSdoOperator());            
+        this.drawGeometry = _qLayer.getPreferences().isDrawQueryGeometry();        
     }
 
     public SVQueryLayer(iLayer _sLayer) 
     {
         super(_sLayer.getView(), 
               _sLayer.getMetadataEntry());
+        
+        this.setLayerName(_sLayer.getLayerName());
         if ( _sLayer.getSpatialView() != null ) {
-          this.setLayerName(_sLayer.getSpatialView().checkLayerName(_sLayer.getLayerName()));
-        } else {
-          this.setLayerName(_sLayer.getLayerName());
+          this.setLayerName(_sLayer.getSpatialView().checkLayerName(this.getLayerName()));
         }
         this.setVisibleName(_sLayer.getVisibleName());
         this.setDesc(_sLayer.getDesc());
         this.setDraw(_sLayer.isDraw());
+        this.setSQL(_sLayer.getSQL());
+        
         this.setStyling(_sLayer.getStyling());
         this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
         this.styling.setTextHiScale(null); // Set to max scale
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
+        
+        if ( _sLayer instanceof SVQueryLayer ) 
+        {
+            this.setBuffered(((SVQueryLayer)_sLayer).getBufferDistance()!=0.0);
+            this.setBufferDistance(((SVQueryLayer)_sLayer).getBufferDistance());
+            this.setDrawQueryGeometry(((SVQueryLayer)_sLayer).isDrawQueryGeometry());
+            this.setGeometry(((SVQueryLayer)_sLayer).getGeometry());
+            this.setRelationshipMask(((SVQueryLayer)_sLayer).getRelationshipMask());
+            this.setSdoOperator(((SVQueryLayer)_sLayer).getSdoOperator());            
+        }
 	}
 
 	public SVQueryLayer createCopy(boolean _renderOnly) 
     {
-        LOGGER.debug("SVQueryLayer.createCopy");
+System.out.println("SVQueryLayer.createCopy");
         // _renderOnly is ignored for SVQueryLayers
         //
-        SVQueryLayer newLayer;
-        try {
-            newLayer = new SVQueryLayer(this);
-        } catch (Exception e) {
-            LOGGER.error("Query Layer Copy Constructor: " + e.toString());
-            return null;
-        }
-        return newLayer;
+        return new SVQueryLayer(this);
     }
 
 	@Override

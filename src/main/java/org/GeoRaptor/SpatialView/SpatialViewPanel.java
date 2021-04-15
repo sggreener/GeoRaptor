@@ -1948,7 +1948,7 @@ extends JPanel
         //
         Envelope mbr = null;
         if ( _mbr == null || _mbr.isNull() ) {
-            mbr = ( _geomSet == null ) 
+            mbr = _geomSet == null 
                   ? JGeom.getGeoMBR(_jGeom)
                   : new Envelope(_geomSet);
         } else {
@@ -1984,8 +1984,7 @@ extends JPanel
         
         // Set MBR of new view (regardless as to whether we are zooming or not)
         // because if we need world to screen transformation set to be able to
-        // view anything. Also, if processing a single point then we can't getPixelSize 
-        // of current map unless MBR set for (possibly new) view.
+        // view anything.
         //
         if ( mappingView.getMapPanel().getWorldToScreenTransform()==null ) {
             // Force setting of WorldToScreenTransform()
@@ -2026,8 +2025,6 @@ extends JPanel
                     propertiesLayer.getStyling().setPointColorType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
                     propertiesLayer.getStyling().setLineColorType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
                     propertiesLayer.getStyling().setShadeType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                    // this.errorDialogHandler.showErrorDialog(null,"SPATIAL_COLUMN_OPR_ACT_LAYER_SELECT",mappingView.getViewName());
-                    // return;
                 }
             } 
         } else {

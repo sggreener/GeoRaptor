@@ -48,13 +48,6 @@ import oracle.ide.panels.DefaultTraversablePanel;
 import oracle.ide.panels.TraversableContext;
 import oracle.ide.panels.TraversalException;
 
-/**
- * 
- * @author Bessie Gong 
- * @version 24 Jul 2019
- * The panel of preference
- *
- */
 public class PreferencePanel extends DefaultTraversablePanel {
 	/**
 	 * 
@@ -74,13 +67,36 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private InputVerifier verifyQueryLimit = null;
 	private InputVerifier verifyMbrAspectRatioLimit = null;
 
-	private Color mapBackground = new Color(0, 0, 255);
-	private Color featureColour = new Color(255, 0, 0);
-	private Color orphanColour = new Color(255, 102, 102);
-	private Color missingColour = new Color(153, 153, 225);
-	private Color correctColour = new Color(153, 255, 153);
+	private Color   mapBackground = new Color(0, 0, 255);
+	private Color   featureColour = new Color(255, 0, 0);
+	private Color    orphanColour = new Color(255, 102, 102);
+	private Color   missingColour = new Color(153, 153, 225);
+	private Color   correctColour = new Color(153, 255, 153);
 	private Color highlightColour = new Color(255, 165, 0);
 	private Color selectionColour = new Color(255, 255, 0);
+
+	public PreferencePanel() {
+		super();
+		try {
+			jbInit();
+			loadPreferenceStrings();
+			applyPreferenceStrings();
+			setVerifiers();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static PreferencePanel getInstance() {
+		if (PreferencePanel.classInstance == null) {
+			PreferencePanel.classInstance = new PreferencePanel();
+		}
+		return PreferencePanel.classInstance;
+	}
+
+	private static Preferences getPreferences(TraversableContext tc) {
+		return Preferences.getInstance(tc.getPropertyStorage());
+	}
 
 	/*************************************
 	 * User Interface Widgets
@@ -318,28 +334,6 @@ public class PreferencePanel extends DefaultTraversablePanel {
 					Constants.SHAPE_POLYGON_ORIENTATION.ANTICLOCKWISE.toString() }));
 	private JLabel lblShapePolygonOrientation = new JLabel();
 
-	public PreferencePanel() {
-		super();
-		try {
-			jbInit();
-			loadPreferenceStrings();
-			applyPreferenceStrings();
-			setVerifiers();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static PreferencePanel getInstance() {
-		if (PreferencePanel.classInstance == null) {
-			PreferencePanel.classInstance = new PreferencePanel();
-		}
-		return PreferencePanel.classInstance;
-	}
-
-	private static Preferences getPreferences(TraversableContext tc) {
-		return Preferences.getInstance(tc.getPropertyStorage());
-	}
 
 	private void loadPreferenceStrings() {
 		sTpMiscellaneous = Resources.getString("sTpMiscellaneous");
@@ -1111,15 +1105,15 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		// tfMinMbrAspectRatio.setSize(new Dimension(20, 20));
 		// tfMinMbrAspectRatio.setPreferredSize(new Dimension(30, 20));
-//		cmbPreviewVertexMark.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				cmbPreviewVertexMark_actionPerformed(e);
-//			}
+		cmbPreviewVertexMark.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				cmbPreviewVertexMark_actionPerformed(e);
+			}
 
-//			private void cmbPreviewVertexMark_actionPerformed(ActionEvent evt) {
-//				setPreviewVertexMark(cmbPreviewVertexMark.getSelectedItem().toString());
-//			}
-//		});
+			private void cmbPreviewVertexMark_actionPerformed(ActionEvent evt) {
+				setPreviewVertexMark(cmbPreviewVertexMark.getSelectedItem().toString());
+			}
+		});
 		lblVertexMarker.setText("Vertex Marker:");
 		lblVertexMarker.setLabelFor(cmbPreviewVertexMark);
 		lblVertexMarker.setHorizontalAlignment(SwingConstants.TRAILING);
@@ -1380,8 +1374,11 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	}
 
 	private void mapBackgroundButtonActionPerformed(ActionEvent evt) {
-		final Color backgroundColor = JColorChooser.showDialog(this, "Spatial properties - Map Background Color",
+		final Color backgroundColor = JColorChooser.showDialog(
+				this, 
+				"Spatial properties - Map Background Color",
 				this.mapBackground);
+
 		if (backgroundColor != null) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
@@ -1689,7 +1686,11 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	}
 
 	public void setMapBackground(Color _mapBackground) {
-		this.mapBackground = _mapBackground;
+		this.mapBackground = new Color(_mapBackground.getRed(),
+				                       _mapBackground.getGreen(),
+				                       _mapBackground.getBlue(),
+				                       _mapBackground.getAlpha()
+				                      );
 		this.btnMapBackground.setBackground(_mapBackground);
 	}
 

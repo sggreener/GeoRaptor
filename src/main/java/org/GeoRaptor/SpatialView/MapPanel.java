@@ -292,10 +292,9 @@ public class MapPanel
 
         // Get map background color
         //
-        Color mBackground = (MapPanel.mainPrefs==null || 
-                             MapPanel.mainPrefs.getMapBackground() == null )
-                             ? Color.WHITE 
-                             : MapPanel.mainPrefs.getMapBackground();
+        Color mBackground = MapPanel.mainPrefs==null        		                 
+                            ? Color.WHITE 
+                            : MapPanel.mainPrefs.getMapBackground();
         this.setMapBackground(mBackground);
         // Create scalebar class and set its background
         this.scaleBar = new ScaleBar(this.mapBackground);
@@ -360,15 +359,16 @@ public class MapPanel
         this.setMapBackground(tempColor); // sets scalebar, background image etc.
     }
     
-    public void setMapBackground(Color _color) {
+    public void setMapBackground(Color _color) 
+    {
         this.mapBackground = _color;
+        
+        this.setBackground( _color );
         final Color mapBackgroundColour = _color;
-        
-        this.setBackground( mapBackgroundColour );
-        
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                setBackground( mapBackgroundColour ); 
+                setBackground( mapBackgroundColour );
+                refreshAll();
             }
         });
         

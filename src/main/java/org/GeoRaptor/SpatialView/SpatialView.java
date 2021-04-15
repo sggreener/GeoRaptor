@@ -593,7 +593,7 @@ LOGGER.debug("*** Removing " + _layerName);
               this.SRIDBaseUnitType = "M";
               this.distanceUnitType = "M";
           } else {
-              this.setSRIDBaseUnitType(SRIDUOM.replace("metre","M"));  // To alighn with current valid distance measurements as defined by SDO_DIST_UNIT.SDO_UNIT
+              this.setSRIDBaseUnitType(SRIDUOM.replace("metre","M"));  // To align with current valid distance measurements as defined by SDO_DIST_UNIT.SDO_UNIT
               this.distanceUnitType =  SRIDUOM.replace("metre","M");
           }
       } catch (IllegalArgumentException iae) {
