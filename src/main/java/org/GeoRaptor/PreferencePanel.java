@@ -1389,8 +1389,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	}
 
 	private void btnFeatureColorActionPerformed(ActionEvent evt) {
-		final Color backgroundColor = JColorChooser.showDialog(this, "Spatial properties - Feature Color",
-				this.featureColour);
+		final Color backgroundColor = JColorChooser.showDialog(
+                                       this, 
+                                       "Spatial properties - Feature Color",
+                                       this.featureColour);
 		if (backgroundColor != null) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {

@@ -194,22 +194,16 @@ public class RenderResultSet
         this.propertyManager = new PropertiesManager(RenderResultSet.propertiesFile);
         this.mainPrefs = MainSettings.getInstance().getPreferences();
         this.renderTool = new RenderTool();
-        // TODO: enable makeVisiable(), disabled temporarily to fix #3 
-        // makeVisible();
         initAction();
     }
     
-    public static RenderResultSet getInstance() {
+    public static RenderResultSet getInstance() 
+    {
         if (_instance == null) {
          _instance = new RenderResultSet();
         }
         return _instance;
      }
-
-    public void makeVisible() {
-        SpatialViewPanel svp = SpatialViewPanel.getInstance();
-        svp.show();
-    }
     
     private void initAction() 
     {
@@ -286,7 +280,7 @@ public class RenderResultSet
         if ( _ideAction.getCommandId() == COMMAND_GRID_EXPORT_TAB             ) { exportResultSet(Constants.EXPORT_TYPE.TAB);  } else
         if ( _ideAction.getCommandId() == COMMAND_COPY_GEOMMBR2CLIPBOARD      ) { copyMBRToClipboard();                        } else
         if ( _ideAction.getCommandId() == COMMAND_COPY_GEOMS2CLIPBOARD        ) { copyToClipboard();                           } else
-        if ( _ideAction.getCommandId() == COMMAND_CREATE_IMAGE_SELECTED_GEOMS ) { displayImageOfSelectedGeometries();         } else
+        if ( _ideAction.getCommandId() == COMMAND_CREATE_IMAGE_SELECTED_GEOMS ) { previewSelectedGeometries();         } else
         if ( _ideAction.getCommandId() == COMMAND_CREATE_QUERY_LAYER          ) { createWorksheetSQLLayer();                   } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_SDO             ) { mainPrefs.setColourSdoGeomElements(false);
                                                                                   mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.SDO_GEOMETRY); } else
@@ -311,7 +305,8 @@ public class RenderResultSet
         return true;
     }
 
-    protected void createAndShowMenu(ContextMenu contextMenu) {
+    protected void createAndShowMenu(ContextMenu contextMenu) 
+    {
         JMenu GeoRaptorMenu = contextMenu.createMenu(Constants.GEORAPTOR,0);
         if ( this.findDimArrayColumn()!=-1 ) {
             int menuIndex=0;
@@ -421,6 +416,7 @@ public class RenderResultSet
                                     IdeAction _ideAction,
                                     JMenu     _subMenu) 
     {
+
         RenderResultSet.labelMenuActions = new LinkedHashMap<Integer,IdeAction>();
 
         if ( this.rst == null || this.meta==null  ) {
@@ -477,6 +473,7 @@ public class RenderResultSet
             }
       } catch (SQLException sqle) {
             LOGGER.warn("RenderResultSet.getLabels(): SQLException - " + sqle.getMessage());
+            sqle.printStackTrace();
       }
       return _subMenu;
     }
@@ -1265,12 +1262,14 @@ public class RenderResultSet
                         if ( stGeom == null ) {
                             continue; // Can't render a null geometry so skip it  
                         }
+                        
                         // If an ST_ geometry then extract its sdo_geometry
                         StructTypeName = stGeom.getSQLTypeName();
                         if ( StructTypeName.indexOf("MDSYS.ST_")==0 ) {
                             stGeom = SDO_GEOMETRY.getSdoFromST(stGeom);
                             StructTypeName = stGeom.getSQLTypeName();
-                        } 
+                        }
+                        
                         if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
                             FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
                             SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
@@ -1302,6 +1301,7 @@ public class RenderResultSet
                         geoSet.add(jGeom);
                   } catch (SQLException sqle) {
                     LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + classname);
+                    sqle.printStackTrace();
                   } 
                 }
             }
@@ -1311,7 +1311,8 @@ public class RenderResultSet
         return geoSet;
     }
     
-    public void displayImageOfSelectedGeometries() {
+    public void previewSelectedGeometries() 
+    {
         final List<JGeometry> geoSet = this.getGeoSetFromResultSet();
         if (geoSet == null || geoSet.size()==0) {
             return;
@@ -1319,7 +1320,7 @@ public class RenderResultSet
         final Dimension imageSize = new Dimension(this.mainPrefs.getPreviewImageWidth(),
                                                   this.mainPrefs.getPreviewImageHeight());
         final Connection conn = this.getConnection();
-        SpatialViewPanel        svp = SpatialViewPanel.getInstance();
+        SpatialViewPanel  svp = SpatialViewPanel.getInstance();
         SwingUtilities.invokeLater(new Runnable() {
            public void run() {
                JFrame frame = new JFrame(Constants.GEORAPTOR + 
@@ -1329,14 +1330,14 @@ public class RenderResultSet
                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                frame.setLocationRelativeTo(svp);
                // Add preview object to frame
-               Preview prevObj = new Preview((JGeometry)null, geoSet, imageSize, conn, frame);
-               prevObj.addComponentListener(prevObj);
-               frame.setContentPane(prevObj);
-               frame.setMinimumSize(prevObj.getSize());
+               Preview preview = new Preview((JGeometry)null, geoSet, imageSize, conn, frame);
+               preview.addComponentListener(preview);
+               frame.setContentPane(preview);
+               frame.setMinimumSize(preview.getSize());
                frame.pack();
                frame.setVisible(true);
                frame = null;
-               prevObj = null;
+               preview = null;
                return;
            }
         });
@@ -1729,7 +1730,7 @@ public class RenderResultSet
             
             // MAKE SURE THE MAP VIEW IS OPEN ...
             //
-            makeVisible();
+            SpatialViewPanel.getInstance().show();
 
             Struct                         stGeom = null;
             int                        FULL_GTYPE = 2001;
@@ -1827,7 +1828,7 @@ public class RenderResultSet
             }
             // MAKE SURE THE VIEW IS OPEN ...
             //
-            makeVisible();
+            SpatialViewPanel.getInstance().show();
             
             int     mappableColumn = -1;
             if ( this.clickColumn == -1 ) {
@@ -1888,7 +1889,6 @@ public class RenderResultSet
             SpatialRenderer              renderer = SpatialRenderer.getInstance();
             Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
             LinkedHashMap<String, Object>    attr = new LinkedHashMap<String, Object>();
-
             for (int row=0; row < rowsToProcess; row++) 
             {
                 stGeom = null; 
@@ -1915,7 +1915,8 @@ public class RenderResultSet
                           {
                               stGeom = (Struct)this._table.getValueAt(viewRow,viewCol);
                               if ( stGeom == null ) {
-                                  break; // Can't render a null geometry so skip whole record 
+                                  // Can't render a null geometry so skip whole record
+                                  break;  
                               }
                               // Check if ST_Geometry ... extract SDO_
                               if ( stGeom.getSQLTypeName().indexOf("MDSYS.ST_")==0 ) {
@@ -1923,8 +1924,8 @@ public class RenderResultSet
                               } 
                               StructTypeName = stGeom.getSQLTypeName();
                               if ( StructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) ) {
-                                  FULL_GTYPE = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
-                                  SRID = SDO_GEOMETRY.getSRID(stGeom,SRID);
+                                  FULL_GTYPE   = SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE);
+                                  SRID         = SDO_GEOMETRY.getSRID(stGeom,SRID);
                                   geometryType = SDO_GEOMETRY.discoverGeometryType(FULL_GTYPE,geometryType);
                                   jGeom        = JGeometry.loadJS(stGeom);
                               } else {
@@ -2031,7 +2032,8 @@ public class RenderResultSet
                     }
             }
             // Map result
-            if ( sGraphicLayer.getCacheCount() != 0 ) {
+            if ( sGraphicLayer.getCacheCount() != 0 ) 
+            {
                 // Need to calculate and set layerMBR()
                 sGraphicLayer.setLayerMBR();
                 // Set label field if not cNoLabel
@@ -2040,13 +2042,14 @@ public class RenderResultSet
                 }
                 // We display the whole set via graphic theme 
                 //
-                   sGraphicLayer.setGeometryType(geometryType);
-                   if ( svp.addLayerToView(sGraphicLayer,false/*zoom*/) ) {
-                       if ( _commandId != COMMAND_VIEW_SELECTED_GEOMS) { 
-                          svp.zoomFullButton(sGraphicLayer);
-                       } else {
-                           svp.redraw();
-                       }
+                sGraphicLayer.setGeometryType(geometryType);
+                if ( svp.addLayerToView(sGraphicLayer,false/*zoom*/) ) 
+                {
+                    if ( _commandId != COMMAND_VIEW_SELECTED_GEOMS) { 
+                       svp.zoomFullButton(sGraphicLayer);
+                    } else {
+                       svp.redraw();
+                    }
                 }
             }
 
@@ -2081,7 +2084,7 @@ public class RenderResultSet
             }
             // MAKE SURE THE VIEW IS OPEN ...
             //
-            makeVisible();
+            SpatialViewPanel.getInstance().show();
             
             String mappableColumnName = "";
             int        mappableColumn = -1;

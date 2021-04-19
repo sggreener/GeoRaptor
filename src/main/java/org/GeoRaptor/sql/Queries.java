@@ -76,7 +76,7 @@ public class Queries {
         // This SQL will work in 9i, 10g and 11g.
         // It returns names of indexes that are primary key or unique constraints
         // as both are valid for unique row access
-        // The SQL aggregates the columns in a multi-column key in column_postion order.
+        // The SQL aggregates the columns in a multi-column key in column_position order.
         // The SQL orders so that the first returned key is one with the smallest number of columns in the key
         //
         String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
@@ -110,6 +110,7 @@ public class Queries {
         "Start With A.Curr = 1 \n" +
         "order by 5 \n" +
         ")";
+        
         List<String> keyColumns = new ArrayList<String>();
 
         PreparedStatement psGeomColumn = _conn.prepareStatement(sql);
@@ -2656,24 +2657,21 @@ LOGGER.debug("=================execute SQL====================");
 				      propertyManager.getMsg("MD_NO_OBJECT_NAME",
                       propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
 
-	  String schemaClause = null;
-      if (Strings.isEmpty(_schemaName) ) {
-          schemaClause = " \n";
-      } else {
-          schemaClause = " ac.owner = ? and \n";
-      }
-
-	  String sql = "select ac.constraint_type, \r\n" + 
-	  		"       CAST(LISTAGG(aic.column_name) WITHIN GROUP (ORDER BY ac.owner, ac.table_name, ac.constraint_type) as varchar2(32)) as column_name, count(*)\r\n" + 
-	  		"  from all_constraints ac\r\n" + 
-	  		"       inner join\r\n" + 
+	  String sql = 
+            "SELECT ac.constraint_type, \r\n" + 
+	  		             " CAST(LISTAGG(aic.column_name) WITHIN GROUP (ORDER BY ac.owner, ac.table_name, ac.constraint_type) as varchar2(32)) as column_name, \n" +
+                         " COUNT(*)\r\n" + 
+	  		"  FROM all_constraints ac\r\n" + 
+	  		"       INNER JOIN \r\n" + 
 	  		"       all_ind_columns aic\r\n" + 
-	  		"       on (aic.index_owner = ac.owner and aic.index_name = ac.constraint_name)\r\n" + 
-	  		"  where " + schemaClause + 
-	  		"        ac.table_name = ? " +
-	  		"    and constraint_type in ('U','P')\r\n" + 
-	  		"group by ac.owner, ac.table_name, ac.constraint_name, ac.constraint_type\r\n" + 
-	  		"having count(*) = 1";
+	  		"       ON (aic.index_owner = ac.owner and aic.index_name = ac.constraint_name)\r\n" + 
+          (Strings.isEmpty(_schemaName)
+          ? " WHERE ac.table_name = ? \r\n"
+          : " WHERE ac.owner = ? and ac.table_name = ?\r\n"
+          ) + 
+	  		"   AND constraint_type IN ('U','P')\r\n" + 
+	  		"GROUP BY ac.owner, ac.table_name, ac.constraint_name, ac.constraint_type\r\n" + 
+	  		"HAVING COUNT(*) = 1";
 
 	  String column_name = null;
 	  LOGGER.logSQL(sql);
@@ -2686,11 +2684,11 @@ LOGGER.debug("=================execute SQL====================");
           ps.setString(2,_objectName);    	  
       }
 
-	  ResultSet rs = ps.executeQuery(sql);
-      if (!rs.isBeforeFirst() ) {    
+      ResultSet rs = ps.executeQuery();
+      if (!rs.isBeforeFirst() ) {
     	  return null;
       } else if (rs.next()) {
-    	  column_name = rs.getString(1);
+    	  column_name = rs.getString(2);
           column_name = rs.wasNull() ? null : column_name;
       }
       rs.close(); rs = null; ps.close(); ps = null;

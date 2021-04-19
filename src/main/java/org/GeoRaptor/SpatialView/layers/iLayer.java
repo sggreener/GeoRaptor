@@ -20,7 +20,7 @@ import oracle.spatial.geometry.JGeometry;
 
 public interface iLayer  {
     static final String CLASS_NAME = null;
-
+    
     String getClassName();
 
     Styling getStyling();
@@ -78,9 +78,7 @@ public interface iLayer  {
 
     void setInitSQL();
 
-    String getSDOFilterClause();
-
-    String wrapSQL(String _sql);
+    String getSDOFilterParameters();
 
     void setSQL(String _SQL);
 
@@ -191,5 +189,8 @@ public interface iLayer  {
 
 	void setPrecision(int precision);
 
+	void setKeyColumn(String _column);
+	String getKeyColumn();
+	
 }
 

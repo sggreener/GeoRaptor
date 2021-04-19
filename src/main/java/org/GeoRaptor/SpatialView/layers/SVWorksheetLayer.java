@@ -256,7 +256,8 @@ extends SVTableLayer
 
                 totalFeatures++;
                 if (this.styling.getLabelColumn() != null) {
-                    labelValue = SQLConversionTools.convertToString(this.getConnection(),this.styling.getLabelColumn(), 
+                    labelValue = SQLConversionTools.convertToString(this.getConnection(),
+                                                                    this.styling.getLabelColumn(), 
                                                                     rSet.getObject(this.styling.getLabelColumn().replace("\"","")));
                 }
                 if (this.styling.getRotationColumn() != null) {

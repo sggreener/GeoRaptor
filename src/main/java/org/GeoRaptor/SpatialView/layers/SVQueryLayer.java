@@ -68,6 +68,8 @@ implements iLayer
     
     protected String           visibleName = "";         // This text is write into JTree where we show layers
 
+	protected String             keyColumn = "";         // Unique key column		
+
     protected Styling              styling = new Styling();
 
     protected SVSpatialLayerDraw drawTools = new SVSpatialLayerDraw(this); // Class used to draw this layer 
@@ -187,12 +189,13 @@ implements iLayer
 
 	public SVQueryLayer createCopy(boolean _renderOnly) 
     {
-System.out.println("SVQueryLayer.createCopy");
         // _renderOnly is ignored for SVQueryLayers
         //
         return new SVQueryLayer(this);
     }
 
+	// *************************************************************
+	
 	@Override
 	public PropertiesManager getPropertyManager() {
 		return super.propertyManager;
@@ -259,7 +262,7 @@ System.out.println("SVQueryLayer.createCopy");
                bufferGeom = "";
         
         // If filter geometry buffered could need projecting to stored geometry 
-        // We transform/project the search geometry (eg draw optimized rectangle) to the SRID of the
+        // We transform the search geometry (eg draw optimized rectangle) to the SRID of the
         // to-be-searched table/column as the search geometry will be in the SRID units of the view.
         //
         if (_buffered && _project) 
@@ -582,7 +585,7 @@ System.out.println("SVQueryLayer.createCopy");
             
             ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(this.getResultFetchSize());
-            
+
             OracleResultSetMetaData rSetM = (OracleResultSetMetaData)ors.getMetaData(); // for column name
 
             String          value = "";
@@ -1361,9 +1364,9 @@ System.out.println("SVQueryLayer.createCopy");
     }
 
 	@Override
-	public String getSDOFilterClause() 
+	public String getSDOFilterParameters() 
     {
-        String sdoFilterClause = this.getSDOFilterClause();
+        String sdoFilterClause = this.getSDOFilterParameters();
         if (this.getMinResolution()) {
             Point.Double pixelSize = null;
             try {
@@ -1379,11 +1382,6 @@ System.out.println("SVQueryLayer.createCopy");
 	        }
         }
         return sdoFilterClause;
-	}
-
-	@Override
-	public String wrapSQL(String _sql) {
-		return this.getSQL();
 	}
 
 	@Override
@@ -1546,5 +1544,15 @@ System.out.println("SVQueryLayer.createCopy");
     public int getFetchSize() {
         return this.resultFetchSize;
     }
+
+	@Override
+	public void setKeyColumn(String _column) {
+		this.keyColumn = _column;		
+	}
+
+	@Override
+	public String getKeyColumn() {
+		return this.keyColumn;
+	}
 
 }

@@ -13,7 +13,8 @@ public class Strings {
     
   /****************** STRING ************************/
   
-  public static String toProperCase(String input) {
+  public static String toProperCase(String input) 
+  {
       //A pattern for all (UNICODE-) lower case characters preceded by a word boundary
       Pattern p = Pattern.compile("\\b([\\p{javaLowerCase}])",Pattern.UNICODE_CASE);
       Matcher m = p.matcher(input.toLowerCase(Locale.getDefault()));
@@ -47,7 +48,8 @@ public class Strings {
    *          Character to remove
    * @return Trimmed text
    */
-  public static String trimFront(String text, char character) {
+  public static String trimFront(String text, char character) 
+  {
     String normalizedText;
     int index;
 
@@ -73,7 +75,8 @@ public class Strings {
    *          Character to remove
    * @return Trimmed text
    */
-  public static String trimEnd(String text, char character) {
+  public static String trimEnd(String text, char character) 
+  {
     String normalizedText;
     int index;
 
@@ -101,7 +104,8 @@ public class Strings {
    *          Character to remove
    * @return Trimmed text
    */
-  public static String trimAll(String text, char character) {
+  public static String trimAll(String text, char character) 
+  {
     String normalizedText = trimFront(text, character);
 
     return trimEnd(normalizedText, character);
@@ -178,7 +182,8 @@ public class Strings {
     *
     * @since ostermillerutils 1.00.00
     */
-   public static String escapeHTML(String s){
+   public static String escapeHTML(String s)
+   {
      int length = s.length();
      int newLength = length;
      boolean someCharacterEscaped = false;
@@ -265,7 +270,18 @@ public class Strings {
      return sb.toString();
    }
 
-    public static boolean isEmpty(String s) {
+   public static String doubleQuote(String _s) 
+   {
+       String s = _s;
+       if ( ! _s.startsWith("\"") )
+    	  s = "\"" + s;
+       if ( ! _s.endsWith("\"") )
+    	  s = s + "\"";
+       return s;
+   }
+
+    public static boolean isEmpty(String s) 
+    {
         return (s == null || s.trim().isEmpty());
     }
 

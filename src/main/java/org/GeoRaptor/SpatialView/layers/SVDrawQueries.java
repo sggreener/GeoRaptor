@@ -8,28 +8,129 @@ import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Struct;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
+import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.LineString;
 
+import oracle.jdbc.OracleResultSetMetaData;
 import oracle.spatial.geometry.JGeometry;
 
 public class SVDrawQueries {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVDraw");
+    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVDrawQueries");
 
+    public static LinkedHashMap<String,String> 
+                  getAttributesFromMetadata(
+    		         ResultSetMetaData _rsmd,
+    		         boolean           _onlyNumbersDatesAndStrings,
+    		         boolean           _fullDataType)
+    {
+    	// _rsmd is value
+    	if ( _rsmd ==  null )
+    		return null;
+
+    	LinkedHashMap<String,String> columnsTypes = new LinkedHashMap<String,String>();
+    	try 
+    	{
+    		boolean include = false;
+    		String  colName = "",
+                colTypeName = "";
+        
+            for (int col=1;col<=_rsmd.getColumnCount();col++) 
+            {
+            	include     = false;
+            	colName     = _rsmd.getColumnLabel(col);
+            	colTypeName = _rsmd.getColumnTypeName(col);
+            	
+            	if ( _onlyNumbersDatesAndStrings ) {
+            		include = colTypeName.startsWith("TIMESTAMP") ||
+                              colTypeName.startsWith("INTERVAL")  ||
+                              colTypeName.equalsIgnoreCase("DATE") ||
+                              colTypeName.equalsIgnoreCase("CHAR") ||
+                              colTypeName.equalsIgnoreCase("NVARCHAR2") ||
+                              colTypeName.equalsIgnoreCase("VARCHAR") ||
+                              colTypeName.equalsIgnoreCase("VARCHAR2") ||
+                              colTypeName.equalsIgnoreCase("ROWID") ||
+                              colTypeName.equalsIgnoreCase("FLOAT") ||
+                              colTypeName.equalsIgnoreCase("BINARY_DOUBLE") ||
+                              colTypeName.equalsIgnoreCase("BINARY_FLOAT") ||
+                              colTypeName.equalsIgnoreCase("NUMBER");
+            	} else {
+            		include = true;
+            	}
+            	
+            	if ( include ) {
+            		if ( _fullDataType ) {
+            			if (_rsmd.getPrecision(col)==0) {
+            				colTypeName += (colTypeName.contains("CHAR") ? "(" + _rsmd.getPrecision(col) + ")" : "");
+            			} else if (_rsmd.getScale(col) == 0 ) {
+            				colTypeName += "(" + _rsmd.getPrecision(col) + ")" ;
+            			} else {
+                            colTypeName += "(" + _rsmd.getPrecision(col) + "," + _rsmd.getScale(col) + ')';
+                        }
+                    }
+                    columnsTypes.put(Strings.doubleQuote(colName),colTypeName);
+                }
+            } // for 
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return columnsTypes;
+    }
+
+    public static ArrayList<String> 
+                       getStylingColumns (
+                          ResultSetMetaData _rsmd,
+    		              Styling          _styling)
+    {
+		ArrayList<String> columns = new ArrayList<String>();
+		if ( _rsmd == null )
+			return new ArrayList<String>();
+    	try 
+    	{
+    		String colName = null;
+    		for (int i=1;i<_rsmd.getColumnCount();i++)
+    		{
+    			colName = _rsmd.getColumnLabel(i);
+    			if (_styling.getLabelColumn()           != null && _styling.getLabelColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    			else if (_styling.getRotationColumn()   != null && _styling.getRotationColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    			else if (_styling.getPointColorColumn() != null && _styling.getPointColorColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    			else if (_styling.getLineColorColumn()  != null &&_styling.getLineColorColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    			else if (_styling.getShadeColumn()      != null && _styling.getShadeColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    			else if (_styling.getPointSizeColumn()  != null && _styling.getPointSizeColumn().replaceAll("\"","").equalsIgnoreCase(colName))
+    				columns.add(Strings.doubleQuote(colName));
+    		}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	return columns;
+    }
+    
     public static boolean executeQuery(
                                  iLayer             _layer,
                                  PreparedStatement  _pStatement,
@@ -86,6 +187,9 @@ public class SVDrawQueries {
             ors.setFetchDirection(ResultSet.FETCH_FORWARD);
             ors.setFetchSize(_layer.getResultFetchSize());
             
+            ResultSetMetaData rsmd = ors.getMetaData(); // for column name
+            ArrayList<String> labelColumns = getStylingColumns(rsmd,styling);            
+
             executeTime = ( System.currentTimeMillis() - executeStart );
             while ((ors.next()) &&
                    (_layer.getSpatialView().getSVPanel().isCancelOperation() == false)) 
@@ -110,15 +214,19 @@ public class SVDrawQueries {
                 if (jGeom == null) continue;
                 
                 totalFeatures++;
-                
-                if (styling.getLabelColumn() != null) {
+
+                // Access styling for this draw....
+                //
+                if (styling.getLabelColumn() != null 
+                 && labelColumns.indexOf(styling.getLabelColumn()) != -1 ) {
                     labelValue = SQLConversionTools.convertToString(
                     		        oConn,
                     		        styling.getLabelColumn(), 
                     		        ors.getObject(styling.getLabelColumn().replace("\"","")));
                 }
                 
-                if (styling.getRotationColumn() != null) {
+                if (styling.getRotationColumn() != null
+                    && labelColumns.indexOf(styling.getRotationColumn()) != -1 ) {
                     try {
                         angleValue = ors.getDouble(styling.getRotationColumn().replace("\"",""));
                     } catch (Exception e) {
@@ -126,8 +234,9 @@ public class SVDrawQueries {
                     }
                 }
                 
-                if (styling.getPointColorColumn() != null && 
-                    styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
+                if (styling.getPointColorColumn() != null
+                 && labelColumns.indexOf(styling.getPointColorColumn()) != -1 
+                 && styling.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = ors.getString(styling.getPointColorColumn().replace("\"",""));
@@ -137,8 +246,9 @@ public class SVDrawQueries {
                     pointColor = Colours.fromRGBa(pointColorValue);
                 }
                 
-                if (styling.getLineColorColumn() != null && 
-                    styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
+                if (styling.getLineColorColumn() != null  
+                 && labelColumns.indexOf(styling.getLineColorColumn()) != -1 
+                 && styling.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = ors.getString(styling.getLineColorColumn().replace("\"",""));
@@ -148,8 +258,9 @@ public class SVDrawQueries {
                     lineColor = Colours.fromRGBa(lineColorValue);
                 }
 
-                if (styling.getShadeColumn() != null && 
-                    styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
+                if (styling.getShadeColumn() != null 
+                 && labelColumns.indexOf(styling.getShadeColumn()) != -1 
+                 && styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
                 {
                 	try 
                 	{
@@ -161,8 +272,9 @@ public class SVDrawQueries {
                     shadeColor = Colours.fromRGBa(shadeValue);
                 }
                     
-                if (styling.getPointSizeColumn() != null && 
-                    styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
+                if (styling.getPointSizeColumn() != null  
+                 && labelColumns.indexOf(styling.getPointSizeColumn()) != -1 
+                 && styling.getPointSizeType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         pointSizeValue = ors.getDouble(styling.getPointSizeColumn().replace("\"",""));
                     } catch (Exception e) {

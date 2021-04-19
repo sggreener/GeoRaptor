@@ -17,7 +17,9 @@ import org.GeoRaptor.tools.SpatialRenderer;
 /**
  * Register a custom renderer for database objects
  */
-public class SpatialColRendererAddin implements Addin {
+public class SpatialColRendererAddin 
+implements Addin 
+{
     @SuppressWarnings("deprecation")
 	public void initialize() {
         // set MainSettings

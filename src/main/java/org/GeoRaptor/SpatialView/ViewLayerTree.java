@@ -1080,7 +1080,6 @@ public class ViewLayerTree
                                String _layerName,
                                boolean _confirm) 
     {
-LOGGER.debug("removeLayer: " + _layerName);
         // find View
         Object node = getNodeByName(_viewName);
         if ( node == null ) {
@@ -1713,7 +1712,6 @@ LOGGER.debug("removeLayer: " + _layerName);
                     // Zoom to new extent
                     if ( mbr.isSet() ) 
                     { 
-                        LOGGER.debug("ViewLayerTree.zoomToLayer()");
                         svp.getVoListener().setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.ZOOM_BOUNDS);
                         sView.setMBR(mbr); // sets MapPanel window and saves MBR in windowNavigator
                         sView.getMapPanel().refreshAll();
@@ -1830,19 +1828,15 @@ LOGGER.debug("removeLayer: " + _layerName);
                 }
             };
         popup.add(setLayerMBR);
-LOGGER.debug("Testing class type of " + fLayerNode.getSpatalLayerType());
         String showLayerAttrMenuText = selectedNodeIsLayer
                                    ? ( selectionModel.getSelectionCount()==1 
                                        ? this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYER_ATTRIBUTES",shortVisibleName)
                                        : this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYERS_ATTRIBUTES")
                                      )
                                    : this.propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_ATTRIBUTES",shortVisibleName);
-LOGGER.debug("Menus entry is " + showLayerAttrMenuText);
         if ( ! showLayerAttrMenuText.equals(this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYERS_ATTRIBUTES")) ) {
-LOGGER.debug("Layer type is " + fLayerNode.getSpatalLayerType());
             if ( fLayerNode.getSpatalLayerType().equalsIgnoreCase(Constants.KEY_SVGraphicLayer)) 
             {
-LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLayer");
                String menuText = this.propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_ATTRIBUTES");
                AbstractAction showLayerAttributes = new AbstractAction(menuText, iconShowLayerAttrs) {
                 /**
@@ -2440,8 +2434,8 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
     } 
     public void drop (DropTargetDropEvent dtde) 
     {
-        LOGGER.debug("START: drop = localObjectFlavor " + dtde.getTransferable().isDataFlavorSupported(localObjectFlavor) + 
-             " TransferableTreeNode.TREE_NODE_FLAVOR = " + dtde.getTransferable().isDataFlavorSupported(TransferableTreeNode.TREE_NODE_FLAVOR));
+        //System.out.println("START: drop = localObjectFlavor " + dtde.getTransferable().isDataFlavorSupported(localObjectFlavor) + 
+        //     " TransferableTreeNode.TREE_NODE_FLAVOR = " + dtde.getTransferable().isDataFlavorSupported(TransferableTreeNode.TREE_NODE_FLAVOR));
     
         Point dropPoint = dtde.getLocation();
         // int index = locationToIndex (dropPoint);
@@ -2454,7 +2448,7 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
         
         if ( ! dtde.getTransferable().isDataFlavorSupported(localObjectFlavor) ) {
             if ( dtde.getTransferable().isDataFlavorSupported(TransferableTreeNode.TREE_NODE_FLAVOR) ) {
-                LOGGER.info("Drag/Drop of this object not yet supported");
+                LOGGER.info("Drag/Drop of this object not supported");
                 dtde.dropComplete (true);
                 return;
             }
@@ -2464,7 +2458,6 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
         {
             dtde.acceptDrop(DnDConstants.ACTION_MOVE);
             Object droppedObject = dtde.getTransferable().getTransferData(localObjectFlavor);
-            LOGGER.debug("START: drop - " + droppedObject.getClass().toString());
   
             // Note: draggedNode can only ever be a LayerNode (see dragGestureRecognized())
             
@@ -2484,7 +2477,7 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
             // Save SRID information
             ViewNode sourceViewNode = (ViewNode)((LayerNode)draggedObject).getParent();
             ViewNode targetViewNode   = null;
-            
+
             // Move the node to its new home
             //
             // get position of new view node
@@ -2502,17 +2495,38 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
                 targetViewNode = (ViewNode)targetLayerNode.getParent(); 
                 // get position of new view node
                 index = targetViewNode.getIndex(dropNode);
-            } else if ( dropNode instanceof ViewNode ) {
+                
+            } else if ( dropNode instanceof ViewNode ) 
+            {
                 targetViewNode = (ViewNode)dropNode;
                 // get position of new view node
                 index = targetViewNode.getChildCount();
-            } else {
+                
+            } else 
+            {
                 // dropped on to root so do nothing
                 dtde.dropComplete (true);
                 return;
             }
+            
+            // Get Layer Node for accessing SRID and checking if we can continue
+            LayerNode lNode = (LayerNode)draggedObject;
+            
+            // If layer SRID is null and targetView is not, we don't allow a move.
+            //
+            if ( lNode.getSpatialLayer().getSRIDAsInteger() == Constants.SRID_NULL
+                 &&
+                 targetViewNode.getSpatialView().getSRIDAsInteger() != Constants.SRID_NULL )
+            {
+            	svp.setMessage(this.propertyManager.getMsg("LAYER_MENU_MOVE_LAYER_NULL_SRID"),true /*beep*/ ); 
+            	LOGGER.info(this.propertyManager.getMsg("LAYER_MENU_MOVE_LAYER_NULL_SRID"));
+            	dtde.dropComplete(false);
+                return;
+            }
+
             // Now do insert
             model.insertNodeInto(draggedObject,targetViewNode,index);
+            
             // Make targetView active if different
             if ( ! targetViewNode.getNodeName().equals(sourceViewNode.getNodeName()) ) {
                 sourceViewNode.setActive(false);
@@ -2520,7 +2534,7 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
                 targetViewNode.setActive(true);
                 targetViewNode.expand();
             }
-            LayerNode lNode = (LayerNode)draggedObject;            
+            
             // Do we need to change Active status of layers left behind?
             // If dragged layer was active in old group then we need to reassign active status to first node in the source view
             //
@@ -2565,9 +2579,9 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
                  != targetViewNode.getSpatialView().getSRIDAsInteger() ) 
             {
                 projectionRequired = 
-                   ! (            lNode.getSpatialLayer().getSRID().equals(Constants.NULL)  // Layer has NULL SRID
-                       || targetViewNode.getSpatialView().getSRID().equals(Constants.NULL)  // Target View has NULL SRID 
-                       || sourceViewNode.getSpatialView().getSRID().equals(targetViewNode.getSpatialView().getSRID() ) // Layer == View SRID (and both not NULL)
+                   ! (             lNode.getSpatialLayer().getSRID().equals(Constants.NULL)  // Layer has NULL SRID
+                       || targetViewNode.getSpatialView ().getSRID().equals(Constants.NULL)  // Target View has NULL SRID 
+                       || sourceViewNode.getSpatialView ().getSRID().equals(targetViewNode.getSpatialView().getSRID() ) // Layer == View SRID (and both not NULL)
                      );
             }
             lNode.getSpatialLayer().setProject(projectionRequired, 
@@ -2587,7 +2601,6 @@ LOGGER.debug(fLayerNode.getSpatialLayer().getLayerName() + " is an SVGraphicLaye
         } 
         dtde.dropComplete (true);
         setDragging(false);
-LOGGER.debug("START: drop");
     }
 
     // --------------------------------------------------- ViewNode

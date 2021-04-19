@@ -41,7 +41,8 @@ import org.locationtech.jts.io.oracle.OraUtil;
 
 
 public class SpatialRenderer 
-  implements ICellRenderer {
+  implements ICellRenderer 
+{
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer");
 
@@ -123,7 +124,8 @@ public class SpatialRenderer
      * @author Simon Greener, June 8th 2010 
      *            Broke code into components based on structure/data type being rendered.
      **/
-    public Component getComponent(JTable  table, 
+    public Component getTableCellRendererComponent(
+    		                      JTable  table, 
                                   Object  value,
                                   boolean isSelected, 
                                   boolean hasFocus,
@@ -305,7 +307,7 @@ public class SpatialRenderer
             imageSize.setSize(5, imageSize.height);
         }
         mbr.Normalize(imageSize);
-//LOGGER.info("mbr:" + mbr.toString() + " imageSize:" + imageSize.toString());
+        
         // Create transformation from world to image
         //
         AffineTransform af = null; 
@@ -318,9 +320,13 @@ public class SpatialRenderer
 
         // Create image and paint background
         //
-        BufferedImage img = new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage img = new BufferedImage(
+                                        imageSize.width, 
+        		                        imageSize.height, 
+        		                        BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
-        g2d.setColor(Color.WHITE);
+        
+        g2d.setColor(Color.WHITE); // White is default cell background for result set
         g2d.fillRect(0,0,imageSize.width, imageSize.height);
 
         // Process all Java shapes
@@ -404,15 +410,15 @@ public class SpatialRenderer
         return retLabel;
     }
   
-    public JLabel getIcon(Struct    _geoStruct, 
+    public JLabel getIcon(Struct    _gStruct, 
                           Dimension _imageSize)
     {
         JLabel retLabel = new JLabel();
         Icon icon = null;
-        if ( _geoStruct==null ) {
+        if ( _gStruct==null ) {
             return retLabel;
         }
-        Struct _gStruct = _geoStruct;
+
         Constants.GEOMETRY_TYPES geomType = Constants.GEOMETRY_TYPES.UNKNOWN;
         int gtype = -1; 
         try {
@@ -472,8 +478,9 @@ public class SpatialRenderer
     }
   
     /**
-     * Processes Object which could be SDO_GEOMETRY, VERTEX_TYPE, SDO_ELEM_INFO_ARRAY, POINT_TYPE etc 
-     * and returns representational (normally coloured) string.
+     * Processes Object which could be:
+     *   SDO_GEOMETRY, VERTEX_TYPE, SDO_ELEM_INFO_ARRAY, POINT_TYPE etc 
+     * Returns representational (normally coloured) string.
      * @param _value
      * @param _allowColouring
      * @return
@@ -486,9 +493,12 @@ public class SpatialRenderer
                sqlTypeName = "";
         try
         {
-            // is this really geometry / vertex type column?
-              boolean colourSDOGeomElems = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
-              if ( _value instanceof java.sql.Struct) {
+        	// is this really geometry / vertex type column?
+            boolean colourSDOGeomElems = _allowColouring 
+                            ? this.GeoRaptorPrefs.isColourSdoGeomElements() 
+                            : false;
+            if ( _value instanceof java.sql.Struct) 
+            {
                 Struct stValue = (Struct)_value;
                 sqlTypeName = stValue.getSQLTypeName();
                 if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
@@ -503,7 +513,9 @@ public class SpatialRenderer
                                                          colourSDOGeomElems,
                                                          Constants.MAX_PRECISION);
                 }
-            } else if (_value instanceof java.sql.Array) {
+            } 
+            else if (_value instanceof java.sql.Array) 
+            {
                 Array aryValue = (Array)_value;
                 sqlTypeName =  aryValue.getBaseTypeName();
                 if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_DIMARRAY)) {
@@ -530,6 +542,7 @@ public class SpatialRenderer
                 clipText = Constants.NULL;
             }
         } catch (Exception _e) {
+        	_e.printStackTrace();
             clipText = sqlTypeName + " rendering Failed (" + _e.getMessage() + ")";
         }
         return clipText;
@@ -673,11 +686,4 @@ public class SpatialRenderer
         }
         return clipText;
     }
-
-	@Override
-	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-			int row, int column) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

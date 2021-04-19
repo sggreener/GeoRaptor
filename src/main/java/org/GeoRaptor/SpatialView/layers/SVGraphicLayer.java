@@ -681,10 +681,12 @@ implements iLayer
                 Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
             String  pointSizeCol =
                 Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
+            
             boolean bShade      = false,
                     bPointColor = false,
                     bLineColor  = false,
                     bPointSize  = false;
+            
             if ( attData != null ) {
                 bShade      = (this.getStyling().getShadeType()      == Styling.STYLING_TYPE.COLUMN && attData.containsKey(shadeCol));
                 bPointColor = (this.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointColorCol));
@@ -939,13 +941,7 @@ implements iLayer
 	}
 
 	@Override
-	public String getSDOFilterClause() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String wrapSQL(String _sql) {
+	public String getSDOFilterParameters() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1103,5 +1099,17 @@ implements iLayer
     public Constants.SDO_OPERATORS getSdoOperator() {
         return this.sdoOperator;
     }
+
+	@Override
+	public void setKeyColumn(String _column) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getKeyColumn() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

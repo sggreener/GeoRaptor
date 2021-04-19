@@ -29,7 +29,8 @@ import org.xml.sax.SAXException;
  * 
  * Class for control all other settings classes.
  */
-public class MainSettings {
+public class MainSettings 
+{
 	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.MainSettings");
 
 	/**

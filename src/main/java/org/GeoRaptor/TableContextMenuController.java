@@ -29,6 +29,7 @@ import oracle.ide.controller.IdeAction;
  */
 public class TableContextMenuController implements Controller
 {
+    private static final String GENERAL_ERROR     = MainSettings.EXTENSION_NAME + " Error";
 	
 	private static final int ZOOM_TO_MAP          = Ide.findOrCreateCmdID("ZOOM_TO_MAP");
 	private static final int ADD_TO_MAP           = Ide.findOrCreateCmdID("ADD_TO_MAP");
@@ -41,13 +42,8 @@ public class TableContextMenuController implements Controller
 	private static final int VALIDATE_GEOMETRY    = Ide.findOrCreateCmdID("VALIDATE_GEOMETRY");
 	private static final int VALIDATE_COLUMN      = Ide.findOrCreateCmdID("VALIDATE_COLUMN");
 	private static final int IMPORT_SHAPEFILE     = Ide.findOrCreateCmdID("IMPORT_SHAPEFILE");
-    private static final String GENERAL_ERROR     = MainSettings.EXTENSION_NAME + " Error";
 
     protected ValidateSDOGeometry validateSDOGeom;
-
-	private void show (String message) {
-		JOptionPane.showMessageDialog(null, message, Resources.getString("DIALOG_SHOW_TITLE"), JOptionPane.INFORMATION_MESSAGE);
-	}
 
 	@Override
 	public boolean handleEvent(IdeAction action, Context context) 
@@ -82,7 +78,6 @@ public class TableContextMenuController implements Controller
                 JOptionPane.showMessageDialog(null, "MySQL support not yet Implemented");
             } else {
 
-			  //show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
               // Add Object to spatial view
 			  SpatialViewPanel svp = SpatialViewPanel.getInstance();
               SpatialViewPanel.LayerReturnCode lrc;
@@ -108,7 +103,7 @@ public class TableContextMenuController implements Controller
                 // show Spatial View (maybe window is not open)
                 svp.show();
               } else if ( lrc == SpatialViewPanel.LayerReturnCode.Fail ) {           	  
-                show("SpatialViewPanel failed to load");
+                Messages.log("Spatial View Panel failed to load");
               }
             }
             
@@ -138,7 +133,6 @@ public class TableContextMenuController implements Controller
 			
 		} else if (cmdId == MANAGE_METADATA) {
 			
-			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             Metadata(conn, 
                     selectedSchemaName,
                     selectedObjectName,
@@ -147,7 +141,6 @@ public class TableContextMenuController implements Controller
             
 		} else if (cmdId == DROP_METADATA) {
 			
-			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             ManageSpatialIndex.getInstance().dropIndex(conn, 
                     selectedSchemaName, 
                     selectedObjectName, 
@@ -157,7 +150,6 @@ public class TableContextMenuController implements Controller
 			
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
 			
-			//show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
             try 
             {
                 ExporterWizard ew = new ExporterWizard("Export to ...",
@@ -178,9 +170,7 @@ public class TableContextMenuController implements Controller
 			
 			ValidateSDOGeometry vs = new ValidateSDOGeometry();
 			vs.setVisible(true);
-			
-			show("Action CmdID: " + cmdId + " Name: " + action.getValue("Name"));
-		
+					
             if (this.validateSDOGeom == null) {
                 this.validateSDOGeom = new ValidateSDOGeometry();
             }
