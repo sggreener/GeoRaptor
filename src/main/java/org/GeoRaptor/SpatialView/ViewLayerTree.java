@@ -1837,7 +1837,7 @@ public class ViewLayerTree
         if ( ! showLayerAttrMenuText.equals(this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYERS_ATTRIBUTES")) ) {
             if ( fLayerNode.getSpatalLayerType().equalsIgnoreCase(Constants.KEY_SVGraphicLayer)) 
             {
-               String menuText = this.propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_ATTRIBUTES");
+               String menuText = this.propertyManager.getMsg("LAYER_MENU_SHOW_LAYER_ATTRIBUTES",shortVisibleName);
                AbstractAction showLayerAttributes = new AbstractAction(menuText, iconShowLayerAttrs) {
                 /**
 				 * 

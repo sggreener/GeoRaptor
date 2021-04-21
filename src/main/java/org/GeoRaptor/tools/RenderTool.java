@@ -70,6 +70,7 @@ public class RenderTool {
             } else if (_value instanceof Array) {
                 Array aryValue = (Array)_value;
                 return ( aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ||
+                		 aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) ||
                          aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEM_ARRAY) ||
                          aryValue.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ORD_ARRAY));
             }
@@ -729,29 +730,29 @@ public class RenderTool {
         String returnString = "";
         try 
         {
-            Array dimArray =  _dimArray;
-            if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
-            {
-                String DIM_NAME = "";
-                double SDO_LB   = Double.MAX_VALUE;
-                double SDO_UB   = Double.MAX_VALUE;
-                double SDO_TOL  = Double.MAX_VALUE;
-                MetadataEntry mEntry = new MetadataEntry();
-                Object objs[] = (Object[])dimArray.getArray();
-                for (int i =0; i < objs.length; i++) {
-                    Struct dimElement = (Struct)objs[i];
-                    Object data[] = dimElement.getAttributes();
-                    DIM_NAME = (String)data[0];
-                    SDO_LB   = OraUtil.toDouble(data[1],Double.NaN);
-                    SDO_UB   = OraUtil.toDouble(data[2],Double.NaN);
-                    SDO_TOL  = OraUtil.toDouble(data[3],Double.NaN);
-                    mEntry.add(DIM_NAME,SDO_LB,SDO_UB,SDO_TOL);
-                }
-                if ( _renderAsHTML ) {
-                    returnString = mEntry.render();
-                } else {
-                    returnString = mEntry.toDimArray();
-                }
+            if ( ! _dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) ) 
+            	return "";
+            
+            Array dimArray  =  _dimArray;
+            String DIM_NAME = "";
+            double SDO_LB   = Double.MAX_VALUE;
+            double SDO_UB   = Double.MAX_VALUE;
+            double SDO_TOL  = Double.MAX_VALUE;
+            MetadataEntry mEntry = new MetadataEntry();
+            Object objs[] = (Object[])dimArray.getArray();
+            for (int i =0; i < objs.length; i++) {
+                Struct dimElement = (Struct)objs[i];
+                Object data[] = dimElement.getAttributes();
+                DIM_NAME = (String)data[0];
+                SDO_LB   = OraUtil.toDouble(data[1],Double.NaN);
+                SDO_UB   = OraUtil.toDouble(data[2],Double.NaN);
+                SDO_TOL  = OraUtil.toDouble(data[3],Double.NaN);
+                mEntry.add(DIM_NAME,SDO_LB,SDO_UB,SDO_TOL);
+            }
+            if ( _renderAsHTML ) {
+                returnString = mEntry.render();
+            } else {
+                returnString = mEntry.toDimArray();
             }
         } catch (SQLException sqle) {
             return sqle.getLocalizedMessage();

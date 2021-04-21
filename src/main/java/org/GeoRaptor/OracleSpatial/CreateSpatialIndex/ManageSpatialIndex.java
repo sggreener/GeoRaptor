@@ -1390,8 +1390,13 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	 * @function dropIndex
 	 * @author Simon Greener April 20th 2010
 	 **/
-	public boolean dropIndex(Connection _conn, String _schemaName, String _tableName, String _columnName,
-			String _userName, boolean _displayResult) {
+	public boolean dropIndex(Connection _conn, 
+			                     String _schemaName, 
+			                     String _tableName, 
+			                     String _columnName,
+			                     String _userName, 
+	                            boolean _displayResult) 
+	{
 		this.userName = _userName;
 		this.geoColumn = _columnName;
 

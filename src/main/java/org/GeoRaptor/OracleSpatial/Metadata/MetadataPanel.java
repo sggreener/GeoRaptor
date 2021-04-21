@@ -1637,8 +1637,8 @@ public class MetadataPanel extends javax.swing.JDialog {
         JOptionPane.showMessageDialog(null,
                                       propertyManager.getMsg("MD_SUCCESSFUL_UPDATE", 
                                     		  Strings.objectString(this.schemaName,
-                                                                                       this.objectName,
-                                                                                       targetColumn)).toString(),
+                                      this.objectName,
+                                      targetColumn)).toString(),
                                       MainSettings.EXTENSION_NAME,
                                       JOptionPane.INFORMATION_MESSAGE);
 
@@ -1748,11 +1748,71 @@ public class MetadataPanel extends javax.swing.JDialog {
     }
 
     /**
-     * Delete select metadata row
+     * Delete selected metadata by row
      */
     protected void deleteMDRow(MetadataEntry _mEntry) 
     {
-        final String fullObjectName = _mEntry.getFullName();
+        deleteMetadata(this.conn,
+        		       _mEntry.getSchemaName(),
+        		       _mEntry.getObjectName(),
+        		       _mEntry.getColumnName()
+        		      );
+        return;
+    }
+    
+    public void deleteMetadata(Connection _conn,
+    		                   String _schemaName,
+                               String _objectName,
+                               String _columnName
+    		                  )
+    {
+    	String userName;
+		try {
+			userName = Strings.isEmpty(_conn.getSchema()) ? _schemaName : _conn.getSchema();
+		} catch (SQLException e) {
+			userName = _schemaName;
+			e.printStackTrace();
+		}
+		
+    	String geoColumn = _columnName;
+        if ( Strings.isEmpty(geoColumn) ) {
+        	List<String> geoColumns = Queries.validateColumnName (
+                                             _conn,
+                                             _schemaName,
+                                             _objectName,
+                                             _columnName
+                         );
+            if ( geoColumns != null && geoColumns.size()!=0 ) {
+                geoColumn = geoColumns.get(0);
+            } else {
+                this.setAlwaysOnTop(false);
+                JOptionPane.showMessageDialog(
+                                null,
+                                propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",_objectName),
+                                UPDATE_METADATA_ERROR,
+                                JOptionPane.ERROR_MESSAGE);
+                this.setAlwaysOnTop(true);
+            	return;
+            }
+        } 
+        
+        // Does object have metadata?
+        boolean yes = true;
+		try {
+			yes = Queries.hasGeomMetadataEntry(
+			                         _conn,
+			                         _schemaName, 
+			                         _objectName, 
+			                         _columnName);
+		} catch (Exception e) {
+			yes = false;
+			e.printStackTrace();
+		}
+        if ( ! yes )
+        	return;
+        
+        String fullObjectName = Strings.objectString(_schemaName,_objectName,geoColumn,".");
+
         // query options for for delete dialog
         //
         Object[] options = { propertyManager.getMsg("MD_DELETE_MB_YES_BUTTON"), 
@@ -1760,41 +1820,49 @@ public class MetadataPanel extends javax.swing.JDialog {
 
         this.setAlwaysOnTop(false);
         int selectStatus = JOptionPane.showOptionDialog(
-                                  null, 
-                                  propertyManager.getMsg("MD_DELETE_MB_QUERY", fullObjectName), 
-                                  propertyManager.getMsg("MD_DIALOG_TILE"),
-                                  JOptionPane.DEFAULT_OPTION,
-                                  JOptionPane.WARNING_MESSAGE, null,
-                                  options, 
-                                  options[0]);
+                              null, 
+                              propertyManager.getMsg("MD_DELETE_MB_QUERY",fullObjectName), 
+                              propertyManager.getMsg("MD_DIALOG_TILE"),
+                              JOptionPane.DEFAULT_OPTION,
+                              JOptionPane.WARNING_MESSAGE, null,
+                              options, 
+                              options[0]
+                           );
         this.setAlwaysOnTop(true);
 
         if (selectStatus != 0) { // not OK button
             return;
         }
 
+        // Now make deletion...
         try {
             String sql = "";
-            if ( _mEntry.getSchemaName().equalsIgnoreCase(this.userName) ) 
-                sql = getSchemaDeleteSQL(_mEntry.getObjectName(), 
-                                         _mEntry.getColumnName());
+            if ( _schemaName.equalsIgnoreCase(userName) ) 
+                sql = getSchemaDeleteSQL(_objectName, 
+                                         geoColumn);
             else {
-                if (Queries.checkCrossSchemaDMLPermissions(this.conn) )
-                    sql = getCrossSchemaDeleteSQL(_mEntry.getSchemaName(),
-                                                  _mEntry.getObjectName(),
-                                                  _mEntry.getColumnName());
+                if (Queries.checkCrossSchemaDMLPermissions(_conn) )
+                    sql = getCrossSchemaDeleteSQL(_schemaName,
+                                                  _objectName,
+                                                  geoColumn);
                 else
                     throw new Exception("Cannot execute cross-schema metadata delete.\n" +
                                         "Unless you: \n" +
                                         "GRANT DELETE ON MDSYS.SDO_GEOM_METADATA_TABLE TO PUBLIC (or " + this.userName + ")");
             }
-
             // delete MD entry
-            Statement st = this.conn.createStatement();            
+            Statement st = _conn.createStatement();            
             st.execute(sql);
-            this.conn.commit();
-            st.close();            
+            _conn.commit();
+            st.close();
+            this.setAlwaysOnTop(false);
+            JOptionPane.showMessageDialog(
+            		        null,
+            		        propertyManager.getMsg("MD_SUCCESSFUL_DELETE",fullObjectName)
+            		    );
+            this.setAlwaysOnTop(true);            
         } catch (Exception ex) {
+        	ex.printStackTrace();
             this.setAlwaysOnTop(false);
             JOptionPane.showMessageDialog(null, 
                                           ex.getMessage(),
@@ -1803,10 +1871,12 @@ public class MetadataPanel extends javax.swing.JDialog {
             this.setAlwaysOnTop(true);
             // show error message
         }
+        return;
     }
     
     private String getSchemaDeleteSQL(String _ObjectName,
-                                      String _ColumnName) {
+                                      String _ColumnName)
+    {
         String sql;
         sql = "DELETE FROM user_sdo_geom_metadata usgm \n" +
               " WHERE usgm.TABLE_NAME  = '" + _ObjectName.toUpperCase() + "' \n" +
@@ -1816,7 +1886,8 @@ public class MetadataPanel extends javax.swing.JDialog {
 
     private String getCrossSchemaDeleteSQL(String _SchemaName,
                                            String _ObjectName,
-                                           String _ColumnName) {
+                                           String _ColumnName)
+    {
         String ownerClause = "NVL(" + (Strings.isEmpty(_SchemaName) ? "NULL" : "'" + _SchemaName.toUpperCase() + "'") + ",SYS_CONTEXT('USERENV','SESSION_USER'))) \n";
         String sql;
         sql = "DELETE FROM all_sdo_geom_metadata asgm \n" +

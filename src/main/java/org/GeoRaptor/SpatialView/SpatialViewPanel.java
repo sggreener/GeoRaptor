@@ -1444,7 +1444,6 @@ extends JPanel
                                 boolean _zoom)
   {
       SpatialView targetView = null;
-      LOGGER.debug("addLayerToView: "+iLayer.CLASS_NAME);
       // 1. Does a view exist with same SRID as layer?
       //
       targetView = getViewBySRID(_layer.getSRID());
@@ -1475,7 +1474,6 @@ extends JPanel
       
       if ( selectedViewName.equals(createNewView) ) 
       {
-          LOGGER.debug("selectedViewName.equals(createNewView) ie " + selectedViewName + ".equals("+createNewView+")");
           // Create new view.
           String createViewName = SpatialView.createViewName(_layer.getSRID());
           targetView = this.newView(createViewName,_layer.getSRID(),false);
@@ -1560,8 +1558,6 @@ extends JPanel
         if ( _sView == null ) {
             return;
         }
-
-        LOGGER.debug("setActiveView(" + _sView.getViewName() + ")");
 
         // Save split position of existing screen as the removal of the mapPanel will change it.
         //
@@ -1831,12 +1827,8 @@ extends JPanel
 
         } catch (XPathExpressionException xe) {
             LOGGER.error(this.propertyManager.getMsg("LOAD_VIEW_FROM_DISK_XPATH_ERR",xe.getMessage()));
-        } catch (ParserConfigurationException pe) {
-            LOGGER.error("ParserConfigurationException " + pe.toString());
-        } catch (SAXException se) {
-            LOGGER.error("SAXException " + se.toString());
-        } catch (IOException ioe) { 
-            LOGGER.error(this.propertyManager.getMsg("LOAD_VIEW_FROM_DISK_XML_PARSE",ioe.toString()));
+        } catch (Exception e) { 
+            LOGGER.error(this.propertyManager.getMsg("LOAD_VIEW_FROM_DISK_XML_PARSE",e.toString()));
         }
     }
 

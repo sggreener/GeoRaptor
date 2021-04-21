@@ -67,11 +67,14 @@ public class Queries {
             propertyManager = new PropertiesManager(propertiesFile);
         
         if ( _conn==null )
-            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR","USER_SDO_GEOM_METADATA SQL"));
+            throw new IllegalArgumentException(
+            		propertyManager.getMsg("MD_NO_CONNECTION_FOR",
+                                           "USER_SDO_GEOM_METADATA SQL"));
         
         if (Strings.isEmpty(_objectName) )
-            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_OBJECT_NAME",
-                                               propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
+            throw new IllegalArgumentException(
+            		propertyManager.getMsg("MD_NO_OBJECT_NAME",
+                    propertyManager.getMsg("METADATA_TABLE_COLUMN_1")));
         
         // This SQL will work in 9i, 10g and 11g.
         // It returns names of indexes that are primary key or unique constraints
@@ -135,7 +138,7 @@ public class Queries {
     
     /** 
      * @function validateColumnName
-     * @precis   Checks that _columnName exists in _schemaName._objectName and 
+     * @precis   Checks that _columnName exists in {_schemaName}.{_objectName} and 
      *           is SDO_GEOMETRY. If no _columnName is provided, returns list 
      *           of SDO_GEOMETRY columns in object.
      * @author   Simon Greener, May 1st 2010 Original Coding

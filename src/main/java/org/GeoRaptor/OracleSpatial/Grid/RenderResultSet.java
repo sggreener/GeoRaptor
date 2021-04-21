@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +42,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.Preview;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
+import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.io.Export.GMLExporter;
 import org.GeoRaptor.io.Export.IExporter;
 import org.GeoRaptor.io.Export.KMLExporter;
@@ -50,6 +53,7 @@ import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
+import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
@@ -519,7 +523,8 @@ public class RenderResultSet
             Object obj  = _table.getModel().getValueAt(modelRow, modelColumn);
             Struct Struct = null;
             Array array = null;
-            if (obj instanceof Struct) {
+            if (obj instanceof Struct) 
+            {
                 try {
                     Struct = (Struct)obj;
                     if ( Struct.getSQLTypeName().indexOf("MDSYS.ST_")==0 ||
@@ -545,7 +550,7 @@ public class RenderResultSet
             } else if (obj instanceof Array){
                 try {
                     array = (Array)obj;
-                    if ( array.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
+                    if ( array.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) ) 
                     {
                         // Return true for this clicked geometry column if:
                         // 1. No selection exists
@@ -630,7 +635,10 @@ public class RenderResultSet
                                 if (dimArray == null ) {
                                     break;
                                 }
-                                if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
+                                if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) 
+                                     ||
+                                     dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) )
+                                {
                                     return viewCol;
                                 }
                             }
@@ -1390,23 +1398,27 @@ public class RenderResultSet
     private boolean copySdoMetadataSQLClipboard(sqlType _sqlType) 
     {
         // This function can only be called if table_name,column_name,diminfo and srid columns exist in resultset....
-        // LOGGER.info("Not yet implemented.");
+        // 
         Connection conn = this.getConnection();
         if ( conn==null ) {
           throw new IllegalArgumentException("Could not access database connection of Query.");
         }
+        
         String sqlStmt = "";
         try
         {
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("No ResultSet Table to process.");
             }
+            
             if ( this._table == null ) {
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
             }
+            
             int colsToProcess = this.rst.getSelectedColumnCount()==0 
                                  ? this._table.getColumnCount() 
                                  : this.rst.getSelectedColumnCount();
+            
             // For rows, we have to include what rows are actually loaded into the JTable as we can only
             // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
             // the table will be corrupted as data conversion of column data types will fail
@@ -1420,10 +1432,9 @@ public class RenderResultSet
             int viewRow = -1;
             int[] columns = this.rst.getSelectedColumns();
             int viewCol = -1;
-
             MetadataEntry  me = null;
             String columnName = "";
-            String  classname = "";
+            String  className = "";
             String   typeName = "";
             Array     diminfo = null;
             for (int row=0; row < rowsToProcess; row++) 
@@ -1440,7 +1451,7 @@ public class RenderResultSet
                     if ( this.rst.getSelectedColumnCount() > 0 ) {
                         viewCol   = columns[col];
                     }
-                    classname  = this._table.getColumnClass(viewCol).getName();
+                    className  = this._table.getColumnClass(viewCol).getName();
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
@@ -1452,11 +1463,12 @@ public class RenderResultSet
                             // Now the values
                             //
                             if ( columnName.equalsIgnoreCase("DIMINFO") && 
-                                 classname.equals("oracle.sql.ARRAY") ) {
+                                 className.equals("oracle.sql.ARRAY") ) {
                                 diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
                                 if ( diminfo != null ) {
-                                    typeName = diminfo.getBaseTypeName();
-                                    if ( typeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
+                                    if ( diminfo.getBaseTypeName()
+                                                .equalsIgnoreCase(Constants.TAG_MDSYS_SDO_ELEMENT) ) 
+                                    {
                                         me.add(diminfo);
                                     } 
                                 }
@@ -1471,16 +1483,19 @@ public class RenderResultSet
                                 me.setColumnName(obj.toString());
                             } else if (columnName.equalsIgnoreCase("SRID") ) {
                                 Object obj = this._table.getValueAt(viewRow,viewCol);
-                                if ( obj instanceof oracle.sql.NUMBER ) {
-                                    NUMBER num = (NUMBER)obj;
-                                    me.setSRID(String.valueOf(num.longValue()));
-                                } else {
-                                    me.setSRID(obj.toString());
+                                if ( obj != null ) 
+                                {
+	                                if ( obj instanceof oracle.sql.NUMBER ) {
+	                                    NUMBER num = (NUMBER)obj;
+	                                    me.setSRID(String.valueOf(num.longValue()));
+	                                } else {
+	                                    me.setSRID(obj.toString());
+	                                }
                                 }
                             }
                         }
                   } catch (SQLException sqle) {
-                    LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + classname);
+                    LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + className);
                   } 
                 }
                 sqlStmt += (Strings.isEmpty(sqlStmt) ? "" : "\n") + 
@@ -1492,6 +1507,7 @@ public class RenderResultSet
             }
         } catch (Exception e) {
             LOGGER.error("Copying of DIMINFO as SQL statement (" + _sqlType.toString() + ") to clipboard produced error: " + e.getMessage());
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null, e.getMessage());
         }
         if (Strings.isEmpty(sqlStmt) ) {
@@ -1518,9 +1534,11 @@ public class RenderResultSet
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("copyDimInfoToClipboard: No ResultSet Table to process.");
             }
+            
             if ( this._table == null ) {
                 throw new IllegalArgumentException("copyDimInfoToClipboard: No SQL Developer Grid Table to process.");
             }
+            
             int mappableColumn = -1;
             if ( this.clickColumn == -1 ) {
               mappableColumn = this.findDimArrayColumn();
@@ -1529,7 +1547,10 @@ public class RenderResultSet
               }
             } 
             
-            int colsToProcess = this.rst.getSelectedColumnCount()==0 ? this._table.getColumnCount() : this.rst.getSelectedColumnCount();
+            int colsToProcess = this.rst.getSelectedColumnCount()==0 
+                                ? this._table.getColumnCount() 
+                                : this.rst.getSelectedColumnCount();
+            
             // For rows, we have to include what rows are actually loaded into the JTable as we can only
             // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
             // the table will be corrupted as data conversion of column data types will fail
@@ -1539,14 +1560,13 @@ public class RenderResultSet
                                 : ( this._table.getLoadedRowCount() != 0
                                     ? this._table.getLoadedRowCount() 
                                     : this._table.getRowCount() );
-            int[] rows = this.rst.getSelectedRows();
-            int viewRow = -1;
+            int[] rows    = this.rst.getSelectedRows();
+            int viewRow   = -1;
             int[] columns = this.rst.getSelectedColumns();
-            int viewCol = -1;
+            int viewCol   = -1;
 
             String  columnName = "";
             String   classname = "";
-            String    typeName = "";
             Array      diminfo = null;
             MetadataEntry   me = null;
             String SRID_marker = "-9999";
@@ -1554,11 +1574,10 @@ public class RenderResultSet
             try { SRID = mainPrefs.getSRIDAsInteger(); } catch (Exception e) { }
             for (int row=0; row < rowsToProcess; row++) 
             {
-                diminfo     = null; 
-                me          = new MetadataEntry(null,null,null,SRID_marker);
-                viewRow     = row;
+                me      = new MetadataEntry(null,null,null,SRID_marker);
+                viewRow = row;
                 if ( this.rst.getSelectedRowCount() > 0 ) {
-                    viewRow   = rows[row];
+                    viewRow = rows[row];
                 }
                 SRID = Constants.SRID_NULL;
                 for (int col = 0; col < colsToProcess; col++) 
@@ -1574,27 +1593,27 @@ public class RenderResultSet
                         // Note: DIMINFO may appear before SRID or vice versa
                         //
                         if ( columnName.equalsIgnoreCase("DIMINFO") && 
-                             classname.equals("java.sql.Array") ) {   
+                             classname.equals("oracle.sql.ARRAY") ) 
+                        {
                             diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
-                            if ( diminfo != null ) {
-                                typeName = diminfo.getBaseTypeName();
-                                if ( ! typeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) {
-                                    diminfo = null;
-                                } 
-                            }
                         } else if (columnName.equalsIgnoreCase("SRID") ) {
                             Object obj = this._table.getValueAt(viewRow,viewCol);
-                            if ( obj instanceof oracle.sql.NUMBER ) {
-                                NUMBER num = (NUMBER)obj;
-                                SRID = (num==null) ? Constants.SRID_NULL : num.intValue();
+                            if ( obj != null )
+                            {
+                            	if ( obj instanceof oracle.sql.NUMBER ) {
+                            		NUMBER num = (NUMBER)obj;
+                            		SRID = (num==null) ? Constants.SRID_NULL : num.intValue();
+                            	}
                             }
                         }
                     } catch (SQLException sqle) {
                         LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + classname);
+                        sqle.printStackTrace();
                     }
                 }  // for cols ....
-                if ( diminfo != null ) {
-                    // LOGGER.info("diminfo= " + this.renderTool.renderDimArray(diminfo, false) + " " + _copyType.toString() + " " + SRID);
+
+                if ( diminfo != null ) 
+                {
                     if ( _copyType.equals(DiminfoCopyType.DIMINFO)) {
                         clipboardText += (Strings.isEmpty(clipboardText) 
                                          ? "" 
@@ -1611,7 +1630,8 @@ public class RenderResultSet
                 }
             } // for rows ...
         } catch (Exception e) {
-            LOGGER.error("copyDimInfoToClipboard: Copying of DIMINFO to clipboard produced error: " + e.getMessage());
+            LOGGER.error("Copying of DIMINFO to clipboard produced error: " + e.getMessage());
+            e.printStackTrace();
             JOptionPane.showMessageDialog(null, e.getMessage());
         }
         if (Strings.isEmpty(clipboardText) ) {
@@ -1665,17 +1685,21 @@ public class RenderResultSet
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("No ResultSet Table to process.");
             }
+            
             String sqlCmd = this.rst.getCurrentSql();
             if (Strings.isEmpty(sqlCmd)) {
                 throw new IllegalArgumentException("No SQL Command available.");
             }
+            
             if ( this._table == null ) {
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
             }
+            
             SpatialViewPanel svp = SpatialViewPanel.getInstance();
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
+            
             int         mappableColumn = -1;
             String  mappableColumnName = "";
             if ( this.clickColumn == -1 ) {
@@ -1693,6 +1717,7 @@ public class RenderResultSet
             if (rowsToProcess==0) {
                 throw new IllegalArgumentException("SQL appears to have generated no rows, so is not mappable.");
             }
+            
             // See if can extract schema and table name from SQL
             //
             String layerName = "",
@@ -2012,10 +2037,6 @@ public class RenderResultSet
                                 attr.put(columnName, value==null ? null : value );
                               }
                       }
-                  } catch (ClassCastException cce) {
-                    LOGGER.error("RenderResultSet.processResultSet(): Cast Error converting column/type " + columnName + "/" + classname);                          
-                  } catch (SQLException sqle) {
-                    LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + classname);
                   } catch (Exception e) {
                     LOGGER.error("RenderResultSet.processResultSet(): Error converting column/type " + columnName + "/" + classname);                      
                   }
@@ -2067,7 +2088,6 @@ public class RenderResultSet
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("No ResultSet Table to process.");
             }
-            String sqlCmd = this.rst.getCurrentSql();
             
             if ( this._table == null ) {
                 throw new IllegalArgumentException("No SQL Developer Grid Table to process.");
@@ -2082,6 +2102,7 @@ public class RenderResultSet
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
+            
             // MAKE SURE THE VIEW IS OPEN ...
             //
             SpatialViewPanel.getInstance().show();
@@ -2093,10 +2114,11 @@ public class RenderResultSet
                  throw new IllegalArgumentException(this.propertyManager.getMsg("NO_DIMINFO"));
             } else {
                 mappableColumn = this.clickColumn;
-            }
+            }            
             mappableColumnName =  this._table.getColumnName(mappableColumn);
-            LOGGER.debug("mappable: " + mappableColumn + " name " + mappableColumnName);
+
             int colsToProcess = this.rst.getSelectedColumnCount()==0 ? this._table.getColumnCount() : this.rst.getSelectedColumnCount();
+            
             // For rows, we have to include what rows are actually loaded into the JTable as we can only
             // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
             // the table will be corrupted as data conversion of column data types will fail
@@ -2111,36 +2133,30 @@ public class RenderResultSet
             int[] columns = this.rst.getSelectedColumns();
             int viewCol = -1;
 
-            // Create a layer name from information gathered
-            //
-            String layerName = "";
-            if ( !Strings.isEmpty(this.rst.getName()) ) {
-              layerName = this.rst.getName();
-            } else {
-              layerName = this.rst.getDefaultExportName();
-            }
-            layerName = mappableColumnName +
-                        ((this.rst.getSelectedRowCount()!=0||this.rst.getSelectedColumnCount()!=0)
-                        ? ": Selection" 
-                        : ": full RecordSet" + (Strings.isEmpty(layerName)?"":" "+layerName));
-            
-            String                          rowID = "";
-            String                     columnName = "";
-            String                      classname = "";
-            Array                         diminfo = null;
-            JGeometry                       jGeom = null; 
-            int                              SRID = Constants.SRID_NULL;
-            MetadataEntry                      me = null;
-            SVGraphicLayer          sGraphicLayer = null;
-            Constants.GEOMETRY_TYPES geometryType = Constants.GEOMETRY_TYPES.UNKNOWN;
-            LinkedHashMap<String, Object>    attr = new LinkedHashMap<String, Object>();
+            String  columnName = "";
+            String   classname = "";
 
+            // Generate more than one SVGraphicTheme based on number of
+            // unique SRIDs in selected rows
+            //
+            Array      diminfo = null;
+            JGeometry    jGeom = null;
+            String  owner_name = null;
+            String  table_name = null;
+            String column_name = null;
+            int           SRID = Constants.SRID_NULL;
+            SVGraphicLayer sGraphicLayer = null;
+            LinkedHashMap<Integer,SVGraphicLayer> diminfoLayers = new LinkedHashMap<Integer,SVGraphicLayer> ();
+            LinkedHashMap<String, Object>  attr = new LinkedHashMap<String, Object>();
             for (int row=0; row < rowsToProcess; row++) 
             {
-                jGeom = null;
-                attr.clear();
-                rowID = null;
-                viewRow = row;
+                jGeom         = null;
+                owner_name    = this.getUserName();
+                table_name    = null;
+                column_name   = null;
+                sGraphicLayer = null;
+                viewRow       = row;
+                attr          = new LinkedHashMap<String, Object>();
                 if ( this.rst.getSelectedRowCount() > 0 ) {
                     viewRow   = rows[row];
                 }
@@ -2152,119 +2168,140 @@ public class RenderResultSet
                     }
                     classname  = this._table.getColumnClass(viewCol).getName();
                     columnName = this._table.getColumnName(viewCol);
-                    LOGGER.debug("columnName= " + columnName + " className=" + classname);
+
+                    if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
+                        classname.equalsIgnoreCase("java.sql.RowId") )
+                    	continue;
+
+                    if ( columnName.equalsIgnoreCase("OWNER") ) {
+                    	owner_name = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));                    
+                        attr.put(columnName, owner_name);
+                        continue; // owner name is saved for this row
+                    }
+
+                    if ( columnName.equalsIgnoreCase("TABLE_NAME") ) {
+                    	table_name = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));                    
+                        attr.put(columnName, table_name);
+                        continue; // table_name is saved for this row
+                    }
+
+                    if ( columnName.equalsIgnoreCase("COLUMN_NAME") ) {
+                    	column_name = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
+                    	attr.put(columnName, column_name);
+                    	continue; // column_name is saved for this row
+                    }
+
+                    if ( columnName.equalsIgnoreCase("DIMINFO") && 
+                          classname.equals("oracle.sql.ARRAY") )
+                    {
+                    	diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
+                        if ( diminfo != null
+                        	 &&
+                             diminfo.getBaseTypeName()
+                                    .equalsIgnoreCase(Constants.TAG_MDSYS_SDO_ELEMENT) ) 
+                        {
+                        	if ( viewCol == mappableColumn ) {
+                        		jGeom = JGeom.getDimArrayAsJGeometry(diminfo,Constants.NULL_SRID,true/*2D*/);
+                            } 
+                        }
+                        continue;  // jGeom is saved for this row
+                    }
+
+                    // From now on we don't support any columns other than SRID
+                    //
+                    if (! columnName.equalsIgnoreCase("SRID"))
+                    	continue;
+
+                    // Process SRID and create sGraphicLayer if needed
+                    //
+                	Object obj = null;
+                	SRID = Constants.NULL_SRID;
                     try 
                     {
-                        if (columnName.equalsIgnoreCase("SRID")) {
-                            Object obj = this._table.getValueAt(viewRow,viewCol);
-                            if ( obj instanceof oracle.sql.NUMBER ) {
-                                NUMBER num = (NUMBER)obj;
-                                SRID = num.intValue();
-                            } else {
-                                SRID =
-                                    Strings.isEmpty(obj.toString()) 
-                                        ? Constants.NULL_SRID 
-                                        : Integer.valueOf(obj.toString()).intValue();
-                            }
-                            attr.put(columnName, SRID);
-                        }  
-                        if ( columnName.equalsIgnoreCase("DIMINFO") && 
-                             classname.equals("oracle.sql.ARRAY") )
-                        {
-                            LOGGER.debug("viewCol == mappableCol - viewCol " + viewCol + " == " + mappableColumn);
-                            diminfo = (Array)this._table.getValueAt(viewRow,viewCol);
-                            if ( diminfo.getBaseTypeName().equalsIgnoreCase(Constants.TAG_MDSYS_SDO_DIMARRAY) ) 
-                            {
-                                if ( viewCol == mappableColumn ) {
-                                   if ( diminfo != null ) {
-                                       jGeom = JGeom.getDimArrayAsJGeometry(diminfo,SRID);
-                                    }
-                                } else {
-                                    jGeom = null;
-                                    me.add(diminfo);
-                                    attr.put(columnName, me.toDimArray());
-                                }
-                            }
-                            if ( jGeom == null ) { break; }
-                            if ( me == null )
-                            {
-                                try 
-                                {
-                                    // Now we have a Struct we can get its SRID and create the layer
-                                    me = new MetadataEntry(this.getUserName(),
-                                                           layerName,
-                                                           mappableColumnName,
-                                                           (SRID==Constants.SRID_NULL || SRID==0)
-                                                          ? "NULL" 
-                                                           : String.valueOf(SRID));
-                                    sGraphicLayer = new SVGraphicLayer(svp.getMostSuitableView(SRID),
-                                                                       layerName,
-                                                                       layerName,
-                                                                       layerName,
-                                                                       me,
-                                                                       true);
-                                    sGraphicLayer.setConnection(this.getConnectionName());
-                                    sGraphicLayer.setSQL(sqlCmd);
-                                    sGraphicLayer.getStyling().setPointSize(12);
-                                    sGraphicLayer.setGeometryType(Constants.GEOMETRY_TYPES.POLYGON);
-                                    if ( this.mainPrefs.isRandomRendering()) {
-                                        sGraphicLayer.getStyling().setAllRandom();
-                                    }
-                                } catch (Exception e) {
-                                    LOGGER.error("Error creating Graphic Theme to hold selection." + e.getMessage());
-                                    return false;
-                                }
-                            }
-                        }
-                        if (classname.equalsIgnoreCase("oracle.sql.ROWID") ||
-                            classname.equalsIgnoreCase("java.sql.RowId") ) {
-                        	continue;
-                            //rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
+                    	obj = this._table.getValueAt(viewRow,viewCol);
+                    } catch  (Exception e) {}
+                    if ( obj == null ) 
+                    {
+                    	SRID = Constants.NULL_SRID;
+                    } 
+                    else
+                    {
+                    	if ( obj instanceof oracle.sql.NUMBER ) {
+                    		NUMBER num = (NUMBER)obj;
+                    		if ( num != null)
+                    			SRID = num.intValue();
                         } else {
-                            try 
-                            {
-                                if ( Tools.dataTypeIsSupported(classname) ) {
-                                    String value = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
-                                    // Object value = this._table.getValueAt(viewRow,viewCol);
-                                    attr.put(columnName, value==null ? null : value );
-                                }
-                            } catch (Exception e) {
-                                LOGGER.error("RenderResultSet.processResultSet(): Error converting " + columnName + " (" + e.getMessage() +")");
-                            }
+                        	try { 
+                        		SRID = Integer.valueOf(obj.toString()).intValue(); 
+                        	} catch (Exception e) {
+                        		SRID = Constants.NULL_SRID;
+                        	}
                         }
-                  } catch (ClassCastException cce) {
-                    LOGGER.error("RenderResultSet.processResultSet(): Cast Error converting column/type " + columnName + "/" + classname);                          
-                  } catch (SQLException sqle) {
-                    LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + classname);
-                  } catch (Exception e) {
-                    LOGGER.error("RenderResultSet.processResultSet(): Error converting column/type " + columnName + "/" + classname);                      
-                  }
-                }
-                // rowid is always column 0 in the underlying tableModel
-                if ( jGeom!=null )
-                    try {
-                        sGraphicLayer.add(new QueryRow(rowID,
-                                                       (attr==null || attr.size()==0?null:new LinkedHashMap<String,Object>(attr)),
-                                                       jGeom,
-                                                       conn));
-                    } catch (Exception e) {
-                        LOGGER.warn("RenderResultSet.mapSelectedGeometries: QueryRow create error = " + e.getMessage());
+                    	attr.put(columnName, SRID); // While not needed, we save SRID for this row anyway
                     }
-            }
-            // Map result
-            if ( sGraphicLayer.getCacheCount() != 0 ) {
-                // Need to calculate and set layerMBR()
-                sGraphicLayer.setLayerMBR();
-                // We display the whole set as graphic theme 
-                //
-                sGraphicLayer.setGeometryType(geometryType);
-                if ( svp.addLayerToView(sGraphicLayer,true/*zoom*/) ) {
-                    svp.zoomFullButton(sGraphicLayer);
+                    
+                    // Do we need a new sGraphicLayer (crossed SRID boundary)?
+                    //
+                    sGraphicLayer = diminfoLayers.get(SRID);
+                    if (sGraphicLayer == null)
+                    {                    
+	                    // We have a new unique SRID so create layer for it.
+                    	String srid = (SRID==Constants.SRID_NULL || SRID==0) 
+                                      ? "NULL" 
+                                      : String.valueOf(SRID);
+	                    sGraphicLayer = new SVGraphicLayer(
+	                    				  svp.getMostSuitableView(SRID),
+	                                      mappableColumnName + " - " + srid,
+	                                      mappableColumnName + " - " + srid,
+	                                      mappableColumnName,
+	                                      null, // MetadataEntry
+	                                      true);
+						sGraphicLayer.setConnection(this.getConnectionName());
+						//sGraphicLayer.setSQL(sqlCmd);
+						sGraphicLayer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE); // Boundary only
+						sGraphicLayer.getStyling().setShadeColor(Colours.getRandomColor());
+						sGraphicLayer.getStyling().setLineColor (Colours.getRandomColor());
+						sGraphicLayer.setGeometryType(Constants.GEOMETRY_TYPES.POLYGON);
+						
+						// Add layer to list
+                    	diminfoLayers.put(SRID,sGraphicLayer);
+                    } 
+                } // for columns
+                
+                // We have enough detail to create a MetadataEntry for the layer
+                sGraphicLayer.setMetadataEntry(
+                        new MetadataEntry(
+              		        owner_name,
+              		        table_name,
+              		        column_name,
+                  	        (SRID==Constants.SRID_NULL || SRID==0) 
+                            ? "NULL" 
+                            : String.valueOf(SRID) ));
+
+                // Add saved elements to current SVGraphicLayer
+                sGraphicLayer.add(
+                		new QueryRow(null, 
+                                     attr, 
+                                     JGeom.setSrid(jGeom,SRID),
+                                     conn)
+                		);
+
+            } // for rows
+
+            // Map results
+            Collection<SVGraphicLayer> layers = diminfoLayers.values();
+            for(SVGraphicLayer layer : layers)
+            {
+                // Calculate and set layerMBR() as could be more than on row
+                layer.setLayerMBR();
+                if ( svp.addLayerToView(layer,true/*zoom*/) ) {
+                    svp.zoomFullButton(layer);
                 }
             }
 
-        } catch (IllegalArgumentException iae) {
-          JOptionPane.showMessageDialog(null, iae.getMessage());
+        } catch (Exception e) {
+          //JOptionPane.showMessageDialog(null, e.getMessage());
+          e.printStackTrace();
           return false;
         }
         return true;

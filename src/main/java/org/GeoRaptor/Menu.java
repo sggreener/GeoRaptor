@@ -28,13 +28,9 @@ public class Menu implements Addin {
         /* Add snippets
         URL geoSnippets = this.getClass().getResource("/org/GeoRaptor/snippets.xml");
         if (geoSnippets != null)  {
-            System.out.println("Menu: Registering: " + geoSnippets.toString());
-            //  Registering: jar:file:/F:/oracle/sqldeveloper32/sqldeveloper/extensions/org.GeoRaptor.jar!/org/GeoRaptor/snippets.xml
             SnippetAddin.registerSnippet(geoSnippets);
         } */
         // Create context menu for when a SELECT statement produces a grid of row data
-        //FormatRegistry.registerFormater(new GMLFormatter());
-        //FormatRegistry.registerFormater(new KMLFormatter());
         RaptorGridTable.addGridContextMenu(RenderResultSet.getInstance());
     }
 }

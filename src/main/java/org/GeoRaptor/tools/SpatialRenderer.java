@@ -518,7 +518,9 @@ public class SpatialRenderer
             {
                 Array aryValue = (Array)_value;
                 sqlTypeName =  aryValue.getBaseTypeName();
-                if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_DIMARRAY)) {
+                // DIM_ELEMENT is base type of an DIM_ARRAY array
+                if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_ELEMENT))
+                {
                     clipText = RenderTool.renderDimArray(aryValue,
                                                          _allowColouring 
                                                          ? this.GeoRaptorPrefs.isColourDimInfo() 

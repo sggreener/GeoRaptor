@@ -215,7 +215,9 @@ public class MetadataEntry
     }
 
     public void setSRID(int _SRID) {
-        this.SRID = _SRID == Constants.SRID_NULL ? Constants.NULL : String.valueOf(_SRID);
+        this.SRID = (_SRID == Constants.SRID_NULL || _SRID == 0 ) 
+                    ? Constants.NULL 
+                    : String.valueOf(_SRID);
     }
 
     public void setColumnName(String _columnName) {
@@ -275,12 +277,9 @@ public class MetadataEntry
         Array dimArray =  _dimArray;
         Object[]  objs = (Object[])dimArray.getArray();
         int   rowCount = objs.length;
-        if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) 
-             ||
-        	 ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) 
+        if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) 
                &&
                rowCount > 1
-             )
            )
         {
             String DIM_NAME = "";
@@ -466,7 +465,7 @@ public class MetadataEntry
         		mrZ = this.rows.get(2);
                 sdo_gtype = "3003";
         	} else {
-        		mrM = this.rows.get(2);
+        		mrZ = this.rows.get(2);
                 sdo_gtype = "3303";
         	}
         } 
@@ -474,8 +473,8 @@ public class MetadataEntry
           mrM = this.rows.get(3);
           sdo_gtype = "4403";
         }
-//      LOGGER.debug("MetadataEntry.toSdoGeometry(): sdo_gtype="+sdo_gtype+" getSRID="+this.getSRID());
         String sdoGeometry = (this.geoRaptorPreferences.getPrefixWithMDSYS() ? Constants.TAG_MDSYS_SDO_GEOMETRY : Constants.TAG_SDO_GEOMETRY) +
+        		             "(" +
                              sdo_gtype + "," +
                              this.getSRID() + 
                              ",NULL," +

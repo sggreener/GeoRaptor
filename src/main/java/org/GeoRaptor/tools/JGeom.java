@@ -306,7 +306,12 @@ public class JGeom {
         return mbr;
     }
 
-	public static JGeometry getDimArrayAsJGeometry(Array _dimArray, int _srid) throws SQLException {
+	public static JGeometry getDimArrayAsJGeometry(
+	                Array   _dimArray, 
+                    int     _srid,
+                    boolean _2D) 
+ 	throws SQLException 
+	{
 		if (_dimArray == null) {
 			return null;
 		}
@@ -333,7 +338,7 @@ public class JGeom {
 				} else if (i == 1) {
 					minY = SDO_LB;
 					maxY = SDO_UB;
-				} else if (i >= 2) {
+				} else if (i >= 2 && ! _2D) {
 					if (DIM_NAME.toUpperCase().equals("Z")) {
 						minZ = SDO_LB;
 						maxZ = SDO_UB;
@@ -343,7 +348,7 @@ public class JGeom {
 					}
 				}
 			}
-			if (arraySize == 2) {
+			if (arraySize == 2 || _2D) {
 				return new JGeometry(minX, minY, maxX, maxY, _srid > 0 ? _srid : Constants.NULL_SRID);
 			} else if (arraySize == 3) {
 				if (Double.isNaN(minZ)) {
@@ -368,5 +373,13 @@ public class JGeom {
 	public static String toString(JGeometry _jGeom)
 	{
 		return RenderTool.renderGeometryAsPlainText(_jGeom,"MDSYS.SDO_GEOMETRY",Constants.bracketType.NONE,12);
+	}
+	
+	public static JGeometry setSrid(JGeometry _jGeom,
+			                        int _srid )
+	{
+		JGeometry nGeom = _jGeom;
+		nGeom.setSRID(_srid);
+		return nGeom;
 	}
 }

@@ -94,11 +94,23 @@ public class TableContextMenuController implements Controller
               } else if ( lrc == SpatialViewPanel.LayerReturnCode.Metadata ) {
                   Messages.log("Menu: No spatial metadata for " +
                                Strings.append(Strings.append(selectedSchemaName,selectedObjectName,"."),selectedColumnName, "."));
-                  Metadata(conn,
-                           selectedSchemaName,
-                           selectedObjectName,
-                           selectedColumnName,
-                           connectionUserName);
+      			MetadataPanel mp = MetadataPanel.getInstance();
+    			boolean status = false;
+				try {
+					status = mp.initialise(
+					                     conn, 
+					                     selectedSchemaName,
+					                     selectedObjectName,
+					                     selectedColumnName,
+					                     connectionUserName);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    			if (status == true) {
+    				mp.setVisible(true);
+    			}
+
               } else if ( lrc == SpatialViewPanel.LayerReturnCode.Success ) {
                 // show Spatial View (maybe window is not open)
                 svp.show();
@@ -130,24 +142,34 @@ public class TableContextMenuController implements Controller
                     connectionUserName,
                     true
             );
-			
+            
 		} else if (cmdId == MANAGE_METADATA) {
 			
-            Metadata(conn, 
-                    selectedSchemaName,
-                    selectedObjectName,
-                    selectedColumnName,
-                    connectionUserName);
+			MetadataPanel mp = MetadataPanel.getInstance();
+			boolean status = false;
+			try {
+				status = mp.initialise(
+				                     conn, 
+				                     selectedSchemaName,
+				                     selectedObjectName,
+				                     selectedColumnName,
+				                     connectionUserName);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (status == true) {
+				mp.setVisible(true);
+			}
             
 		} else if (cmdId == DROP_METADATA) {
-			
-            ManageSpatialIndex.getInstance().dropIndex(conn, 
-                    selectedSchemaName, 
-                    selectedObjectName, 
-                    selectedColumnName,
-                    connectionUserName,
-                    true);
-			
+
+			MetadataPanel mp = MetadataPanel.getInstance();
+			mp.deleteMetadata(conn, 
+                              selectedSchemaName,
+                              selectedObjectName,
+                              selectedColumnName);
+
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
 			
             try 
@@ -198,42 +220,5 @@ public class TableContextMenuController implements Controller
 		return action.isEnabled();
 	}
 
-    private void Metadata(Connection conn,
-                          String     selectedSchemaName,
-                          String     selectedObjectName,
-                          String     selectedColumnName,
-                          String     connectionUserName) 
-    {
-    	try 
-    	{
-    		if ( selectedSchemaName.equalsIgnoreCase(connectionUserName) || 
-                 Queries.checkCrossSchemaDMLPermissions(conn)) 
-    		{
-    			MetadataPanel mp = MetadataPanel.getInstance();
-    			boolean status =  mp.initialise(
-                                        conn, 
-    									selectedSchemaName,
-    									selectedObjectName, 
-    									selectedColumnName,
-    									connectionUserName);
-    			if (status == true) {
-    				mp.setVisible(true);
-    			}
-    		}
-    		else {
-    			throw new Exception(
-                        "Cannot execute cross-schema metadata inserts, updates or deletes.\n" +
-    					"Unless you: \n" +
-    					"Grant Delete On Mdsys.SDO_GEOM_METADATA_TABLE To Public (or " + connectionUserName + ")");
-    		}
-    		
-    	} catch (SQLException sqle) {
-    		JOptionPane.showMessageDialog(null,sqle.getMessage(),GENERAL_ERROR,JOptionPane.ERROR_MESSAGE);
-    	} catch (IllegalArgumentException iae) {
-    		JOptionPane.showMessageDialog(null,iae.getMessage(),GENERAL_ERROR,JOptionPane.ERROR_MESSAGE);
-    	} catch (Exception _e) {
-    		JOptionPane.showMessageDialog(null, _e.getMessage(), MainSettings.EXTENSION_NAME, JOptionPane.ERROR_MESSAGE);
-    	}
-    }
 
 }
