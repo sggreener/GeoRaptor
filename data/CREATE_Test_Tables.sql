@@ -1,59 +1,107 @@
 set serveroutput on size unlimited
 
-DROP   TABLE ProjPoint2D  PURGE;
-CREATE TABLE ProjPoint2D ( id integer, label varchar2(20), angleDegrees number, geom mdsys.sdo_geometry );
+DROP TABLE GeodPoint2D PURGE;
+DROP TABLE GeodPoly2D  PURGE;
+DROP TABLE ProjMultiPoint2D PURGE;
+DROP TABLE ProjMultiPoint3D PURGE;
+DROP TABLE ProjCircle2D  PURGE;
+DROP TABLE ProjCompound2D PURGE;
+DROP TABLE ProjLine2D PURGE;
+DROP TABLE ProjMultiLine2D  PURGE;
+DROP TABLE ProjMultiPoly2D  PURGE;
+DROP TABLE ProjPoint3D PURGE;
+DROP TABLE ProjPoly2D PURGE;
+
+-- *****************************************************************************
+
+CREATE TABLE ProjPoint3D ( id integer, geom MDSYS.SDO_GEOMETRY );
+COMMIT;
 SET FEEDBACK OFF
-    INSERT INTO ProjPoint2D (id, label, angleDegrees, geom)
+    INSERT INTO ProjPoint3D
       SELECT rownum,
-             CHR(dbms_random.value(65,90)) || to_char(round(dbms_random.value(0,1000),0),'FM9999') as label,
-             ROUND(dbms_random.value(0,359.9),1) as angleDegrees,
-             mdsys.sdo_geometry(2001,NULL,
+             mdsys.sdo_geometry(3001,NULL,
                    MDSYS.SDO_POINT_TYPE(
                          ROUND(dbms_random.value(358880  - ( 10000 / 2 ),  
                                                  358880  + ( 10000 / 2 )),2),
                          ROUND(dbms_random.value(5407473 - (  5000 / 2 ), 
                                                  5407473 + (  5000 / 2 )),2),
-                         NULL),
+                         ROUND(dbms_random.value( -1000 - ( 10000 / 2 ), 
+                                                   1000 + ( 10000 / 2 )),2)),
                    NULL,NULL)
        FROM DUAL
      CONNECT BY LEVEL <= 500; 
 COMMIT;
 SET FEEDBACK ON
-SET HEADING OFF
-SELECT 'Inserted '||count(*)||' records into ProjPoint2D' FROM ProjPoint2D;
+SELECT COUNT(*) FROM ProjPoint3D;
+
+SELECT 'Inserted '||count(*)||' records into ProjPoint3D' FROM ProjPoint3D;
 SET HEADING ON
-ALTER TABLE ProjPoint2D ADD CONSTRAINT projpoint2d_pk PRIMARY KEY (id);
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJPOINT2D'; 
+ALTER TABLE PROJPOINT3D ADD CONSTRAINT PROJPOINT3D_PK PRIMARY KEY (id);
+DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJPOINT3D'; 
 COMMIT;
 DECLARE
   v_shape mdsys.sdo_geometry;
 BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM ProjPoint2D;
+  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJPoint3D;
   INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('PROJPOINT2D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
+    VALUES ('PROJPOINT3D','GEOM',MDSYS.SDO_DIM_ARRAY(
+    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.005),
+    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.005),
+    MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.005)),NULL);
 END;
 /
 SHOW ERRORS
-COMMIT;
-CREATE INDEX ProjPoint2D_GEOM on ProjPoint2D(geom) 
-       INDEXTYPE is mdsys.spatial_index 
+CREATE INDEX ProjPoint3D_Geom on ProjPoint3D(geom) 
+       indextype is mdsys.spatial_index 
        parameters('sdo_indx_dims=2, layer_gtype=point');
 
 -- *******************************************************************************************************
 
-CREATE VIEW VW_PROJPOINT2D AS SELECT * FROM PROJPOINT2D;
+CREATE VIEW VW_PROJPOINT AS SELECT * FROM PROJPOINT3D;
 
 -- *******************************************************************************************************
 
--- Small, No Index table
+-- Small, No Index, no metadata table
 
-CREATE TABLE PROJPOINT2DNI AS SELECT * FROM PROJPOINT2D WHERE ROWNUM < 10;
+CREATE TABLE PROJPOINT3DNI AS SELECT * FROM PROJPOINT3D WHERE ROWNUM < 10;
 
 -- *******************************************************************************************************
 
-DROP   TABLE ProjCircle2D  PURGE;
+CREATE MATERIALIZED VIEW MV_PROJPOINT AS SELECT * FROM PROJPOINT3D WHERE ROWNUM < 10;
+
+-- ****************************************************************
+
+CREATE TABLE ProjMultiPoint3D ( geom MDSYS.SDO_GEOMETRY );
+INSERT INTO  ProjMultiPoint3D 
+VALUES ( MDSYS.SDO_GEOMETRY(3005,NULL,NULL,
+               MDSYS.SDO_ELEM_INFO_ARRAY(1,1,4),
+               MDSYS.SDO_ORDINATE_ARRAY(252000,5526500,1,253000,5526000,2,254000,5526000,3,254000,5527000,4)));
+COMMIT;
+DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJMULTIPOINT3D'; 
+COMMIT;
+DECLARE
+  v_shape mdsys.sdo_geometry;
+BEGIN
+  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJMULTIPOINT3D;
+  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
+    VALUES ('PROJMULTIPOINT3D',
+            'GEOM',
+            MDSYS.SDO_DIM_ARRAY(
+                MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.05),
+                MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.05),
+                MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.05)),
+            NULL);
+END;
+/
+SHOW ERRORS
+SELECT diminfo from USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJMULTIPOINT3D'; 
+DROP INDEX PROJMULTIPOINT3D_Geom;
+CREATE INDEX PROJMULTIPOINT3D_Geom on PROJMULTIPOINT3D(geom) 
+       indextype is mdsys.spatial_index 
+       parameters('sdo_indx_dims=2, layer_gtype=multipoint');
+
+-- *******************************************************************************************************
+
 CREATE TABLE ProjCircle2D ( id integer, label varchar2(20), rgb varchar2(20), iRGB integer, geom mdsys.sdo_geometry );
 SET FEEDBACK OFF
     INSERT INTO ProjCircle2D (id, label, rgb, iRGB, geom)
@@ -87,8 +135,8 @@ BEGIN
   SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM ProjCircle2D;
   INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
     VALUES ('PROJCIRCLE2D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(2),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
+    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
+    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
 END;
 /
 SHOW ERRORS
@@ -99,7 +147,6 @@ CREATE INDEX ProjCircle2D_GEOM on ProjCircle2D(geom)
 
 -- *******************************************************************************************************
 
-DROP   TABLE ProjLine2D PURGE;
 CREATE TABLE ProjLine2D ( linetype varchar2(40), geom mdsys.sdo_geometry );
 INSERT INTO  ProjLine2D 
 VALUES('VERTEXARC',
@@ -135,19 +182,18 @@ BEGIN
   SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM ProjLine2D;
   INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
     VALUES ('PROJLINE2D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(2),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
+    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
+    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
 END;
 /
 SHOW ERRORS
 COMMIT;
 CREATE INDEX ProjLine2D_Geom on ProjLine2D(geom) 
        INDEXTYPE is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=line');
+       PARAMETERS('sdo_indx_dims=2, layer_gtype=line');
 
 -- *******************************************************************************************************
 
-DROP   TABLE ProjMultiLine2D  PURGE;
 CREATE TABLE ProjMultiLine2D ( id integer, label varchar2(20), angleDegrees number, geom mdsys.sdo_geometry );
 SET FEEDBACK OFF
     INSERT INTO ProjMultiLine2D (id, label, angleDegrees, geom)
@@ -181,8 +227,8 @@ BEGIN
   SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM ProjMultiLine2D;
   INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
     VALUES ('PROJMULTILINE2D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(2),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
+    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
+    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
 END;
 /
 SHOW ERRORS
@@ -193,7 +239,6 @@ CREATE INDEX ProjMultiLine2D_GEOM on ProjMultiLine2D(geom)
 
 -- *******************************************************************************************************
 
-DROP   TABLE ProjPoly2D PURGE;
 CREATE TABLE ProjPoly2D ( polytype varchar2(40), geom mdsys.sdo_geometry );
 INSERT INTO  ProjPoly2D (PolyType,Geom) 
 VALUES( 'VERTEXWITHHOLE', MDSYS.SDO_GEOMETRY(2003, NULL, NULL, 
@@ -317,8 +362,8 @@ BEGIN
   SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM ProjPoly2D;
   INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
     VALUES ('PROJPOLY2D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(2),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
+    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
+    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),NULL);
 END;
 /
 SHOW ERRORS
@@ -329,7 +374,6 @@ CREATE INDEX ProjPoly2D_Geom on ProjPoly2D(geom)
 
 -- **********************************************************************************
 
-DROP   TABLE ProjMultiPoly2D  PURGE;
 CREATE TABLE ProjMultiPoly2D ( id integer, label varchar2(20), angleDegrees number, geom mdsys.sdo_geometry );
 SET FEEDBACK OFF
     INSERT INTO ProjMultiPoly2D (id, label, angleDegrees, geom)
@@ -375,7 +419,6 @@ CREATE INDEX ProjMultiPoly2D_GEOM on ProjMultiPoly2D(geom)
 
 -- *********************************************************************************
 
-DROP   TABLE ProjCompound2D PURGE;
 CREATE TABLE ProjCompound2D ( geom  mdsys.sdo_geometry );
 INSERT INTO  ProjCompound2D 
 VALUES(
@@ -618,7 +661,6 @@ CREATE INDEX PROJCOMPOUND2D_Geom on PROJCOMPOUND2D(geom)
 
 -- ***********************************************************************************
 
-DROP   TABLE PROJMULTIPOINT2D PURGE;
 CREATE TABLE ProjMultiPoint2D ( gid integer, text varchar2(10), geom mdsys.sdo_geometry );
 insert into projmultipoint2d (gid,text,geom)
 select rownum as gid,
@@ -718,178 +760,6 @@ CREATE INDEX PROJ41014POLY2D_Geom on PROJ41014POLY2D(geom)
 
 -- *****************************************************************************
 
-DROP   TABLE ProjPoint3D PURGE;
-CREATE TABLE ProjPoint3D ( id integer, geom MDSYS.SDO_GEOMETRY );
-COMMIT;
-SET FEEDBACK OFF
-    INSERT INTO ProjPoint3D
-      SELECT rownum,
-             mdsys.sdo_geometry(3001,NULL,
-                   MDSYS.SDO_POINT_TYPE(
-                         ROUND(dbms_random.value(358880  - ( 10000 / 2 ),  
-                                                 358880  + ( 10000 / 2 )),2),
-                         ROUND(dbms_random.value(5407473 - (  5000 / 2 ), 
-                                                 5407473 + (  5000 / 2 )),2),
-                         ROUND(dbms_random.value( -1000 - ( 10000 / 2 ), 
-                                                   1000 + ( 10000 / 2 )),2)),
-                   NULL,NULL)
-       FROM DUAL
-     CONNECT BY LEVEL <= 500; 
-COMMIT;
-SET FEEDBACK ON
-SELECT COUNT(*) FROM ProjPoint3D;
-
-SELECT 'Inserted '||count(*)||' records into ProjPoint3D' FROM ProjPoint3D;
-SET HEADING ON
-ALTER TABLE PROJPOINT3D ADD CONSTRAINT PROJPOINT3D_PK PRIMARY KEY (id);
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJPOINT3D'; 
-COMMIT;
-DECLARE
-  v_shape mdsys.sdo_geometry;
-BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJPoint3D;
-  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('PROJPOINT3D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(2),0.005),
-    MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.005),
-    MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(4),0.005)),NULL);
-END;
-/
-SHOW ERRORS
-CREATE INDEX ProjPoint3D_Geom on ProjPoint3D(geom) 
-       indextype is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=point');
-
--- ****************************************************************
-
-DROP   TABLE PROJMULTIPOINT3D PURGE;
-CREATE TABLE ProjMultiPoint3D ( geom MDSYS.SDO_GEOMETRY );
-INSERT INTO  ProjMultiPoint3D 
-VALUES ( MDSYS.SDO_GEOMETRY(3005,NULL,NULL,
-               MDSYS.SDO_ELEM_INFO_ARRAY(1,1,4),
-               MDSYS.SDO_ORDINATE_ARRAY(252000,5526500,1,253000,5526000,2,254000,5526000,3,254000,5527000,4)));
-COMMIT;
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJMULTIPOINT3D'; 
-COMMIT;
-DECLARE
-  v_shape mdsys.sdo_geometry;
-BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJMULTIPOINT3D;
-  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('PROJMULTIPOINT3D',
-            'GEOM',
-            MDSYS.SDO_DIM_ARRAY(
-                MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.05)),
-            NULL);
-END;
-/
-SHOW ERRORS
-SELECT diminfo from USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJMULTIPOINT3D'; 
-DROP INDEX PROJMULTIPOINT3D_Geom;
-CREATE INDEX PROJMULTIPOINT3D_Geom on PROJMULTIPOINT3D(geom) 
-       indextype is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=multipoint');
-
--- *****************************************************************************
-
-DROP   TABLE ProjLine3D PURGE;
-CREATE TABLE ProjLine3D ( LineType VarChar2(40), geom MDSYS.SDO_GEOMETRY );
-INSERT INTO  ProjLine3D 
-VALUES ( 'COMPOUND',
-    MDSYS.SDO_GEOMETRY(3002,NULL,NULL,
-      mdsys.sdo_elem_info_array(1,4,2,1,2,1,4,2,2),
-      MDSYS.SDO_ORDINATE_ARRAY(252000,5526000,1,252700,5526700,2,252500,5526700,3,252500,5526500,4))
-);
-INSERT INTO PROJLINE3D 
-VALUES('VERTEX',
-MDSYS.SDO_GEOMETRY(3002, NULL, NULL, 
-MDSYS.SDO_ELEM_INFO_ARRAY(1, 2, 1), 
-MDSYS.SDO_ORDINATE_ARRAY(
-380326.792, 5167089.286, 1,
-380326.792, 5167889.286, 2,
-380826.792, 5167889.286, 3,
-380126.792, 5167489.286, 4)));
-COMMIT;
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJLINE3D'; 
-COMMIT;
-DECLARE
-  v_shape mdsys.sdo_geometry;
-BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJLINE3D;
-  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('PROJLINE3D',
-            'GEOM',
-            MDSYS.SDO_DIM_ARRAY(
-                MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.05)),
-            NULL);
-END;
-/
-SHOW ERRORS
-SELECT diminfo from USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJLINE3D'; 
-DROP INDEX PROJLINE3D_Geom;
-CREATE INDEX PROJLINE3D_Geom on PROJLINE3D(geom) 
-       indextype is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=line');
-
--- *****************************************************************************
-
-DROP   TABLE ProjPoly3D PURGE;
-CREATE TABLE ProjPoly3D ( PolyType VarChar2(40), geom MDSYS.SDO_GEOMETRY );
-INSERT INTO  ProjPoly3D 
-VALUES ( 'COMPOUND',
-         MDSYS.SDO_GEOMETRY(3003,NULL,NULL,
-               MDSYS.SDO_ELEM_INFO_ARRAY(1,1005,2,1,2,1,7,2,2),
-               MDSYS.SDO_ORDINATE_ARRAY(253014,5527010,1,253010,5527001,2,253006,5527011,3,253010,5527011,4,253014,5527010,1)));
-INSERT INTO PROJPOLY3D
-VALUES( 'VERTEXNOHOLE',
-MDSYS.SDO_GEOMETRY(3003, NULL, NULL, 
-MDSYS.SDO_ELEM_INFO_ARRAY(1, 1003, 1),
-MDSYS.SDO_ORDINATE_ARRAY(
-476400, 237700, 1,
-475879.950, 237700, 2,
-475939.060, 237634.800, 3,
-476002.840, 237573.450, 4,
-476045.530, 237559.550, 5,
-476087, 237545.060, 6,
-476135.250, 237525.530, 7,
-476155.500, 237517.380, 8,
-476170.250, 237509, 9,
-476182.690, 237494.470, 10,
-476226.190, 237551.520, 11,
-476342.910, 237515.520, 12,
-476400, 237494.926, 13,
-476400, 237700, 1)));
-COMMIT;
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJPOLY3D'; 
-COMMIT;
-DECLARE
-  v_shape mdsys.sdo_geometry;
-BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM PROJPOLY3D;
-  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('PROJPOLY3D',
-            'GEOM',
-            MDSYS.SDO_DIM_ARRAY(
-                MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Z',V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.05)),
-            NULL);
-END;
-/
-SHOW ERRORS
-select diminfo from USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'PROJPOLY3D'; 
-DROP INDEX PROJPOLY3D_Geom;
-CREATE INDEX PROJPOLY3D_Geom on PROJPOLY3D(geom) 
-       indextype is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=polygon');
-
--- *******************************************************************************************************
-
-DROP   TABLE GeodPoint2D PURGE;
 CREATE TABLE GeodPoint2D ( id integer, geom mdsys.sdo_geometry );
 SET FEEDBACK OFF
     INSERT INTO GeodPoint2D
@@ -929,48 +799,6 @@ CREATE INDEX GeodPoint2D_Geom on GeodPoint2D(geom)
 
 -- *******************************************************************************************************
 
-DROP   TABLE GeodPoint3D PURGE;
-CREATE TABLE GeodPoint3D ( id integer, geom mdsys.sdo_geometry );
-SET FEEDBACK OFF
-    INSERT INTO GeodPoint3D
-      SELECT rownum,
-             mdsys.sdo_geometry(3001,8311,
-                   MDSYS.SDO_POINT_TYPE(
-                         ROUND(dbms_random.value(112,147),2),
-                         ROUND(dbms_random.value(-10,-44),2),
-                         ROUND(dbms_random.value(0,10000),2)),
-                   NULL,NULL)
-       FROM DUAL
-     CONNECT BY LEVEL <= 500; 
-COMMIT;
-SET FEEDBACK ON
-SET HEADING OFF
-SELECT 'Inserted '||count(*)||' records into GeodPoint3D' FROM ProjPoint3D;
-SET HEADING ON
-ALTER TABLE GEODPOINT3D ADD CONSTRAINT GEODPOINT3D_PK PRIMARY KEY (id);
-DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'GEODPOINT3D'; 
-COMMIT;
-DECLARE
-  v_shape mdsys.sdo_geometry;
-BEGIN
-  SELECT SDO_AGGR_MBR(geom) INTO v_shape FROM GEODPOINT3D;
-  INSERT INTO USER_SDO_GEOM_METADATA(TABLE_NAME,COLUMN_NAME,DIMINFO,SRID)
-    VALUES ('GEODPOINT3D','GEOM',MDSYS.SDO_DIM_ARRAY(
-    MDSYS.SDO_DIM_ELEMENT('Longitude',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(4),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Latitude' ,V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(5),0.05),
-    MDSYS.SDO_DIM_ELEMENT('Z'        ,V_SHAPE.SDO_ORDINATES(3),V_SHAPE.SDO_ORDINATES(6),0.5)),8311);
-END;
-/
-SHOW ERRORS
-SELECT diminfo FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = 'GEODPOINT3D'; 
-DROP INDEX GEODPOINT3D_Geom;
-CREATE INDEX GEODPOINT3D_Geom on GEODPOINT3D(geom) 
-       indextype is mdsys.spatial_index 
-       parameters('sdo_indx_dims=2, layer_gtype=point');
-
--- *******************************************************************************************************
-
-DROP   TABLE GeodPoly2D  PURGE;
 CREATE TABLE GeodPoly2D ( PolyType VARCHAR2(40), geom mdsys.sdo_geometry );
 INSERT INTO  GeodPoly2D 
 VALUES ( 'SIMPLE', 
@@ -995,8 +823,8 @@ BEGIN
     VALUES ('GEODPOLY2D',
             'GEOM',
             MDSYS.SDO_DIM_ARRAY(
-                MDSYS.SDO_DIM_ELEMENT('X',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
-                MDSYS.SDO_DIM_ELEMENT('Y',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),
+                MDSYS.SDO_DIM_ELEMENT('Longitude',V_SHAPE.SDO_ORDINATES(1),V_SHAPE.SDO_ORDINATES(3),0.05),
+                MDSYS.SDO_DIM_ELEMENT('Latitude',V_SHAPE.SDO_ORDINATES(2),V_SHAPE.SDO_ORDINATES(4),0.05)),
             8265);
 END;
 /
