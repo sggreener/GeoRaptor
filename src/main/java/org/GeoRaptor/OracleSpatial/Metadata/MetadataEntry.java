@@ -507,47 +507,78 @@ public class MetadataEntry
 
     public String updateSQL() 
     {
-        return "UPDATE user_sdo_geom_metadata usgm\n" +
-               "   SET usgm.diminfo = " + this.toDimArray() + "," + "\n" +
-               "          usgm.srid = " + this.SRID + "\n" +
-               " WHERE usgm.table_name  = '" + this.objectName.toUpperCase() + "' \n" +
-               "   AND usgm.column_name = '" + this.columnName.toUpperCase() + "'";
+    	if ( Strings.isEmpty(this.schemaName) )
+          return "UPDATE user_sdo_geom_metadata usgm\n" +
+                 "   SET usgm.diminfo     = " + this.toDimArray() + "," + "\n" +
+                 "          usgm.srid     = " + this.SRID + "\n" +
+                 " WHERE usgm.table_name  = '" + this.objectName.toUpperCase() + "' \n" +
+                 "   AND usgm.column_name = '" + this.columnName.toUpperCase() + "'";
+    	else
+          return "UPDATE mdsys.sdo_geom_metadata_table tsgm\n" +
+                 "   SET tsgm.sdo_diminfo     = "  + this.toDimArray() + "," + "\n" +
+                 "       tsgm.sdo_srid        = "  + this.SRID + "\n" +
+                 " WHERE tsgm.sdo_owner       = '" + this.schemaName.toUpperCase() + "' \n" +
+                 "   AND tsgm.sdo_table_name  = '" + this.objectName.toUpperCase() + "' \n" +
+                 "   AND tsgm.sdo_column_name = '" + this.columnName.toUpperCase() + "'";
     }
 
     public String deleteSQL() 
     {
-        return "DELETE FROM user_sdo_geom_metadata usgm\n" +
-               " WHERE usgm.table_name  = '" + this.objectName.toUpperCase() + "' \n" +
-               "   AND usgm.column_name = '" + this.columnName.toUpperCase() + "'";
+    	if ( Strings.isEmpty(this.schemaName) )
+    		return "DELETE FROM user_sdo_geom_metadata usgm\n" +
+                   " WHERE usgm.table_name  = '" + this.objectName.toUpperCase() + "' \n" +
+                   "   AND usgm.column_name = '" + this.columnName.toUpperCase() + "'";
+    	else
+    		return "DELETE FROM mdsys.sdo_geom_metadata_table tsgm\n" +
+                   " WHERE tsgm.sdo_owner       = '" + this.schemaName.toUpperCase() + "' \n" +
+                   "   AND tsgm.sdo_table_name  = '" + this.objectName.toUpperCase() + "' \n" +
+                   "   AND tsgm.sdo_column_name = '" + this.columnName.toUpperCase() + "'";
     }
     
     public String insertSQL(boolean upsert) 
     {
-        if ( upsert ) {
-            return "MERGE INTO User_Sdo_Geom_Metadata M \n" + 
-                      "USING (SELECT'" + this.objectName.toUpperCase() + "' as table_name, \n" +
-                      "             '" + this.columnName.toUpperCase() + "' as column_name \n" +
-                      "         FROM dual \n" +
-                      "       ) S \n" + 
-                      "       On (     M.Table_Name  = S.Table_Name \n" + 
-                      "            And M.Column_Name = S.Column_Name \n" + 
-                      "           ) \n" +
-                      "WHEN MATCHED THEN \n" +
-                      "UPDATE SET m.srid  = " + this.SRID + ", \n" +
-                      "           m.DimInfo = " + this.toDimArray() + " \n" +
-                      "WHEN NOT MATCHED THEN \n" +
-                      "INSERT ( m.table_name,m.column_name,m.DimInfo,m.srid ) \n" +
-                      "VALUES ('" + this.objectName.toUpperCase() + "', \n" +
-                      "        '" + this.columnName.toUpperCase() + "', \n" +
-                      "        "  + this.toDimArray() + ", \n" +
-                      "        "  + this.SRID + ")";
-        } else {
-            return "INSERT INTO USER_SDO_GEOM_METADATA (table_name,column_name,DimInfo,srid) \n" +
-                    "VALUES ('" + this.objectName.toUpperCase() + "', \n" +
-                    "        '" + this.columnName.toUpperCase() + "', \n" +
-                    "        "  + this.toDimArray() + ", \n" +
-                    "        "  + this.SRID + ")";
-        }
+    	if ( Strings.isEmpty(this.schemaName) )
+    	{
+	        if ( upsert ) {
+	            return "MERGE INTO User_Sdo_Geom_Metadata M \n" + 
+	                      "USING (SELECT'" + this.objectName.toUpperCase() + "' as table_name, \n" +
+	                      "             '" + this.columnName.toUpperCase() + "' as column_name \n" +
+	                      "         FROM dual \n" +
+	                      "       ) S \n" + 
+	                      "       On (     M.Table_Name  = S.Table_Name \n" + 
+	                      "            And M.Column_Name = S.Column_Name \n" + 
+	                      "           ) \n" +
+	                      "WHEN MATCHED THEN \n" +
+	                      "UPDATE SET m.srid  = " + this.SRID + ", \n" +
+	                      "           m.DimInfo = " + this.toDimArray() + " \n" +
+	                      "WHEN NOT MATCHED THEN \n" +
+	                      "INSERT ( m.table_name,m.column_name,m.DimInfo,m.srid ) \n" +
+	                      "VALUES ('" + this.objectName.toUpperCase() + "', \n" +
+	                      "        '" + this.columnName.toUpperCase() + "', \n" +
+	                      "        "  + this.toDimArray() + ", \n" +
+	                      "        "  + this.SRID + ")";
+	        } else {
+	            return "INSERT INTO USER_SDO_GEOM_METADATA (table_name,column_name,DimInfo,srid) \n" +
+	                    "VALUES ('" + this.objectName.toUpperCase() + "', \n" +
+	                    "        '" + this.columnName.toUpperCase() + "', \n" +
+	                    "        "  + this.toDimArray() + ", \n" +
+	                    "        "  + this.SRID + ")";
+	        }
+    	} else {
+    		// TODO Support for UPSERT as yet
+            return "INSERT INTO MDSYS.SDO_GEOM_METADATA_TABLE \n" +
+                    "       (sdo_owner,\n" + 
+    		        "        sdo_table_name,\n" + 
+    		        "        sdo_column_name,\n" + 
+    		        "        sdo_srid,\n" + 
+    		        "        sdo_diminfo\n" + 
+                    ") VALUES ('" + this.schemaName.toUpperCase() + "', \n" +
+                    "          '" + this.objectName.toUpperCase() + "', \n" +
+                    "          '" + this.columnName.toUpperCase() + "', \n" +
+                    "          "  + this.SRID + ", \n" +
+                    "          "  + this.toDimArray() + "\n" + 
+                    ")";
+    	}
     }
     
     public String toDimArray() 

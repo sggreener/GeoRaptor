@@ -1306,11 +1306,11 @@ public class MetadataPanel extends javax.swing.JDialog {
             }
         }
         
-        // Initialise SRID 
+        // Initialise SRID input box with default SRID 
         //
         this.tfSRID.setText( this.metadataPreferences.getSRID() );
 
-        // 3.1 Load metadata into table
+        // 3.1 Load all metadata into table
         //
         String check = this.metadataTM.readMetadataIntoTable(this.conn,this.userName, Strings.isEmpty(_schemaName));
         if ( check.equalsIgnoreCase(this.sCancelled) ) {
@@ -1343,7 +1343,10 @@ public class MetadataPanel extends javax.swing.JDialog {
         //    If nothing in top table (currTable) then no metadata for object exists
         //    it will be tagged as isMissing()
         //
-        populateUserWidgets((MetadataEntry)this.metadataTM.getValueAt(0, this.metadataTM.mEntryPosn));
+        if ( ! Strings.isEmpty(_objectName) )
+        	populateUserWidgets(_objectName,_columnName);
+        else
+        	populateUserWidgets((MetadataEntry)this.metadataTM.getValueAt(0, this.metadataTM.mEntryPosn));
         
         // 7. Set up Models and Listeners
         //
@@ -1417,7 +1420,7 @@ public class MetadataPanel extends javax.swing.JDialog {
      private void populateUserWidgets(String _objectName,
                                       String _columnName) 
      { 
-        String schemaUser = Strings.append(this.schemaName,_objectName, Constants.TABLE_COLUMN_SEPARATOR);
+        String schemaObject = Strings.append(this.schemaName,_objectName, Constants.TABLE_COLUMN_SEPARATOR);
         
         // 1. Geometry column checks....
         //
@@ -1430,7 +1433,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         if ( tableGeometryColumns == null || tableGeometryColumns.size()==0 ) {
             throw new IllegalArgumentException(
                              propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",
-                                                    schemaUser) );
+                                                    schemaObject) );
         }
 
         // 2. Passed in schema/object/geometry column values are valid

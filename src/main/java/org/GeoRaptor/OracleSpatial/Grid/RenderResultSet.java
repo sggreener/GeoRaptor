@@ -903,13 +903,6 @@ public class RenderResultSet
   
     }
     
-    /**
-     * 
-     * @method geoGeometryProperties
-     * @return GEOMETRY_METADATA
-     * @author Simon Greener, February 2011, Original Coding
-     *          Could be moved to SDO_Geometry with GEOMETRY_METADATA being made part of SDO_Geometry.
-     */
     private GeometryProperties getGeometryProperties() 
     {
         GeometryProperties geomMetadata = new GeometryProperties();
@@ -1435,11 +1428,10 @@ public class RenderResultSet
             MetadataEntry  me = null;
             String columnName = "";
             String  className = "";
-            String   typeName = "";
             Array     diminfo = null;
             for (int row=0; row < rowsToProcess; row++) 
             {
-                me = new MetadataEntry();
+                me      = new MetadataEntry();
                 diminfo = null; 
                 viewRow = row;
                 if ( this.rst.getSelectedRowCount() > 0 ) {
@@ -1455,7 +1447,8 @@ public class RenderResultSet
                     columnName = this._table.getColumnName(viewCol);
                     try 
                     {
-                        if ( columnName.equalsIgnoreCase("DIMINFO") ||
+                        if ( columnName.equalsIgnoreCase("OWNER") ||
+                        	 columnName.equalsIgnoreCase("DIMINFO") ||
                              columnName.equalsIgnoreCase("TABLE_NAME") ||
                              columnName.equalsIgnoreCase("COLUMN_NAME") ||
                              columnName.equalsIgnoreCase("SRID") ) 
@@ -1498,9 +1491,12 @@ public class RenderResultSet
                     LOGGER.error("RenderResultSet.processResultSet(): SQL Error converting column/type " + columnName + "/" + className);
                   } 
                 }
+                boolean upsert = Strings.isEmpty(me.getSchemaName())
+                                 ? false
+                                 : true;
                 sqlStmt += (Strings.isEmpty(sqlStmt) ? "" : "\n") + 
                            (_sqlType == sqlType.INSERT 
-                            ? me.insertSQL(false)
+                            ? me.insertSQL(upsert)
                             : (_sqlType == sqlType.UPDATE 
                                ? me.updateSQL()
                                : me.deleteSQL()));
@@ -2281,7 +2277,7 @@ public class RenderResultSet
                 // Add saved elements to current SVGraphicLayer
                 sGraphicLayer.add(
                 		new QueryRow(null, 
-                                     attr, 
+                                     attr,
                                      JGeom.setSrid(jGeom,SRID),
                                      conn)
                 		);

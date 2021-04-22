@@ -21,12 +21,6 @@ import oracle.ide.Ide;
 import oracle.ide.controller.Controller;
 import oracle.ide.controller.IdeAction;
 
-/**
- * @author Bessie Gong Email: sadbessie@gmail.com
- * @version 11 Sep 2019
- *
- *	User Object Hooks controller
- */
 public class TableContextMenuController implements Controller
 {
     private static final String GENERAL_ERROR     = MainSettings.EXTENSION_NAME + " Error";
