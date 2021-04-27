@@ -102,21 +102,24 @@ CREATE INDEX PROJMULTIPOINT3D_Geom on PROJMULTIPOINT3D(geom)
 
 -- *******************************************************************************************************
 
-CREATE TABLE ProjCircle2D ( id integer, label varchar2(20), rgb varchar2(20), iRGB integer, geom mdsys.sdo_geometry );
+CREATE TABLE ProjCircle2D ( id integer, label varchar2(20), radius number(10,3), rgb varchar2(20), iRGB integer, geom mdsys.sdo_geometry );
 SET FEEDBACK OFF
-    INSERT INTO ProjCircle2D (id, label, rgb, iRGB, geom)
+    INSERT INTO ProjCircle2D (id, label, radius, rgb, iRGB, geom)
       SELECT rownum,
              CHR(dbms_random.value(65,90)) || to_char(round(dbms_random.value(0,1000),0),'FM9999') as label,
+             ROUND(radius,3) as radius,
              ROUND(dbms_random.value(0,255),0) || ',' || ROUND(dbms_random.value(0,255),0) || ',' || ROUND(dbms_random.value(0,255),0) as rgb,
-             power(2,16)* ROUND(dbms_random.value(0,255),0) + 
-             power(2,8) * ROUND(dbms_random.value(0,255),0) + 
+             POWER(2,16)* ROUND(dbms_random.value(0,255),0) + 
+             POWER(2,8) * ROUND(dbms_random.value(0,255),0) + 
                           ROUND(dbms_random.value(0,255),0) as irgb,
-		     mdsys.sdo_geometry(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4),
-                                sdo_ordinate_array(x+2.0*radius,y,x+radius,y+radius,X,Y)) as geom 
-       FROM (SELECT ROUND(dbms_random.value(358880  - ( 10000 / 2 ),  
-                                            358880  + ( 10000 / 2 )),2) as x,
-                    ROUND(dbms_random.value(5407473 - (  5000 / 2 ), 
-                                            5407473 + (  5000 / 2 )),2) as y,
+             mdsys.sdo_geometry(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,4),
+                                sdo_ordinate_array(ROUND(x+2.0*radius,3),ROUND(y,3),
+                                                   ROUND(x+radius,3),    ROUND(y+radius,3),
+                                                   ROUND(X,3),           ROUND(Y,3))) as geom 
+       FROM (SELECT dbms_random.value(358880  - ( 10000 / 2 ),  
+                                      358880  + ( 10000 / 2 )) as x,
+                    dbms_random.value(5407473 - (  5000 / 2 ), 
+                                      5407473 + (  5000 / 2 )) as y,
                     dbms_random.value(10,100) as radius
               FROM DUAL
            CONNECT BY LEVEL <= 500
@@ -353,6 +356,10 @@ VALUES( 'CURVEPOLYWITHHOLE',
 MDSYS.SDO_GEOMETRY(2003,NULL,NULL,
 MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,4,7,2003,4),
 MDSYS.SDO_ORDINATE_ARRAY(253000,5527000,252000,5527000,252000,5526000,252700,5526700,252500,5526700,252500,5526500)));
+INSERT INTO ProjPoly2D(polytype,geom) VALUES('CIRCLE',
+MDSYS.SDO_GEOMETRY(2003, NULL, NULL, 
+MDSYS.SDO_ELEM_INFO_ARRAY(1, 1003, 4), 
+MDSYS.SDO_ORDINATE_ARRAY(359058.942, 5407809.74, 358998.246, 5407870.436, 358937.55, 5407809.74)));
 
 DELETE FROM USER_SDO_GEOM_METADATA WHERE Table_name = 'PROJPOLY2D'; 
 COMMIT;
