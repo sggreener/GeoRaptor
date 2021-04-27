@@ -594,7 +594,8 @@ public class SpatialRenderer
         // If ICON or THUMBNAIL drop back to SDO_GEOMETRY text
         //
         if (visualFormat == Constants.renderType.ICON ||
-            visualFormat == Constants.renderType.THUMBNAIL) {
+            visualFormat == Constants.renderType.THUMBNAIL) 
+        {
             visualFormat = Constants.renderType.SDO_GEOMETRY;
         }
 
@@ -608,7 +609,7 @@ public class SpatialRenderer
                 visualFormat = Constants.renderType.SDO_GEOMETRY;
             }
         }
-
+        
         try 
         {
             if ( visualFormat != Constants.renderType.SDO_GEOMETRY ) {
@@ -664,7 +665,11 @@ public class SpatialRenderer
                 }
             }
         } catch (Exception _e) {
-          LOGGER.error("SpatialRenderer.renderGeometry(): Caught exception when rendering geometry as " + visualFormat.toString() + " (" + _e.getMessage() + ")");
+        	int coordDimension  = SDO_GEOMETRY.getDimension(stValue,2);
+        	int sdoFullGType    = SDO_GEOMETRY.getFullGType(stValue,2000);
+        	int sdoGType        = SDO_GEOMETRY.getGType(stValue,2000);
+        	String geometryType = SDO_GEOMETRY.getGeometryType(sdoGType);
+        	LOGGER.error("Error rendering " + coordDimension + "D (" + sdoFullGType + ") " + geometryType + " as " + visualFormat.toString() + " (invalid or unsupported geometry?)");
         }
         
         if ( visualFormat != Constants.renderType.SDO_GEOMETRY && Strings.isEmpty(clipText) ) 

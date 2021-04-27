@@ -50,8 +50,11 @@ implements Comparable<Object>
                   minY, 
                   maxX, 
                   maxY;
+    
     protected int decimalPlaces = 8;
    
+    protected int SRID = Constants.SRID_NULL;
+    
     public Envelope(int _precision) {
         this.decimalPlaces = _precision;
         setNull();
@@ -84,48 +87,70 @@ implements Comparable<Object>
     }
 
     public Envelope(double _minX, double _minY,
-                           double _maxX, double _maxY) {
+            double _maxX, double _maxY) 
+    {
+    	this.init(_minX,_minY,_maxX,_maxY);
+    	this.SRID = Constants.SRID_NULL;
+    }
+
+    public Envelope(double _minX, double _minY,
+                    double _maxX, double _maxY,
+                    int    _SRID) {
         this.init(_minX,_minY,_maxX,_maxY);
+        this.SRID = _SRID;
+    }
+    
+    public Envelope(int _precision,
+            double _minX, double _minY,
+            double _maxX, double _maxY)
+    {
+    	this.decimalPlaces = _precision;
+    	this.init(_minX,_minY,_maxX,_maxY);
     }
 
     public Envelope(int _precision,
-                           double _minX, double _minY,
-                           double _maxX, double _maxY) {
+                    double _minX, double _minY,
+                    double _maxX, double _maxY,
+                    int    _SRID ) 
+    {
         this.decimalPlaces = _precision;
+        this.SRID = _SRID;
         this.init(_minX,_minY,_maxX,_maxY);
     }
 
     public Envelope(Point2D _min, 
-                           Point2D _max) {
+                    Point2D _max) {
         this.init(_min.getX(),_min.getY(),_max.getX(),_max.getY());
     }
 
     public Envelope(Envelope _mbr) {
         if (_mbr == null) {
             this.setNull();
-        }
-        else if ( _mbr.isSet() ) {
+        } else if ( _mbr.isSet() ) {
             this.decimalPlaces = _mbr.decimalPlaces;
             this.init(_mbr.minX,_mbr.minY,_mbr.maxX,_mbr.maxY);
+            this.SRID = _mbr.SRID;
         }
     }
 
     public Envelope(double _originX, 
-                           double _originY,
-                           Dimension _dimension) {
+                    double _originY,
+                 Dimension _dimension) {
         this.init(_originX,
                   _originY,
                   _originX + _dimension.getWidth(),
                   _originY + _dimension.getHeight());
+        this.SRID = Constants.SRID_NULL;
     }
 
     public Envelope(Point2D _centre, 
-                           double _width,
-                           double _height) {
+                     double _width,
+                     double _height) {
         this.init(_centre.getX() - _width,
                   _centre.getY() - _height,
                   _centre.getX() + _width,
                   _centre.getY() + _height);
+        this.SRID = Constants.SRID_NULL;
     }
     
     public Envelope(List<QueryRow> _geoSet) {
@@ -152,7 +177,9 @@ implements Comparable<Object>
         // a double array containing the minX,minY, maxX,maxY value of the MBR for 2D or
         // a double array containing the minX,minY,minZ maxX,maxY, maxZ value of the MBR for 3D
         //
-        int dims = _geo.getDimensions();
+        int dims  = _geo.getDimensions();
+        this.SRID = _geo.getSRID();
+        
         if ( _geo.isOrientedPoint() || _geo.isOrientedMultiPoint() ) {
             this.setMBR(JGeom.getOrientedPointMBR(_geo));
         } else {
@@ -239,7 +266,7 @@ implements Comparable<Object>
      */
     public boolean isSet() 
     {
-        return ! (this.isNull() || this.isInvalid());
+        return ! (this.isNull() || this.isInvalid() || this.area()==0.0);
     }
         
     /**
@@ -358,7 +385,8 @@ implements Comparable<Object>
         this.minX = Double.MAX_VALUE;
         this.minY = Double.MAX_VALUE;
         this.maxX = Double.MIN_VALUE;
-        this.maxY = Double.MIN_VALUE;        
+        this.maxY = Double.MIN_VALUE;
+        this.SRID = Constants.SRID_NULL;
     }
     
     /**
@@ -373,6 +401,7 @@ implements Comparable<Object>
         this.minY = _mbr.minY;
         this.maxX = _mbr.maxX;
         this.maxY = _mbr.maxY;
+        this.SRID = _mbr.SRID;
     }
 
     /**
@@ -456,6 +485,15 @@ implements Comparable<Object>
         }
     }
 
+    public void setSRID(int _srid) 
+    {
+    	this.SRID = _srid;
+    }
+    
+    public int getSRID() {
+    	return this.SRID;
+    }
+    
     /**
      * Computes the coordinate of the centre of this envelope (as long as it is non-null
      *
@@ -1039,12 +1077,15 @@ implements Comparable<Object>
       }
     }
     
-    public String toString() {
+    public String toString() 
+    {
+        if ( this.isNull() )
+        	return "NULL";
         String fmt = "%." + this.decimalPlaces + "f";
-        String sFormat = "(" + fmt + "," + fmt + "),(" + fmt +"," + fmt + ")";
-        return this.isNull() 
-            ? "NULL"
-            : String.format(sFormat,this.minX,this.minY,this.maxX,this.maxY); 
+        String sFormat = "SRID=%s (" + fmt + "," + fmt + "),(" + fmt +"," + fmt + ")";
+        return String.format(sFormat,
+        		             ((this.SRID==Constants.SRID_NULL)?"NULL":""+this.SRID),
+        		             this.minX,this.minY,this.maxX,this.maxY); 
     }
 
     public String toXML() {

@@ -13,13 +13,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
@@ -47,6 +45,7 @@ import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.COGO;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
@@ -184,7 +183,7 @@ public class SVTableLayer
         this.setDesc(_sLayer.getDesc());
         this.setDraw(_sLayer.isDraw());
         this.setSQL(_sLayer.getSQL());
-        
+        this.setKeyColumn(this.getKeyColumn());
         this.setSRIDType(_sLayer.getSRIDType());
         this.setGeometryType(_sLayer.getGeometryType());
         this.setSTGeometry(_sLayer.isSTGeometry());
@@ -504,9 +503,9 @@ public class SVTableLayer
         //
         Envelope lMBR = new Envelope(this.getDefaultPrecision());
         
-        LOGGER.debug("SVTableLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
-                   "\nSRIDTYPE=" + this.getSRIDType().toString()+
-                   "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
+        //System.out.println("SVTableLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
+        //           "\nSRIDTYPE=" + this.getSRIDType().toString()+
+        //           "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
         
         // If one method fails, a warning is written. When this happens we need to report success of later method
         boolean multiTry = false;
@@ -522,7 +521,6 @@ public class SVTableLayer
                                                        this.getGeoColumn(),
                                                        this.getSRID(),
                                                        String.valueOf(_targetSRID))); 
-                LOGGER.debug("SVTableLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
                 if ( lMBR.isSet() ) {
                     super.setMBR(lMBR);
                     return true;
@@ -538,9 +536,9 @@ public class SVTableLayer
         boolean hasMetadata = false;
         try {
             hasMetadata = Queries.hasGeomMetadataEntry(conn,
-                                                            this.getSchemaName(),
-                                                            this.getObjectName(),
-                                                            this.getGeoColumn());
+                                                       this.getSchemaName(),
+                                                       this.getObjectName(),
+                                                       this.getGeoColumn());
             // Try and extract from existing Metadata
             if ( hasMetadata ) {
                 try 
@@ -587,7 +585,6 @@ public class SVTableLayer
             LOGGER.warn("Failed to get MBR Through Sampling (" + e.getMessage() + ").");
         }
         
-        LOGGER.debug("SVTableLayer.setLayerMBR() setMBR=" + lMBR.toString());        
         if ( _defaultMBR!=null && 
              _defaultMBR.isSet() ) {
             super.setMBR(_defaultMBR);
@@ -682,7 +679,9 @@ public class SVTableLayer
     	Struct sGeom = null;
         try {
             Connection conn = super.getConnection();
-            sGeom = Queries.projectEnvelope(conn,_mbr,_sourceSRID,_destinationSRID);
+            Envelope mbr = new Envelope(_mbr);
+            mbr.setSRID(_sourceSRID);
+            sGeom = Queries.projectEnvelope(conn,_mbr,_destinationSRID);
         } catch (Exception e) {
             LOGGER.error(super.propertyManager.getMsg("ERROR_CREATE_MBR_RECTANGLE",e.getMessage()));
             sGeom = null;
@@ -717,29 +716,44 @@ public class SVTableLayer
 
     // ***********************************************************
     // ********************** SQL ********************************
+
+    private boolean mustProject () {
+    	// If the view and the layer have non-null SRIDs and they are not the same projection occurs.
+    	// If one or both SRIDs are null, we do not project.
+		return super.getSpatialView().getSRIDAsInteger() != Constants.NULL_SRID
+            && this.getSRIDAsInteger() != Constants.NULL_SRID
+	        && super.getSpatialView().getSRIDAsInteger() != this.getSRIDAsInteger(); 
+    }
     
 	public String generateSQL() 
-	{		
+	{
 		String sql = "";
-		
-		// The search geom (MBR) is always the SRID of the spatial view 
-		// So, needs to be transformed to SRID of base table
-		//
+		boolean project = this.mustProject(); 
+
+        // The search geom (MBR) is always the SRID of the spatial view 
+        // So, may need to be transformed to SRID of base table
+        //
+        // Display Geometry Column may also need projecting to SRID of displaying view
+        //
+        String geoColumn = "";
 		String searchGeom = "";
-		if ( this.getSRIDAsInteger()==Constants.NULL_SRID)
+		if ( ! project ) {
 			searchGeom = "?";
-		else {
-			if ( this.getSRIDAsInteger()!=super.getSpatialView().getSRIDAsInteger() ) {
-				// Project search geometry to CS of base table.
-			    searchGeom = String.format("MDSYS.SDO_CS.TRANSFORM(?,%s)", super.getSRID());
-			} else
-				searchGeom ="?";
+            geoColumn = "t." + super.getGeoColumn();
+		} else { 
+           searchGeom = String.format("MDSYS.SDO_CS.TRANSFORM(?,%d)", 
+                                      super.getSRIDAsInteger());
+           geoColumn  = String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%d)", 
+					                  super.getGeoColumn(),
+					                  super.spatialView.getSRIDAsInteger());
 		} 
 
-		// Build rest of SQL
+
+		// Retrieve columns to select
 		//
 		String columns = "";
 		try {
+			// Get NON-SDO_GEMETRY columns of table
 			columns = Queries.getColumns(super.getConnection(), 
 					                     super.getSchemaName(), 
 					                     super.getObjectName(),
@@ -749,31 +763,9 @@ public class SVTableLayer
 			return null;
 		}
 
-		// Get Primary Key/Unique column
-		try 
-		{
-            this.setKeyColumn(Queries.getPrimaryKey(
-                                   super.getConnection(), 
-                                   super.getSchemaName(), 
-                                   super.getObjectName()
-                              )
-            		         );
-		} catch ( Exception e) {
-			e.printStackTrace();
-		}
-		
-		// Geometry to be returned as a column
-		String geoColumn = "";
-		if (this.getSRIDAsInteger()!=Constants.NULL_SRID
-			&&
-			this.getSRIDAsInteger()!=super.getSpatialView().getSRIDAsInteger() ) {
-			// Project returned geometry column data to srid of view
-			geoColumn = String.format("MDSYS.SDO_CS.TRANSFORM(t.%s,%s)", 
-					                  super.getGeoColumn(),
-					                  super.spatialView.getSRID());
-		} else {
-			geoColumn = "t." + super.getGeoColumn();
-		}
+		// Force setting and getting of Primary Key/Unique column
+		this.setKeyColumn(null);
+		keyColumn = this.getKeyColumn();
 
 		this.searchPredicate = "";
 		if (this.hasIndex()) {
@@ -784,16 +776,13 @@ public class SVTableLayer
 		} else {
 			this.searchPredicate = "t." + super.getGeoColumn() + " IS NOT NULL\n" + 
                          " AND t." + super.getGeoColumn() + ".SDO_GTYPE is not null\n" + 
-                         " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + super.getGeoColumn() + "," + this.getTolerance() + ") = 'TRUE'\n" + 
-                         " AND MDSYS.SDO_GEOM.RELATE(t." + super.getGeoColumn() + ",'ANYINTERACT',a.geom," + this.getTolerance() + ") = 'TRUE'";
+                         " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t." + super.getGeoColumn() + ",?) = 'TRUE'\n" + 
+                         " AND MDSYS.SDO_GEOM.RELATE(t." + super.getGeoColumn() + ",'ANYINTERACT',a.geom,?) = 'TRUE'";
 		}
 
-		sql = "WITH cteGeom AS (\n" + 
-			      "  SELECT " + searchGeom + " AS geom FROM DUAL\n" + 
-	          ")\n" +
-		      "SELECT " + (Strings.isEmpty(columns) ? "" : columns + ",") + 
-                        geoColumn + " as " + super.getGeoColumn() + " \n" + 
-              "  FROM cteGeom a,\n" + 
+		sql = "SELECT " + (Strings.isEmpty(columns) ? "" : columns + ",") + 
+                          geoColumn + " as " + super.getGeoColumn() + " \n" + 
+              "  FROM " + "(SELECT " + searchGeom + " AS geom FROM DUAL) a,\n" +
               "       " + this.getFullObjectName() + " t \n" +
               " WHERE " + this.searchPredicate;
 
@@ -816,59 +805,285 @@ public class SVTableLayer
         } catch (SQLException e) {
             spatialIndexName = "";
         }
-        if ( this.hasIndex() ) {
-        	
+        
+        if ( this.hasIndex() ) 
+        {
             String queryHint = "/*+ORDERED" + (Strings.isEmpty(spatialIndexName) 
             		           ? "" : " INDEX(b " + spatialIndexName+")") + 
             		           "*/";
             
-            sql = "WITH searchDistance As (\n" +
-                  "  SELECT MDSYS.SDO_GEOM.SDO_DISTANCE(?/*search pt1*/,?/*DistancePoint*/,?/*tol*/,?/*unit*/) AS dist \n" +
-                  "    FROM DUAL \n" +
-                  ")\n" +
-                  "SELECT " + queryHint + 
-                          (_project 
-                           ? "MDSYS.SDO_CS.TRANSFORM(a." + this.getGeoColumn() + "," + 
+            this.setKeyColumn(this.getKeyColumn());
+        	String keyColumnPredicate = Strings.isEmpty(this.getKeyColumn()) 
+                                        ? "" 
+                                        : "   AND b." + this.getKeyColumn() + 
+                                              " = a." + this.getKeyColumn() + "\n";
+
+        	String attributes = "a.*" +
+                                (_project 
+                                 ? ",MDSYS.SDO_CS.TRANSFORM(a." + super.getGeoColumn() + "," + 
                                                            this.spatialView.getSRID() + 
-                                                    ") as " + this.projectedGeometryName + ", a.*\n" 
-                           : "a.*\n" 
-                           ) +
-                  "  FROM (" + this.getSQL() + "\n " ;
-            
-            if (this.getPreferences().isNN() ) {
-               sql += "      ) a,\n" +
-                    "       "+this.getFullObjectName() + " b,\n" +
-                      "       searchDistance s \n" +
-                      " WHERE SDO_NN(b." + super.getGeoColumn() + ",?,?,1) = 'TRUE' \n" +
-                      "   AND SDO_NN_DISTANCE(1) < s.dist \n" +
-                    (Strings.isEmpty(this.getKeyColumn()) 
-                    ? "" 
-                    : "   AND b." + this.getKeyColumn() + " = a." + this.getKeyColumn() +"\n " 
-                    ) +
-                      " ORDER BY sdo_nn_distance(1)";
-            } else {
-               sql += "   AND MDSYS.SDO_WITHIN_DISTANCE(" + super.getGeoColumn() + ",?/*search point*/,'distance=' || (SELECT s.dist FROM searchDistance s) || ?) = 'TRUE' \n" +
-                      "       ) a";
+                                   ") as " + this.projectedGeometryName + "\n"
+                                 : "");
+        	
+            if ( ! this.getPreferences().isNN() ) 
+            {
+            	// Modify baseSQL to enable reference to search distance CTE
+            	String baseSQL = this.getSQL();
+            	baseSQL = baseSQL.replaceFirst("FROM ",
+                                               "FROM searchDistanceCTE sdcte,\n       ");
+            	// Construct SQL
+            	sql = String.format(
+                        "WITH searchDistanceCTE As (\n" +
+                        "  SELECT MDSYS.SDO_GEOM.SDO_DISTANCE(?,?,?,?) AS dist \n" +
+                        "    FROM DUAL \n" +
+                        ")\n" +
+                        "%s" +
+                        "   AND MDSYS.SDO_WITHIN_DISTANCE(t.%s,?,'distance='||sdcte.dist) = 'TRUE'",
+                        baseSQL,
+                        super.getGeoColumn()
+            		  );
+            	//1 ? searchPt                 (sdo_geometry)
+            	//2 ? DistancePoint            (sdo_geometry)
+            	//3 ? tolerance                (number)
+            	//4 ? unit                     (string)
+            	//5 ? baseSQL sdo_filter Geom  (sdo_geometry)
+            	//6 ? baseSQL sdo_filter param (string)
+            	//7 ? search point             (sdo_geometry)
+            	
+            } else /* isNN() */ {
+            	
+            	sql = String.format(
+                        "WITH searchDistanceCTE As (\n" +
+                        "  SELECT MDSYS.SDO_GEOM.SDO_DISTANCE(?,?,?,?) AS dist \n" +
+                        "    FROM DUAL \n" +
+                        ")\n" +
+                        "SELECT %s\n" + 
+                        "       %s\n" +
+                        "  FROM (%s" +
+                        "       ) a,\n" +
+                        "       %s b,\n" +
+                        "       searchDistanceCTE s \n" +
+                        " WHERE SDO_NN(b.%s,?,?,1) = 'TRUE' \n" +
+                        "   AND SDO_NN_DISTANCE(1) < s.dist \n" +
+                        "%s" + 
+                        " ORDER BY sdo_nn_distance(1)",
+                		queryHint, 
+                		attributes,
+                		this.getSQL(),
+                		this.getFullObjectName(),
+                		super.getGeoColumn(),
+                		keyColumnPredicate
+                	  );
+            	//1 ? searchPt         (sdo_geometry)
+            	//2 ? DistancePoint    (sdo_geometry)
+            	//3 ? tolerance        (number)
+            	//4 ? unit             (string)
+            	//5 ? CTE Search       (sdo_geometry)
+            	//6 ? sdo_filter param (string)
+            	//7 ? search point     (sdo_geometry)
+            	//8 ? sdo_nn parameter (string) <-- Not SDO_NN
             }
-        } else {
-            // "   AND MDSYS.SDO_GEOM.SDO_DISTANCE(t." + super.getGeoColumn() + ",
-            //                                     ?/*searchPoint*/,
-            //                                     ?/*tol*/,
-            //                                     ?/*unit*/) < MDSYS.SDO_GEOM.SDO_DISTANCE(?/*searchPoint*/,
-            //                                                                              ?/*distancePoint*/,
-            //                                                                              ?/*tol*/,
-            //                                                                              ?/*unit*/)";
-            // If Not Indexed: 7 Parameters
-            // SearchPoint, Tol, Unit
-            // SearchPoint, DistancePoint, Tol, Unit
-            sql = this.getSQL() + "\n" +
-                       "   AND MDSYS.SDO_GEOM.SDO_DISTANCE(t." + super.getGeoColumn() + ",?,?/*tol*/,?/*unit*/) "
-                          + "< MDSYS.SDO_GEOM.SDO_DISTANCE(?,?,?/*tol*/,?/*unit*/) \n";
+            
+        } else /* ! hasIndex() */  {        	
+            sql = this.getSQL() +
+                 "\n   AND MDSYS.SDO_GEOM.SDO_DISTANCE(t." + super.getGeoColumn() + "," + 
+                                                    "?," + 
+                                                    "?/*tol*/," + 
+                                                    "?/*unit*/) "
+                    + "< MDSYS.SDO_GEOM.SDO_DISTANCE(?,?,?/*tol*/,?/*unit*/) \n";
+        	//1 ? search window    (sdo_geometry)
+            //2 ? tolerance        (number)
+            //3 ? tolerance        (number)
+            //4 ? Search Point     (sdo_geometry) ie click on map
+        	//5 ? tolerance        (number)
+        	//6 ? unit             (string)
+        	//7 ? searchPt         (sdo_geometry)
+        	//8 ? DistancePoint    (sdo_geometry)
+        	//9 ? tolerance        (number)
+        	//10 ? unit             (string)
         }
         LOGGER.logSQL(sql);
         return sql;
     }
 
+    protected PreparedStatement getIdentifyPS(Point2D _worldPoint, 
+                                              int     _numSearchPixels) 
+    {
+System.out.println("getIdentifyPS\n");
+    	// ********************************
+        // Create parameter values ......
+    	//
+        
+        // Get target SRID and units_parameter in case layer have been drag-and-dropped to a different view/srid
+		//
+		String lengthUnits = Tools.getViewUnits(this.spatialView,Constants.MEASURE.LENGTH);
+		int      querySRID = -1;
+
+		boolean project = this.project 
+	            && this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL 
+	            && this.getSRIDAsInteger()             != Constants.SRID_NULL ;
+System.out.println("PROJECT: " + project);
+
+        String units_parameter = "";
+        if ( project )
+		{
+		  querySRID = this.spatialView.getSRIDAsInteger(); 
+		  units_parameter = String.format(",unit=%s",lengthUnits);
+		} else {
+		  querySRID = this.getSRIDAsInteger();
+		  if ( querySRID != Constants.SRID_NULL )
+		      units_parameter = String.format(",unit=%s",lengthUnits);
+		}
+System.out.println("QuerySrid=" + querySRID);
+
+		// Create search mbr, point and distance measurement variables
+		//
+		Point2D.Double pixelSize = null;
+		Struct       searchPoint = null;
+		Struct     distancePoint = null;
+		Struct         searchMBR = null;
+		Connection          conn = this.getConnection();
+	    String       identifySQL = this.getIdentifySQL(project);
+        String            params = ""; // For LOGGER.logSQL
+
+        try 
+        {
+        	if ( conn == null )
+        		throw new SQLException ("No active database connection");
+        	
+        	// Compute End point of search distance line
+            // Note: first point of line denoting search distance is the passed in point (view/world units)
+		    //
+        	pixelSize   = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
+            searchPoint = JGeom.toStruct(new JGeometry(_worldPoint.getX(),_worldPoint.getY(),querySRID),conn);
+            
+	        Point2D distancePoint2D = new Point2D.Double(
+	                                       _worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (_numSearchPixels*pixelSize.getX()) : 0.0),
+			                               _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (_numSearchPixels*pixelSize.getY()) : 0.0)
+                                          );
+            distancePoint = JGeom.toStruct(new JGeometry(distancePoint2D.getX(),distancePoint2D.getY(),querySRID),conn);
+
+	  	    // SDO_Filter geometry has same SRID as layer (for base SQL)
+            // _worldPoint/pixelSize is in view units. Could even be decimal degrees
+            // TODO But when layer has been dragged into a different view????
+            //
+		    Envelope mbr = new Envelope(
+                                 _worldPoint.getX() - (_numSearchPixels*pixelSize.getX()/1.9),
+		                         _worldPoint.getY() - (_numSearchPixels*pixelSize.getY()/1.9),
+		                         _worldPoint.getX() + (_numSearchPixels*pixelSize.getX()/1.9),
+		                         _worldPoint.getY() + (_numSearchPixels*pixelSize.getY()/1.9),
+		                         querySRID
+		                   );
+            searchMBR = Queries.projectEnvelope(conn,mbr,querySRID);
+System.out.println(identifySQL);
+System.out.println(identifySQL.length()-identifySQL.replaceAll("\\?","").length());
+System.out.println(String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false))));
+System.out.println(String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false))));
+System.out.println(this.getTolerance());
+System.out.println(units_parameter);
+System.out.println(String.format("? %s\n",RenderTool.renderStructAsPlainText(searchMBR, Constants.bracketType.NONE, this.spatialView.getPrecision(false))));
+System.out.println(this.sdoFilterClause);
+System.out.println(String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false))));
+if ( this.getPreferences().isNN() ) {
+System.out.println("? '" + "sdo_num_res=" + String.valueOf(_numSearchPixels * 2));                    
+}
+      	} catch (Exception e) {
+			LOGGER.warn(e.getLocalizedMessage());
+			return null;
+		}
+
+
+    	// *******************************************
+		// Create PreparedStatement and set its values
+		//
+			
+        PreparedStatement pStatement = null;
+        try 
+        {
+	        pStatement = (PreparedStatement)conn.prepareStatement(identifySQL);
+
+	        // Assign parameters (see getIdentifySQL)
+	        //
+	        String spatialFilterClause = null;
+	        int stmtParamIndex = 1;
+	        if ( this.hasIndex() ) 
+	        {
+	        	//1 ? searchPt         (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,searchPoint,java.sql.Types.STRUCT);                     
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	           	//2 ? DistancePoint    (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,distancePoint,java.sql.Types.STRUCT);
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	           	//3 ? tolerance        (number)
+	            pStatement.setDouble(stmtParamIndex++,this.getTolerance());
+	                params += String.format("? %f\n",this.getTolerance());
+	           	//4 ? unit             (string)
+	            pStatement.setString(stmtParamIndex++,units_parameter.replace(",",""));
+	                params += String.format("? '%s'\n",units_parameter.replace(",",""));
+	           	//5 ? baseSQL sdo_filter Geom (sdo_geometry)
+	            pStatement.setObject (stmtParamIndex++, searchMBR,java.sql.Types.STRUCT);
+	                params += String.format("? %s\n", RenderTool.renderStructAsPlainText(searchMBR, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	          	//6 ? baseSQL sdo_filter param (string)
+	            spatialFilterClause = this.sdoFilterClause; // Default
+	            if (this.getMinResolution()) {
+	                double maxPixelSize = Math.max(pixelSize.getX(), pixelSize.getY());
+	                if (maxPixelSize != 0.0) {
+	                    spatialFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
+	                }
+	            }
+	            pStatement.setString(stmtParamIndex++, spatialFilterClause);
+	                params += "? '"+spatialFilterClause+"'\n";
+	
+	            //7 ? search point     (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,searchPoint,java.sql.Types.STRUCT);                     
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	
+	            if ( this.getPreferences().isNN() ) {
+	            	//8 ? sdo_nn parameter (string) <-- Not SDO_NN
+	                String sdo_num_res = "sdo_num_res=" + String.valueOf(_numSearchPixels * 2);
+	                pStatement.setString(stmtParamIndex++,sdo_num_res+units_parameter); 
+	                    params += "? '" + sdo_num_res + "'\n";                    
+	            }
+	            
+	        } else { /* ! this.hasIndex() */
+	        	
+	        	//1 ? base sdo_filter geom (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,searchMBR,java.sql.Types.STRUCT);
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchMBR, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+                //2 ? tolerance        (number)
+	            pStatement.setDouble(stmtParamIndex++,this.getTolerance());
+                    params += String.format("? %f \n",this.getTolerance());
+   	            //3 ? tolerance        (number)
+	            pStatement.setDouble(stmtParamIndex++,this.getTolerance());
+                    params += String.format("? %f \n",this.getTolerance());
+   	            //4 ? Search Point     (sdo_geometry) ie click on map
+	            pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));	                
+	        	//5 ? tolerance        (number)
+	            pStatement.setDouble(stmtParamIndex++,this.getTolerance());
+	                params += String.format("? %f\n", this.getTolerance());
+	        	//6 ? unit             (string)
+	            pStatement.setString(stmtParamIndex++, units_parameter.replace(",","")); 
+	                params += String.format("? '%s'\n",units_parameter.replace(",",""));	            
+	        	//7 ? searchPt         (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	        	//8 ? DistancePoint    (sdo_geometry)
+	            pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);
+	                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
+	        	//9 ? tolerance        (number)
+	            pStatement.setDouble(stmtParamIndex++,this.getTolerance());             
+	                params += String.format("? %f\n", this.getTolerance());
+	        	//10 ? unit             (string)
+	            pStatement.setString(stmtParamIndex++, units_parameter.replace(",","")); 
+	                params += String.format("? '%s'\n",units_parameter.replace(",",""));
+	        }
+	    	LOGGER.logSQL(identifySQL + "\n" + params);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+		return pStatement;
+    }
 
     /**
      * @param SQL
@@ -886,27 +1101,35 @@ public class SVTableLayer
     	return this.layerSQL;
     }
 
-    protected PreparedStatement setParameters(String _sql,
-    		                                Envelope _mbr) 
+    /*
+     * getSQLPS is for the main draw SQL (not identify)
+     */
+    protected PreparedStatement getSQLPS(String _sql,
+    	                               Envelope _mbr) 
 	{
     	// See generateSQL for created SQL/layerSQL
     	// Parameters in SQL are:
     	//  1 ? is search Geom ie Envelope
     	//  Either:
     	//    2 ? SDO_FILTER for STGeometry
+    	
     	//  Or
     	//    2 ? SDO_FILTER Envelope and 
     	//    3 ? SDO_FILTER filter parameters
         //
-		boolean project = this.project && this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL
+		boolean project = this.project 
+				&& this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL
 				&& this.getSRIDAsInteger() != Constants.SRID_NULL;
 
-		int querySRID = project ? this.spatialView.getSRIDAsInteger()
-				: (this.spatialView.getSRIDAsInteger() == Constants.SRID_NULL ? this.getSRIDAsInteger()
-						: this.spatialView.getSRIDAsInteger());
+		int querySRID = project 
+				        ? this.spatialView.getSRIDAsInteger()
+				        : (this.spatialView.getSRIDAsInteger() == Constants.SRID_NULL 
+				          ? this.getSRIDAsInteger()
+						  : this.spatialView.getSRIDAsInteger());
 
 		PreparedStatement pStatement = null;
 		String sdoFilterClause = "";
+		String params = "";
 		Struct filterGeom = null;
 		int stmtParamIndex = 1;
 		try {
@@ -917,19 +1140,27 @@ public class SVTableLayer
 			//
 			filterGeom = this.getSearchFilterGeometry(_mbr, project, querySRID, this.getSRIDAsInteger());
 			pStatement.setObject(stmtParamIndex++, filterGeom, java.sql.Types.STRUCT);
+			    params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(filterGeom));
 
 			// Set up SDO_Filter clause depending on whether min_resolution is to be applied or not
 			// If ST_Geometry, can't use sdoFilterClause
 			//
-			if (this.hasIndex() && this.isSTGeometry() == false) {
-				sdoFilterClause = this.getSDOFilterParameters();
-				pStatement.setString(stmtParamIndex++, sdoFilterClause);
+			if (this.hasIndex() ) {
+				if ( this.isSTGeometry() == false) { 
+					sdoFilterClause = this.getSDOFilterParameters();
+				    pStatement.setString(stmtParamIndex++, sdoFilterClause);
+                        params += "? " + sdoFilterClause + "\n";
+				}
+			} else {
+				// " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t.GEOM,?) = 'TRUE'\n" + 
+                // " AND MDSYS.SDO_GEOM.RELATE(t.GEOM,'ANYINTERACT',a.geom,?) = 'TRUE'";
+	            pStatement.setDouble(stmtParamIndex++, this.getTolerance());
+                    params += String.format("? %f \n",this.getTolerance());
+	            pStatement.setDouble(stmtParamIndex++, this.getTolerance());
+                    params += String.format("? %f \n",this.getTolerance());
 			}
-		    		  
-			if (this.getPreferences().isLogSearchStats()) {
-				LOGGER.logSQL("\n" + _sql + "\n"
-						+ String.format("?=%s\n?=%s", SDO_GEOMETRY.getGeometryAsString(filterGeom), sdoFilterClause));
-			}
+
+			LOGGER.logSQL(_sql + "\n" + params);
 
 		} catch (SQLException sqle) {
 			// isView() then say no index
@@ -969,21 +1200,11 @@ public class SVTableLayer
             }
         }
 
-        // Get and possible wrap the SQL the user may have modified in order to return only the columns needed for visualisation
-        // Ensures all columns needed for labelling, colouring, rotation etc area available 
-        // in order to reduce network traffic
+        // Get SQL and set up its parameters 
         //
         String sql = this.getSQL();
-        if (Strings.isEmpty(sql)) {
-            LOGGER.warn("SVTableLayer.drawLayer(" + this.getLayerNameAndConnectionName() + "). Cannot get layer's SQL statement.");
-            return false;
-        }
-
-        // Set up parameters for statement
-        //
         PreparedStatement pStatement = null;
-        pStatement = this.setParameters(sql,
-                                       _mbr);
+        pStatement = this.getSQLPS(sql,_mbr);
 
         // Now execute query and return result
         //
@@ -1025,6 +1246,7 @@ public class SVTableLayer
     {
     	Struct              rStruct = null; // read SDO_GEOMETRY column
         ArrayList<QueryRow>   rList = new ArrayList<QueryRow>(); // list of return rows
+        
         int         numSearchPixels = _numSearchPixels <= 0 
                                       ? this.getPreferences().getSearchPixels() 
                                       : _numSearchPixels;
@@ -1033,154 +1255,26 @@ public class SVTableLayer
         //
         String querySQL = "";
         String params = "";
-        String spatialFilterClause = ""; 
         Connection conn = null;
         try {
             // Set up the connection and statement
             //
             conn = super.getConnection();
             if (conn == null) { return null; }
-            boolean project = this.project &&
-                              this.spatialView.getSRIDAsInteger() != Constants.SRID_NULL &&
-                              this.getSRIDAsInteger()             != Constants.SRID_NULL;
-
-            // If we need to transform the geometry for display then we are best to give it a different name in the output string
-            String geoColumn = project 
-                               ? this.projectedGeometryName.toUpperCase() 
-                               : this.getGeoColumn().toUpperCase();
-            geoColumn = geoColumn.replace("\"","");
-
-            querySQL = this.getIdentifySQL(project);
-
-            // Get target SRID and units_parameter in case layer have been drag-and-dropped to a different view/srid
-            //
-            String     lengthUnits  = Tools.getViewUnits(this.spatialView,Constants.MEASURE.LENGTH);
-            String units_parameter = "";
-            int          querySRID = -1;
-            if ( project ) {
-                querySRID = this.spatialView.getSRIDAsInteger(); 
-                units_parameter = String.format(",unit=%s",lengthUnits);
-            } else {
-                querySRID = this.spatialView.getSRIDAsInteger()==Constants.SRID_NULL
-                            ? this.getSRIDAsInteger()
-                            : this.spatialView.getSRIDAsInteger();
-                if ( this.getSRIDAsInteger() != Constants.SRID_NULL)
-                    units_parameter = String.format(",unit=%s",lengthUnits);
-            }
             
-            // Create search mbr, distance measurement variables
-            //
-            Point2D.Double pixelSize = null;
-            Struct   searchPoint = null;
-            Struct distancePoint = null;
-            Struct     searchMBR = null;
-            try {
-                // Compute End point of search distance line
-                // Note: first point of line denoting search distance is the passed in point (world units)
-                //
-                pixelSize   = this.getSpatialView().getSVPanel().getMapPanel().getPixelSize();
-                searchPoint = Queries.projectSdoPoint(conn,_worldPoint,this.getSRIDAsInteger(),querySRID);
-                
-                Point2D distancePoint2D = new Point2D.Double(_worldPoint.getX() + ((pixelSize.getX() >= pixelSize.getY()) ? (numSearchPixels*pixelSize.getX()) : 0.0),
-                                                             _worldPoint.getY() + ((pixelSize.getY() >  pixelSize.getX()) ? (numSearchPixels*pixelSize.getY()) : 0.0));
-                distancePoint = Queries.projectSdoPoint(conn,distancePoint2D,this.getSRIDAsInteger(),querySRID);
-                
-                // SDO_Filter geometry has same SRID as layer
-                Envelope mbr = new Envelope(_worldPoint.getX() - (numSearchPixels*pixelSize.getX()/1.9),
-                                            _worldPoint.getY() - (numSearchPixels*pixelSize.getY()/1.9),
-                                            _worldPoint.getX() + (numSearchPixels*pixelSize.getX()/1.9),
-                                            _worldPoint.getY() + (numSearchPixels*pixelSize.getY()/1.9));
-                searchMBR = Queries.projectEnvelope(conn,mbr,this.getSRIDAsInteger(), Constants.SRID_NULL); 
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Failed to create search SDO_GEOMETRY objects " + e.getMessage());
-                return null;
-            }
-
             // Create statement
             //
-            PreparedStatement pStatement = (PreparedStatement)conn.prepareStatement(querySQL);
+            PreparedStatement pStatement = this.getIdentifyPS(
+            		                            _worldPoint, 
+                                                _numSearchPixels   		
+                                           );
 
-            // Assign parameters
+    		// If geometry is transformed (for display) then we are best to give it a different name in the output string
             //
-            int stmtParamIndex = 1;
-
-            if ( this.hasIndex() ) {
-                // Common 
-                // "WITH searchDistance As (SELECT MDSYS.SDO_GEOM.SDO_DISTANCE(?/*search pt1*/,?/*DistancePoint*/,?/*tol*/,?/*unit*/) AS dist FROM DUAL )\n" +
-                //   "SELECT /*+ ORDERED*/ " +
-                //           (_project 
-                //               ? "MDSYS.SDO_CS.TRANSFORM(a." +  this.getGeoColumn() + "," + this.spatialView.getSRID() + ") as " +  projectedGeometryName + ", a.*\n" 
-                //               : "a.*\n" 
-                //               )
-                //"  FROM (" + this.getSQL() + 
-                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     
-                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);
-                params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble(stmtParamIndex++,this.getTolerance());
-                params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString(stmtParamIndex++,units_parameter.replace(",",""));
-                params += String.format("? '%s'\n",units_parameter.replace(",",""));
-                
-                // MBR for SDO_FILTER 
-                //
-                pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);
-                params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
-                if ( ! this.isSTGeometry() ) {
-                    spatialFilterClause = this.sdoFilterClause; // Default
-                    if (this.getMinResolution()) {
-                        double maxPixelSize = Math.max(pixelSize.getX(), pixelSize.getY());
-                        if (maxPixelSize != 0.0) {
-                            spatialFilterClause = String.format(this.sdoFilterMinResClause,maxPixelSize);
-                        }
-                    }
-                    pStatement.setString(stmtParamIndex++, spatialFilterClause);
-                    params += "? '"+spatialFilterClause+"'\n";
-                    // Does it have a secondary filter clause?
-                    // eg SDO_ANYINTERACT
-                    if ( this.queryContainsOperator(querySQL) ) {
-                        pStatement.setObject (stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);
-                        params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
-                    }
-                }
-                
-                if ( this.getPreferences().isNN() ) {
-                    //       "       ) a,\n" +
-                    //     "       "+this.getFullObjectName() + " b,\n" +
-                    //       "       searchDistance s \n" +
-                    //       " WHERE SDO_NN(b." + super.getGeoColumn() + ",?,?,1) = 'TRUE' \n" +
-                    //       "   AND SDO_NN_DISTANCE(1) < s.dist \n" +  
-                    //       "   AND b.rowid = a.rowid \n " +
-                    //       " ORDER BY sdo_nn_distance(1)";
-                    pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                 params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                    String     sdo_num_res = "sdo_num_res=" + String.valueOf(numSearchPixels * 2);
-                    pStatement.setString(stmtParamIndex++,sdo_num_res+units_parameter); params += "? '" + sdo_num_res + "'\n";                    
-                } else {
-                    // "   AND MDSYS.SDO_WITHIN_DISTANCE(" + super.getGeoColumn() + ",?/*search point*/,'distance=' || (SELECT s.dist FROM searchDistance s) || ?) = 'TRUE' ) a\n";
-                    pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                    pStatement.setString(stmtParamIndex++,units_parameter);                 params += String.format("? '%s'\n",units_parameter);
-                }
-            } else {
-                pStatement.setObject(stmtParamIndex++, searchMBR, java.sql.Types.STRUCT);                                params += String.format("? %s\n", SDO_GEOMETRY.getGeometryAsString(searchMBR));
-                pStatement.setDouble(stmtParamIndex++, this.getTolerance());                      params += String.format("? '%s'\n",this.getTolerance());
-                // "   AND MDSYS.SDO_GEOM.SDO_DISTANCE(t." + super.getGeoColumn() + ",
-                //                                     ?/*searchPoint*/,
-                //                                     ?/*tol*/,
-                //                                     ?/*unit*/) < MDSYS.SDO_GEOM.SDO_DISTANCE(?/*searchPoint*/,
-                //                                                                              ?/*distancePoint*/,
-                //                                                                              ?/*tol*/,
-                //                                                                              ?/*unit*/)";
-                // If Not Indexed: 7 Parameters
-                // SearchPoint, Tol, Unit
-                // SearchPoint, DistancePoint, Tol, Unit
-                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
-                pStatement.setObject(stmtParamIndex++,searchPoint, java.sql.Types.STRUCT);                     params += String.format("? %s\n",RenderTool.renderStructAsPlainText(searchPoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setObject(stmtParamIndex++,distancePoint, java.sql.Types.STRUCT);                   params += String.format("? %s\n",RenderTool.renderStructAsPlainText(distancePoint, Constants.bracketType.NONE, this.spatialView.getPrecision(false)));
-                pStatement.setDouble(stmtParamIndex++,this.getTolerance());             params += String.format("? %f\n",this.getTolerance());
-                pStatement.setString(stmtParamIndex++,units_parameter.replace(",","")); params += String.format("? '%s'\n",units_parameter.replace(",",""));
-            }
+    		String geoColumn = project 
+    		                 ? this.projectedGeometryName.toUpperCase() 
+    		                 : this.getGeoColumn().toUpperCase();
+    		geoColumn = geoColumn.replace("\"","");
 
             // ****************** Execute the query ************************
             //
@@ -1193,7 +1287,6 @@ public class SVTableLayer
                       value = "",
                  columnName = "",
              columnTypeName = "";
-            RowId           rid = null;
             while (ors.next()) {
                 LinkedHashMap<String, Object> calValueMap = new LinkedHashMap<String, Object>(rSetM.getColumnCount() - 1);
                 for (int col = 1; col <= rSetM.getColumnCount(); col++) {
@@ -1512,8 +1605,20 @@ public class SVTableLayer
 	}
 
 	@Override
-	public void setKeyColumn(String _column) {
-		this.keyColumn = _column;		
+	public void setKeyColumn(String _keyColumn) 
+	{
+		if ( Strings.isEmpty(_keyColumn) )
+			try {
+				this.keyColumn = Queries.getPrimaryKey(
+						             this.getConnection(),
+				                     this.getSchemaName(),
+				                     this.getObjectName()
+				                 );
+			} catch (IllegalArgumentException | SQLException e) {
+				e.printStackTrace();
+			}
+		else
+			this.keyColumn = _keyColumn;		
 	}
 
 	@Override

@@ -1571,8 +1571,7 @@ public class Queries {
      */
     public static Struct projectEnvelope(Connection _conn,
                                           Envelope  _mbr,
-                                                int _sourceSRID,
-                                                int _destinationSRID) 
+                                                int _toSRID) 
     throws SQLException, 
            IllegalArgumentException
     {
@@ -1587,65 +1586,111 @@ public class Queries {
                                                                       propertyManager.getMsg("MBR")));
         
         String sql = null;
-        if (_sourceSRID      == Constants.SRID_NULL ) { 
+        
+        if (_mbr.getSRID() == Constants.SRID_NULL 
+      		&&     _toSRID == Constants.SRID_NULL ) 
+        { 
           sql = "SELECT MDSYS.SDO_GEOMETRY(2003,NULL,NULL,\n" +
                            "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
                            "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
                    " FROM DUAL";
+          
             LOGGER.logSQL(sql + 
                     "\n? = " + _mbr.getMinX() +
                     "\n? = " + _mbr.getMinY() +
                     "\n? = " + _mbr.getMaxX() +
                     "\n? = " + _mbr.getMaxY());
-        } else if (_destinationSRID == Constants.SRID_NULL ||
-     	           _sourceSRID      == _destinationSRID )  {
+            
+        } else if (_mbr.getSRID() == Constants.SRID_NULL ) {
+        	
           sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
                        "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
                        "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
                 " FROM DUAL";
+          
           LOGGER.logSQL(sql + 
-             "\n? = " + _sourceSRID +
+             "\n? = " + _toSRID +
              "\n? = " + _mbr.getMinX() +
              "\n? = " + _mbr.getMinY() +
              "\n? = " + _mbr.getMaxX() +
              "\n? = " + _mbr.getMaxY());
 
-        } else { 
+        } else if (_toSRID == Constants.SRID_NULL ) {
+        	
+            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
+                         "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
+                         "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+                  " FROM DUAL";
+            LOGGER.logSQL(sql + 
+               "\n? = " + _mbr.getSRID()+
+               "\n? = " + _mbr.getMinX() +
+               "\n? = " + _mbr.getMinY() +
+               "\n? = " + _mbr.getMaxX() +
+               "\n? = " + _mbr.getMaxY());
+
+        } else if (_mbr.getSRID() == _toSRID ) {
+        	
+            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
+                    "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
+                    "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+             " FROM DUAL";
+            LOGGER.logSQL(sql + 
+                    "\n? = " + _mbr.getSRID()+
+                    "\n? = " + _mbr.getMinX() +
+                    "\n? = " + _mbr.getMinY() +
+                    "\n? = " + _mbr.getMaxX() +
+                    "\n? = " + _mbr.getMaxY());
+
+        } else {
+        	
           sql = "SELECT MDSYS.SDO_CS.TRANSFORM( \n" +
                             "MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
                             "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
                             "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)),?) as rect " +
                "  FROM DUAL";
+          
           LOGGER.logSQL(sql + 
-                  "\n? = " + _sourceSRID +
+                  "\n? = " + _mbr.getSRID() +
                   "\n? = " + _mbr.getMinX() +
                   "\n? = " + _mbr.getMinY() +
                   "\n? = " + _mbr.getMaxX() +
                   "\n? = " + _mbr.getMaxY() +
-                  "\n? = " + _destinationSRID);
+                  "\n? = " + _toSRID);
         }
 
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
         
-        if (_sourceSRID == Constants.SRID_NULL ) { 
+        if (_mbr.getSRID() == Constants.SRID_NULL 
+      		&&     _toSRID == Constants.SRID_NULL ) { 
             pStatement.setDouble(1,_mbr.getMinX());
             pStatement.setDouble(2,_mbr.getMinY());
             pStatement.setDouble(3,_mbr.getMaxX());
             pStatement.setDouble(4,_mbr.getMaxY());
-        } else if (_destinationSRID == Constants.SRID_NULL ||
-     	           _sourceSRID      == _destinationSRID )  {
-            pStatement.setInt   (1,_sourceSRID);
+        } else if (_mbr.getSRID() == Constants.SRID_NULL ) {
+            pStatement.setInt   (1,_toSRID);
             pStatement.setDouble(2,_mbr.getMinX());
             pStatement.setDouble(3,_mbr.getMinY());
             pStatement.setDouble(4,_mbr.getMaxX());
             pStatement.setDouble(5,_mbr.getMaxY());
-        } else { 
-            pStatement.setInt   (1,_sourceSRID);
+        } else if (_toSRID == Constants.SRID_NULL ) {
+            pStatement.setInt   (1,_mbr.getSRID());
             pStatement.setDouble(2,_mbr.getMinX());
             pStatement.setDouble(3,_mbr.getMinY());
             pStatement.setDouble(4,_mbr.getMaxX());
             pStatement.setDouble(5,_mbr.getMaxY());
-            pStatement.setInt   (6,_destinationSRID);
+        } else if (_mbr.getSRID() == _toSRID ) { 
+            pStatement.setInt   (1,_mbr.getSRID());
+            pStatement.setDouble(2,_mbr.getMinX());
+            pStatement.setDouble(3,_mbr.getMinY());
+            pStatement.setDouble(4,_mbr.getMaxX());
+            pStatement.setDouble(5,_mbr.getMaxY());
+        } else {
+        	pStatement.setInt   (1,_mbr.getSRID());
+        	pStatement.setDouble(2,_mbr.getMinX());
+        	pStatement.setDouble(3,_mbr.getMinY());
+        	pStatement.setDouble(4,_mbr.getMaxX());
+        	pStatement.setDouble(5,_mbr.getMaxY());
+            pStatement.setInt   (6,_toSRID);
         }        
         ResultSet rSet = pStatement.executeQuery();
         Struct retGeom = null;
@@ -1721,15 +1766,19 @@ public class Queries {
         String sql = "SELECT MDSYS.SDO_CS.TRANSFORM(?,?) as geom FROM DUAL";
 
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
+    	Struct st = null;
         try {
-        	Struct st = null;
         	//st = JGeometry.storeJS(_conn,_jGeom);
             st = JGeom.toStruct(_jGeom,_conn);
+            if ( st == null )
+            	throw new Exception ("Failed to convert JGeometry to Struct");
 			pStatement.setObject(1,st);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			return null;
 		}
+        	
         pStatement.setInt(2,_destinationSRID);
         try {
             LOGGER.logSQL(sql + 
@@ -1739,16 +1788,14 @@ public class Queries {
             LOGGER.logSQL(sql);
             e.printStackTrace();
         }
+        
         ResultSet rSet = (ResultSet)pStatement.executeQuery();
         Struct retGeom = null;
         if (rSet.next()) {
             retGeom = (Struct)rSet.getObject(1);
-            if ( rSet.wasNull() ) retGeom = null;
         }
-        rSet.close();
-        rSet = null;
-        pStatement.close();
-        pStatement = null;
+        rSet.close();       rSet = null;
+        pStatement.close(); pStatement = null;
         return retGeom;
     }
 
@@ -1757,8 +1804,6 @@ public class Queries {
                                          int        _sourceSRID,
                                          int        _destinationSRID)
     {
-LOGGER.debug("projectSdoPoint(" + _point.toString() + "," + _sourceSRID + "," + _destinationSRID+")");
-
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
         }
@@ -1775,27 +1820,29 @@ LOGGER.debug("projectSdoPoint(" + _point.toString() + "," + _sourceSRID + "," + 
         String sql = ""; 
         Struct sGeom = null;
     	
-        if ( _sourceSRID == Constants.SRID_NULL ) { 
+        if ( _sourceSRID == Constants.SRID_NULL 
+             ||
+             _destinationSRID == Constants.SRID_NULL ) { 
           sql = "SELECT SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
                  " FROM DUAL";
-        } else if (_destinationSRID == Constants.SRID_NULL ||
-        		   _sourceSRID      == _destinationSRID )  {
+        } else if (_sourceSRID == _destinationSRID )  {
           sql = "SELECT SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL) as geom " +
-                 " FROM DUAL";
-        } else {        
-          sql = "SELECT f.geom.sdo_point.x, f.geom.sdo_point.y " +
-                 " FROM (SELECT MDSYS.SDO_CS.TRANSFORM(SDO_GEOMETRY(2001,?,SDO_POINT_TYPE(?,?,NULL),NULL,NULL),?) as geom FROM DUAL) f" +
-                " WHERE f.geom is not null";
+              " FROM DUAL";
+        } else { 
+          sql = "SELECT MDSYS.SDO_CS.TRANSFORM(" +
+          		            " MDSYS.SDO_GEOMETRY(2001,?,MDSYS.SDO_POINT_TYPE(?,?,NULL),NULL,NULL)," +
+                             "?) as geom \n" + 
+                "  FROM DUAL";
         }
+
         try {
 	        PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
-LOGGER.debug("=================Setting parameters ====================");
-	        if ( _sourceSRID == Constants.SRID_NULL ) {
+	        if ( _sourceSRID == Constants.SRID_NULL ||
+                 _destinationSRID == Constants.SRID_NULL ) {
 		        pStatement.setDouble(1,_point.getX());
 		        pStatement.setDouble(2,_point.getY());
-	        } else if (_destinationSRID == Constants.SRID_NULL ||
-	  		           _sourceSRID      == _destinationSRID )  {
-	            pStatement.setInt(1,_sourceSRID);
+	        } else if (_sourceSRID == _destinationSRID )  {
+	            pStatement.setInt   (1,_destinationSRID);
 		        pStatement.setDouble(2,_point.getX());
 		        pStatement.setDouble(3,_point.getY());
 	        } else {
@@ -1804,7 +1851,6 @@ LOGGER.debug("=================Setting parameters ====================");
 		        pStatement.setDouble(3,_point.getY());
 	            pStatement.setInt   (4,_destinationSRID);
 		    }
-LOGGER.debug("=================execute SQL====================");
 	        ResultSet rs = (ResultSet)pStatement.executeQuery();
 	        if (rs.next()) {
 	        	sGeom = (Struct)rs.getObject(1);
@@ -1820,7 +1866,6 @@ LOGGER.debug("=================execute SQL====================");
         } catch (Exception e) {
         	LOGGER.error("Failed to create/Project SDO_GEOMETRY point (" + e.getLocalizedMessage());
         }
-        LOGGER.debug("================= End projectSdoPoint ====================");
         return sGeom;
     }
 

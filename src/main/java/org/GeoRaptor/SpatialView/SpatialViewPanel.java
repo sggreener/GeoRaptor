@@ -1258,8 +1258,8 @@ extends JPanel
             try
             {
                 geoColumns = Queries.getGeoColumns(_conn,
-                                                        _schemaName,
-                                                        _objectName);
+                                                   _schemaName,
+                                                   _objectName);
             } catch (SQLException sqle) {
                 JOptionPane.showMessageDialog( null,
                                                propertyManager.getMsg("ERROR_MESSAGE_NO_TABLE_GEOMETRY_COLUMN",
@@ -1332,6 +1332,7 @@ extends JPanel
                                                        columnName,
                                                        Constants.TABLE_COLUMN_SEPARATOR),
                            Constants.TABLE_COLUMN_SEPARATOR);
+        
         MetadataEntry mEntry = null;
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
@@ -1376,11 +1377,11 @@ extends JPanel
             // 0 Percentage means no sampling. 
             // 1 means first one found ie ROWNUM < 2
             layerGeometryType = Queries.getLayerGeometryType(_conn,
-                                                                  mEntry.getSchemaName(), 
-                                                                  mEntry.getObjectName(), 
-                                                                  mEntry.getColumnName(),
-                                                                  0, /* samplePercentage */
-                                                                  1  /* sampleRows */ );
+                                                             mEntry.getSchemaName(), 
+                                                             mEntry.getObjectName(), 
+                                                             mEntry.getColumnName(),
+                                                             0, /* samplePercentage */
+                                                             1  /* sampleRows */ );
             if (Strings.isEmpty(layerGeometryType)) {
                 LOGGER.error("getLayerGeometryType for " + layerName + " returned null: table empty?");
             }
@@ -1404,8 +1405,7 @@ extends JPanel
                                               layerName,
                                               mEntry,
                                               true /* draw - should be GeoRaptor Property */
-                                              );
-        
+                                              );        
         // See if we can discover a better MBR than that derived from metadata.
         if (layer.setLayerMBR(mEntry.getMBR(),
                               layer.getSRIDAsInteger())==false) {
@@ -1416,6 +1416,7 @@ extends JPanel
         // Set layer properties
         // 
         layer.setConnectionName(_connectionName); LOGGER.debug("Connection Name set to " + _connectionName);
+        layer.setKeyColumn(null);                 LOGGER.debug("layer Key Column is " + layer.getKeyColumn());
         layer.setGeometryType(layerGeometryType); LOGGER.debug("layer Geometry type is " + layerGeometryType);
         layer.setSRIDType();                      LOGGER.debug("layer SRID type is " + layer.getSRIDType().toString());
         if ( layer.getSRIDType().toString().startsWith("GEO") ) {
@@ -1682,7 +1683,8 @@ extends JPanel
         return null;
     }
     
-    public SpatialView getMostSuitableView(int _srid) {
+    public SpatialView getMostSuitableView(int _srid) 
+    {
         // Get right view to draw geometries in by checking SRID compatibility
         // Does not create a new view!
         //

@@ -40,7 +40,7 @@ public class SVDrawQueries {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVDrawQueries");
 
     public static LinkedHashMap<String,String> 
-                  getAttributesFromMetadata(
+                  getAttributesFromMetadata (
     		         ResultSetMetaData _rsmd,
     		         boolean           _onlyNumbersDatesAndStrings,
     		         boolean           _fullDataType)
@@ -190,6 +190,9 @@ public class SVDrawQueries {
             ResultSetMetaData rsmd = ors.getMetaData(); // for column name
             ArrayList<String> labelColumns = getStylingColumns(rsmd,styling);            
 
+            // Computed MBR will be in SRID of view NOT layer
+            newMBR.setSRID(_layer.getSpatialView().getSRIDAsInteger());
+
             executeTime = ( System.currentTimeMillis() - executeStart );
             while ((ors.next()) &&
                    (_layer.getSpatialView().getSVPanel().isCancelOperation() == false)) 
@@ -299,10 +302,11 @@ public class SVDrawQueries {
                                          : angleValue);
                 dataDrawTime += ( System.currentTimeMillis() - dataDrawStart );
                 
-                // Check if we are reccalculating the layer's MBR
+                // Check if we are re-calculating the layer's MBR
+                // The values in the jGeom will be in the View's SRID units 
                 //
                 if ( _layer.getMBRRecalculation() ) {
-                    LOGGER.debug("**** MBR Recalculation");
+System.out.println("__Recalculation of MBR");
                     mbrCalcStart =  System.currentTimeMillis();
                     newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
                     mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );
@@ -333,7 +337,6 @@ public class SVDrawQueries {
                            "   Features/Second = " + String.format("%10.2f",featsPerSecond));
             
             if ( _layer.getMBRRecalculation() ) {
-                LOGGER.debug("**** MBR Recalculation - Final processing " + newMBR.toString());
                 if (newMBR.getWidth() == newMBR.getHeight()) {
                   // Must be a single point
                   //
@@ -341,7 +344,6 @@ public class SVDrawQueries {
                   double maxBufferSize = Math.max(pixelSize.getX(),pixelSize.getY()) * _layer.getPreferences().getSearchPixels();
                   newMBR.setChange(maxBufferSize);
                 }
-                LOGGER.debug("**** MBR Recalculation - setMBR to " + newMBR.toString());
                 _layer.setMBR(newMBR);
                 _layer.setMBRRecalculation(false);
             }
@@ -385,6 +387,5 @@ public class SVDrawQueries {
         }
         return true;
     }
-          
 
 }

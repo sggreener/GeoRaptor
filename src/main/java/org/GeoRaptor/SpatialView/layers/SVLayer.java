@@ -2,9 +2,7 @@ package org.GeoRaptor.SpatialView.layers;
 
 import java.io.IOException;
 import java.io.StringReader;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -16,7 +14,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.GeoRaptor.Constants;
-import org.GeoRaptor.Constants.GEOMETRY_TYPES;
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
@@ -26,19 +23,12 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import oracle.dbtools.raptor.utils.Connections;
-import oracle.jdbc.driver.OracleConnection;
-import oracle.spatial.geometry.JGeometry;
 
 /**
  * Class describe one layer on map. It can be vector or raster type.
@@ -419,7 +409,6 @@ public class SVLayer {
 	}
 
 	public Envelope getMBR() {
-		LOGGER.debug("SLayer.getMBR()=" + (new Envelope(this.mbr)).toString());
 		return new Envelope(this.mbr);
 	}
 

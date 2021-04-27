@@ -89,9 +89,11 @@ import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -1630,7 +1632,9 @@ public class ViewLayerTree
                                      final LayerNode _layer) 
     {
         // Layer node is either the one passed in or the first one when only one is selected
-        //
+        // TODO So why isn't the passed in LayerNode the one?
+    	//      If one is selected should it not be the same as the passed in one?
+    	//
         boolean selectedNodeIsLayer = false;
         LayerNode lNode = null;
         TreeNode  tNode = null;
@@ -1650,20 +1654,20 @@ public class ViewLayerTree
             lNode = _layer;
         }
         final LayerNode fLayerNode = lNode;
-        final TreeNode  fTreeNode  = tNode;
+        final TreeNode   fTreeNode = tNode;
+        final iLayer        sLayer = fLayerNode.getSpatialLayer();  
 
-        // Where menu uses visible name of layer, shorten it where it is greater than 40 cars
-        // SGG limit should be a preference
-        String shortVisibleName = fLayerNode.getSpatialLayer().getVisibleName().length()>40
-                                ? fLayerNode.getSpatialLayer().getVisibleName().substring(0, 39) + "...."
-                                : fLayerNode.getSpatialLayer().getVisibleName();
-            
-        
         // Cannot bring context menu up for layers of a non-active view so we
         // can directly reference the passed in SpatialView to get the mapPanel()
         //
         final SpatialView sView = _view.getSpatialView();
-        
+
+        // Where menu uses visible name of layer, shorten it where it is greater than 40 cars
+        // SGG limit should be a preference
+        String shortVisibleName = sLayer.getVisibleName().length()>40
+                                ? sLayer.getVisibleName().substring(0, 39) + "...."
+                                : sLayer.getVisibleName();
+            
         JPopupMenu popup = new JPopupMenu(fLayerNode.getText());
         
         String zoomToLayerMenu = ( selectedNodeIsLayer 
@@ -1681,8 +1685,6 @@ public class ViewLayerTree
                     if ( getSelectionModel().getSelectionCount() > 1 ) 
                     {
                         TreePath[] nodes = getSelectionModel().getSelectionPaths();
-                        // Process
-                        //
                         DefaultMutableTreeNode node = null;
                         for ( int i = 0; i < nodes.length; i++ ) 
                         {
@@ -1694,7 +1696,7 @@ public class ViewLayerTree
                         }
                     } else {
                         if ( fLayerNode.isDraw() ) {
-                            mbr = fLayerNode.getSpatialLayer().getMBR();
+                            mbr = sLayer.getMBR();
                         } else {
                           // Use layer extent anyway?
                           int selectOpt = JOptionPane.showConfirmDialog(null,
@@ -1703,7 +1705,7 @@ public class ViewLayerTree
                                                                         JOptionPane.YES_NO_OPTION);
                           if (selectOpt == 0) {
                               // Reset MBR of layers in view
-                              mbr = fLayerNode.getSpatialLayer().getMBR();
+                              mbr = sLayer.getMBR();
                           } else {
                               return;
                           }
@@ -1732,53 +1734,77 @@ public class ViewLayerTree
 
 				public void actionPerformed(ActionEvent e) 
                 {
-                    // Get Layer MBR 
                     Envelope mbr = new Envelope(sView.getDefaultPrecision());
+                    
+                    // Get MBR of selected layers 
                     if ( getSelectionModel().getSelectionCount() > 1 ) {
-                        TreePath[] nodes = getSelectionModel().getSelectionPaths();
                         // Process
-                        //
-                        DefaultMutableTreeNode node = null;
+                        // TODO If more than one layer selected and they have different
+                    	//      source SRIDs though appear in same View, the following 
+                    	//      MBR calculation will be wrong: need iLayer getProjectedMBR()
+                    	//
+                        TreePath[] nodes = getSelectionModel().getSelectionPaths();
                         for ( int i = 0; i < nodes.length; i++ ) 
                         {
+                            DefaultMutableTreeNode node = null;
                             node = (DefaultMutableTreeNode)nodes[i].getLastPathComponent();
                             if ( node instanceof LayerNode ) 
                             {
-                                mbr.setMaxMBR(((LayerNode)node).getSpatialLayer().getMBR());
+                                mbr.setMaxMBR(sLayer.getMBR());
                             }
                         }
                     } else {
-                        // Get Layer MBR 
-                        mbr = fLayerNode.getSpatialLayer().getMBR();
+                        mbr = sLayer.getMBR();
                     }
-                    JGeometry jGeom = null;
-                    /*
-                    jGeom = new JGeometry(mbr.getMinX(), 
-                                          mbr.getMinY(), 
-                                          mbr.getMaxX(), 
-                                          mbr.getMaxY(), 
-                                          fLayerNode.getSpatialLayer().getSRIDAsInteger());
-                    */
-                    // Linestring instead of polygon.
-                    double[] coords = {mbr.getMinX(), mbr.getMinY(),
-                                       mbr.getMaxX(), mbr.getMinY(),
-                                       mbr.getMaxX(), mbr.getMaxY(), 
-                                       mbr.getMinX(), mbr.getMaxY(), 
-                                       mbr.getMinX(), mbr.getMinY()
-                                       };
-                    jGeom = JGeometry.createLinearLineString(
-                    		          coords,
-                    		          2,
-                    		          fLayerNode.getSpatialLayer().getSRIDAsInteger());
-					try {
-                        svp.showGeometry(
-                                fLayerNode.getSpatialLayer(),
+
+//System.out.println("viewMBR="+sView.getMBR().toString());
+//System.out.println("layerMBR="+sLayer.getMBR().toString());
+                	int viewSRID  = sView.getSRIDAsInteger();                	
+                	int layerSRID = sLayer.getSRIDAsInteger();
+                	
+                	JGeometry jGeom = null;
+                    // TODO Preference?
+                	// Srid assignment is the reverse of what is logical.
+                	// Is there some deep code that has set the MBR of a layer to its projected view?
+                	//
+                	boolean polygon = false;
+                	if ( polygon )
+                		jGeom = new JGeometry(
+                				    mbr.getMinX(), mbr.getMinY(),
+                				    mbr.getMaxX(), mbr.getMaxY(),
+                				    viewSRID
+                				);
+                	else {
+                        // Display MBR as Linestring not polygon 
+                        double[] coords = {mbr.getMinX(), mbr.getMinY(),
+                                           mbr.getMaxX(), mbr.getMinY(),
+                                           mbr.getMaxX(), mbr.getMaxY(), 
+                                           mbr.getMinX(), mbr.getMaxY(), 
+                                           mbr.getMinX(), mbr.getMinY()
+                                           };
+                		jGeom = JGeometry.createLinearLineString(coords,2,viewSRID);
+                	}
+                    try {
+                    	// Has layer been dragged to a view other than its base SRID?
+                    	//
+                    	if (   layerSRID != Constants.NULL_SRID 
+                             && viewSRID != Constants.NULL_SRID 
+                             && viewSRID != layerSRID ) 
+                    	{
+// System.out.println("L:"+layerSRID + ",V:"+viewSRID);
+                            Connection conn = sLayer.getConnection();
+                            Struct sGeom = Queries.projectJGeometry(conn,jGeom,viewSRID);
+                            if ( sGeom != null )
+                            	jGeom = JGeometry.loadJS(sGeom); 
+                    	}
+                    	svp.showGeometry (
+                                sLayer,
                                 jGeom, 
-                        		null /* _geoSet */, 
-                        		JGeom.getGeoMBR(jGeom), 
-                        		true  /* _selectionColouring */, 
-                        		true  /* _zoom               */, 
-                        		false /* _drawAfter          */
+                        		null,   /* _geoSet */ 
+                        		JGeom.getGeoMBR(jGeom), /* _mbr */ 
+                        		true,   /* _selectionColouring  */ 
+                        		true,   /* _zoom                */ 
+                        		false   /* _drawAfter           */
                         );
                         /* ??? */ 
                         sView.getMapPanel().windowNavigator.add(svp.getMapPanel().getWindow());
@@ -1789,6 +1815,7 @@ public class ViewLayerTree
                     }
                 }
             };
+            
         popup.add(showLayerMBR);
 
         String setLayerMBRMenu = ( selectedNodeIsLayer 
@@ -2573,23 +2600,25 @@ public class ViewLayerTree
             // NOTE: When a layer with same SRID as a view is dragged to another and projected, 
             //       but then moved back it needs its SQL changed
             //
+            boolean projectionRequired = 
+                lNode.getSpatialLayer().getSRIDAsInteger() != Constants.NULL_SRID
+                &&
+                targetViewNode.getSpatialView ().getSRIDAsInteger() != Constants.NULL_SRID
+                &&
+                sourceViewNode.getSpatialView ().getSRIDAsInteger() != targetViewNode.getSpatialView().getSRIDAsInteger();
             
-            boolean projectionRequired = false;
-            if (            lNode.getSpatialLayer().getSRIDAsInteger()
-                 != targetViewNode.getSpatialView().getSRIDAsInteger() ) 
-            {
-                projectionRequired = 
-                   ! (             lNode.getSpatialLayer().getSRID().equals(Constants.NULL)  // Layer has NULL SRID
-                       || targetViewNode.getSpatialView ().getSRID().equals(Constants.NULL)  // Target View has NULL SRID 
-                       || sourceViewNode.getSpatialView ().getSRID().equals(targetViewNode.getSpatialView().getSRID() ) // Layer == View SRID (and both not NULL)
-                     );
-            }
             lNode.getSpatialLayer().setProject(projectionRequired, 
                                                true /* Always recalc mbr of layer*/);
             
-            // Change SQL of droppedNode based on layer/target SRID
-            // lNode.getSpatialLayer().setInitSQL();
-
+            // If we have dragged a layer from one view to another we need to force refresh of 
+            // the base SQL (will overwrite any changes made by user)
+            // TODO Fix overwrite
+            //
+            if ( projectionRequired && lNode.getSpatialLayer() instanceof SVTableLayer )
+            	lNode.getSpatialLayer().setSQL(
+            			((SVTableLayer)lNode.getSpatialLayer()).generateSQL()
+                );
+            
             // refresh any changes to tree 
             model.nodeStructureChanged(sourceViewNode);
             model.nodeStructureChanged(targetViewNode);
