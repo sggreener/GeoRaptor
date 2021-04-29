@@ -14,11 +14,16 @@ DROP TABLE ProjPoly2D PURGE;
 
 -- *****************************************************************************
 
-CREATE TABLE ProjPoint3D ( id integer, geom MDSYS.SDO_GEOMETRY );
+CREATE TABLE ProjPoint3D ( id integer, label varchar2(20), rgb varchar2(20), iRGB integer, geom mdsys.sdo_geometry );
 COMMIT;
 SET FEEDBACK OFF
     INSERT INTO ProjPoint3D
       SELECT rownum,
+             CHR(dbms_random.value(65,90)) || to_char(round(dbms_random.value(0,1000),0),'FM9999') as label,
+             ROUND(dbms_random.value(0,255),0) || ',' || ROUND(dbms_random.value(0,255),0) || ',' || ROUND(dbms_random.value(0,255),0) as rgb,
+             POWER(2,16)* ROUND(dbms_random.value(0,255),0) + 
+             POWER(2,8) * ROUND(dbms_random.value(0,255),0) + 
+                          ROUND(dbms_random.value(0,255),0) as irgb,
              mdsys.sdo_geometry(3001,NULL,
                    MDSYS.SDO_POINT_TYPE(
                          ROUND(dbms_random.value(358880  - ( 10000 / 2 ),  
