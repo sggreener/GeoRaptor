@@ -2269,7 +2269,6 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
         conn = spatialView.getActiveLayer().getConnection();
         Struct stGeom = null;
         try {
-            //JGeometry.storeJS(conn,_geometry);
             stGeom = JGeom.toStruct(_geometry,conn);
         } catch (Exception e) {
         	LOGGER.error("Failed to convert JGeometry to SDO_GEOMETRY ("+e.getLocalizedMessage()+")");
@@ -2464,7 +2463,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                             currentlLayer,
                                             maxDrawableLayers);
                     if ( layer.hasIndex()==false ) {
-                        this.svp.setMessage("No Index: " + layer.getVisibleName(), true);
+                        this.svp.setMessage("No Index: " + layer.getVisibleName(), false);
                     }
                     boolean status = layer.drawLayer(this.mapPanel.getWindow(), getBiG2D());
                     if (status == false) {

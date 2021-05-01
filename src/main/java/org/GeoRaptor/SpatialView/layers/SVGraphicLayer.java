@@ -719,9 +719,9 @@ implements iLayer
                 {
                     // Draw the geometry using current display settings
                     String   sLabelText = (bLabel      ? SQLConversionTools.convertToString(conn,label,         qrow.getAttData().get(label)) : "");
-                    Color   cShadeValue = Colours.fromRGBa((bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol)) : "0,0,0,255")); 
-                    Color   cPointValue = Colours.fromRGBa((bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : "0,0,0,255")); 
-                    Color    cLineValue = Colours.fromRGBa((bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)) : "0,0,0,255"));
+                    Color   cShadeValue = Colours.fromRGBa((bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol)) : Colours.transparentBlackRGBa)); 
+                    Color   cPointValue = Colours.fromRGBa((bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : Colours.transparentBlackRGBa)); 
+                    Color    cLineValue = Colours.fromRGBa((bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)) : Colours.transparentBlackRGBa));
                     int iPointSizeValue = (bPointSize  ? MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),4) : 4 );
                     double dRotateAngle = (bRotate     ? (this.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
                                                           ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(this.getStyling().getRotationColumn())).doubleValue() - 90.0f)) 

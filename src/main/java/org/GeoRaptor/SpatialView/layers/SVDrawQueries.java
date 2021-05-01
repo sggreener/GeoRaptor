@@ -244,7 +244,7 @@ public class SVDrawQueries {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = ors.getString(styling.getPointColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        pointColorValue = "0,0,0,255";
+                        pointColorValue = Colours.transparentBlackRGBa;
                     }
                     pointColor = Colours.fromRGBa(pointColorValue);
                 }
@@ -256,7 +256,7 @@ public class SVDrawQueries {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = ors.getString(styling.getLineColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        lineColorValue = "0,0,0,255";
+                        lineColorValue = Colours.transparentBlackRGBa;
                     }
                     lineColor = Colours.fromRGBa(lineColorValue);
                 }
@@ -270,7 +270,7 @@ public class SVDrawQueries {
                 		// regardless as to whether RGB or Integer, get colour as a string.
                         shadeValue = ors.getString(styling.getShadeColumn().replace("\"",""));
                     } catch (Exception e) {
-                        shadeValue = "0,0,0,255";
+                        shadeValue = Colours.transparentBlackRGBa;
                     }
                     shadeColor = Colours.fromRGBa(shadeValue);
                 }
@@ -306,7 +306,6 @@ public class SVDrawQueries {
                 // The values in the jGeom will be in the View's SRID units 
                 //
                 if ( _layer.getMBRRecalculation() ) {
-System.out.println("__Recalculation of MBR");
                     mbrCalcStart =  System.currentTimeMillis();
                     newMBR.setMaxMBR(JGeom.getGeoMBR(jGeom));
                     mbrCalcTime += ( System.currentTimeMillis() - mbrCalcStart );

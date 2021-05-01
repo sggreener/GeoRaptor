@@ -1299,7 +1299,7 @@ public class Queries {
                                              String     _columnName,
                                              String     _SRID) 
     {
-/* TODO: CHANGE THIS */
+/* TODO: CHANGE THIS re 19+ */
         if ( propertyManager == null ) {
             propertyManager = new PropertiesManager(propertiesFile);
         }
@@ -1334,15 +1334,17 @@ public class Queries {
             Strings.isEmpty(_schemaName) 
                           ? _objectName :
             Strings.append(_schemaName,_objectName,Constants.TABLE_COLUMN_SEPARATOR);
+        
         String sql = 
-            "SELECT /*+FIRST_ROWS(1)*/ count(*) \n" + 
-            "  FROM " + fullName + " a\n" + 
+            "SELECT /*+FIRST_ROWS(1)*/ count(*)" + 
+            "  FROM " + fullName + " a" + 
             " WHERE SDO_FILTER(a." + _columnName + 
-                             ",MDSYS.SDO_GEOMETRY(2003," + _SRID + ",NULL,\n" +
-                             " MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
+                             ",MDSYS.SDO_GEOMETRY(2003," + _SRID + ",NULL," +
+                             " MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
                              " MDSYS.SDO_ORDINATE_ARRAY(0,0,1,1))) = 'TRUE'" +
-            "   AND rownum < 2"; 
+            "   AND rownum < 2";
         LOGGER.logSQL(sql);
+        
     	boolean indexExists = true;
         try {
         	Statement st = _conn.createStatement();
@@ -1590,9 +1592,9 @@ public class Queries {
         if (_mbr.getSRID() == Constants.SRID_NULL 
       		&&     _toSRID == Constants.SRID_NULL ) 
         { 
-          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,NULL,NULL,\n" +
-                           "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
-                           "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,NULL,NULL," +
+                           "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
+                           "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect" +
                    " FROM DUAL";
           
             LOGGER.logSQL(sql + 
@@ -1603,9 +1605,9 @@ public class Queries {
             
         } else if (_mbr.getSRID() == Constants.SRID_NULL ) {
         	
-          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
-                       "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
-                       "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+          sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL," +
+                       "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
+                       "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect" +
                 " FROM DUAL";
           
           LOGGER.logSQL(sql + 
@@ -1617,9 +1619,9 @@ public class Queries {
 
         } else if (_toSRID == Constants.SRID_NULL ) {
         	
-            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
-                         "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
-                         "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL," +
+                         "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
+                         "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect" +
                   " FROM DUAL";
             LOGGER.logSQL(sql + 
                "\n? = " + _mbr.getSRID()+
@@ -1630,9 +1632,9 @@ public class Queries {
 
         } else if (_mbr.getSRID() == _toSRID ) {
         	
-            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
-                    "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
-                    "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect " +
+            sql = "SELECT MDSYS.SDO_GEOMETRY(2003,?,NULL," +
+                    "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
+                    "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)) as rect" +
              " FROM DUAL";
             LOGGER.logSQL(sql + 
                     "\n? = " + _mbr.getSRID()+
@@ -1643,10 +1645,10 @@ public class Queries {
 
         } else {
         	
-          sql = "SELECT MDSYS.SDO_CS.TRANSFORM( \n" +
-                            "MDSYS.SDO_GEOMETRY(2003,?,NULL,\n" +
-                            "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3),\n" +
-                            "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)),?) as rect " +
+          sql = "SELECT MDSYS.SDO_CS.TRANSFORM(" +
+                            "MDSYS.SDO_GEOMETRY(2003,?,NULL," +
+                            "MDSYS.SDO_ELEM_INFO_ARRAY(1,1003,3)," +
+                            "MDSYS.SDO_ORDINATE_ARRAY(?,?,?,?)),?) as rect" +
                "  FROM DUAL";
           
           LOGGER.logSQL(sql + 
@@ -1768,7 +1770,6 @@ public class Queries {
         PreparedStatement pStatement = (PreparedStatement)_conn.prepareStatement(sql);
     	Struct st = null;
         try {
-        	//st = JGeometry.storeJS(_conn,_jGeom);
             st = JGeom.toStruct(_jGeom,_conn);
             if ( st == null )
             	throw new Exception ("Failed to convert JGeometry to Struct");

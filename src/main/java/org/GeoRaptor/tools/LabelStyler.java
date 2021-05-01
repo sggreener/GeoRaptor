@@ -94,7 +94,16 @@ public class LabelStyler extends JDialog {
 
   protected MutableAttributeSet attributes;
 
-  public static enum LabelAttribute { FontFamily,FontSize,Bold,Italic,Underline,StrikeThrough,Subscript,Superscript,Foreground,Background};
+  public static enum LabelAttribute { FontFamily,
+	                                  FontSize,
+	                                  Bold,
+	                                  Italic,
+	                                  Underline,
+	                                  StrikeThrough,
+	                                  Subscript,
+	                                  Superscript,
+	                                  Foreground,
+	                                  Background};
 
   private static enum COLOUR_ACTIONS { BACKGROUND, FOREGROUND };
   private static COLOUR_ACTIONS actionColour = COLOUR_ACTIONS.FOREGROUND;
@@ -128,11 +137,12 @@ public class LabelStyler extends JDialog {
 
   private   Color        dialogBackground;
   protected Color        cMapBackground         = new Color(255,255,255,0);
-  protected int          alphaBackground        = 255; // Opaque
+  protected int          alphaBackground        =   0; // Transparent
   protected int          alphaForeground        = 255; // Opaque
  
   public LabelStyler(JFrame _owner,
-                     Color  _mapBackground) {
+                     Color  _mapBackground) 
+  {
     super(_owner, "Font Chooser", false);
 
     this.propertyManager = new PropertiesManager(LabelStyler.propertiesFile);
@@ -142,7 +152,7 @@ public class LabelStyler extends JDialog {
 
     PREVIEW_TEXT = this.propertyManager.getMsg("PREVIEW_TEXT");
     this.cMapBackground = Colours.setAlpha(_mapBackground,0); // 0 means utterly transparent
-    this.alphaBackground = 0;
+    this.alphaBackground  = 0;
     this.dialogBackground = getBackground();
     
     JPanel pnlFont = new JPanel(new GridLayout(1, 2, 10, 2));
@@ -465,13 +475,13 @@ public class LabelStyler extends JDialog {
     
     Color c = StyleConstants.getBackground(_aSet);
     this.setSliderAndAlpha(c.getAlpha(), COLOUR_ACTIONS.BACKGROUND, true);
-    this.btnBackgroundFillColor.setBackground(Colours.setAlpha(c,255));
+    this.btnBackgroundFillColor.setBackground(Colours.setAlpha(c,Colours.TRANSPARENT));
     this.setBackgroundFillBorder(c);
     this.btnBackgroundFillColor.setBorder(BorderFactory.createRaisedBevelBorder());
 
     c = StyleConstants.getForeground(_aSet);
     this.setSliderAndAlpha(c.getAlpha(), COLOUR_ACTIONS.FOREGROUND, true);
-    this.btnForegroundFontColor.setBackground(Colours.setAlpha(c,255));
+    this.btnForegroundFontColor.setBackground(Colours.setAlpha(c,Colours.TRANSPARENT));
     this.btnForegroundFontColor.setBorder(BorderFactory.createLoweredBevelBorder());
 
     SwingUtilities.invokeLater(new Runnable() {
@@ -489,7 +499,8 @@ public class LabelStyler extends JDialog {
       }
   }
 
-  public AttributeSet getAttributes() {
+  public AttributeSet getAttributes() 
+  {
     if (attributes == null)
       return null;
     StyleConstants.setFontFamily(attributes, fontNameInputList.getSelected());
@@ -503,14 +514,16 @@ public class LabelStyler extends JDialog {
     return attributes;
   }
 
-  public static SimpleAttributeSet getDefaultAttributes(Color _cMapBackground) {
+  public static SimpleAttributeSet getDefaultAttributes(Color _cMapBackground)
+  {
       SimpleAttributeSet saa = new SimpleAttributeSet();
       StyleConstants.setFontFamily(saa, "Serif");
       StyleConstants.setFontSize(saa, 12);
       StyleConstants.setBold(saa, true);
       StyleConstants.setForeground(saa, Color.BLACK);
+      // Alpha of 255 is transparent; 0 is opaque
       if ( _cMapBackground==null )
-          StyleConstants.setBackground(saa, new Color(255,255,255,0));  // 0 is utterly transparent
+          StyleConstants.setBackground(saa, new Color(255,255,255,0));
       else {
           StyleConstants.setBackground(saa,
                                        new Color(_cMapBackground.getRed(),
@@ -540,7 +553,8 @@ public class LabelStyler extends JDialog {
       sb.append("</LabelStyler>");
       return sb.toString();
   }
- 
+
+/*
   public static SimpleAttributeSet fromNode(Node _node) 
   {
       if ( _node == null ) {
@@ -575,8 +589,8 @@ public class LabelStyler extends JDialog {
                   case StrikeThrough: StyleConstants.setStrikeThrough(attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue)); break;
                   case Subscript    : StyleConstants.setSubscript(    attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue)); break;
                   case Superscript  : StyleConstants.setSuperscript(  attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue)); break;
-                  case Foreground   : StyleConstants.setForeground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"00,00,00,255":nodeValue)); break;
-                  case Background   : StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"255,255,255,255":nodeValue)); break;
+                  case Foreground   : StyleConstants.setForeground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?Colours.opaqueBlackRGBa:nodeValue)); break;
+                  case Background   : StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?Colours.transparentWhiteRGBa:nodeValue)); break;
               }
           }  // for each node....
           return attributes;
@@ -585,13 +599,15 @@ public class LabelStyler extends JDialog {
       }
       return attributes;
   }
-        
+*/
+
   public static SimpleAttributeSet fromXML(Node _node) 
   {
       if ( _node == null ) {
           LOGGER.warn("SimpleAttributeSet: XML node is null"); 
           return new SimpleAttributeSet();  // Should throw error 
       }
+
       if (_node.getNodeName().equalsIgnoreCase("LabelStyler")==false ) {
           LOGGER.warn("SimpleAttributeSet: XML is of type " + _node.getNodeName() + " when it should be <LabelAttributes>");
           return new SimpleAttributeSet();  // Should throw error 
@@ -600,14 +616,17 @@ public class LabelStyler extends JDialog {
           LOGGER.warn("SimpleAttributeSet: LabelStyler has no children");
           return new SimpleAttributeSet();  // Should throw error 
       }
-      // return fromNode(_node);
-      SimpleAttributeSet attributes = null; 
+
+      SimpleAttributeSet attributes = null;
+      
       String nodeValue = "";
+      
       try 
       {
           XPath xpath = XPathFactory.newInstance().newXPath();
-          attributes = new SimpleAttributeSet();
           
+          attributes = new SimpleAttributeSet();
+
           nodeValue = (String)xpath.evaluate("FontFamily/text()",_node,XPathConstants.STRING);
           StyleConstants.setFontFamily(   attributes, Strings.isEmpty(nodeValue)?"Arial":nodeValue);
           
@@ -633,10 +652,11 @@ public class LabelStyler extends JDialog {
           StyleConstants.setSuperscript(  attributes, Boolean.valueOf(Strings.isEmpty(nodeValue)?"false":nodeValue));
           
           nodeValue = (String)xpath.evaluate("Foreground/text()",_node,XPathConstants.STRING);
-          StyleConstants.setForeground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"00,00,00,255":nodeValue));
+          StyleConstants.setForeground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?Colours.opaqueBlackRGBa:nodeValue));
           
           nodeValue = (String)xpath.evaluate("Background/text()",_node,XPathConstants.STRING);
-          StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?"255,255,255,255":nodeValue));
+
+          StyleConstants.setBackground(   attributes, Colours.fromRGBa(Strings.isEmpty(nodeValue)?Colours.transparentWhiteRGBa:nodeValue));
           
           return attributes;
       } catch (Exception e) {
@@ -707,9 +727,9 @@ public class LabelStyler extends JDialog {
     _previewLabel.setText(previewText.toString());
     _previewLabel.setFont(fn);
     _previewLabel.setForeground(Colours.setAlpha(this.btnForegroundFontColor.getBackground(),
-                                               this.alphaForeground));
+                                                 this.alphaForeground));
     _previewLabel.setBackground(Colours.setAlpha(btnBackgroundFillColor.getBackground(),
-                                               this.alphaBackground));
+                                                 this.alphaBackground));
   } 
     
   class InputList 

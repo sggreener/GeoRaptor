@@ -44,6 +44,7 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.Messages;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.Colours;
@@ -523,17 +524,26 @@ public class SVSpatialLayerDraw {
         Struct stGeom = null;
         try
         {
-        	Connection conn = this.layer.getConnection();
-            stGeom = JGeom.toStruct(_geom,conn);
-            if ( stGeom == null ) {
-                return null;
-            }
-            
             // Check geometry parameters
             //
             if ( _geom == null )
                 throw new SQLException("Supplied Sdo_Geometry is NULL.");
-    
+
+        	Connection conn = this.layer.getConnection();
+        	// JTS cannot handle Circles so "buffer" to get polygon
+            if ( _geom.isCircle() ) {
+            	Envelope  mbr = new Envelope(_geom);
+            	Point2D point = mbr.centre();
+                return new Point2D.Double(point.getX(),point.getY()); 
+            }
+
+            // Convert to Struct ready for JTS Struct -> Geometry conversion
+       		stGeom = JGeom.toStruct(_geom,conn);
+            
+            if ( stGeom == null ) {
+                throw new SQLException("Supplied Geometry could not be converted to an valid object.");
+            }            
+                
             // Extract SRID from SDO_GEOEMTRY
             //
             int SRID = _geom.getSRID();
@@ -563,13 +573,14 @@ public class SVSpatialLayerDraw {
                 LOGGER.warn("Could not compute centroid.");
                 return null;
             }
+            
             return new Point2D.Double(p.getX(),p.getY()); 
+            
           } catch(Exception e) {
               LOGGER.warn("Error generating JTS Centroid: " + e.getMessage());
               return null;
           }
      }
-
 
     public Graphics2D getGraphics2D() {
         return this.graphics2D;
@@ -668,6 +679,7 @@ public class SVSpatialLayerDraw {
                                                     (_rotate == Constants.ROTATE.MARKER ||
                                                      _rotate == Constants.ROTATE.BOTH)
                                                     ? _angle : 0.0f);
+        
         this.graphics2D.setColor(_pointColorValue);
         this.graphics2D.fill(drawShape);
         this.graphics2D.draw(drawShape);
@@ -752,6 +764,7 @@ public class SVSpatialLayerDraw {
             //
             labelPoint = this.getWorldToScreenTransform()
                              .transform(new Point.Double(point[0],point[1]),null);
+            
             drawPoint(labelPoint, 
             		  this.layer.getStyling().getPointType(), 
             		  _pointColorValue, 
@@ -804,7 +817,8 @@ public class SVSpatialLayerDraw {
             // if within Scale
             //
             if ( this.isWithinScale() ) {
-                drawString(this.graphics2D,_label,
+                drawString(this.graphics2D,
+                		   _label,
                            (int)labelPoint.getX(), 
                            (int)labelPoint.getY(),
                            this.horizPosn, 
@@ -990,7 +1004,7 @@ public class SVSpatialLayerDraw {
      * @author Simon Greener April 19rd 2010
      *          Fixed code to mark start, points and direction
      **/
-    private void drawShape(Shape  _shp,
+    private void drawShape(Shape _shp,
                            Color _lineColorValue)
     {
         if (this.layer.getStyling().isPerformLine()) {
@@ -1008,6 +1022,7 @@ public class SVSpatialLayerDraw {
             JGeometry element = null;
             int elementCount = _geo.getElements().length,
                        gType = 0;
+            
             // DEBUG LOGGER.info("markGeometry: elementCount=" + elementCount);
             int[] elem_info = null;
             for (int i=1; i<=elementCount; i++) {
@@ -2042,10 +2057,14 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
 
         AttributedString label = new AttributedString(_string);
         label.addAttribute(TextAttribute.FONT, renderFont);
-        if (StyleConstants.isUnderline(_attributes))     label.addAttribute(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-        if (StyleConstants.isStrikeThrough(_attributes)) label.addAttribute(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
-        if ( foreColour != null ) label.addAttribute(TextAttribute.FOREGROUND, foreColour);
-        if ( backColour != null ) label.addAttribute(TextAttribute.BACKGROUND, backColour);
+        if (StyleConstants.isUnderline(_attributes))     
+        	label.addAttribute(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        if (StyleConstants.isStrikeThrough(_attributes)) 
+        	label.addAttribute(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
+        if ( foreColour != null ) 
+        	label.addAttribute(TextAttribute.FOREGROUND, foreColour);
+        if ( backColour != null ) 
+        	label.addAttribute(TextAttribute.BACKGROUND, backColour);
         label.addAttribute(TextAttribute.KERNING,TextAttribute.KERNING_ON);
 
         // Determine box width/height for string/font

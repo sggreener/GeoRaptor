@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -49,6 +48,7 @@ import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.HtmlHelp;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -2204,8 +2204,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 			// Variables for conversion loop
 			//
-			JGeometry geom = null;
-			Struct geometrySTRUCT = null;
+			JGeometry jGeom = null;
+			Struct gStruct = null;
 			int parameterIndex = 0;
 			String oracleColumnName = "";
 			String oracleDataType = "";
@@ -2320,23 +2320,24 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				// 3.1 Convert geometry of shapefile
 				//
 				try {
-					geom = (JGeometry) ht.get("geometry");
+					jGeom = (JGeometry) ht.get("geometry");
 					if (this.roundNumber != -1) {
-						geom = roundOrdinates(geom, this.roundNumber);
+						jGeom = roundOrdinates(jGeom, this.roundNumber);
 					}
-					geometrySTRUCT = JGeometry.storeJS(geom,conn);
+					gStruct = JGeom.toStruct(jGeom,conn);
 				} catch (Exception e) {
 					LOGGER.warn("Converting geometry of Record #" + rec + " failed - writing NULL value");
-					geometrySTRUCT = null; // Inserting of null geometries allowed
+					gStruct = null; // Inserting of null geometries allowed
+					e.printStackTrace();
 				}
 
 				// 3.2 Set geometry value into prepared statement
 				//
 				try {
-					if (geometrySTRUCT == null) {
+					if (gStruct == null) {
 						ps.setNull(colsToStore, OracleTypes.STRUCT, Constants.TAG_MDSYS_SDO_GEOMETRY);
 					} else {
-						ps.setObject(colsToStore, geometrySTRUCT);
+						ps.setObject(colsToStore, gStruct);
 					}
 				} catch (SQLException sqle) {
 					this.errorCount++;

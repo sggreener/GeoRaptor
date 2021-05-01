@@ -506,7 +506,6 @@ public class Tools {
             Connection conn = DatabaseConnections.getInstance().getActiveConnection(); 
             //convert JGeometry instance to DB STRUCT
             Struct stGeom = null;
-            //stGeom = JGeometry.storeJS(conn,_jGeom);
             stGeom = JGeom.toStruct(_jGeom,conn);
             PreparedStatement ps = null;
             ps = conn.prepareStatement(sql);

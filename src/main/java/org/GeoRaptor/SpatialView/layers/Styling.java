@@ -121,8 +121,7 @@ public class Styling {
 
 		// Shade
 		this.setShadeType(_style.getShadeType());
-		this.setShadeColor(new Color(_style.getShadeColor(null).getRed(), this.getShadeColor(null).getBlue(),
-        this.getShadeColor(null).getGreen(), this.getShadeColor(null).getAlpha()));
+		this.setShadeColor(_style.getShadeColor(null));
 		this.setShadeColumn(_style.getShadeColumn());
 		this.setShadeTransLevel(_style.getShadeTransLevel());
 
@@ -611,7 +610,7 @@ public class Styling {
 		if (_labelAttributes == null) { /* SGG Changed from != to == Aug 2019*/
 			this.markLabelAttributes = LabelStyler.getDefaultAttributes(_mapBackground);
 		} else {
-			this.markLabelAttributes = LabelStyler.fromNode(_labelAttributes.getChildNodes().item(0));
+			this.markLabelAttributes = LabelStyler.fromXML(_labelAttributes.getChildNodes().item(0));
 		}
 	}
 
@@ -649,7 +648,7 @@ public class Styling {
 	}
 
 	public void setPointColor(Color _pointColor) {
-		this.pointColor = _pointColor;
+		this.pointColor = Colours.fromRGBa(Colours.toRGBa(_pointColor));
 	}
 
 	public boolean isSelectionActive() {
@@ -792,7 +791,7 @@ public class Styling {
 	}
 
 	public void setLineColor(Color _lineColor) {
-		this.lineColor = _lineColor;
+		this.lineColor = Colours.fromRGBa(Colours.toRGBa(_lineColor));
 	}
 
 	public void setLineColorType(Styling.STYLING_TYPE _colorType) {
@@ -1046,7 +1045,7 @@ public class Styling {
 		if (_shadeColor == null)
 			this.shadeColor = Color.BLACK;
 		else
-			this.shadeColor = _shadeColor;
+			this.shadeColor = Colours.fromRGBa(Colours.toRGBa(_shadeColor));
 	}
 
 	/* @tobedone: handle alpha

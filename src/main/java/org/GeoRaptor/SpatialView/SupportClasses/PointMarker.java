@@ -141,8 +141,8 @@ public class PointMarker {
     
     public static Shape diamond(double _cx, double _cy, int _pointSize, double _angle) 
     {
-        double halfLength  = _pointSize / 2.0f;
-        double thirdLength = _pointSize / 3.0;
+        float halfLength  = ((float)_pointSize) / 2.0f;
+        float thirdLength = ((float)_pointSize) / 3.0f;
         GeneralPath p = new GeneralPath(GeneralPath.WIND_NON_ZERO);
         p.moveTo(_cx              ,_cy + halfLength);
         p.lineTo(_cx + thirdLength,_cy);
@@ -227,10 +227,10 @@ public class PointMarker {
     
     public static Shape boat(double _cx, double _cy, int _pointSize, double _angle) 
     { 
-        float halfHeight = _pointSize / 2.0f;
-        float oneThird   = _pointSize / 3.0f;
-        float oneQuarter = _pointSize / 4.0f;
-        float twoThirds  = _pointSize / 3.0f * 2.0f;
+        float halfHeight = ((float)_pointSize) / 2.0f;
+        float oneThird   = ((float)_pointSize) / 3.0f;
+        float oneQuarter = ((float)_pointSize) / 4.0f;
+        float twoThirds  = ((float)_pointSize) / 3.0f * 2.0f;
         GeneralPath boatGP = new GeneralPath(Path2D.WIND_NON_ZERO);
         // Bow
         boatGP.moveTo(_cx + halfHeight,                         _cy - halfHeight + twoThirds );
@@ -291,7 +291,8 @@ public class PointMarker {
       // Now create an eye
       Area eye =  new Area( new Ellipse2D.Double(_cx - bodyWidth / 4,
                                                  _cy - halfFishLength + bodyLength / 4,
-                                                 eyeSize, eyeSize) );
+                                                 eyeSize, 
+                                                 eyeSize) );
       // Remove it from body
       body.subtract(eye);
 
@@ -318,10 +319,10 @@ public class PointMarker {
     
     public static Shape hash(double _cx, double _cy, int _pointSize, double _angle) 
     { 
-        double third    = (double)_pointSize / 3.0;
+        double third    = ((double)_pointSize) / 3.0;
         double twoThird = third + third;
-        double x = _cx - ((double)_pointSize / 2.0), 
-               y = _cy - ((double)_pointSize / 2.0);
+        double x = _cx - (((double)_pointSize) / 2.0), 
+               y = _cy - (((double)_pointSize) / 2.0);
         Path2D.Double p = new Path2D.Double(Path2D.WIND_NON_ZERO);
         p.moveTo(x,  y + third   ); p.lineTo(x + _pointSize, y + third);
         p.moveTo(x,  y + twoThird); p.lineTo(x + _pointSize, y + twoThird);
@@ -364,7 +365,7 @@ public class PointMarker {
     
     public static Shape asterisk(double _cx, double _cy, int _pointSize, double _angle) 
     {
-        float halfSize = _pointSize / 2.0f;
+        float halfSize = ((float)_pointSize) / 2.0f;
         Path2D.Double p = new Path2D.Double(Path2D.WIND_NON_ZERO); 
         p.moveTo(_cx + (-1 * halfSize), _cy + (-1 * halfSize));
         p.lineTo(_cx + (1 * halfSize), _cy + (1 * halfSize));
@@ -394,7 +395,7 @@ public class PointMarker {
      */
     public static Shape star(double _cx, double _cy, int _pointSize, double _angle) 
     {
-        float halfSize = _pointSize / 2.0f;
+        float halfSize = ((float)_pointSize) / 2.0f;
         Path2D.Double p = new Path2D.Double(Path2D.WIND_NON_ZERO); 
         p.moveTo(_cx - halfSize,         _cy - halfSize / 4.0f); 
         p.lineTo(_cx + halfSize,         _cy - halfSize / 4.0f); 
@@ -555,7 +556,7 @@ public class PointMarker {
   
     public static Shape astroid( double _cx, double _cy, double _radius, double _angle ) 
     {
-        double halfRadius = _radius / 2.0f;
+       double halfRadius = _radius / 2.0f;
        double r2 = halfRadius * 2;
        Shape astroid = new Area( new Rectangle2D.Double( _cx - halfRadius, _cy - halfRadius, r2, r2 ) );
        ((Area) astroid).subtract( new Area( new Ellipse2D.Double( _cx - r2, _cy - r2,  r2, r2 ) ) );
@@ -568,7 +569,7 @@ public class PointMarker {
     }
 
     public static Shape almond(Point2D _point, double _pointSize, double _angle ) {
-      return almond( _point.getX(), _point.getY(), _pointSize, _angle );
+    	return almond( _point.getX(), _point.getY(), _pointSize, _angle );
     }
   
     public static Shape almond( double _cx, double _cy, double _pointSize, double _angle )
@@ -611,8 +612,8 @@ public class PointMarker {
     
     public static Shape StrokedCircle(double _x, double _y, int _pointSize, int _vertexCount) 
     {
-        int pointSize = ( _pointSize <= 0 ) ? 1 : _pointSize;
-        int vCount = ( _vertexCount < 3 ) ? 3 : _vertexCount;
+        int pointSize = ( _pointSize   <= 0 ) ? 1 : _pointSize;
+        int vCount    = ( _vertexCount < 3  ) ? 3 : _vertexCount;
         return StrokedCircle(_x, _y, pointSize, vCount, 0);
     }
       
@@ -620,7 +621,7 @@ public class PointMarker {
     {
         if ( _vertexCount < 3 )
             return triangle(_x,_y,_pointSize/2.0,_startAngle);
-        float radius = _pointSize / 2.0f;
+        float radius = ((float)_pointSize) / 2.0f;
         int xArray[]=new int[_vertexCount];
         int yArray[]=new int[_vertexCount];
         double addAngle=2.0*Math.PI/(double)_vertexCount;

@@ -538,7 +538,6 @@ public class SDO_GEOMETRY
         	          );
             Connection localConnection = DatabaseConnections.getInstance().getActiveConnection();
             Struct stGeom = null;
-            //stGeom = JGeometry.storeJS(newGeom,localConnection);
             stGeom = JGeom.toStruct(newGeom,localConnection);
             return stGeom;
         } catch (Exception e) {

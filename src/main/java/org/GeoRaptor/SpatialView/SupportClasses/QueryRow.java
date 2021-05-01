@@ -14,6 +14,7 @@ import oracle.spatial.geometry.JGeometry;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SpatialRenderer;
 
@@ -97,7 +98,7 @@ public class QueryRow {
       try {
           if ( this.jGeom != null && _conn != null ) {
               Connection conn = _conn;
-              this.geoValue = (Struct) JGeometry.storeJS(conn, _geoValue);
+              this.geoValue = JGeom.toStruct(_geoValue,conn);
               if ( _geoValue != null ) {
                   // Cache as row is created
                   this.currentRenderType = this.mainPreferences.getVisualFormat();

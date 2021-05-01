@@ -2643,7 +2643,6 @@ public class RenderResultSet
                                          : Double.isNaN(m)
                                            ? new JGeometry(x,y,z,this.options.getSRID())
                                            : new JGeometry(x,y,z,m,this.options.getSRID());
-                                  //stGeom = JGeometry.storeJS(jGeo, this.conn);
                                   stGeom = JGeom.toStruct(jGeo,conn);
                               } else if ( saveStructTypeName.equalsIgnoreCase(Constants.TAG_MDSYS_SDO_POINT_TYPE) ) {
                                   columnMetadata.setColumnTypeName(1,Constants.TAG_MDSYS_SDO_GEOMETRY);
@@ -2651,7 +2650,6 @@ public class RenderResultSet
                                   jGeo = Double.isNaN(ords[2])
                                          ? new JGeometry(ords[0],ords[1],        this.options.getSRID())
                                          : new JGeometry(ords[0],ords[1],ords[2],this.options.getSRID());
-                                  //stGeom = JGeometry.storeJS(jGeo, this.conn);
                                   stGeom = JGeom.toStruct(jGeo,conn);
                               }
                               geoExporter.printColumn(stGeom, columnMetadata);

@@ -7,13 +7,24 @@ import java.util.StringTokenizer;
 
 public class Colours {
 
+	public static enum ALPHA { OPAQUE, TRANSPARENT};
+	public static final int            TRANSPARENT  = 255;
+	public static final int            OPAQUE       = 0;
+	public static final int            SOLID        = 0;
+	public static final String      opaqueBlackRGBa = "0,0,0,0";
+	public static final String transparentBlackRGBa = "0,0,0,255";
+	public static final String      opaqueWhiteRGBa = "255,255,255,0";
+	public static final String transparentWhiteRGBa = "255,255,255,255";
+	
     public Colours() {
         super();
     }
 
     public static Color getRandomColor() {
         Random numGen = new Random();
-        return new Color(numGen.nextInt(256), numGen.nextInt(256), numGen.nextInt(256));
+        return new Color(numGen.nextInt(256), 
+        		         numGen.nextInt(256), 
+        		         numGen.nextInt(256));
     }
     
     public static Color setAlpha(Color _color,
@@ -21,10 +32,11 @@ public class Colours {
     {
         if (_color == null )
             return null;
+        int alpha = Math.abs(_alpha);
         return new Color(_color.getRed(),
         		         _color.getGreen(),
         		         _color.getBlue(),
-                         Math.abs(_alpha) <= 255 ? _alpha : 255
+                         alpha <= 255 ? alpha : TRANSPARENT
                    );
     }
 
@@ -34,7 +46,7 @@ public class Colours {
 		if (_color == null)
 			return null;
 		int alpha = ( Math.abs(_alpha) > 1.0 )
-				    ? Math.abs(_alpha) <= 255.0 ? (int)_alpha : 255
+				    ? Math.abs(_alpha) <= 255.0 ? (int)_alpha : TRANSPARENT
                     : (int)(255.0 * Math.abs(_alpha));
 		return new Color(_color.getRed(), 
                          _color.getGreen(), 
@@ -44,7 +56,13 @@ public class Colours {
 	}
 
     public static String getRGBa(Color _c) {
-        return String.format("%d,%d,%d,%d",_c.getRed(),_c.getGreen(),_c.getBlue(),_c.getAlpha());
+    	if ( _c == null )
+    		return Colours.opaqueWhiteRGBa;
+        return String.format("%d,%d,%d,%d",
+                             _c.getRed(),
+                             _c.getGreen(),
+                             _c.getBlue(),
+                             _c.getAlpha());
     }
 
     public static String toRGBa(Color _c) {
@@ -55,14 +73,13 @@ public class Colours {
     {
         if (Strings.isEmpty(_rgba) )
             return Color.BLACK;
-        
         if ( _rgba.indexOf(",")==-1 )
             return new Color(Integer.parseInt(_rgba));
 
         int red = 0, 
           green = 0, 
            blue = 0, 
-          alpha = 255;
+          alpha = TRANSPARENT;
         
         String tok = ""; 
         String [] st = _rgba.split(",");
@@ -72,17 +89,17 @@ public class Colours {
             try 
             {
             	switch ( i ) {
-                  case 1 : red   = Integer.parseInt(tok); break;
-                  case 2 : green = Integer.parseInt(tok); break; 
-                  case 3 : blue  = Integer.parseInt(tok); break;
-                  case 4 : alpha = Integer.parseInt(tok);  
+                  case 0 : red   = Integer.parseInt(tok); break;
+                  case 1 : green = Integer.parseInt(tok); break; 
+                  case 2 : blue  = Integer.parseInt(tok); break;
+                  case 3 : alpha = Integer.parseInt(tok);  
                 }
             } catch (NumberFormatException e) {
             	switch ( i ) {
-                  case 1 : red   = 0; break;
-                  case 2 : green = 0; break; 
-                  case 3 : blue  = 0; break;
-                  case 4 : alpha = 255;  
+                  case 0 : red   = 0; break;
+                  case 1 : green = 0; break; 
+                  case 2 : blue  = 0; break;
+                  case 3 : alpha = TRANSPARENT;  
                 }               
             }
         } // FOR

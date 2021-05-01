@@ -926,7 +926,6 @@ public class ViewLayerTree
         }
     }
     
-    
     public int getDrawableLayerCount(String _viewName) {
       // find view node by name
       Object vNode = getNodeByName(_viewName);
@@ -3083,7 +3082,7 @@ public class ViewLayerTree
           this.leafCheck = null;
           this.leafText = null;
           this.leafRenderer = null;
-          this.sLayer = null;
+          this.sLayer = null; 
       }
   
       public void setTextForeground() 

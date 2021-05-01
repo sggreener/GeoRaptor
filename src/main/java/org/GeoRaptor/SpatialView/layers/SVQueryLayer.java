@@ -1231,10 +1231,10 @@ implements iLayer
                          this.getLayerNameAndConnectionName() + 
                          ").setIndex.isSpatiallyIndexed()");
             this.indexExists = Queries.isSpatiallyIndexed(conn,
-                                                               super.getSchemaName(),
-                                                               super.getObjectName(),
-                                                               super.getGeoColumn(),
-                                                               super.getSRID());                
+                                                          super.getSchemaName(),
+                                                          super.getObjectName(),
+                                                          super.getGeoColumn(),
+                                                          super.getSRID());
             LOGGER.debug("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
         } catch (IllegalArgumentException iae) {
             LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
