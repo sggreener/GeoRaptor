@@ -679,7 +679,8 @@ public class SVSpatialLayerDraw {
                                                     (_rotate == Constants.ROTATE.MARKER ||
                                                      _rotate == Constants.ROTATE.BOTH)
                                                     ? _angle : 0.0f);
-        
+        // Don't let any other linestyle affect drawing markers (as uses line settings)
+        this.graphics2D.setStroke(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,1));
         this.graphics2D.setColor(_pointColorValue);
         this.graphics2D.fill(drawShape);
         this.graphics2D.draw(drawShape);
@@ -687,10 +688,11 @@ public class SVSpatialLayerDraw {
 
     private void drawPoint(Shape _drawShape)
     {
+    	this.graphics2D.setStroke(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,1));
         this.graphics2D.fill(_drawShape);
         this.graphics2D.draw(_drawShape);
     }
-
+    
     /**
      * @precis Function that transforms a point before calling actaul drawing method
      *         does the actual drawing for POINT and MULTIPOINT geometries.
@@ -848,13 +850,7 @@ public class SVSpatialLayerDraw {
             // Save colour of starting point
             Color oldColor = this.graphics2D.getColor();
             this.graphics2D.setColor(Color.GRAY);
-            this.graphics2D.setStroke(new BasicStroke(this.layer.getStyling().getLineWidth(),
-                                                      BasicStroke.CAP_BUTT,
-                                                      BasicStroke.JOIN_MITER,
-                                                      10.0f,
-                                                      new float[] { 2f, 2f },
-                                                      /* Expressed in pixel space? */
-                        0.1f));
+
             this.graphics2D.drawLine((int)_point.getX(), (int)_point.getY(),
                                      (int)_orientedPoint.getX(),
                                      (int)_orientedPoint.getY());
@@ -2057,7 +2053,7 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
 
         AttributedString label = new AttributedString(_string);
         label.addAttribute(TextAttribute.FONT, renderFont);
-        if (StyleConstants.isUnderline(_attributes))     
+        if (StyleConstants.isUnderline(_attributes))
         	label.addAttribute(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
         if (StyleConstants.isStrikeThrough(_attributes)) 
         	label.addAttribute(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
