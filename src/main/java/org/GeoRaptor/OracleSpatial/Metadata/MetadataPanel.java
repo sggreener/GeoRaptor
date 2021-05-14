@@ -277,13 +277,13 @@ public class MetadataPanel extends javax.swing.JDialog {
         lblObject = new javax.swing.JLabel();
         tfSelectedObject = new javax.swing.JLabel();
         lblGeometryColumn = new javax.swing.JLabel();
-        cmbGeoColumns = new javax.swing.JComboBox<String>();
+        cmbGeoColumns = new javax.swing.JComboBox();
         lblSRID = new javax.swing.JLabel();
         tfSRID = new javax.swing.JTextField();
         btnSRID = new javax.swing.JButton();
         pnlConnection = new javax.swing.JPanel();
         lblDBConnection = new javax.swing.JLabel();
-        cmbConnections = new javax.swing.JComboBox<String>();
+        cmbConnections = new javax.swing.JComboBox();
         lblConnectedSchema = new javax.swing.JLabel();
         tfConnectedSchema = new javax.swing.JTextField();
         btnReloadConnections = new javax.swing.JButton();
@@ -296,6 +296,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         scrollUserSdoMetadataTable = new javax.swing.JScrollPane();
         userSdoMetadataTable = new javax.swing.JTable();
         btnUpdate = new javax.swing.JButton();
+        btnReload = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("SDO_GEOM_METADATA");
@@ -337,16 +338,14 @@ public class MetadataPanel extends javax.swing.JDialog {
                 "Schema", "Table/View/MView", "Column", "SRID", "DimInfo"
             }
         ) {
-			private static final long serialVersionUID = 918428651124757416L;
-			@SuppressWarnings("rawtypes")
-			Class[] types = new Class [] {
+            Class[] types = new Class [] {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
                 false, false, false, false, false
             };
 
-            public Class<?> getColumnClass(int columnIndex) {
+            public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
             }
 
@@ -469,7 +468,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         lblGeometryColumn.setText("Geometry Column:");
 
         cmbGeoColumns.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        cmbGeoColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "GEOMETRY" }));
+        cmbGeoColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "GEOMETRY" }));
         cmbGeoColumns.setMaximumSize(null);
         cmbGeoColumns.setMinimumSize(null);
         cmbGeoColumns.setPreferredSize(new java.awt.Dimension(230, 20));
@@ -572,13 +571,13 @@ public class MetadataPanel extends javax.swing.JDialog {
             .addGroup(pnlConnectionLayout.createSequentialGroup()
                 .addGroup(pnlConnectionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblDBConnection, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(cmbConnections, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(cmbConnections, javax.swing.GroupLayout.DEFAULT_SIZE, 22, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(pnlConnectionLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblConnectedSchema, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(tfConnectedSchema, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnReloadConnections, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btnReloadConnections, javax.swing.GroupLayout.DEFAULT_SIZE, 26, Short.MAX_VALUE)
                 .addGap(10, 10, 10))
         );
 
@@ -649,16 +648,12 @@ public class MetadataPanel extends javax.swing.JDialog {
             new String [] {
                 "Dim Name", "SDO_LB", "SDO_UB", "SDO_TOLERANCE"
             }
-            ) 
-        {
-			private static final long serialVersionUID = 3536548795112343013L;
-			
-			@SuppressWarnings("rawtypes")
-			Class[] types = new Class [] {
+        ) {
+            Class[] types = new Class [] {
                 java.lang.String.class, java.lang.Double.class, java.lang.Double.class, java.lang.Double.class
             };
 
-            public Class<?> getColumnClass(int columnIndex) {
+            public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
             }
         });
@@ -703,9 +698,9 @@ public class MetadataPanel extends javax.swing.JDialog {
                         .addComponent(sldrSample, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(lblPercentage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollUserSdoMetadataTable, javax.swing.GroupLayout.DEFAULT_SIZE, 66, Short.MAX_VALUE)
+                .addComponent(scrollUserSdoMetadataTable, javax.swing.GroupLayout.DEFAULT_SIZE, 70, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnAddElement, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(btnAddElement, javax.swing.GroupLayout.DEFAULT_SIZE, 28, Short.MAX_VALUE))
         );
 
         btnUpdate.setMnemonic('U');
@@ -726,7 +721,7 @@ public class MetadataPanel extends javax.swing.JDialog {
             .addGroup(panelObjectMetadataLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelObjectMetadataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pnlDimElements, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(pnlDimElements, javax.swing.GroupLayout.DEFAULT_SIZE, 845, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelObjectMetadataLayout.createSequentialGroup()
                         .addGroup(panelObjectMetadataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblGeometryColumn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -763,8 +758,8 @@ public class MetadataPanel extends javax.swing.JDialog {
                                 .addComponent(tfSelectedSchema, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
                         .addGroup(panelObjectMetadataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblObject, javax.swing.GroupLayout.DEFAULT_SIZE, 15, Short.MAX_VALUE)
-                            .addComponent(tfSelectedObject, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                            .addComponent(lblObject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(tfSelectedObject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(panelObjectMetadataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(lblGeometryColumn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -774,16 +769,25 @@ public class MetadataPanel extends javax.swing.JDialog {
                             .addComponent(lblSRID, javax.swing.GroupLayout.DEFAULT_SIZE, 21, Short.MAX_VALUE)
                             .addComponent(tfSRID, javax.swing.GroupLayout.DEFAULT_SIZE, 21, Short.MAX_VALUE)
                             .addComponent(btnSRID, javax.swing.GroupLayout.DEFAULT_SIZE, 21, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 11, Short.MAX_VALUE))
-                    .addComponent(pnlConnection, 0, 106, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 16, Short.MAX_VALUE))
+                    .addComponent(pnlConnection, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pnlDimElements, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
+                .addComponent(pnlDimElements, javax.swing.GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnUpdate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(btnUpdate, javax.swing.GroupLayout.DEFAULT_SIZE, 28, Short.MAX_VALUE))
         );
 
         tfSelectedObject.getAccessibleContext().setAccessibleName("");
         pnlDimElements.getAccessibleContext().setAccessibleParent(panelObjectMetadata);
+
+        btnReload.setMnemonic('R');
+        btnReload.setText("Reload Metadata");
+        btnReload.setActionCommand("");
+        btnReload.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnReloadActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -792,12 +796,14 @@ public class MetadataPanel extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(panelObjectMetadata, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelObjectMetadata, javax.swing.GroupLayout.DEFAULT_SIZE, 877, Short.MAX_VALUE)
                     .addComponent(panelCurrentMetadata, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(6, 6, 6)
                         .addComponent(btnHelp, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(717, 717, 717)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnReload)
+                        .addGap(638, 638, 638)
                         .addComponent(btnClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -810,7 +816,8 @@ public class MetadataPanel extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnHelp, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(btnClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnReload))
                 .addContainerGap())
         );
 
@@ -983,11 +990,17 @@ public class MetadataPanel extends javax.swing.JDialog {
 
     }//GEN-LAST:event_btnReloadConnectionsActionPerformed
 
+    private void btnReloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReloadActionPerformed
+        // TODO add your handling code here:
+        this.metadataTM.readMetadataIntoTable(this.conn,this.userName,this.cbAllSchemas.isSelected());
+    }//GEN-LAST:event_btnReloadActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddElement;
     private javax.swing.JButton btnCalculateDiminfo;
     private javax.swing.JButton btnClose;
     private javax.swing.JButton btnHelp;
+    private javax.swing.JButton btnReload;
     private javax.swing.JButton btnReloadConnections;
     private javax.swing.JButton btnSRID;
     private javax.swing.JButton btnUpdate;
@@ -995,8 +1008,8 @@ public class MetadataPanel extends javax.swing.JDialog {
     private javax.swing.JCheckBox cbMissing;
     private javax.swing.JCheckBox cbObjectExists;
     private javax.swing.JCheckBox cbOrphan;
-    private javax.swing.JComboBox<String> cmbConnections;
-    private javax.swing.JComboBox<String> cmbGeoColumns;
+    private javax.swing.JComboBox cmbConnections;
+    private javax.swing.JComboBox cmbGeoColumns;
     private javax.swing.JLabel lblConnectedSchema;
     private javax.swing.JLabel lblDBConnection;
     private javax.swing.JLabel lblGeometryColumn;
@@ -1431,6 +1444,7 @@ public class MetadataPanel extends javax.swing.JDialog {
                                            _columnName) );
         
         if ( tableGeometryColumns == null || tableGeometryColumns.size()==0 ) {
+        	Messages.log(propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",schemaObject),true);
             throw new IllegalArgumentException(
                              propertyManager.getMsg("MD_TABLE_NO_SDO_GEOMETRY_COLUMN",
                                                     schemaObject) );
@@ -1442,9 +1456,9 @@ public class MetadataPanel extends javax.swing.JDialog {
         this.objectName = _objectName;
         this.columnName = Strings.isEmpty(_columnName)?tableGeometryColumns.get(0):_columnName;
         String fullObjectName = Strings.objectString(this.schemaName,
-                                                          this.objectName,
-                                                          this.columnName,
-                                                          Constants.TABLE_COLUMN_SEPARATOR);
+                                                     this.objectName,
+                                                     this.columnName,
+                                                     Constants.TABLE_COLUMN_SEPARATOR);
         // 3. Set object type widget ie Table, View, Materialized View
         //
         this.objectType = "";
@@ -1452,12 +1466,12 @@ public class MetadataPanel extends javax.swing.JDialog {
             this.objectType = Queries.getObjectType(this.conn, this.schemaName, this.objectName);
         } catch (Exception e /* SQLException sqle and IllegalArgumentException */ ) {
             JOptionPane.showMessageDialog(null,
-                                          propertyManager.getMsg("ERROR_MESSAGE_OBJECT_TYPE_NOT_FOUND",
-                                                                 Strings.append(this.schemaName,
-                                                                   this.objectName,
-                                                                   Constants.TABLE_COLUMN_SEPARATOR)),
-                                          MainSettings.EXTENSION_NAME,
-                                          JOptionPane.INFORMATION_MESSAGE);
+                            propertyManager.getMsg("ERROR_MESSAGE_OBJECT_TYPE_NOT_FOUND",
+                                                   Strings.append(this.schemaName,
+                                                                  this.objectName,
+                                                                  Constants.TABLE_COLUMN_SEPARATOR)),
+                            MainSettings.EXTENSION_NAME,
+                            JOptionPane.INFORMATION_MESSAGE);
             this.objectType = "UNKNOWN";
         }
         this.tfSelectedObject.setText(fullObjectName + " (" + this.objectType + ")");
@@ -1474,7 +1488,7 @@ public class MetadataPanel extends javax.swing.JDialog {
             this.cmbGeoColumns.setSelectedIndex(0);
         } else {  // Passed in name is one of many sdo_geometry columns, find and set as selected
             for (int i = 0; i < this.cmbGeoColumns.getModel().getSize(); i++) {
-                    String geometryName = this.cmbGeoColumns.getModel().getElementAt(i); 
+                    String geometryName = (String)this.cmbGeoColumns.getModel().getElementAt(i); 
                     if ( geometryName.equalsIgnoreCase(this.columnName)) {
                         this.cmbGeoColumns.setSelectedIndex(i);
                         break;
@@ -1740,13 +1754,17 @@ public class MetadataPanel extends javax.swing.JDialog {
     //
     protected void deleteDimElement() 
     {
-        int vrow                = this.userLSM.getMaxSelectionIndex();
+        int vrow = this.userLSM.getMaxSelectionIndex();
+        if ( vrow == -1 ) // Nothing selected
+        	return;
+        
         int lastSelectedElement = this.userSdoMetadataTable.convertRowIndexToModel(vrow);
         if ( lastSelectedElement != -1 
              &&
              lastSelectedElement < this.userTM.getRowCount() )
         {
             this.userTM.deleteRow(lastSelectedElement);
+            this.userSdoMetadataTable.clearSelection();
         }
     }
 
@@ -2006,9 +2024,13 @@ public class MetadataPanel extends javax.swing.JDialog {
                 this.fireTableRowsInserted(0,cache.getEntryCount()-1);
         }
 
-        public void deleteRow(int _row) {
-            if ( cache != null && cache.getEntryCount() > 0 && _row < cache.getEntryCount() ) {
+        public void deleteRow(int _row) 
+        {
+            if ( cache != null 
+              && cache.getEntryCount() > 0 
+              && _row < cache.getEntryCount() ) {
                 cache.remove(_row);
+                userSdoMetadataTable.clearSelection();
                 this.fireTableRowsDeleted(0,cache.getEntryCount()-1);
             }
         }

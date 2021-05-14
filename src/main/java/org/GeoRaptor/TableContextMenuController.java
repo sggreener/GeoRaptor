@@ -1,5 +1,6 @@
 package org.GeoRaptor;
 
+import java.awt.Toolkit;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -13,6 +14,8 @@ import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
+import org.GeoRaptor.tools.Tools;
+import org.geotools.util.logging.Logger;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;
@@ -68,9 +71,24 @@ public class TableContextMenuController implements Controller
 		if (cmdId == ZOOM_TO_MAP || cmdId == ADD_TO_MAP) 
         {
             if ( isMySQL ) {
-                //Toolkit.getDefaultToolkit().beep();
-                JOptionPane.showMessageDialog(null, "MySQL support not yet Implemented");
+        		Tools.displayMessage(
+        				"MySQL support not yet Implemented",
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
             } else {
+
+            	if ( ! hasGeometryColumn(
+            			conn, 
+                        selectedSchemaName,
+                        selectedObjectName, 
+                        selectedColumnName) )
+            	{
+            		Tools.displayMessage(
+            				"No geometry column exists in " + selectedObjectName,
+            			    JOptionPane.WARNING_MESSAGE,
+            				true);
+            		return true;
+            	}
 
               // Add Object to spatial view
 			  SpatialViewPanel svp = SpatialViewPanel.getInstance();
@@ -91,14 +109,12 @@ public class TableContextMenuController implements Controller
       			MetadataPanel mp = MetadataPanel.getInstance();
     			boolean status = false;
 				try {
-					status = mp.initialise(
-					                     conn, 
-					                     selectedSchemaName,
-					                     selectedObjectName,
-					                     selectedColumnName,
-					                     connectionUserName);
+					status = mp.initialise(conn, 
+					                       selectedSchemaName,
+					                       selectedObjectName,
+					                       selectedColumnName,
+					                       connectionUserName);
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
     			if (status == true) {
@@ -115,6 +131,19 @@ public class TableContextMenuController implements Controller
             
         } else if (cmdId == CREATE_SPATIAL_INDEX) {
         	
+        	if ( ! hasGeometryColumn(
+        			  conn,
+        			  selectedSchemaName,
+                      selectedObjectName, 
+                      selectedColumnName) ) 
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
+        	
             ManageSpatialIndex msi = ManageSpatialIndex.getInstance(); 
             boolean status = msi.setInit(activeConnectionName, 
                                          selectedSchemaName,
@@ -126,7 +155,20 @@ public class TableContextMenuController implements Controller
             }
 			
 		} else if (cmdId == DROP_SPATIAL_INDEX) {
-			
+
+        	if ( ! hasGeometryColumn(
+                    conn,
+      			    selectedSchemaName,
+                    selectedObjectName, 
+                    selectedColumnName) ) 
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
+
 			// ManageSpatialIndex.getInstance().dropIndex(null, "", "", "", "", true);
             ManageSpatialIndex.getInstance().dropIndex(
             		conn, 
@@ -138,6 +180,19 @@ public class TableContextMenuController implements Controller
             );
             
 		} else if (cmdId == MANAGE_METADATA) {
+
+        	if ( ! hasGeometryColumn(
+        			conn, 
+                    selectedSchemaName,
+                    selectedObjectName, 
+                    selectedColumnName) )
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
 			
 			MetadataPanel mp = MetadataPanel.getInstance();
 			boolean status = false;
@@ -149,7 +204,6 @@ public class TableContextMenuController implements Controller
 				                     selectedColumnName,
 				                     connectionUserName);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			if (status == true) {
@@ -158,6 +212,19 @@ public class TableContextMenuController implements Controller
             
 		} else if (cmdId == DROP_METADATA) {
 
+        	if ( ! hasGeometryColumn(
+        			conn, 
+                    selectedSchemaName,
+                    selectedObjectName, 
+                    selectedColumnName) )
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
+        	
 			MetadataPanel mp = MetadataPanel.getInstance();
 			mp.deleteMetadata(conn, 
                               selectedSchemaName,
@@ -166,6 +233,19 @@ public class TableContextMenuController implements Controller
 
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
 			
+        	if ( ! hasGeometryColumn(
+        			conn, 
+                    selectedSchemaName,
+                    selectedObjectName, 
+                    selectedColumnName) )
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
+        	
             try 
             {
                 ExporterWizard ew = new ExporterWizard("Export to ...",
@@ -184,9 +264,22 @@ public class TableContextMenuController implements Controller
 
 		} else if (cmdId == VALIDATE_GEOMETRY || cmdId == VALIDATE_COLUMN) {
 			
-			ValidateSDOGeometry vs = new ValidateSDOGeometry();
-			vs.setVisible(true);
-					
+        	if ( ! hasGeometryColumn(
+        			conn, 
+                    selectedSchemaName,
+                    selectedObjectName, 
+                    selectedColumnName) )
+        	{
+        		Tools.displayMessage(
+        				"No geometry column exists in " + selectedObjectName,
+        			    JOptionPane.WARNING_MESSAGE,
+        				true);
+        		return true;
+        	}
+        	
+			//ValidateSDOGeometry vs = new ValidateSDOGeometry();
+			//vs.setVisible(true);
+
             if (this.validateSDOGeom == null) {
                 this.validateSDOGeom = new ValidateSDOGeometry();
             }
@@ -214,5 +307,21 @@ public class TableContextMenuController implements Controller
 		return action.isEnabled();
 	}
 
-
+	private boolean hasGeometryColumn(Connection _conn,
+                                      String     _schemaName, 
+                                      String     _objectName, 
+                                      String     _columnName) 
+	{
+	    String aGeomColumn;
+		try {
+			aGeomColumn = Queries.getGeometryColumn(
+					                 _conn,
+					                 _schemaName,
+					                 _objectName,
+					                 _columnName);
+		} catch (Exception e) {
+			return false;
+		}
+	    return ! Strings.isEmpty(aGeomColumn);
+	}
 }

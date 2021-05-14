@@ -60,7 +60,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -76,7 +75,6 @@ import org.GeoRaptor.SpatialView.SupportClasses.MyImageSelection;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
-import org.GeoRaptor.SpatialView.layers.SVDrawQueries;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerDraw;
@@ -85,6 +83,9 @@ import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
+import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
@@ -97,13 +98,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import oracle.spatial.geometry.JGeometry;
-
-import org.GeoRaptor.layout.XYConstraints;
-import org.GeoRaptor.layout.XYLayout;
-import org.GeoRaptor.sql.Queries;
 
 
 /**
@@ -121,7 +117,7 @@ extends JPanel
     /** 
      * Handle to Preferences File 
      **/
-    Preferences SVPanelPreferences;
+    Preferences preferences = null;
     
     /** 
      * Properties File Manager
@@ -132,7 +128,7 @@ extends JPanel
     
     private XYLayout xyMainToolbarLayout = new XYLayout();
 
-    public static enum LayerReturnCode {Metadata,MBR,Fail,Success};  
+    public static enum LayerReturnCode {Metadata,MBR,Fail,Success,Silent};  
     
     /**
      * User interface 
@@ -203,7 +199,7 @@ extends JPanel
         {
             // Get handle to preferences
             //
-            this.SVPanelPreferences = MainSettings.getInstance().getPreferences();
+            this.preferences = MainSettings.getInstance().getPreferences();
             
             try {
                 // Get localisation file
@@ -241,7 +237,7 @@ extends JPanel
             
             setIconsAndText();
             
-            int splitPos = SVPanelPreferences.getMainLayerSplitPos();
+            int splitPos = preferences.getMainLayerSplitPos();
             if ( splitPos < 100 ) {
                 // convert to pixels as cannot set percentage when window not visible
                 this.mainLayerSplitPercentage = splitPos == 0 ? 10 : splitPos;
@@ -251,7 +247,7 @@ extends JPanel
             }
             mainLayerSplit.setDividerLocation(splitPos + mainLayerSplit.getInsets().left);
             
-            splitPos = SVPanelPreferences.getMainSplitPos();
+            splitPos = preferences.getMainSplitPos();
             if ( splitPos < 100 ) {
                 // convert to pixels as cannot set percentage when window not visible
                 this.mainSplitPercentage = splitPos == 0 ? 10 : splitPos;
@@ -285,7 +281,7 @@ extends JPanel
         this.viewLayerTree.expandAll();
     }
 
-    public void show()
+	public void show()
     {
     	if ( this.viewFrame == null ) {
     		this.viewFrame = new JFrame(Constants.GEORAPTOR);
@@ -295,7 +291,6 @@ extends JPanel
         this.viewFrame.setVisible(true);
         this.viewFrame.add(this);
 //        this.viewFrame.pack();
-        this.viewFrame.setVisible(true);
     	this.redraw(); 
     }
     /** 
@@ -753,7 +748,7 @@ extends JPanel
         // Position of layer tree depends on preference
         //
         mainLayerSplit.add(LayerTreePanel,
-                           SVPanelPreferences.getTOCPosition().equalsIgnoreCase(JSplitPane.LEFT) ?
+                           preferences.getTOCPosition().equalsIgnoreCase(JSplitPane.LEFT) ?
                            JSplitPane.LEFT : JSplitPane.RIGHT);
         mainSplit.add(mainLayerSplit, JSplitPane.LEFT);
         mainSplit.add(attDataView, JSplitPane.RIGHT);
@@ -1056,12 +1051,12 @@ extends JPanel
      // and let SpatialView constructor create name from SRID
      //
     public boolean createDefaultView(boolean _active) {
-        String defaultViewName = SpatialView.createViewName(SVPanelPreferences.getSRID());
+        String defaultViewName = SpatialView.createViewName(preferences.getSRID());
         SpatialView defaultSpatialView = this.getView(defaultViewName);
         if ( defaultSpatialView==null ) {
             defaultSpatialView = 
                 this.newView(defaultViewName,
-                             SVPanelPreferences.getSRID(),
+                             preferences.getSRID(),
                              _active); // Ignore SpatialView returned
             return ( defaultSpatialView == null ) ? false : true;
         } else {
@@ -1071,12 +1066,12 @@ extends JPanel
      }
 
     public boolean hasDefaultView() {
-        String defaultViewName = SpatialView.createViewName(SVPanelPreferences.getSRID());
+        String defaultViewName = SpatialView.createViewName(preferences.getSRID());
         return this.getView(defaultViewName)==null?false:true;
     }
     
      public String getDefaultSRID() {
-       return SVPanelPreferences.getSRID();
+       return preferences.getSRID();
      }
 
      public ImageIcon getQueryIcon(ViewOperationListener.VIEW_OPERATION _vol) 
@@ -1167,7 +1162,7 @@ extends JPanel
         if ( this.getWidth() != 0 ) {
             this.mainLayerSplitPercentage = Math.round( (float)this.mainLayerSplit.getDividerLocation() / (float)this.getWidth() * 100.0f);
             // Save change to global preferences
-            this.SVPanelPreferences.setMainLayerSplitPos(this.mainLayerSplitPercentage);
+            this.preferences.setMainLayerSplitPos(this.mainLayerSplitPercentage);
         }
     }
     
@@ -1180,7 +1175,7 @@ extends JPanel
         if ( this.getHeight() != 0 ) {
             this.mainSplitPercentage = Math.round( (float)this.mainSplit.getDividerLocation() / (float)this.getHeight() * 100.0f);
             // Save change to global preferences
-            this.SVPanelPreferences.setMainSplitPos(this.mainSplitPercentage);
+            this.preferences.setMainSplitPos(this.mainSplitPercentage);
         }
     }
     
@@ -1276,7 +1271,9 @@ extends JPanel
               return LayerReturnCode.Fail;
             }
             if ( geoColumns==null || geoColumns.size()==0) {
-                throw new Exception("No geometry columns exist in " + Strings.append(_schemaName, _objectName, "."));
+            	setMessage("No geometry columns exist in " + Strings.append(_schemaName, _objectName, "."),
+            			   true);
+            	return LayerReturnCode.Silent;
             } 
             
             // **************************************************************
@@ -1328,9 +1325,10 @@ extends JPanel
         // Now get new layer's metadata
         //
         String schemaTableColumn =
-            Strings.append(_schemaName, Strings.append(_objectName,
-                                                       columnName,
-                                                       Constants.TABLE_COLUMN_SEPARATOR),
+            Strings.append(_schemaName, 
+                           Strings.append(_objectName,
+                                          columnName,
+                                          Constants.TABLE_COLUMN_SEPARATOR),
                            Constants.TABLE_COLUMN_SEPARATOR);
         
         MetadataEntry mEntry = null;
@@ -1397,7 +1395,7 @@ extends JPanel
         //
         SVTableLayer layer = new SVTableLayer(this.activeView,  // Use activeView temporarily
                                               layerName, 
-                                              SVPanelPreferences.isSchemaPrefix()
+                                              preferences.isSchemaPrefix()
                                                 ? layerName 
                                                 : Strings.append(mEntry.getObjectName(),
                                                                  mEntry.getColumnName(),
@@ -1424,8 +1422,8 @@ extends JPanel
         } else {
             layer.setPrecision(-1);  // -1 forces calculation
         }
-        layer.setFetchSize(    this.SVPanelPreferences.getFetchSize());
-        layer.setMinResolution(this.SVPanelPreferences.isMinResolution());
+        layer.setFetchSize(    this.preferences.getFetchSize());
+        layer.setMinResolution(this.preferences.isMinResolution());
         layer.getStyling().setSelectionShadeTransLevel(Constants.SOLID);
         layer.getStyling().setShadeTransLevel(Constants.SOLID);
         layer.setIndex();    // Will call MetadataTool.hasSpatialIndex()
@@ -1577,7 +1575,7 @@ extends JPanel
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 mainLayerSplit.add(_sView.getMapPanel(),
-                                   SVPanelPreferences.getTOCPosition().equalsIgnoreCase(JSplitPane.LEFT)
+                                   preferences.getTOCPosition().equalsIgnoreCase(JSplitPane.LEFT)
                                    ? JSplitPane.RIGHT
                                    : JSplitPane.LEFT);
                 // Re-Apply splits
@@ -2018,9 +2016,9 @@ extends JPanel
                     propertiesLayer.getStyling().setLineColor(Colours.getRandomColor());
                     propertiesLayer.getStyling().setShadeColor(Colours.getRandomColor());
                     propertiesLayer.getStyling().setShadeTransLevel(0.5f);
-                    propertiesLayer.getStyling().setPointColorType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                    propertiesLayer.getStyling().setLineColorType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                    propertiesLayer.getStyling().setShadeType(SVPanelPreferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+                    propertiesLayer.getStyling().setPointColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+                    propertiesLayer.getStyling().setLineColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+                    propertiesLayer.getStyling().setShadeType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
                 }
             } 
         } else {
@@ -2402,7 +2400,7 @@ extends JPanel
         SwingUtilities.invokeLater(new Runnable() {
             public void run() 
             {
-                DecimalFormat dFormat = Tools.getNLSDecimalFormat(_precision,SVPanelPreferences.getGroupingSeparator());
+                DecimalFormat dFormat = Tools.getNLSDecimalFormat(_precision,preferences.getGroupingSeparator());
                 String labelText = "";
                 labelText = String.format(defaultCoordFormat,
                                           dFormat.format(_x),
@@ -2433,7 +2431,7 @@ extends JPanel
                     worldUpperRightIcon.setText(defaultCoordText);
                     worldLowerLeftIcon.setText(defaultCoordText);
                 } else {
-                    DecimalFormat dFormat = Tools.getDecimalFormatter(_precision,SVPanelPreferences.getGroupingSeparator());
+                    DecimalFormat dFormat = Tools.getDecimalFormatter(_precision,preferences.getGroupingSeparator());
                     String labelText = "";
                     labelText = String.format(defaultCoordFormat, 
                                               dFormat.format(_mbr.minX),

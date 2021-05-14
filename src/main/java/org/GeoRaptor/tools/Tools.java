@@ -51,6 +51,7 @@ import oracle.sql.NUMBER;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
+import org.GeoRaptor.Messages;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
@@ -67,7 +68,7 @@ public class Tools {
     /**
      * For access to preferences
      */
-    protected static Preferences geoRaptorPreferences;
+    protected static Preferences preferences;
 
     public Tools() {
         super();
@@ -751,6 +752,30 @@ public class Tools {
     {
         Connection localConnection = DatabaseConnections.getInstance().getActiveConnection(); 
         return Tools.discoverSRIDType(localConnection,_srid);
+    }
+
+    public static void displayMessage(String _message, int _messageType, boolean _bell)
+    {
+    	/*
+    	  ERROR_MESSAGE = 0;
+    	  INFORMATION_MESSAGE = 1;
+    	  WARNING_MESSAGE = 2;
+    	  QUESTION_MESSAGE = 3;
+    	*/
+    	
+    	if ( _bell )
+            Toolkit.getDefaultToolkit().beep();
+    	// Check preferences
+    	preferences = MainSettings.getInstance().getPreferences();
+        boolean useDialog = preferences.getUseDialog();
+    	if ( useDialog )
+           JOptionPane.showMessageDialog(
+        		   null,
+                   _message,
+                   Constants.GEORAPTOR,
+                   _messageType);
+    	else
+    		Messages.log(_message,false);
     }
 
 }

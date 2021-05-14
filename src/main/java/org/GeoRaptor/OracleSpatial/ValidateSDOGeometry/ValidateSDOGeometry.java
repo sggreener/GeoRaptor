@@ -30,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DateFormat;
 import java.text.NumberFormat;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -75,32 +74,22 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
-import oracle.jdbc.OraclePreparedStatement;
-import oracle.jdbc.OracleResultSet;
-import oracle.jdbc.OracleTypes;
-
-import org.GeoRaptor.layout.XYConstraints;
-import org.GeoRaptor.layout.XYLayout;
-
-import oracle.spatial.geometry.ElementExtractor;
-import oracle.spatial.geometry.J3D_Geometry;
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
-import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.Preferences;
+import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
-import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVSpatialLayerProps;
 import org.GeoRaptor.SpatialView.layers.Styling;
 import org.GeoRaptor.SpatialView.layers.iLayer;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
@@ -114,10 +103,15 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.TableSortIndicator;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
+import oracle.jdbc.OraclePreparedStatement;
+import oracle.jdbc.OracleResultSet;
+import oracle.jdbc.OracleTypes;
+import oracle.spatial.geometry.ElementExtractor;
+import oracle.spatial.geometry.J3D_Geometry;
+import oracle.spatial.geometry.JGeometry;
 
 /**
  * Table manu point - validate values in selected geometry column
@@ -141,7 +135,9 @@ import org.geotools.util.logging.Logging;
  *          Improved dialog by application of titled borders etc.
  *          Added copy to clipboard for SELECT and UPDATE statements
  */
-public class ValidateSDOGeometry extends JDialog implements Observer 
+public class ValidateSDOGeometry 
+extends JDialog 
+implements Observer 
 {
 	private static final long serialVersionUID = -8079134652561357147L;
 
@@ -149,11 +145,12 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     
     protected Preferences geoRaptorPreferences;
 
-    protected PropertiesManager  propertyManager    = null;
-    protected ErrorDialogHandler errorDialogHandler = null;
-    private static final String     propertiesFile  = "org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.Validation";
-    protected PropertiesManager         helpManager = null;
-    private static final String   errorCodeHelpFile = "org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ErrorCodes";
+    protected PropertiesManager  propertyManager   = null;
+    private static final String     propertiesFile = "org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.Validation";
+    
+    protected ErrorDialogHandler           errorDialogHandler = null;
+    protected PropertiesManager                   helpManager = null;
+    private static final String   errorCodeHelpPropertiesFile = "org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ErrorCodes";
 
     public static final String primaryKeyColumnName = "gid";
     public static final String        contextColumn = "context";
@@ -215,7 +212,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             //
                this.propertyManager = new PropertiesManager(ValidateSDOGeometry.propertiesFile);
             this.errorDialogHandler = new ErrorDialogHandler(ValidateSDOGeometry.propertiesFile);
-                   this.helpManager = new PropertiesManager(ValidateSDOGeometry.errorCodeHelpFile);
+                   this.helpManager = new PropertiesManager(ValidateSDOGeometry.errorCodeHelpPropertiesFile);
                     this.renderTool = new RenderTool();
             this.connectionName = DatabaseConnections.getActiveConnectionName();
         } catch (Exception e) {
@@ -224,22 +221,29 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
         try {
             jbInit();
+            //this.pack();
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
+
         setPropertyStrings();
+        
         //this.svp = DockableSV.getSpatialViewPanel();
         this.svp = SpatialViewPanel.getInstance();
+        
         this.vtModel = new ValidationTableModel(  );
-        this.vtModel.addTableModelListener(new TableModelListener() {
-            public void tableChanged(TableModelEvent e) {
-                 return;
-            }
-        });
+        
+        this.vtModel.addTableModelListener(
+               new TableModelListener() {
+                   public void tableChanged(TableModelEvent e) {
+                     return;
+                   }
+               });
         this.resultTable.setModel(this.vtModel);
         
         TableColumnModel tcm = this.resultTable.getColumnModel();
+        
         tcm.getColumn(0).setPreferredWidth(130);
         tcm.getColumn(0).setResizable(true);
         tcm.getColumn(1).setPreferredWidth(50);
@@ -307,7 +311,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         this.outFormat = DateFormat.getTimeInstance(DateFormat.LONG,Locale.getDefault());        
     }
 
-    private void tfFilter_focusLost(FocusEvent e) {
+	private void tfFilter_focusLost(FocusEvent e) {
         this.applyFilter();
         this.setMessage(propertyManager.getMsg("MESSAGE_FILTERED"));
     }
@@ -629,11 +633,13 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         pnlProcessing.add(btnValidationActions,
                           new XYConstraints(320, -4, 145, 20));
         boxLayout = new BoxLayout(pnlValidationForm, BoxLayout.PAGE_AXIS);
+        
         pnlValidationForm.setLayout(boxLayout);
         pnlValidationForm.add(pnlMetadata, 0);
         pnlValidationForm.add(pnlProcessing, 1);
+        
         this.getContentPane().add(pnlValidationForm, BorderLayout.CENTER);
-        this.pack();
+        
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -670,6 +676,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     
     // End of variables declaration//GEN-END:variables
 
+    // ***********************************************
+    
     public void init(String _connName, 
                      String _schemaName,
                      String _objectName,
@@ -688,13 +696,18 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         Connection conn = DatabaseConnections.getInstance().getConnection(_connName);
         if ( conn!=null ) {
             if ( DatabaseConnections.getInstance().isConnectionOpen(_connName)) {
-                geoColumn = Queries.getGeometryColumn(conn,_schemaName,_objectName,_columnName);
+                geoColumn = Queries.getGeometryColumn(
+                		               conn,
+                		               _schemaName,
+                		               _objectName,
+                		               _columnName);
                 if (Strings.isEmpty(geoColumn) ) {
-                    this.errorDialogHandler.showErrorDialog(this,
-                                                         "ERROR_MESSAGE_NO_COLUMNS",
-                                                            Strings.append(_schemaName,
-                                                                      _objectName,
-                                                                      Constants.TABLE_COLUMN_SEPARATOR));
+                    this.errorDialogHandler
+                        .showErrorDialog(this,
+                                         "ERROR_MESSAGE_NO_COLUMNS",
+                                         Strings.append(_schemaName,
+                                                        _objectName,
+                                                        Constants.TABLE_COLUMN_SEPARATOR));
                     return;            
                 }
             }
@@ -707,22 +720,27 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         // If nothing we can't do anything
         //
         if ( this.metadata == null || this.metadata.size() == 0) {
-            this.errorDialogHandler.showErrorDialog(this,
-                                                    "ERROR_MESSAGE_NO_METADATA", Strings.objectString(_schemaName,
-                                                                           _objectName,
-                                                                           geoColumn,
-                                                                           Constants.TABLE_COLUMN_SEPARATOR));
+            this.errorDialogHandler
+                .showErrorDialog(this,
+                                 "ERROR_MESSAGE_NO_METADATA", 
+                                 Strings.objectString(_schemaName,
+                                                      _objectName,
+                                                      geoColumn,
+                                                      Constants.TABLE_COLUMN_SEPARATOR));
             return;
         }
 
         // Set up cmbGeoColumns and
         // Copy data relating to current column cmbGeoColumns
         //
-        if ( this.cmbGeoColumns.getItemCount() != 0 )
+        if ( this.cmbGeoColumns.getItemCount() != 0 ) {
             this.cmbGeoColumns.removeAllItems();
+        }
+        
         MetadataEntry mEntry = null;
         Iterator<String> keyIter = metadata.keySet().iterator();
-        while (keyIter.hasNext()) {
+        while (keyIter.hasNext()) 
+        {
             String key = (String)keyIter.next();
             mEntry = this.metadata.get(key);
             this.cmbGeoColumns.addItem(mEntry.getColumnName());
@@ -755,13 +773,15 @@ public class ValidateSDOGeometry extends JDialog implements Observer
 
         // set dialog title with table name
         this.setTitle(this.DIALOG_TITLE + "[" + Strings.objectString(_schemaName,_objectName,geoColumn) + "]");
-        //this.setLocationRelativeTo(super.getComponent(0));
+        
+        this.setLocationRelativeTo(super.getComponent(0));
         this.setVisible(true);
     }
 
     private void createDisplayLayer(String geoColumn) 
     {
-        try {
+        try 
+        {
             // Save current active view and layer
             //
             this.currentActiveView  = this.svp.getActiveView();
@@ -887,25 +907,30 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         //
         try 
         {
-            List<String> keyColumns = Queries.keysAndColumns(this.getConnection(),this.getSchemaName(),this.getObjectName());
+            List<String> keyColumns = Queries.keysAndColumns(
+            		                          this.getConnection(),
+            		                          this.getSchemaName(),
+            		                          this.getObjectName());
             if (keyColumns.size() != 0) 
                 for (int i = 0; i < keyColumns.size(); i++) {
                     this.cmbKeyColumns.addItem(keyColumns.get(i));
                 }
         } catch (SQLException sqle ) {
-            this.errorDialogHandler.showErrorDialog(this,
-                                                 "ERROR_MESSAGE_CANDIDATE_KEYS",
-                                                    Strings.append(this.getSchemaName(),
-                                                              this.getObjectName(),
-                                                              Constants.TABLE_COLUMN_SEPARATOR) + "\n" +
+            this.errorDialogHandler
+                .showErrorDialog(this,
+                                 "ERROR_MESSAGE_CANDIDATE_KEYS",
+                                 Strings.append(this.getSchemaName(),
+                                                this.getObjectName(),
+                                                Constants.TABLE_COLUMN_SEPARATOR) + "\n" +
                                  sqle.getMessage().toString() + "\n" +
                                  "Will use ROWID.");
         } catch (IllegalArgumentException iae ) {
-          this.errorDialogHandler.showErrorDialog(this,
-                                               "ERROR_MESSAGE_CANDIDATE_KEYS",
-                                                    Strings.append(this.getSchemaName(),
-                                                            this.getObjectName(),
-                                                            Constants.TABLE_COLUMN_SEPARATOR) + "\n" +
+          this.errorDialogHandler
+              .showErrorDialog(this,
+                               "ERROR_MESSAGE_CANDIDATE_KEYS",
+                               Strings.append(this.getSchemaName(),
+                                              this.getObjectName(),
+                                              Constants.TABLE_COLUMN_SEPARATOR) + "\n" +
                                iae.getMessage().toString() + "\n" +
                                "Will use ROWID.");
         }
@@ -918,10 +943,10 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     {
         try {
             this.metadata = Queries.getMetadata(this.getConnection(),
-                                                     this.getSchemaName(), 
-                                                     this.getObjectName(), 
-                                                     null,
-                                                     false);
+                                                this.getSchemaName(), 
+                                                this.getObjectName(), 
+                                                null,
+                                                false);
         } catch (SQLException sqle) {
             JOptionPane.showMessageDialog(null,
                                           "Error retrieving metadata for " +
@@ -934,8 +959,10 @@ public class ValidateSDOGeometry extends JDialog implements Observer
 
     private void btnCreateSQL_actionPerformed(ActionEvent e) {
         lblMessages.setText("");
-        if (Strings.isEmpty(this.userSQL) )
+        if (Strings.isEmpty(this.userSQL) ) {
             this.userSQL = this.getInitialSQL();
+        }
+        
         ValidationSelectQuery vqr = new ValidationSelectQuery(this,"",true,this);
         vqr.setSql(this.userSQL);
         vqr.setNullGeoms(this.nullGeoms);  // Actually set on creation of form
@@ -954,7 +981,8 @@ public class ValidateSDOGeometry extends JDialog implements Observer
         this.lblTolerance.setEnabled( ! this.cbDimInfo.isSelected() );
     }//GEN-LAST:event_cbAllSchemasItemStateChanged
 
-    private void exitButton_actionPerformed(ActionEvent e) {
+    private void cleanUp() 
+    {    	
         if ( this.newView != null ) {
             this.svp.getViewLayerTree().removeView(this.newView.getViewName(),false);
             this.svp.setActiveView(this.currentActiveView);
@@ -967,8 +995,13 @@ public class ValidateSDOGeometry extends JDialog implements Observer
             this.currentActiveView.removeLayer(this.validationLayer.getLayerName(),false);
         }
         this.svp.getActiveView().setActiveLayer(this.currentActiveLayer);
-        this.svp.getViewLayerTree().expandView(this.currentActiveView.getViewName());
-        this.dispose();
+        this.svp.getViewLayerTree().expandView(this.currentActiveView.getViewName());    	
+        this.setVisible(false);
+        //this.dispose();
+    }
+    
+    private void exitButton_actionPerformed(ActionEvent e) {
+    	this.cleanUp();
     }
 
     private void bulkDeleteErrors() 
@@ -1548,6 +1581,7 @@ public class ValidateSDOGeometry extends JDialog implements Observer
     public void setSRID(String _srid) {
         this.tfSRID.setText(_srid);
     }
+    
     public String getSRID() {
         String processingObject = Strings.objectString(this.getSchemaName(),this.getObjectName(),this.getSelectedColumnName());
         return this.metadata.get(processingObject).getSRID();

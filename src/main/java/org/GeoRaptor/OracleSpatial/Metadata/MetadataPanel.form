@@ -7,6 +7,7 @@
   </Properties>
   <SyntheticProperties>
     <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
+    <SyntheticProperty name="generateCenter" type="boolean" value="false"/>
   </SyntheticProperties>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
@@ -26,12 +27,14 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="panelObjectMetadata" alignment="0" max="32767" attributes="1"/>
+                  <Component id="panelObjectMetadata" alignment="0" pref="877" max="32767" attributes="1"/>
                   <Component id="panelCurrentMetadata" alignment="0" max="32767" attributes="1"/>
                   <Group type="102" alignment="0" attributes="1">
                       <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
                       <Component id="btnHelp" max="32767" attributes="0"/>
-                      <EmptySpace min="-2" pref="717" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnReload" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="638" max="-2" attributes="0"/>
                       <Component id="btnClose" max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -49,6 +52,7 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="btnHelp" alignment="3" max="32767" attributes="0"/>
                   <Component id="btnClose" alignment="3" max="32767" attributes="0"/>
+                  <Component id="btnReload" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace min="-2" max="-2" attributes="0"/>
           </Group>
@@ -258,7 +262,7 @@
               <Group type="102" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="pnlDimElements" alignment="0" max="32767" attributes="0"/>
+                      <Component id="pnlDimElements" alignment="0" pref="845" max="32767" attributes="0"/>
                       <Group type="102" alignment="1" attributes="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="lblGeometryColumn" alignment="1" max="32767" attributes="1"/>
@@ -307,8 +311,8 @@
                               </Group>
                           </Group>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="lblObject" pref="15" max="32767" attributes="0"/>
-                              <Component id="tfSelectedObject" pref="0" max="32767" attributes="0"/>
+                              <Component id="lblObject" max="32767" attributes="0"/>
+                              <Component id="tfSelectedObject" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
@@ -321,14 +325,14 @@
                               <Component id="tfSRID" alignment="0" pref="21" max="32767" attributes="1"/>
                               <Component id="btnSRID" alignment="0" pref="21" max="32767" attributes="1"/>
                           </Group>
-                          <EmptySpace pref="11" max="32767" attributes="0"/>
+                          <EmptySpace pref="16" max="32767" attributes="0"/>
                       </Group>
-                      <Component id="pnlConnection" min="0" pref="106" max="32767" attributes="1"/>
+                      <Component id="pnlConnection" min="0" max="32767" attributes="1"/>
                   </Group>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                  <Component id="pnlDimElements" pref="172" max="32767" attributes="0"/>
+                  <Component id="pnlDimElements" pref="177" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="btnUpdate" max="32767" attributes="0"/>
+                  <Component id="btnUpdate" pref="28" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -539,7 +543,7 @@
                   <Group type="102" alignment="0" attributes="0">
                       <Group type="103" groupAlignment="3" attributes="0">
                           <Component id="lblDBConnection" alignment="3" max="32767" attributes="0"/>
-                          <Component id="cmbConnections" alignment="3" max="32767" attributes="0"/>
+                          <Component id="cmbConnections" alignment="3" pref="22" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="3" attributes="0">
@@ -547,7 +551,7 @@
                           <Component id="tfConnectedSchema" alignment="3" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="btnReloadConnections" max="32767" attributes="0"/>
+                      <Component id="btnReloadConnections" pref="26" max="32767" attributes="0"/>
                       <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -714,9 +718,9 @@
                           </Group>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="scrollUserSdoMetadataTable" pref="66" max="32767" attributes="0"/>
+                      <Component id="scrollUserSdoMetadataTable" pref="70" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="btnAddElement" max="32767" attributes="0"/>
+                      <Component id="btnAddElement" pref="28" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -870,5 +874,15 @@
         </Component>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JButton" name="btnReload">
+      <Properties>
+        <Property name="mnemonic" type="int" value="82"/>
+        <Property name="text" type="java.lang.String" value="Reload Metadata"/>
+        <Property name="actionCommand" type="java.lang.String" value=""/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnReloadActionPerformed"/>
+      </Events>
+    </Component>
   </SubComponents>
 </Form>

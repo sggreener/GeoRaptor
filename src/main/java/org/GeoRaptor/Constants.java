@@ -510,7 +510,8 @@ public class Constants {
 	public static final String KEY_QUERY_LIMIT = "queryLimit";
 	public static final String KEY_GEOMETRY_COLUMN_NAME = "defGeomColName";
 	public static final String KEY_LAYER_RENDER_RANDOM = "layerRenderRandom";
-
+	public static final String KEY_USE_DIALOG = "useDialogForMessages";
+	
 	/**
 	 * Preference Default Values: One needed per KEY above
 	 **/
@@ -589,5 +590,6 @@ public class Constants {
 			+ "<ActiveLayer></ActiveLayer><RenderingHint>SPEED</RenderingHint><MBR><MinX>0</MinX><MinY>0</MinY><MaxX>1</MaxX><MaxY>1</MaxY></MBR>"
 			+ "<MapBackground>-1</MapBackground><ScaleBar>true</ScaleBar><SRIDBaseUnitType>M</SRIDBaseUnitType>"
 			+ "<Layers></Layers>" + "</View></Views></SpatialPanel></GeoRaptor>";
+	public static final boolean VAL_USE_DIALOG = true;
 
 }

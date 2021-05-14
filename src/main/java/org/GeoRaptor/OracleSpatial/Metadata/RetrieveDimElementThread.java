@@ -110,6 +110,7 @@ public class RetrieveDimElementThread implements Runnable {
                 "               and Gs.Srid = n." + columnName + ".Sdo_Srid)) over (order by 1) end As isGeographic,\n" + 
                 "        n." + columnName + " as geom \n" + 
                 "   From " + objectName + " n \n" + 
+                "  Where n." + this.me.getColumnName() + " is not null\n" + 
                 ") " +
                "Select Min(B.X) As " + xLB + ", \n" +
                "       Max(B.X) As " + xUB + ", \n" +

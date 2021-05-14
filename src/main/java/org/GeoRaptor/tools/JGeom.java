@@ -36,15 +36,23 @@ public class JGeom {
                 _jGeom.getType();
     }
 
-    public static Struct toStruct(JGeometry _geom, 
-                                 Connection _conn) 
-    throws Exception 
+    public static Struct toStruct(JGeometry _jGeom, 
+                                 Connection _conn)  
     {
       Struct stGeom = null;
-      String sdo_geometry = null;
-	  sdo_geometry = RenderTool.renderGeometryAsPlainText(_geom, Constants.TAG_MDSYS_SDO_GEOMETRY, Constants.bracketType.NONE,12);
-      stGeom = Queries.getSdoGeometry(_conn,sdo_geometry);
-      // stGeom = JGeom.fromGeometry(_geom,_conn);
+      try 
+      {
+    	  stGeom = JGeometry.storeJS(_jGeom,_conn);
+      } catch (Exception e) {
+    	  String sdo_geometry = null;
+    	  sdo_geometry = RenderTool.renderGeometryAsPlainText(_jGeom, Constants.TAG_MDSYS_SDO_GEOMETRY, Constants.bracketType.NONE,12);
+          try 
+          {
+        	  stGeom = Queries.getSdoGeometry(_conn,sdo_geometry);
+          } catch (SQLException e1) {
+			  e1.printStackTrace();
+          }
+      }
       return stGeom;
     }
     

@@ -3,6 +3,7 @@ package org.GeoRaptor;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -56,10 +57,11 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 	// private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.PreferencesPanel");
 
-	private static PreferencePanel classInstance;
-	private Preferences prefs = null;
-	protected ResourceBundle rBundle = ResourceBundle.getBundle("org.GeoRaptor.PreferencesPanel",
-			Locale.getDefault());
+	private static PreferencePanel classInstance = null;
+	
+	private Preferences preferences = null;
+	
+    protected ResourceBundle rBundle = null;
 
 	private InputVerifier verifyTableCountLimit = null;
 	private InputVerifier verifyImageDimension = null;
@@ -77,10 +79,12 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 	public PreferencePanel() {
 		super();
-		try {
+		try 
+		{
+			this.rBundle = ResourceBundle.getBundle("org.GeoRaptor.PreferencesPanel",Locale.getDefault());
 			jbInit();
 			loadPreferenceStrings();
-			applyPreferenceStrings();
+			applyPreferenceStrings();                     
 			setVerifiers();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -98,22 +102,15 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		return Preferences.getInstance(tc.getPropertyStorage());
 	}
 
-	/*************************************
-	 * User Interface Widgets
-	 **/
-
+    // Variables declaration - do not modify                     
 	private JTabbedPane tpPreferences = new JTabbedPane();
 
 	private JPanel pnlSpatialView = new JPanel();
 
 	private JLabel lblNewLayerPosition = new JLabel();
-	private JComboBox<String> cmbNewLayerPosition = new JComboBox<>(new String[] {
-			                                                 Constants.layerPositionType.TOP.toString(), 
-			                                                 Constants.layerPositionType.BOTTOM.toString() });
+	private JComboBox<String> cmbNewLayerPosition = new JComboBox<String>();
 	private JLabel lblTOCPosition = new JLabel();
-	private JComboBox<String> cmbTOCPosition = new JComboBox<>(new String[] { 
-                                                             JSplitPane.LEFT.toUpperCase(), 
-                                                             JSplitPane.RIGHT.toUpperCase() });
+	private JComboBox<String> cmbTOCPosition = new JComboBox<String>();
 
 	private JCheckBox cbDrawQueryGeometry = new JCheckBox();
 	private JCheckBox cbSQLSchemaPrefix = new JCheckBox();
@@ -146,8 +143,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private XYLayout xYObjectTextLayout = new XYLayout();
 	private JCheckBox cbColourSdoGeometry = new JCheckBox();
 	private JLabel lblSdoGeometryBracketing = new JLabel();
-	private JComboBox<String> cmbSdoGeometryBracket      = new JComboBox<>(Constants.getBracketTypes());
-	private JComboBox<String> cmbSdoGeometryVisualFormat = new JComboBox<>(Constants.getRenderTypes());
+	private JComboBox<String> cmbSdoGeometryBracket      = new JComboBox<String>();
+	private JComboBox<String> cmbSdoGeometryVisualFormat = new JComboBox<String>();
 	private JCheckBox cbSdoGeomCoordNumbering = new JCheckBox();
 	private JCheckBox cbSdoGeometryFormat = new JCheckBox();
 	private JLabel lblSdoGeometryVisualFormat = new JLabel();
@@ -206,7 +203,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JTextField tfDefFetchSize = new JTextField();
 	private JLabel lblDefFetchSize = new JLabel();
 	private JLabel lblDefaultSRID = new JLabel();
-
+	private JCheckBox cbUseDialog = new JCheckBox();
+	
 	// Fourth tab - Defaults
 	//
 	//private JPanel pnlDefaults = new JPanel();
@@ -218,9 +216,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JTextField tfNullString = new JTextField();
 	private JLabel lblNullString = new JLabel();
 	private JLabel lblNullNumber = new JLabel();
-	private JFormattedTextField tfNullNumber = new JFormattedTextField(Tools.getNLSDecimalFormat(-1, false));
-	private JFormattedTextField tfNullInteger = new JFormattedTextField(
-			new JFormattedTextField(NumberFormat.getIntegerInstance()));
+	private JFormattedTextField tfNullNumber = new JFormattedTextField();
+	private JFormattedTextField tfNullInteger = new JFormattedTextField();
 	private JTextField tfNullDate = new JTextField();
 	private JLabel lblNullDate = new JLabel();
 	private JLabel lblNullInteger = new JLabel();
@@ -233,89 +230,11 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JRadioButton rbBegin10 = new JRadioButton();
 	private JRadioButton rbLast10 = new JRadioButton();
 
-	/*************************************
-	 * Internationalization Strings
-	 **/
-
-	protected String sTpMiscellaneous = "Miscellaneous";
-	protected String sTpSpatialView = "Spatial View (*Restart)";
-	protected String sTpVisualisation = "Visualisation";
-	protected String sTpImportExport = "Import/Export";
-
-	protected String sBtnSRID = "Select SRID";
-	protected String sCbColourDimInfo = "Colour DimInfo elements:";
-	protected String sCbColourDimInfoTT = "Activate colouring of DimInfo structures.";
-	protected String sCbColourSdoGeometry = "Colour SDO_GEOMETRY elements?";
-	protected String sCbColourSdoGeometryTT = "Render Sdo_Geometry components in colour (or BW) in tabular views";
-	protected String sCbMinResolution = "SDO_FILTER pixel filtering (not points)";
-	protected String sCbSchemaPrefix = "Prefix Initial layer name with schema?";
-	protected String sCbSchemaPrefixTT = "If ticked, the initial visible layer name will be prefixed with the schema eg SCHEMA.TABLE.COLUMN, otherwise just TABLE.COLUMN";
-	protected String sCbSdoGeomCoordNumbering = "Number SDO_ORDINATE_ARRAY coordinates?";
-	protected String sCbSdoGeomCoordNumberingTT = "Number Coordinate groups using subscripts eg (1,2,3)1, (4,5,6)2 etc";
-	protected String sCbSdoGeometryFormat = "Render directly from SDO_GEOMETRY:";
-	protected String sCbLogSearchStats = "Log SQL Statements:";
-	protected String sCbSdoGeometryFormatTT = "When rendering geometries use native SDO_GEOMETRY (don't convert to JGeometry).";
-	protected String sCmbSdoGeometryBracketTT = "Group Sdo_Elem_Info elements into triplets and Sdo_Ordinates into Coordinate groupings using brackets ()";
-	protected String sCmbSdoGeometryVisualFormatTT = "Render Sdo_Geometry in tabular views in GML, KML, WKT or Sdo_GEOMETRY formats";
-	protected String sCbRandomRendering = "Randomly Style New Layers:";
-	protected String sCmbTOCPositionTT = "Layer's position when added to layer list:";
-	protected String sLblAffix = "Prefix/Suffix String:";
-	protected String sLblDefFetchSize = "SELECT Fetch Size (rows):";
-	protected String sLblFeatureColour = "Colour of measure/create feature:";
-	protected String sLblFeatureColourTT = "When creating a spatial feature for query, clipboard or as part of a measurement, the colour can be set using this propery.";
-	protected String sLblMBRSaveSize = "Maximum window saves (*): 20";
-	protected String sLblMapBackground = "Default Map Background (*):";
-	protected String sLblNewLayerPosition = "Layer's position when added to layer list:";
-	protected String sLblPanZoomChange = "Pan/Zoom change: 10025% of current window";
-	protected String sLblRefreshImage = "Refresh Image time (ms):";
-	protected String sLblSdoGeometryBracketing = "SDO_ORDINATE_ARRAY coordinate bracket:";
-	protected String sLblSdoGeometryVisualFormat = "SDO_GEOMETRY display format:";
-	protected String sLblSearchPixels = "Query distance in pixels: 10";
-	protected String sLblTOCPosition = "View/Layer Tree Panel position(*):";
-	protected String sPnlMbrSource = "Layer MBR Source";
-	protected String sDefSRID = "Default SRIDS";
-	protected String sPnlSelections = "Selection rendering and drawing";
-	protected String sRbLayerMBRIndex = "RTree Index (projected only)";
-	protected String sRbLayerMBRMetadata = "Metadata";
-	protected String sRbPrefix = "Prefix";
-	protected String sRbSuffix = "Suffix";
-	protected String sLblTableCountLimit = "Table Count Limit:";
-	protected String sLblQueryLimit = "Search/Display/Query Limit (feats):";
-	protected String sLblTableCountLimitTT = "Limit to be applied when drawing layers without spatial indexes or when sampling.";
-	protected String sCbSdoNN = "Identify using SDO_NN:";
-	protected String sCbSdoNNTT = "When identifying features use SDO_NN or SDO_NN_DISTANCE";
-	protected String sPnlNullValueSubstitution = "NULL Value Substitution";
-	protected String sLblNullString = "String (Varchar etc) NULL Value:";
-	protected String sLblNullNumber = "Number NULL Value:";
-	protected String sLblNullInteger = "Integer NULL Value:";
-	protected String sLblNullDate = "Date / Timestamp NULL Value:";
-	protected String sLblPreviewImageWidth = "Image (Width,Height) (";
-	protected String sLblPreviewImageHeight = "Image Height";
-	protected String sCbPreviewVertexNumbering = "Number Vertices";
-	protected String sCbPreviewHorizontalLabels = "Horizontal Labels";
-	protected String sTfNullStringTT = "Value to write when text column is NULL";
-	protected String sTfNullNumberTT = "Value to write when number column is NULL";
-	protected String sTfNullIntegerTT = "Value to write when integer column is NULL";
-	protected String sTfNullDateTT = "Value to write when Date/Timestamp column is null";
-	protected String sCbDbaseNullWriteString = "DBase Write Empty String (all Fields):";
-	protected String sCbPrefixWithMDSYS = "Prefix SDO Types With MDSYS";
-	protected String sCbFastPicklerConversion = "Fast conversion of SDO_GEOMETRY:";
-	protected String sCbMapScale = "Display 1:xxxx Map Scale";
-	protected String sCbNumberOfFeatures = "Display Layer's Feature Count?";
-
-	protected String sLblDBFColumnTruncation = "Extract DBF 10 char name from:";
-	protected String sRbBegin10 = "First 10 Chars";
-	protected String sRbBegin10TT = "OBK__FLACHEN__BIOTOPTYP_ => OBK__FLACH";
-	protected String sRbLast10 = "Last 10 Chars";
-	protected String sRbLast10TT = "OBK__FLACHEN__BIOTOPTYP_ => BIOTOPTYP_";
-	protected String sTfQueryLimitTT = "Value must be an integer value >= 0 (0 means no limit is applied).";
-
 	private JCheckBox cbRandomRendering = new JCheckBox();
 	private JLabel lblGeometryColumnName = new JLabel();
 	private JTextField tfGeometryColumnName = new JTextField();
 
 	private JLabel lblMinMbrAspectRatio = new JLabel();
-	protected String sLblMinMbrAspectRatio = "Minimum MBR Aspect Ratio (def 3.0):";
 	private JTextField tfMinMbrAspectRatio = new JTextField();
 
 	private JPanel pnlPreviewImage = new JPanel();
@@ -327,162 +246,117 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	private JLabel lblComma = new JLabel();
 	private JSlider sldrVertexMarkSize = new JSlider();
 	private JLabel lblMarkerSize = new JLabel();
-	private JComboBox<Object> cmbShapePolygonOrientation = new JComboBox<Object>(
-			new DefaultComboBoxModel<Object>(new String[] { Constants.SHAPE_POLYGON_ORIENTATION.ORACLE.toString(),
-					Constants.SHAPE_POLYGON_ORIENTATION.INVERSE.toString(),
-					Constants.SHAPE_POLYGON_ORIENTATION.CLOCKWISE.toString(),
-					Constants.SHAPE_POLYGON_ORIENTATION.ANTICLOCKWISE.toString() }));
+	private JComboBox<Object> cmbShapePolygonOrientation = new JComboBox<Object>();
 	private JLabel lblShapePolygonOrientation = new JLabel();
+    // End of variables declaration                   
 
-
-	private void loadPreferenceStrings() {
-		sTpMiscellaneous = Resources.getString("sTpMiscellaneous");
-		sTpSpatialView = Resources.getString("sTpSpatialView");
-		sTpVisualisation = Resources.getString("sTpVisualisation");
-		sTpImportExport = Resources.getString("sTpImportExport");
-
-		sBtnSRID = Resources.getString("sBtnSRID");
-		sCbColourDimInfo = Resources.getString("sCbColourDimInfo");
-		sCbColourDimInfoTT = Resources.getString("sCbColourDimInfoTT");
-		sCbColourSdoGeometry = Resources.getString("sCbColourSdoGeometry");
-		sCbColourSdoGeometryTT = Resources.getString("sCbColourSdoGeometryTT");
-		sCbMinResolution = Resources.getString("sCbMinResolution");
-		sCbSchemaPrefix = Resources.getString("sCbSchemaPrefix");
-		sCbSchemaPrefixTT = Resources.getString("sCbSchemaPrefixTT");
-		sCbSdoGeomCoordNumbering = Resources.getString("sCbSdoGeomCoordNumbering");
-		sCbSdoGeomCoordNumberingTT = Resources.getString("sCbSdoGeomCoordNumberingTT");
-		sCbSdoGeometryFormat = Resources.getString("sCbSdoGeometryFormat");
-		sCbSdoGeometryFormatTT = Resources.getString("sCbSdoGeometryFormatTT");
-		sCmbSdoGeometryBracketTT = Resources.getString("sCmbSdoGeometryBracketTT");
-		sCmbSdoGeometryVisualFormatTT = Resources.getString("sCmbSdoGeometryVisualFormatTT");
-		sCbRandomRendering = Resources.getString("sCbRandomRendering");
-		sCbLogSearchStats = Resources.getString("sCbLogSearchStats");
-		sCmbTOCPositionTT = Resources.getString("sCmbTOCPositionTT");
-		sLblAffix = Resources.getString("sLblAffix");
-		sLblDefFetchSize = Resources.getString("sLblDefFetchSize");
-		sLblFeatureColour = Resources.getString("sLblFeatureColour");
-		sLblFeatureColourTT = Resources.getString("sLblFeatureColourTT");
-		sLblMBRSaveSize = Resources.getString("sLblMBRSaveSize");
-		sLblMapBackground = Resources.getString("sLblMapBackground");
-		sLblNewLayerPosition = Resources.getString("sLblNewLayerPosition");
-		sLblPanZoomChange = Resources.getString("sLblPanZoomChange");
-		sLblRefreshImage = Resources.getString("sLblRefreshImage");
-		sLblSdoGeometryBracketing = Resources.getString("sLblSdoGeometryBracketing");
-		sLblSdoGeometryVisualFormat = Resources.getString("sLblSdoGeometryVisualFormat");
-		sLblSearchPixels = Resources.getString("sLblSearchPixels");
-		sLblTOCPosition = Resources.getString("sLblTOCPosition");
-		sPnlMbrSource = Resources.getString("sPnlMbrSource");
-		sDefSRID = Resources.getString("sDefSRID");
-		sPnlSelections = Resources.getString("sPnlSelections");
-		sRbLayerMBRIndex = Resources.getString("sRbLayerMBRIndex");
-		sRbLayerMBRMetadata = Resources.getString("sRbLayerMBRMetadata");
-		sRbPrefix = Resources.getString("sRbPrefix");
-		sRbSuffix = Resources.getString("sRbSuffix");
-		sLblTableCountLimit = Resources.getString("sLblTableCountLimit");
-		sLblQueryLimit = Resources.getString("sLblQueryLimit");
-		sLblTableCountLimitTT = Resources.getString("sLblTableCountLimitTT");
-		sCbSdoNN = Resources.getString("sCbSdoNN");
-		sCbSdoNNTT = Resources.getString("sCbSdoNNTT");
-		sPnlNullValueSubstitution = Resources.getString("sPnlNullValueSubstitution");
-		sLblNullString = Resources.getString("sLblNullString");
-		sLblNullNumber = Resources.getString("sLblNullNumber");
-		sLblNullInteger = Resources.getString("sLblNullInteger");
-		sLblNullDate = Resources.getString("sLblNullDate");
-		sTfNullStringTT = Resources.getString("sTfNullStringTT");
-		sTfNullNumberTT = Resources.getString("sTfNullNumberTT");
-		sTfNullDateTT = Resources.getString("sTfNullDateTT");
-		sTfNullIntegerTT = Resources.getString("sTfNullIntegerTT");
-		sCbDbaseNullWriteString = Resources.getString("sCbDbaseNullWriteString");
-		sCbPrefixWithMDSYS = Resources.getString("sCbPrefixWithMDSYS");
-		sCbFastPicklerConversion = Resources.getString("sCbFastPicklerConversion");
-		sCbMapScale = Resources.getString("sCbMapScale");
-		sCbNumberOfFeatures = Resources.getString("sCbNumberOfFeatures");
-		sLblDBFColumnTruncation = Resources.getString("sLblDBFColumnTruncation");
-		sRbBegin10 = Resources.getString("sRbBegin10");
-		sRbBegin10TT = Resources.getString("sRbBegin10TT");
-		sRbLast10 = Resources.getString("sRbLast10");
-		sRbLast10TT = Resources.getString("sRbLast10TT");
-		sTfQueryLimitTT = Resources.getString("sTfQueryLimitTT");
-		sLblPreviewImageWidth = Resources.getString("sLblPreviewImageWidth");
-		sLblPreviewImageHeight = Resources.getString("sLblPreviewImageHeight");
-		sCbPreviewVertexNumbering = Resources.getString("sCbPreviewVertexNumbering");
-		sCbPreviewHorizontalLabels = Resources.getString("sCbPreviewHorizontalLabels");
-		sLblMinMbrAspectRatio = Resources.getString("sLblMinMbrAspectRatio");
+	// *************************************************************
+	
+	private void tfNullInteger_actionPerformed(ActionEvent e) {
+		if (Strings.isEmpty(tfNullInteger.getText())) {
+			JOptionPane.showMessageDialog(null, Resources.getString("INTEGER_ONLY_DIGITS"), MainSettings.EXTENSION_NAME,
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
-	private void applyPreferenceStrings() {
-		tpPreferences.setTitleAt(0, sTpSpatialView);
-		tpPreferences.setTitleAt(1, sTpVisualisation);
-		tpPreferences.setTitleAt(2, sTpMiscellaneous);
-		tpPreferences.setTitleAt(3, sTpImportExport);
-
-		btnSRID.setText(sBtnSRID);
-		cbColourDimInfo.setText(sCbColourDimInfo);
-		cbColourDimInfo.setToolTipText(sCbColourDimInfoTT);
-		cbColourSdoGeometry.setText(sCbColourSdoGeometry);
-		cbColourSdoGeometry.setToolTipText(sCbColourSdoGeometryTT);
-		cbMinResolution.setText(sCbMinResolution);
-		cbSchemaPrefix.setText(sCbSchemaPrefix);
-		cbSchemaPrefix.setToolTipText(sCbSchemaPrefixTT);
-		cbSdoGeomCoordNumbering.setText(sCbSdoGeomCoordNumbering);
-		cbSdoGeomCoordNumbering.setToolTipText(sCbSdoGeomCoordNumberingTT);
-		cbSdoGeometryFormat.setText(sCbSdoGeometryFormat);
-		cbSdoGeometryFormat.setToolTipText(sCbSdoGeometryFormatTT);
-		cmbSdoGeometryBracket.setToolTipText(sCmbSdoGeometryBracketTT);
-		cmbSdoGeometryVisualFormat.setToolTipText(sCmbSdoGeometryVisualFormatTT);
-		cbRandomRendering.setText(sCbRandomRendering);
-		cmbTOCPosition.setToolTipText(sCmbTOCPositionTT);
-		cbLogSearchStats.setText(sCbLogSearchStats);
-		lblAffix.setText(sLblAffix);
-		lblDefFetchSize.setText(sLblDefFetchSize);
-		lblMBRSaveSize.setText(sLblMBRSaveSize);
-		btnFeatureColour.setToolTipText(sLblFeatureColourTT);
-		btnMapBackground.setToolTipText(sLblMapBackground);
-		lblNewLayerPosition.setText(sLblNewLayerPosition);
-		lblPanZoomChange.setText(String.format(sLblPanZoomChange, Constants.VAL_PAN_ZOOM_PERCENTAGE));
-		lblRefreshImage.setText(sLblRefreshImage);
-		lblSdoGeometryBracketing.setText(sLblSdoGeometryBracketing);
-		lblSdoGeometryVisualFormat.setText(sLblSdoGeometryVisualFormat);
-		lblSearchPixels.setText(sLblSearchPixels);
-		lblTOCPosition.setText(sLblTOCPosition);
-		pnlMbrSource.setBorder(BorderFactory.createTitledBorder(sPnlMbrSource));
-		this.lblDefaultSRID.setText(sDefSRID);
-		rbLayerMBRIndex.setText(sRbLayerMBRIndex);
-		rbLayerMBRMetadata.setText(sRbLayerMBRMetadata);
-		rbPrefix.setText(sRbPrefix);
-		rbSuffix.setText(sRbSuffix);
-		lblTableCountLimit.setText(sLblTableCountLimit);
-		lblTableCountLimit.setToolTipText(sLblTableCountLimitTT);
-		pnlNullValueSubstitution.setBorder(BorderFactory.createTitledBorder(sPnlNullValueSubstitution));
-		lblNullString.setText(sLblNullString);
-		lblNullNumber.setText(sLblNullNumber);
-		lblNullInteger.setText(sLblNullInteger);
-		lblNullDate.setText(sLblNullDate);
-		tfNullString.setToolTipText(sTfNullStringTT);
-		tfNullString.setToolTipText(sTfNullStringTT);
-		tfNullNumber.setToolTipText(sTfNullNumberTT);
-		tfNullInteger.setToolTipText(sTfNullIntegerTT);
-		tfNullDate.setToolTipText(sTfNullDateTT);
-		cbDbaseNullWriteString.setText(sCbDbaseNullWriteString);
-		cbPrefixWithMDSYS.setText(sCbPrefixWithMDSYS);
-		cbFastPicklerConversion.setText(sCbFastPicklerConversion);
-		cbMapScale.setText(sCbMapScale);
-		cbNumberOfFeatures.setText(sCbNumberOfFeatures);
-		lblDBFColumnTruncation.setText(sLblDBFColumnTruncation);
-		rbBegin10.setText(sRbBegin10);
-		rbBegin10.setToolTipText(sRbBegin10TT);
-		rbLast10.setText(sRbLast10);
-		rbLast10.setToolTipText(sRbLast10TT);
-		lblQueryLimit.setText(sLblQueryLimit);
-		tfQueryLimit.setToolTipText(sTfQueryLimitTT);
-		lblImageWidth.setText(sLblPreviewImageWidth);
-		cbPreviewHorizontalLabels.setText(sCbPreviewHorizontalLabels);
-		cbPreviewVertexNumbering.setText(sCbPreviewVertexNumbering);
-		lblImageWidth.setText(sLblPreviewImageWidth);
-		lblWidthHeightPixels.setText(sLblPreviewImageHeight);
-		lblMinMbrAspectRatio.setText(sLblMinMbrAspectRatio);
+	private void tfNullNumber_actionPerformed(ActionEvent e) {
+		if (Strings.isEmpty(tfNullNumber.getText())) {
+			JOptionPane.showMessageDialog(null, rBundle.getString("NUMBER_ONLY_DIGITS"), MainSettings.EXTENSION_NAME,
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
+	private void btnCorrectMetadata_actionPerformed(ActionEvent e) {
+		final Color correctColor = JColorChooser.showDialog(this, "Spatial properties - Correct Metadata Color",
+				this.correctColour);
+		if (correctColor != null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					setCorrectColour(correctColor);
+				}
+			});
+		}
+	}
+
+	private void btnOrphanColour_actionPerformed(ActionEvent e) {
+		final Color orphanColor = JColorChooser.showDialog(this, "Spatial properties - Orphan Metadata Color",
+				this.orphanColour);
+		if (orphanColor != null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					setOrphanColour(orphanColor);
+				}
+			});
+		}
+	}
+
+	private void btnMissingMetadata_actionPerformed(ActionEvent e) {
+		final Color missingColor = JColorChooser.showDialog(this, "Spatial properties - Missing Metadata Color",
+				this.missingColour);
+		if (missingColor != null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					setMissingColour(missingColor);
+				}
+			});
+		}
+	}
+
+	private void btnHighlightColour_actionPerformed(ActionEvent e) {
+		final Color highlightColor = JColorChooser.showDialog(this, "Spatial properties - Metadata Highlight Color",
+				this.highlightColour);
+		if (highlightColor != null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					setHighlightColour(highlightColor);
+				}
+			});
+		}
+	}
+
+	private void btnSelectionColour_actionPerformed(ActionEvent e) {
+		final Color selectionColor = JColorChooser.showDialog(this, "Spatial properties - Metadata Highlight Color",
+				this.selectionColour);
+		if (selectionColor != null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					setHighlightColour(selectionColor);
+				}
+			});
+		}
+	}
+
+	private void cbDebug_actionPerformed(ActionEvent e) {
+		if (cbDebug.isSelected()) {
+			JPanel panel = new JPanel();
+			JLabel label = new JLabel("Password:");
+			JPasswordField pass = new JPasswordField(10);
+			panel.add(label);
+			panel.add(pass);
+			String[] options = new String[] { "OK", "Cancel" };
+			int option = JOptionPane.showOptionDialog(null, panel, "GeoRaptor Debug Password", JOptionPane.NO_OPTION,
+					JOptionPane.PLAIN_MESSAGE, null, options, options[1]);
+			if (option == 0) // pressing OK button
+			{
+				char[] passwd = pass.getPassword();
+				String password = new String(passwd);
+				if (password.equals(Constants.DEBUG_PASSWORD)) {
+					Constants.DEBUG = true;
+				}
+			}
+		} else {
+			Constants.DEBUG = false;
+		}
+	}
+
+	private void tfGeometryColumnName_actionPerformed(ActionEvent e) {
+		if (Strings.isEmpty(tfGeometryColumnName.getText())) {
+			tfGeometryColumnName.setText(preferences.getDefGeomColName());
+		}
+	}
+
+	// ****************************************************************
+	
 	private void setVerifiers() {
 		verifySRID = new InputVerifier() {
 			public boolean verify(JComponent comp) {
@@ -594,17 +468,32 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		this.tfMinMbrAspectRatio.setInputVerifier(verifyMbrAspectRatioLimit);
 	}
 
-	private void jbInit() throws Exception {
-		this.setLayout(verticalFlowLayout1);
-		this.setSize(new Dimension(550, 375));
-		// this.setMaximumSize(new Dimension(550, 400));
-		// this.setPreferredSize(new Dimension(550, 400));
-		// this.setMinimumSize(new Dimension(550, 400));
+	private void jbInit() 
+	throws Exception 
+    {
+	    // Initialise ComboBoxes etc
+	    this.cmbNewLayerPosition        = new JComboBox<>(new String[] {Constants.layerPositionType.TOP.toString(), Constants.layerPositionType.BOTTOM.toString() });
+	    this.cmbTOCPosition             = new JComboBox<>(new String[] { JSplitPane.LEFT.toUpperCase(), JSplitPane.RIGHT.toUpperCase() });
+	    this.cmbSdoGeometryBracket      = new JComboBox<>(Constants.getBracketTypes());
+	    this.cmbSdoGeometryVisualFormat = new JComboBox<>(Constants.getRenderTypes());
+	    this.tfNullNumber               = new JFormattedTextField(Tools.getNLSDecimalFormat(-1, false));
+	    this.tfNullInteger              = new JFormattedTextField(new JFormattedTextField(NumberFormat.getIntegerInstance()));
+	    this.cmbShapePolygonOrientation = new JComboBox<Object>(
+	                                          new DefaultComboBoxModel<Object>(new String[] { Constants.SHAPE_POLYGON_ORIENTATION.ORACLE.toString(),
+	                                              Constants.SHAPE_POLYGON_ORIENTATION.INVERSE.toString(),
+	                                              Constants.SHAPE_POLYGON_ORIENTATION.CLOCKWISE.toString(),
+	                                              Constants.SHAPE_POLYGON_ORIENTATION.ANTICLOCKWISE.toString() }));
 
-		// tpPreferences.setSize(new Dimension(540, 365));
-		// tpPreferences.setPreferredSize(new Dimension(540, 390));
-		// tpPreferences.setMinimumSize(new Dimension(540, 365));
-		// tpPreferences.setMaximumSize(new Dimension(540, 390));
+        this.setLayout(verticalFlowLayout1);
+		this.setSize(new Dimension(550, 400));
+		this.setMaximumSize(new Dimension(550, 400));
+		this.setPreferredSize(new Dimension(550, 400));
+		this.setMinimumSize(new Dimension(550, 400));
+
+		tpPreferences.setSize(new Dimension(540, 365));
+		tpPreferences.setPreferredSize(new Dimension(540, 365));
+		tpPreferences.setMinimumSize(new Dimension(540, 365));
+		tpPreferences.setMaximumSize(new Dimension(540, 365));
 
 		/**
 		 * *****************************************************************
@@ -612,12 +501,12 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		 *****************************************************************/
 
 		pnlSpatialView.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+		pnlSpatialView.setSize(new Dimension(550, 380));
+		pnlSpatialView.setPreferredSize(new Dimension(550, 380));
+		pnlSpatialView.setMinimumSize(new Dimension(550, 380));
+		pnlSpatialView.setMaximumSize(new Dimension(600, 380));
+		pnlSpatialView.setBounds(new Rectangle(2, 20, 550, 380));
 		pnlSpatialView.setFont(new Font("Dialog", 0, 11));
-		// pnlSpatialView.setSize(new Dimension(530, 380));
-		// pnlSpatialView.setPreferredSize(new Dimension(530, 380));
-		// pnlSpatialView.setMinimumSize(new Dimension(530, 380));
-		// pnlSpatialView.setMaximumSize(new Dimension(530, 380));
-		// pnlSpatialView.setBounds(new Rectangle(2, 20, 530, 380));
 
 		pnlSpatialView.setLayout(xYLayoutSpatial);
 		pnlSpatialView.add(cbDrawQueryGeometry, new XYConstraints(268, 128, 220, 20));
@@ -642,9 +531,14 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		lblNewLayerPosition.setText("Layer's position when added to layer list:");
 		lblNewLayerPosition.setLabelFor(cmbNewLayerPosition);
-		// cmbNewLayerPosition.setMinimumSize(new Dimension(10, 19));
-		// cmbNewLayerPosition.setSize(new Dimension(60, 20));
-		// cmbNewLayerPosition.setPreferredSize(new Dimension(80, 20));
+  	    lblNewLayerPosition.setPreferredSize(new Dimension(205, 15));
+	    lblNewLayerPosition.setMinimumSize(new Dimension(205, 15));
+	    lblNewLayerPosition.setMaximumSize(new Dimension(205, 15));
+        lblNewLayerPosition.setOpaque(true);
+                
+		cmbNewLayerPosition.setMinimumSize(new Dimension(10, 19));
+		cmbNewLayerPosition.setSize(new Dimension(60, 20));
+		cmbNewLayerPosition.setPreferredSize(new Dimension(80, 20));
 		cmbNewLayerPosition.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				cmbNewLayerPositionActionPerformed(evt);
@@ -655,19 +549,14 @@ public class PreferencePanel extends DefaultTraversablePanel {
 			}
 		});
 
-		// lblNewLayerPosition.setPreferredSize(new Dimension(205, 15));
-		// lblNewLayerPosition.setMinimumSize(new Dimension(205, 15));
-		// lblNewLayerPosition.setMaximumSize(new Dimension(205, 15));
-
-		lblNewLayerPosition.setOpaque(true);
 		lblTOCPosition.setText("View/Layer Tree Panel position(*):");
 		lblTOCPosition.setLabelFor(cmbTOCPosition);
-		// lblTOCPosition.setPreferredSize(new Dimension(165, 15));
-		// lblTOCPosition.setMinimumSize(new Dimension(165, 15));
-		// lblTOCPosition.setMaximumSize(new Dimension(165, 15));
+		lblTOCPosition.setPreferredSize(new Dimension(165, 15));
+		lblTOCPosition.setMinimumSize(new Dimension(165, 15));
+		lblTOCPosition.setMaximumSize(new Dimension(165, 15));
 		lblTOCPosition.setOpaque(true);
 		cmbTOCPosition.setToolTipText("Layer's position when added to layer list:");
-		// cmbTOCPosition.setMinimumSize(new Dimension(80, 20));
+		cmbTOCPosition.setMinimumSize(new Dimension(80, 20));
 		cmbTOCPosition.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				cmbTOCPositionActionPerformed(evt);
@@ -679,14 +568,14 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		});
 
 		rbLayerMBRIndex.setText("RTree Index (projected only)");
-		// rbLayerMBRIndex.setPreferredSize(new Dimension(160, 15));
-		// rbLayerMBRIndex.setMinimumSize(new Dimension(160, 15));
-		// rbLayerMBRIndex.setMaximumSize(new Dimension(160, 15));
+		rbLayerMBRIndex.setPreferredSize(new Dimension(160, 15));
+		rbLayerMBRIndex.setMinimumSize(new Dimension(160, 15));
+		rbLayerMBRIndex.setMaximumSize(new Dimension(160, 15));
 		rbLayerMBRIndex.setHorizontalTextPosition(SwingConstants.LEADING);
 		rbLayerMBRMetadata.setText("Metadata");
-		// rbLayerMBRMetadata.setPreferredSize(new Dimension(80, 15));
-		// rbLayerMBRMetadata.setMinimumSize(new Dimension(80, 15));
-		// rbLayerMBRMetadata.setMaximumSize(new Dimension(80, 15));
+		rbLayerMBRMetadata.setPreferredSize(new Dimension(80, 15));
+		rbLayerMBRMetadata.setMinimumSize(new Dimension(80, 15));
+		rbLayerMBRMetadata.setMaximumSize(new Dimension(80, 15));
 		rbLayerMBRMetadata.setHorizontalAlignment(SwingConstants.LEFT);
 		rbLayerMBRMetadata.setHorizontalTextPosition(SwingConstants.LEADING);
 		spatialndexPanel.setLayout(xYLayout1);
@@ -695,17 +584,17 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		tfRefreshImage.setText("1500");
 		lblRefreshImage.setText("Refresh Image time (ms):");
 		lblRefreshImage.setLabelFor(tfRefreshImage);
-		// lblRefreshImage.setPreferredSize(new Dimension(130, 15));
-		// lblRefreshImage.setMinimumSize(new Dimension(130, 15));
-		// lblRefreshImage.setMaximumSize(new Dimension(130, 15));
+		lblRefreshImage.setPreferredSize(new Dimension(130, 15));
+		lblRefreshImage.setMinimumSize(new Dimension(130, 15));
+		lblRefreshImage.setMaximumSize(new Dimension(130, 15));
 		lblRefreshImage.setOpaque(true);
 		lblRefreshImage.setHorizontalAlignment(SwingConstants.RIGHT);
 		tfDefFetchSize.setText("100");
 		lblDefFetchSize.setText("SELECT Fetch Size (rows):");
 		lblDefFetchSize.setLabelFor(tfDefFetchSize);
-		// lblDefFetchSize.setPreferredSize(new Dimension(135, 15));
-		// lblDefFetchSize.setMinimumSize(new Dimension(135, 15));
-		// lblDefFetchSize.setMaximumSize(new Dimension(135, 15));
+		lblDefFetchSize.setPreferredSize(new Dimension(135, 15));
+		lblDefFetchSize.setMinimumSize(new Dimension(135, 15));
+		lblDefFetchSize.setMaximumSize(new Dimension(135, 15));
 		lblDefFetchSize.setOpaque(true);
 		lblDefFetchSize.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblDefaultSRID.setText("Default SRID:");
@@ -717,10 +606,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		pnlMbrSource.setLayout(xYLayoutMBR);
 		pnlMbrSource.setBorder(BorderFactory.createTitledBorder("Layer MBR Source"));
-		// pnlMbrSource.setPreferredSize(new Dimension(185, 85));
-		// pnlMbrSource.setMinimumSize(new Dimension(185, 85));
-		// pnlMbrSource.setMaximumSize(new Dimension(185, 85));
-		// pnlMbrSource.setSize(new Dimension(130, 60));
+		pnlMbrSource.setPreferredSize(new Dimension(185, 85));
+		pnlMbrSource.setMinimumSize(new Dimension(185, 85));
+		pnlMbrSource.setMaximumSize(new Dimension(185, 85));
+		pnlMbrSource.setSize(new Dimension(130, 60));
 
 		pnlMbrSource.add(rbLayerMBRIndex, new XYConstraints(50, 21, 160, 15));
 		pnlMbrSource.add(rbLayerMBRMetadata, new XYConstraints(145, -4, 65, 15));
@@ -758,9 +647,9 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		sldrMBRSaveSize.setPaintLabels(true);
 		lblMBRSaveSize.setLabelFor(sldrMBRSaveSize);
 		lblMBRSaveSize.setText("Maximum window saves (*): 20");
-		// lblMBRSaveSize.setPreferredSize(new Dimension(160, 15));
-		// lblMBRSaveSize.setMinimumSize(new Dimension(160, 15));
-		// lblMBRSaveSize.setMaximumSize(new Dimension(160, 15));
+		lblMBRSaveSize.setPreferredSize(new Dimension(160, 15));
+		lblMBRSaveSize.setMinimumSize(new Dimension(160, 15));
+		lblMBRSaveSize.setMaximumSize(new Dimension(160, 15));
 		lblMBRSaveSize.setOpaque(true);
 		lblMBRSaveSize.setHorizontalAlignment(SwingConstants.RIGHT);
 		sldrMBRSaveSize.addChangeListener(new ChangeListener() {
@@ -798,10 +687,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		// Schema Prefix for initial Layer Visible Name?
 		cbMinResolution.setHorizontalTextPosition(SwingConstants.LEADING);
-		// cbMinResolution.setPreferredSize(new Dimension(210, 20));
-		// cbMinResolution.setMinimumSize(new Dimension(210, 20));
-		// cbMinResolution.setMaximumSize(new Dimension(210, 20));
-		// cbMinResolution.setSize(new Dimension(202, 15));
+		cbMinResolution.setPreferredSize(new Dimension(210, 20));
+		cbMinResolution.setMinimumSize(new Dimension(210, 20));
+		cbMinResolution.setMaximumSize(new Dimension(210, 20));
+		cbMinResolution.setSize(new Dimension(202, 15));
 		cbMinResolution.setHorizontalAlignment(SwingConstants.RIGHT);
 		cbSchemaPrefix.setText("Prefix Initial layer name with schema?");
 		cbSchemaPrefix.setToolTipText(sCbSchemaPrefixTT);
@@ -809,9 +698,9 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		cbSchemaPrefix.setHorizontalTextPosition(SwingConstants.LEADING);
 		cbSchemaPrefix.setHorizontalAlignment(SwingConstants.RIGHT);
-		// cbSchemaPrefix.setMinimumSize(new Dimension(210, 15));
-		// cbSchemaPrefix.setMaximumSize(new Dimension(210, 15));
-		// cbSchemaPrefix.setPreferredSize(new Dimension(210, 15));
+		cbSchemaPrefix.setMinimumSize(new Dimension(210, 15));
+		cbSchemaPrefix.setMaximumSize(new Dimension(210, 15));
+		cbSchemaPrefix.setPreferredSize(new Dimension(210, 15));
 
 		sldrPanZoomChange.setMaximum(50);
 		sldrPanZoomChange.setMinimum(5);
@@ -835,27 +724,29 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		lblPanZoomChange.setLabelFor(sldrPanZoomChange);
 		lblPanZoomChange.setText("Pan/Zoom change: 100% of current window");
-		// lblPanZoomChange.setSize(new Dimension(201, 15));
-		// lblPanZoomChange.setPreferredSize(new Dimension(201, 15));
-		// lblPanZoomChange.setMinimumSize(new Dimension(201, 15));
-		// lblPanZoomChange.setMaximumSize(new Dimension(201, 15));
+		lblPanZoomChange.setSize(new Dimension(201, 15));
+		lblPanZoomChange.setPreferredSize(new Dimension(201, 15));
+		lblPanZoomChange.setMinimumSize(new Dimension(201, 15));
+		lblPanZoomChange.setMaximumSize(new Dimension(201, 15));
 		lblPanZoomChange.setOpaque(true);
 		lblPanZoomChange.setHorizontalTextPosition(SwingConstants.RIGHT);
 		lblPanZoomChange.setHorizontalAlignment(SwingConstants.RIGHT);
 
 		/**
-		 * *****************************************************************
-		 ** ****************** Visualisation Panel (2) **********************
-		 *****************************************************************/
+		 *******************************************************************
+		 ********************* Visualisation Panel (2) *********************
+		 *******************************************************************/
 
 		// pnlVisualisation
 		//
 		pnlVisualisation.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		pnlVisualisation.setLayout(xYLayoutVisualisation);
-		// pnlVisualisation.setSize(new Dimension(530, 380));
-		// pnlVisualisation.setPreferredSize(new Dimension(530, 380));
-		// pnlVisualisation.setMinimumSize(new Dimension(530, 380));
-		// pnlVisualisation.setMaximumSize(new Dimension(530, 387));
+		pnlVisualisation.setSize(new Dimension(550, 380));
+		pnlVisualisation.setPreferredSize(new Dimension(550, 380));
+		pnlVisualisation.setMinimumSize(new Dimension(550, 380));
+		pnlVisualisation.setMaximumSize(new Dimension(600, 380));
+		pnlVisualisation.setBounds(new Rectangle(2, 20, 550, 380));
+		pnlVisualisation.setFont(new Font("Dialog", 0, 11));
 
 		// pnlVisualisation - pnlSdoObjectTextDisplay
 		//
@@ -863,9 +754,9 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		pnlSdoObjectTextDisplay.setBorder(BorderFactory.createTitledBorder("SDO_GEOMETRY / DIMINFO Text Display"));
 		cbColourSdoGeometry.setText("Colour SDO_GEOMETRY elements?");
 		cbColourSdoGeometry.setHorizontalTextPosition(SwingConstants.LEADING);
-		// cbColourSdoGeometry.setPreferredSize(new Dimension(190, 15));
-		// cbColourSdoGeometry.setMinimumSize(new Dimension(190, 15));
-		// cbColourSdoGeometry.setMaximumSize(new Dimension(190, 15));
+		cbColourSdoGeometry.setPreferredSize(new Dimension(190, 15));
+		cbColourSdoGeometry.setMinimumSize(new Dimension(190, 15));
+		cbColourSdoGeometry.setMaximumSize(new Dimension(190, 15));
 		cbColourSdoGeometry.setHorizontalAlignment(SwingConstants.TRAILING);
 		pnlSdoObjectTextDisplay.add(cbRandomRendering, new XYConstraints(290, 94, 215, 20));
 		pnlSdoObjectTextDisplay.add(cbPrefixWithMDSYS, new XYConstraints(290, 79, 215, 15));
@@ -879,22 +770,21 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		pnlSdoObjectTextDisplay.add(cbGroupingSeparator, new XYConstraints(285, 56, 220, 20));
 		cbColourDimInfo.setText("Colour DimInfo elements:");
 		cbColourDimInfo.setHorizontalTextPosition(SwingConstants.LEADING);
-		// cbColourDimInfo.setPreferredSize(new Dimension(150, 15));
-		// cbColourDimInfo.setMinimumSize(new Dimension(150, 15));
-		// cbColourDimInfo.setMaximumSize(new Dimension(150, 15));
+		cbColourDimInfo.setPreferredSize(new Dimension(150, 15));
+		cbColourDimInfo.setMinimumSize(new Dimension(150, 15));
+		cbColourDimInfo.setMaximumSize(new Dimension(150, 15));
 		cbColourDimInfo.setHorizontalAlignment(SwingConstants.TRAILING);
 		lblSdoGeometryBracketing.setText("SDO_ORDINATE_ARRAY coordinate bracket:");
 		lblSdoGeometryBracketing.setLabelFor(cmbSdoGeometryBracket);
 		lblSdoGeometryBracketing.setHorizontalTextPosition(SwingConstants.LEADING);
 		lblSdoGeometryBracketing.setHorizontalAlignment(SwingConstants.RIGHT);
 		lblSdoGeometryBracketing.setOpaque(true);
-		// lblSdoGeometryBracketing.setPreferredSize(new Dimension(220, 15));
-		// lblSdoGeometryBracketing.setMinimumSize(new Dimension(220, 15));
-		// lblSdoGeometryBracketing.setMaximumSize(new Dimension(220, 15));
-		// cmbSdoGeometryBracket = new JComboBox(Constants.getBracketTypeCombo());
-		// cmbSdoGeometryBracket.setPreferredSize(new Dimension(100, 25));
-		// cmbSdoGeometryBracket.setMinimumSize(new Dimension(100, 25));
-		// cmbSdoGeometryBracket.setMaximumSize(new Dimension(100, 25));
+		lblSdoGeometryBracketing.setPreferredSize(new Dimension(220, 15));
+		lblSdoGeometryBracketing.setMinimumSize(new Dimension(220, 15));
+		lblSdoGeometryBracketing.setMaximumSize(new Dimension(220, 15));
+		cmbSdoGeometryBracket.setPreferredSize(new Dimension(100, 25));
+		cmbSdoGeometryBracket.setMinimumSize(new Dimension(100, 25));
+		cmbSdoGeometryBracket.setMaximumSize(new Dimension(100, 25));
 		cmbSdoGeometryBracket.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				cmbSdoGeometryBracketType_actionPerformed(e);
@@ -907,21 +797,20 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		});
 		cbSdoGeomCoordNumbering.setText("Number SDO_ORDINATE_ARRAY coordinates?");
 		cbSdoGeomCoordNumbering.setHorizontalTextPosition(SwingConstants.LEADING);
-		// cbSdoGeomCoordNumbering.setPreferredSize(new Dimension(250, 15));
-		// cbSdoGeomCoordNumbering.setMinimumSize(new Dimension(250, 15));
-		// cbSdoGeomCoordNumbering.setMaximumSize(new Dimension(250, 15));
+		cbSdoGeomCoordNumbering.setPreferredSize(new Dimension(250, 15));
+		cbSdoGeomCoordNumbering.setMinimumSize(new Dimension(250, 15));
+		cbSdoGeomCoordNumbering.setMaximumSize(new Dimension(250, 15));
 		cbSdoGeomCoordNumbering.setHorizontalAlignment(SwingConstants.TRAILING);
 		lblSdoGeometryVisualFormat.setText("SDO_GEOMETRY display format:");
 		lblSdoGeometryVisualFormat.setLabelFor(cmbSdoGeometryVisualFormat);
 		lblSdoGeometryVisualFormat.setOpaque(true);
 		lblSdoGeometryVisualFormat.setHorizontalAlignment(SwingConstants.TRAILING);
-		// lblSdoGeometryVisualFormat.setPreferredSize(new Dimension(185, 20));
-		// lblSdoGeometryVisualFormat.setMaximumSize(new Dimension(185, 20));
-		// lblSdoGeometryVisualFormat.setMinimumSize(new Dimension(185, 20));
-		// cmbSdoGeometryVisualFormat.setPreferredSize(new Dimension(100, 25));
-		// cmbSdoGeometryVisualFormat.setMinimumSize(new Dimension(100, 25));
-		// cmbSdoGeometryVisualFormat.setMaximumSize(new Dimension(100, 25));
-		// cmbSdoGeometryVisualFormat = new JComboBox(Constants.getRenderTypeCombo());
+		lblSdoGeometryVisualFormat.setPreferredSize(new Dimension(185, 20));
+		lblSdoGeometryVisualFormat.setMaximumSize(new Dimension(185, 20));
+		lblSdoGeometryVisualFormat.setMinimumSize(new Dimension(185, 20));
+		cmbSdoGeometryVisualFormat.setPreferredSize(new Dimension(100, 25));
+		cmbSdoGeometryVisualFormat.setMinimumSize(new Dimension(100, 25));
+		cmbSdoGeometryVisualFormat.setMaximumSize(new Dimension(100, 25));
 
 		pnlVisualisation.add(pnlSdoObjectTextDisplay, new XYConstraints(8, 3, 520, 140));
 		pnlVisualisation.add(pnlMapColours, new XYConstraints(8, 143, 205, 100));
@@ -947,10 +836,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		// pnlVisualisation - PnlMapColours
 		//
-		// btnMapBackground.setSize(new Dimension(65, 25));
-		// btnMapBackground.setPreferredSize(new Dimension(160, 20));
-		// btnMapBackground.setMinimumSize(new Dimension(160, 20));
-		// btnMapBackground.setMaximumSize(new Dimension(160, 20));
+		btnMapBackground.setSize(new Dimension(65, 25));
+		btnMapBackground.setPreferredSize(new Dimension(160, 20));
+		btnMapBackground.setMinimumSize(new Dimension(160, 20));
+		btnMapBackground.setMaximumSize(new Dimension(160, 20));
 		pnlMapColours.setBorder(BorderFactory.createTitledBorder("Map Colours"));
 		pnlMapColours.setLayout(xYMapColoursLayout);
 		btnMapBackground.setBackground(mapBackground);
@@ -960,10 +849,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 				mapBackgroundButtonActionPerformed(evt);
 			}
 		});
-		// btnSelectionColour.setSize(new Dimension(65, 25));
-		// btnSelectionColour.setPreferredSize(new Dimension(160, 20));
-		// btnSelectionColour.setMinimumSize(new Dimension(160, 20));
-		// btnSelectionColour.setMaximumSize(new Dimension(160, 20));
+		btnSelectionColour.setSize(new Dimension(65, 25));
+		btnSelectionColour.setPreferredSize(new Dimension(160, 20));
+		btnSelectionColour.setMinimumSize(new Dimension(160, 20));
+		btnSelectionColour.setMaximumSize(new Dimension(160, 20));
 		btnSelectionColour.setBackground(selectionColour);
 		btnSelectionColour.setText("Selection Colour");
 		btnSelectionColour.addActionListener(new ActionListener() {
@@ -973,10 +862,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		});
 		pnlMapColours.add(btnMapBackground, new XYConstraints(5, 46, 160, 20));
 		pnlMapColours.add(btnSelectionColour, new XYConstraints(5, 21, 111, 21));
-		// btnFeatureColour.setSize(new Dimension(65, 25));
-		// btnFeatureColour.setPreferredSize(new Dimension(160, 20));
-		// btnFeatureColour.setMinimumSize(new Dimension(160, 20));
-		// btnFeatureColour.setMaximumSize(new Dimension(160, 20));
+		btnFeatureColour.setSize(new Dimension(65, 25));
+		btnFeatureColour.setPreferredSize(new Dimension(160, 20));
+		btnFeatureColour.setMinimumSize(new Dimension(160, 20));
+		btnFeatureColour.setMaximumSize(new Dimension(160, 20));
 		pnlMapColours.add(btnFeatureColour, new XYConstraints(5, -4, 160, 20));
 		btnFeatureColour.setBackground(featureColour);
 		btnFeatureColour.setText("Measure/Create Feature");
@@ -988,10 +877,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		// pnlVisualisation - pnlMetadataColours
 		//
-		// btnCorrectColour.setPreferredSize(new Dimension(80, 20));
-		// btnCorrectColour.setMaximumSize(new Dimension(80, 20));
-		// btnCorrectColour.setMinimumSize(new Dimension(80, 20));
-		// btnCorrectColour.setSize(new Dimension(80, 20));
+		btnCorrectColour.setPreferredSize(new Dimension(80, 20));
+		btnCorrectColour.setMaximumSize(new Dimension(80, 20));
+		btnCorrectColour.setMinimumSize(new Dimension(80, 20));
+		btnCorrectColour.setSize(new Dimension(80, 20));
 		pnlMetadataColours.setLayout(xYMetadataColoursLayout);
 		pnlMetadataColours.setBorder(BorderFactory.createTitledBorder("Metadata Colours"));
 
@@ -1003,9 +892,9 @@ public class PreferencePanel extends DefaultTraversablePanel {
 			}
 		});
 
-		// btnOrphanColour.setPreferredSize(new Dimension(80, 20));
-		// btnOrphanColour.setMaximumSize(new Dimension(80, 20));
-		// btnOrphanColour.setMinimumSize(new Dimension(80, 20));
+		btnOrphanColour.setPreferredSize(new Dimension(80, 20));
+		btnOrphanColour.setMaximumSize(new Dimension(80, 20));
+		btnOrphanColour.setMinimumSize(new Dimension(80, 20));
 		btnOrphanColour.setText("Orphan");
 		btnOrphanColour.setBackground(orphanColour);
 		btnOrphanColour.addActionListener(new ActionListener() {
@@ -1017,10 +906,10 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		pnlMetadataColours.add(btnOrphanColour, new XYConstraints(95, 1, 80, 20));
 		pnlMetadataColours.add(btnMissingColour, new XYConstraints(10, 31, 75, 20));
 
-		// btnMissingColour.setPreferredSize(new Dimension(80, 20));
-		// btnMissingColour.setMaximumSize(new Dimension(80, 20));
-		// btnMissingColour.setMinimumSize(new Dimension(80, 20));
-		// btnMissingColour.setSize(new Dimension(80, 20));
+		btnMissingColour.setPreferredSize(new Dimension(80, 20));
+		btnMissingColour.setMaximumSize(new Dimension(80, 20));
+		btnMissingColour.setMinimumSize(new Dimension(80, 20));
+		btnMissingColour.setSize(new Dimension(80, 20));
 		pnlMetadataColours.add(btnHighlightColour, new XYConstraints(95, 31, 80, 20));
 		btnMissingColour.setText("Missing");
 		btnMissingColour.setBackground(missingColour);
@@ -1030,9 +919,9 @@ public class PreferencePanel extends DefaultTraversablePanel {
 			}
 		});
 
-		// btnHighlightColour.setPreferredSize(new Dimension(80, 20));
-		// btnHighlightColour.setMinimumSize(new Dimension(80, 20));
-		// btnHighlightColour.setMaximumSize(new Dimension(80, 20));
+		btnHighlightColour.setPreferredSize(new Dimension(80, 20));
+		btnHighlightColour.setMinimumSize(new Dimension(80, 20));
+		btnHighlightColour.setMaximumSize(new Dimension(80, 20));
 		btnHighlightColour.setText("Highlight");
 		btnHighlightColour.setBackground(highlightColour);
 		btnHighlightColour.addActionListener(new ActionListener() {
@@ -1041,18 +930,18 @@ public class PreferencePanel extends DefaultTraversablePanel {
 			}
 		});
 
-		// cbPrefixWithMDSYS.setMaximumSize(new Dimension(163, 15));
-		// cbPrefixWithMDSYS.setMinimumSize(new Dimension(163, 15));
-		// cbPrefixWithMDSYS.setPreferredSize(new Dimension(163, 15));
-		// cbPrefixWithMDSYS.setSize(new Dimension(215, 15));
+		cbPrefixWithMDSYS.setMaximumSize(new Dimension(163, 15));
+		cbPrefixWithMDSYS.setMinimumSize(new Dimension(163, 15));
+		cbPrefixWithMDSYS.setPreferredSize(new Dimension(163, 15));
+		cbPrefixWithMDSYS.setSize(new Dimension(215, 15));
 		cbPrefixWithMDSYS.setText("Prefix SDO Types With MDSYS");
 		cbPrefixWithMDSYS.setHorizontalTextPosition(SwingConstants.LEADING);
 		cbPrefixWithMDSYS.setSelected(true);
 		cbPrefixWithMDSYS.setHorizontalAlignment(SwingConstants.RIGHT);
 
-		// lblQueryLimit.setPreferredSize(new Dimension(169, 15));
-		// lblQueryLimit.setMaximumSize(new Dimension(169, 15));
-		// lblQueryLimit.setMinimumSize(new Dimension(169, 15));
+		lblQueryLimit.setPreferredSize(new Dimension(169, 15));
+		lblQueryLimit.setMaximumSize(new Dimension(169, 15));
+		lblQueryLimit.setMinimumSize(new Dimension(169, 15));
 		lblQueryLimit.setText("Search/Display/Query Limit (feats):");
 		lblQueryLimit.setHorizontalAlignment(SwingConstants.TRAILING);
 		lblQueryLimit.setLabelFor(tfQueryLimit);
@@ -1103,8 +992,8 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		lblMinMbrAspectRatio.setHorizontalTextPosition(SwingConstants.RIGHT);
 		lblMinMbrAspectRatio.setLabelFor(tfMinMbrAspectRatio);
 
-		// tfMinMbrAspectRatio.setSize(new Dimension(20, 20));
-		// tfMinMbrAspectRatio.setPreferredSize(new Dimension(30, 20));
+		tfMinMbrAspectRatio.setSize(new Dimension(20, 20));
+		tfMinMbrAspectRatio.setPreferredSize(new Dimension(30, 20));
 		cmbPreviewVertexMark.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				cmbPreviewVertexMark_actionPerformed(e);
@@ -1139,30 +1028,30 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		lblComma.setHorizontalTextPosition(SwingConstants.CENTER);
 		lblComma.setLabelFor(tfImageHeight);
 
-		// lblImageWidth.setMaximumSize(new Dimension(200, 20));
-		// lblImageHeight.setMaximumSize(new Dimension(200, 20));
-		// lblImageHeight.setMinimumSize(new Dimension(110, 20));
-		// lblImageHeight.setPreferredSize(new Dimension(110, 20));
+		lblImageWidth.setMaximumSize(new Dimension(200, 20));
+		//lblImageHeight.setMaximumSize(new Dimension(200, 20));
+		//lblImageHeight.setMinimumSize(new Dimension(110, 20));
+		//lblImageHeight.setPreferredSize(new Dimension(110, 20));
 
 		cbPreviewHorizontalLabels.setText("Horizontal Labels");
 		cbPreviewHorizontalLabels.setHorizontalAlignment(SwingConstants.RIGHT);
-		// cbPreviewHorizontalLabels.setMinimumSize(new Dimension(60, 18));
-		// cbPreviewHorizontalLabels.setPreferredSize(new Dimension(60, 18));
-		// cbPreviewHorizontalLabels.setSize(new Dimension(60, 18));
+		cbPreviewHorizontalLabels.setMinimumSize(new Dimension(60, 18));
+		cbPreviewHorizontalLabels.setPreferredSize(new Dimension(60, 18));
+		cbPreviewHorizontalLabels.setSize(new Dimension(60, 18));
 
 		cbPreviewHorizontalLabels.setHorizontalTextPosition(SwingConstants.LEFT);
 		cbPreviewHorizontalLabels.setSize(new Dimension(100, 18));
 		cbPreviewVertexNumbering.setText("Vertex Labeling");
 		cbPreviewVertexNumbering.setHorizontalTextPosition(SwingConstants.LEFT);
-		// cbPreviewVertexNumbering.setSize(new Dimension(50, 18));
-		// cbPreviewVertexNumbering.setPreferredSize(new Dimension(50, 18));
-		// cbPreviewVertexNumbering.setMinimumSize(new Dimension(50, 18));
+		cbPreviewVertexNumbering.setSize(new Dimension(50, 18));
+		cbPreviewVertexNumbering.setPreferredSize(new Dimension(50, 18));
+		cbPreviewVertexNumbering.setMinimumSize(new Dimension(50, 18));
 		cbPreviewVertexNumbering.setHorizontalTextPosition(SwingConstants.LEFT);
 
 		cbPreviewVertexNumbering.setHorizontalAlignment(SwingConstants.RIGHT);
-		// tfImageHeight.setPreferredSize(new Dimension(20, 20));
-		// tfImageWidth.setPreferredSize(new Dimension(20, 20));
-		// tfImageWidth.setSize(new Dimension(30, 20));
+		tfImageHeight.setPreferredSize(new Dimension(20, 20));
+		tfImageWidth.setPreferredSize(new Dimension(20, 20));
+		tfImageWidth.setSize(new Dimension(30, 20));
 		rbBegin10.setText("First 10 Chars");
 		lblDBFColumnTruncation.setText("Extract DBF 10 char name from:");
 		lblDBFColumnTruncation.setHorizontalAlignment(SwingConstants.TRAILING);
@@ -1186,38 +1075,39 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		pnlMiscellaneous.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		pnlMiscellaneous.setLayout(xYLayoutMiscellaneous);
-		// pnlMiscellaneous.setSize(new Dimension(530, 380));
-		// pnlMiscellaneous.setPreferredSize(new Dimension(530, 380));
-		// pnlMiscellaneous.setMinimumSize(new Dimension(530, 380));
-		// pnlMiscellaneous.setMaximumSize(new Dimension(530, 380));
-		// pnlMiscellaneous.setBounds(new Rectangle(2, 20, 530, 380));
+		pnlMiscellaneous.setSize(new Dimension(550, 380));
+		pnlMiscellaneous.setPreferredSize(new Dimension(550, 380));
+		pnlMiscellaneous.setMinimumSize(new Dimension(550, 380));
+		pnlMiscellaneous.setMaximumSize(new Dimension(600, 380));
+		pnlMiscellaneous.setBounds(new Rectangle(2, 20, 530, 380));
+		pnlMiscellaneous.setFont(new Font("Dialog", 0, 11));
 
-		// cbGroupingSeparator.setSize(new Dimension(205, 18));
-		// cbGroupingSeparator.setPreferredSize(new Dimension(205, 18));
-		// cbGroupingSeparator.setMinimumSize(new Dimension(205, 18));
-		// cbGroupingSeparator.setMaximumSize(new Dimension(205, 18));
+		cbGroupingSeparator.setSize(new Dimension(205, 18));
+		cbGroupingSeparator.setPreferredSize(new Dimension(205, 18));
+		cbGroupingSeparator.setMinimumSize(new Dimension(205, 18));
+		cbGroupingSeparator.setMaximumSize(new Dimension(205, 18));
 
 		// Index Affix
 		//
 		lblAffix.setText("Prefix/Suffix:");
 		lblAffix.setLabelFor(tfAffixString);
-		// lblAffix.setPreferredSize(new Dimension(100, 15));
-		// lblAffix.setMinimumSize(new Dimension(100, 15));
-		// lblAffix.setMaximumSize(new Dimension(100, 15));
+		lblAffix.setPreferredSize(new Dimension(100, 15));
+		lblAffix.setMinimumSize(new Dimension(100, 15));
+		lblAffix.setMaximumSize(new Dimension(100, 15));
 		lblAffix.setOpaque(true);
 		lblAffix.setHorizontalAlignment(SwingConstants.RIGHT);
-		// tfAffixString.setMinimumSize(new Dimension(105, 20));
-		// tfAffixString.setMaximumSize(new Dimension(105, 20));
-		// tfAffixString.setPreferredSize(new Dimension(105, 20));
+		tfAffixString.setMinimumSize(new Dimension(105, 20));
+		tfAffixString.setMaximumSize(new Dimension(105, 20));
+		tfAffixString.setPreferredSize(new Dimension(105, 20));
 		rbPrefix.setText(sRbPrefix);
-		// rbPrefix.setMaximumSize(new Dimension(55, 20));
-		// rbPrefix.setMinimumSize(new Dimension(55, 20));
-		// rbPrefix.setPreferredSize(new Dimension(55, 20));
+		rbPrefix.setMaximumSize(new Dimension(55, 20));
+		rbPrefix.setMinimumSize(new Dimension(55, 20));
+		rbPrefix.setPreferredSize(new Dimension(55, 20));
 		bgAffix.add(rbPrefix);
 		rbSuffix.setText(sRbSuffix);
-		// rbSuffix.setMaximumSize(new Dimension(55, 20));
-		// rbSuffix.setMinimumSize(new Dimension(55, 20));
-		// rbSuffix.setPreferredSize(new Dimension(55, 20));
+		rbSuffix.setMaximumSize(new Dimension(55, 20));
+		rbSuffix.setMinimumSize(new Dimension(55, 20));
+		rbSuffix.setPreferredSize(new Dimension(55, 20));
 		bgAffix.add(rbSuffix);
 		cbSdoGeometryFormat.setSelected(true);
 		cbSdoGeometryFormat.setText("Render directly from SDO_GEOMETRY:");
@@ -1226,7 +1116,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		// Finalise
 		//
-		// cbSdoGeometryFormat.setSize(new Dimension(255, 18));
+		cbSdoGeometryFormat.setSize(new Dimension(255, 18));
 		spatialndexPanel.add(tfAffixString, new XYConstraints(145, -4, 115, 20));
 		spatialndexPanel.add(lblAffix, new XYConstraints(65, -4, 75, 15));
 		spatialndexPanel.add(rbPrefix, new XYConstraints(145, 16, 55, 20));
@@ -1257,11 +1147,12 @@ public class PreferencePanel extends DefaultTraversablePanel {
 
 		pnlImportExport.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		pnlImportExport.setLayout(xYLayoutImportExport);
-		// pnlImportExport.setSize(new Dimension(530, 380));
-		// pnlImportExport.setPreferredSize(new Dimension(530, 380));
-		// pnlImportExport.setMinimumSize(new Dimension(530, 380));
-		// pnlImportExport.setMaximumSize(new Dimension(530, 380));
-		// pnlImportExport.setBounds(new Rectangle(2, 20, 530, 380));
+		pnlImportExport.setSize(new Dimension(550, 380));
+		pnlImportExport.setPreferredSize(new Dimension(550, 380));
+		pnlImportExport.setMinimumSize(new Dimension(550, 380));
+		pnlImportExport.setMaximumSize(new Dimension(600, 380));
+		pnlImportExport.setBounds(new Rectangle(2, 20, 550, 380));
+		pnlImportExport.setFont(new Font("Dialog", 0, 11));
 
 		pnlNullValueSubstitution.setBorder(BorderFactory.createTitledBorder("NULL Value Substitution"));
 		pnlNullValueSubstitution.setLayout(xYLayoutNullValueSubstitution);
@@ -1928,178 +1819,86 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		this.tfRefreshImage.setText(String.valueOf(_imageRefreshMS));
 	}
 
-	private void tfNullInteger_actionPerformed(ActionEvent e) {
-		if (Strings.isEmpty(tfNullInteger.getText())) {
-			JOptionPane.showMessageDialog(null, Resources.getString("INTEGER_ONLY_DIGITS"), MainSettings.EXTENSION_NAME,
-					JOptionPane.ERROR_MESSAGE);
-		}
+	public void setUseDialog(boolean _dialog) {
+		this.cbUseDialog.setSelected(_dialog);
 	}
 
-	private void tfNullNumber_actionPerformed(ActionEvent e) {
-		if (Strings.isEmpty(tfNullNumber.getText())) {
-			JOptionPane.showMessageDialog(null, rBundle.getString("NUMBER_ONLY_DIGITS"), MainSettings.EXTENSION_NAME,
-					JOptionPane.ERROR_MESSAGE);
-		}
+	public boolean getUseDialog() {
+		return this.cbUseDialog.isSelected();
 	}
 
-	private void btnCorrectMetadata_actionPerformed(ActionEvent e) {
-		final Color correctColor = JColorChooser.showDialog(this, "Spatial properties - Correct Metadata Color",
-				this.correctColour);
-		if (correctColor != null) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					setCorrectColour(correctColor);
-				}
-			});
-		}
-	}
-
-	private void btnOrphanColour_actionPerformed(ActionEvent e) {
-		final Color orphanColor = JColorChooser.showDialog(this, "Spatial properties - Orphan Metadata Color",
-				this.orphanColour);
-		if (orphanColor != null) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					setOrphanColour(orphanColor);
-				}
-			});
-		}
-	}
-
-	private void btnMissingMetadata_actionPerformed(ActionEvent e) {
-		final Color missingColor = JColorChooser.showDialog(this, "Spatial properties - Missing Metadata Color",
-				this.missingColour);
-		if (missingColor != null) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					setMissingColour(missingColor);
-				}
-			});
-		}
-	}
-
-	private void btnHighlightColour_actionPerformed(ActionEvent e) {
-		final Color highlightColor = JColorChooser.showDialog(this, "Spatial properties - Metadata Highlight Color",
-				this.highlightColour);
-		if (highlightColor != null) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					setHighlightColour(highlightColor);
-				}
-			});
-		}
-	}
-
-	private void btnSelectionColour_actionPerformed(ActionEvent e) {
-		final Color selectionColor = JColorChooser.showDialog(this, "Spatial properties - Metadata Highlight Color",
-				this.selectionColour);
-		if (selectionColor != null) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					setHighlightColour(selectionColor);
-				}
-			});
-		}
-	}
-
-	private void cbDebug_actionPerformed(ActionEvent e) {
-		if (cbDebug.isSelected()) {
-			JPanel panel = new JPanel();
-			JLabel label = new JLabel("Password:");
-			JPasswordField pass = new JPasswordField(10);
-			panel.add(label);
-			panel.add(pass);
-			String[] options = new String[] { "OK", "Cancel" };
-			int option = JOptionPane.showOptionDialog(null, panel, "GeoRaptor Debug Password", JOptionPane.NO_OPTION,
-					JOptionPane.PLAIN_MESSAGE, null, options, options[1]);
-			if (option == 0) // pressing OK button
-			{
-				char[] passwd = pass.getPassword();
-				String password = new String(passwd);
-				if (password.equals(Constants.DEBUG_PASSWORD)) {
-					Constants.DEBUG = true;
-				}
-			}
-		} else {
-			Constants.DEBUG = false;
-		}
-	}
-
-	private void tfGeometryColumnName_actionPerformed(ActionEvent e) {
-		if (Strings.isEmpty(tfGeometryColumnName.getText())) {
-			tfGeometryColumnName.setText(prefs.getDefGeomColName());
-		}
-	}
-
+	// Set/Get from Preferences
+	
 	@Override
 	public void onEntry(TraversableContext tc) {
 		super.onEntry(tc);
 
 		// Load prefs into the panel controls' states.
 		//
-		this.prefs = getPreferences(tc);
-		this.setColourSdoGeomElements(prefs.isColourSdoGeomElements());
-		this.setSdoGeometryBracketType(prefs.getSdoGeometryBracketType().toString());
-		this.setSdoGeometryCoordinateNumbering(prefs.isSdoGeometryCoordinateNumbering());
-		this.setSdoGeometryVisualFormat(prefs.getSdoGeometryVisualFormat().toString());
-		this.cbColourDimInfo.setSelected(prefs.isColourDimInfo());
-		this.setSuffixFlag(prefs.isSuffixFlag());
-		this.tfAffixString.setText(prefs.getAffixString());
-		this.tfRefreshImage.setText(String.valueOf(prefs.getImageRefreshMS()));
-		this.tfDefFetchSize.setText(String.valueOf(prefs.getFetchSize()));
-		this.cmbNewLayerPosition.setSelectedItem(prefs.getNewLayerPosition());
-		this.cmbTOCPosition.setSelectedItem(prefs.getTOCPosition());
-		this.sldrSearchPixels.setValue(prefs.getSearchPixels());
-		this.cbSchemaPrefix.setSelected(prefs.isSchemaPrefix());
+		this.preferences = getPreferences(tc);
+		this.setColourSdoGeomElements(preferences.isColourSdoGeomElements());
+		this.setSdoGeometryBracketType(preferences.getSdoGeometryBracketType().toString());
+		this.setSdoGeometryCoordinateNumbering(preferences.isSdoGeometryCoordinateNumbering());
+		this.setSdoGeometryVisualFormat(preferences.getSdoGeometryVisualFormat().toString());
+		this.cbColourDimInfo.setSelected(preferences.isColourDimInfo());
+		this.setSuffixFlag(preferences.isSuffixFlag());
+		this.tfAffixString.setText(preferences.getAffixString());
+		this.tfRefreshImage.setText(String.valueOf(preferences.getImageRefreshMS()));
+		this.tfDefFetchSize.setText(String.valueOf(preferences.getFetchSize()));
+		this.cmbNewLayerPosition.setSelectedItem(preferences.getNewLayerPosition());
+		this.cmbTOCPosition.setSelectedItem(preferences.getTOCPosition());
+		this.sldrSearchPixels.setValue(preferences.getSearchPixels());
+		this.cbSchemaPrefix.setSelected(preferences.isSchemaPrefix());
 
-		this.cbSdoGeometryFormat.setSelected(prefs.isSdoGeometryProcessingFormat());
-		this.sldrMBRSaveSize.setValue(prefs.getMBRSaveSize());
+		this.cbSdoGeometryFormat.setSelected(preferences.isSdoGeometryProcessingFormat());
+		this.sldrMBRSaveSize.setValue(preferences.getMBRSaveSize());
 		this.lblMBRSaveSize.setText(String.format(this.sLblMBRSaveSize + " %3d", this.sldrMBRSaveSize.getValue()));
-		this.cbMinResolution.setSelected(prefs.isMinResolution());
-		this.setLayerMBRSource(prefs.getLayerMBRSource());
-		this.setDefaultSRID(prefs.getSRID());
+		this.cbMinResolution.setSelected(preferences.isMinResolution());
+		this.setLayerMBRSource(preferences.getLayerMBRSource());
+		this.setDefaultSRID(preferences.getSRID());
 
-		this.setMapBackground(prefs.getMapBackground());
-		this.setFeatureColour(prefs.getFeatureColour());
-		this.setOrphanColour(prefs.getOrphanColour());
-		this.setMissingColour(prefs.getMissingColour());
-		this.setCorrectColour(prefs.getCorrectColour());
-		this.setHighlightColour(prefs.getHighlightColour());
-		this.setSelectionColour(prefs.getSelectionColour());
+		this.setMapBackground(preferences.getMapBackground());
+		this.setFeatureColour(preferences.getFeatureColour());
+		this.setOrphanColour(preferences.getOrphanColour());
+		this.setMissingColour(preferences.getMissingColour());
+		this.setCorrectColour(preferences.getCorrectColour());
+		this.setHighlightColour(preferences.getHighlightColour());
+		this.setSelectionColour(preferences.getSelectionColour());
 
-		this.sldrPanZoomChange.setValue(prefs.getPanZoomPercentage());
-		this.setTableCountLimit(prefs.getTableCountLimit());
-		this.setLogSearchStats(prefs.isLogSearchStats());
-		this.setNN(prefs.isNN());
+		this.sldrPanZoomChange.setValue(preferences.getPanZoomPercentage());
+		this.setTableCountLimit(preferences.getTableCountLimit());
+		this.setLogSearchStats(preferences.isLogSearchStats());
+		this.setNN(preferences.isNN());
 
 		// Import / Export NULLs
-		this.setNullString(prefs.getNullString());
-		this.setNullNumber(prefs.getNullNumber());
-		this.setNullInteger(prefs.getNullInteger());
-		this.setNullDate(prefs.getNullDate());
-		this.setDbaseNullWriteString(prefs.getDbaseNullWriteString());
-		this.setPrefixWithMDSYS(prefs.getPrefixWithMDSYS());
-		this.setGroupingSeparator(prefs.getGroupingSeparator());
-		this.setShapePolygonOrientation(prefs.getShapePolygonOrientation().toString());
+		this.setNullString(preferences.getNullString());
+		this.setNullNumber(preferences.getNullNumber());
+		this.setNullInteger(preferences.getNullInteger());
+		this.setNullDate(preferences.getNullDate());
+		this.setDbaseNullWriteString(preferences.getDbaseNullWriteString());
+		this.setPrefixWithMDSYS(preferences.getPrefixWithMDSYS());
+		this.setGroupingSeparator(preferences.getGroupingSeparator());
+		this.setShapePolygonOrientation(preferences.getShapePolygonOrientation().toString());
 
-		this.setPreviewImageHeight(prefs.getPreviewImageHeight());
-		this.setPreviewImageWidth(prefs.getPreviewImageWidth());
-		this.setPreviewImageVertexLabeling(prefs.isPreviewImageVertexLabeling());
-		this.setPreviewImageHorizontalLabels(prefs.isPreviewImageHorizontalLabels());
-		this.setMinMbrAspectRatio(prefs.getMinMbrAspectRatio());
-		this.setPreviewVertexMark(prefs.getPreviewVertexMark());
-		this.setPreviewVertexMarkSize(prefs.getPreviewVertexMarkSize());
+		this.setPreviewImageHeight(preferences.getPreviewImageHeight());
+		this.setPreviewImageWidth(preferences.getPreviewImageWidth());
+		this.setPreviewImageVertexLabeling(preferences.isPreviewImageVertexLabeling());
+		this.setPreviewImageHorizontalLabels(preferences.isPreviewImageHorizontalLabels());
+		this.setMinMbrAspectRatio(preferences.getMinMbrAspectRatio());
+		this.setPreviewVertexMark(preferences.getPreviewVertexMark());
+		this.setPreviewVertexMarkSize(preferences.getPreviewVertexMarkSize());
 
-		this.setFastPicklerConversion(prefs.isFastPicklerConversion());
-		this.setMapScaleVisible(prefs.isMapScaleVisible());
-		this.setNumberOfFeaturesVisible(prefs.isNumberOfFeaturesVisible());
-		this.setDrawQueryGeometry(prefs.isDrawQueryGeometry());
-		this.setDBFColumnShorten(prefs.isDBFShortenBegin10());
+		this.setFastPicklerConversion(preferences.isFastPicklerConversion());
+		this.setMapScaleVisible(preferences.isMapScaleVisible());
+		this.setNumberOfFeaturesVisible(preferences.isNumberOfFeaturesVisible());
+		this.setDrawQueryGeometry(preferences.isDrawQueryGeometry());
+		this.setDBFColumnShorten(preferences.isDBFShortenBegin10());
 		this.cbDebug.setSelected(Constants.DEBUG);
-		this.setSQLSchemaPrefix(prefs.getSQLSchemaPrefix());
-		this.setQueryLimit(prefs.getQueryLimit());
-		this.setDefGeomColName(prefs.getDefGeomColName());
-		this.setRandomRendering(prefs.isRandomRendering());
+		this.setSQLSchemaPrefix(preferences.getSQLSchemaPrefix());
+		this.setQueryLimit(preferences.getQueryLimit());
+		this.setDefGeomColName(preferences.getDefGeomColName());
+		this.setRandomRendering(preferences.isRandomRendering());
+		this.setUseDialog(preferences.getUseDialog());
 	}
 
 	@Override
@@ -2167,6 +1966,238 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		prefs.setQueryLimit(this.getQueryLimit());
 		prefs.setDefGeomColName(this.getDefGeomColName());
 		prefs.setRandomRendering(this.isRandomRendering());
+		prefs.setUseDialog(this.getUseDialog());
+	}
+
+	/*************************************
+	 * Internationalization Strings
+	 **/
+
+	protected String sLblMinMbrAspectRatio = "Minimum MBR Aspect Ratio (def 3.0):";
+	protected String sTpMiscellaneous = "Miscellaneous";
+	protected String sTpSpatialView = "Spatial View (*Restart)";
+	protected String sTpVisualisation = "Visualisation";
+	protected String sTpImportExport = "Import/Export";
+
+	protected String sBtnSRID = "Select SRID";
+	protected String sCbColourDimInfo = "Colour DimInfo elements:";
+	protected String sCbColourDimInfoTT = "Activate colouring of DimInfo structures.";
+	protected String sCbColourSdoGeometry = "Colour SDO_GEOMETRY elements?";
+	protected String sCbColourSdoGeometryTT = "Render Sdo_Geometry components in colour (or BW) in tabular views";
+	protected String sCbMinResolution = "SDO_FILTER pixel filtering (not points)";
+	protected String sCbSchemaPrefix = "Prefix Initial layer name with schema?";
+	protected String sCbSchemaPrefixTT = "If ticked, the initial visible layer name will be prefixed with the schema eg SCHEMA.TABLE.COLUMN, otherwise just TABLE.COLUMN";
+	protected String sCbSdoGeomCoordNumbering = "Number SDO_ORDINATE_ARRAY coordinates?";
+	protected String sCbSdoGeomCoordNumberingTT = "Number Coordinate groups using subscripts eg (1,2,3)1, (4,5,6)2 etc";
+	protected String sCbSdoGeometryFormat = "Render directly from SDO_GEOMETRY:";
+	protected String sCbLogSearchStats = "Log SQL Statements:";
+	protected String sCbSdoGeometryFormatTT = "When rendering geometries use native SDO_GEOMETRY (don't convert to JGeometry).";
+	protected String sCmbSdoGeometryBracketTT = "Group Sdo_Elem_Info elements into triplets and Sdo_Ordinates into Coordinate groupings using brackets ()";
+	protected String sCmbSdoGeometryVisualFormatTT = "Render Sdo_Geometry in tabular views in GML, KML, WKT or Sdo_GEOMETRY formats";
+	protected String sCbRandomRendering = "Randomly Style New Layers:";
+	protected String sCmbTOCPositionTT = "Layer's position when added to layer list:";
+	protected String sLblAffix = "Prefix/Suffix String:";
+	protected String sLblDefFetchSize = "SELECT Fetch Size (rows):";
+	protected String sLblFeatureColour = "Colour of measure/create feature:";
+	protected String sLblFeatureColourTT = "When creating a spatial feature for query, clipboard or as part of a measurement, the colour can be set using this propery.";
+	protected String sLblMBRSaveSize = "Maximum window saves (*): 20";
+	protected String sLblMapBackground = "Default Map Background (*):";
+	protected String sLblNewLayerPosition = "Layer's position when added to layer list:";
+	protected String sLblPanZoomChange = "Pan/Zoom change: 10025% of current window";
+	protected String sLblRefreshImage = "Refresh Image time (ms):";
+	protected String sLblSdoGeometryBracketing = "SDO_ORDINATE_ARRAY coordinate bracket:";
+	protected String sLblSdoGeometryVisualFormat = "SDO_GEOMETRY display format:";
+	protected String sLblSearchPixels = "Query distance in pixels: 10";
+	protected String sLblTOCPosition = "View/Layer Tree Panel position(*):";
+	protected String sPnlMbrSource = "Layer MBR Source";
+	protected String sDefSRID = "Default SRIDS";
+	protected String sPnlSelections = "Selection rendering and drawing";
+	protected String sRbLayerMBRIndex = "RTree Index (projected only)";
+	protected String sRbLayerMBRMetadata = "Metadata";
+	protected String sRbPrefix = "Prefix";
+	protected String sRbSuffix = "Suffix";
+	protected String sLblTableCountLimit = "Table Count Limit:";
+	protected String sLblQueryLimit = "Search/Display/Query Limit (feats):";
+	protected String sLblTableCountLimitTT = "Limit to be applied when drawing layers without spatial indexes or when sampling.";
+	protected String sCbSdoNN = "Identify using SDO_NN:";
+	protected String sCbSdoNNTT = "When identifying features use SDO_NN or SDO_NN_DISTANCE";
+	protected String sCbUseDialog = "Dialog?";
+	protected String sCbUseDialogTT = "Use dialog box for displaying messages (otherwise Messages pane)?";
+
+	protected String sPnlNullValueSubstitution = "NULL Value Substitution";
+	protected String sLblNullString = "String (Varchar etc) NULL Value:";
+	protected String sLblNullNumber = "Number NULL Value:";
+	protected String sLblNullInteger = "Integer NULL Value:";
+	protected String sLblNullDate = "Date / Timestamp NULL Value:";
+	protected String sLblPreviewImageWidth = "Image (Width,Height) (";
+	protected String sLblPreviewImageHeight = "Image Height";
+	protected String sCbPreviewVertexNumbering = "Number Vertices";
+	protected String sCbPreviewHorizontalLabels = "Horizontal Labels";
+	protected String sTfNullStringTT = "Value to write when text column is NULL";
+	protected String sTfNullNumberTT = "Value to write when number column is NULL";
+	protected String sTfNullIntegerTT = "Value to write when integer column is NULL";
+	protected String sTfNullDateTT = "Value to write when Date/Timestamp column is null";
+	protected String sCbDbaseNullWriteString = "DBase Write Empty String (all Fields):";
+	protected String sCbPrefixWithMDSYS = "Prefix SDO Types With MDSYS";
+	protected String sCbFastPicklerConversion = "Fast conversion of SDO_GEOMETRY:";
+	protected String sCbMapScale = "Display 1:xxxx Map Scale";
+	protected String sCbNumberOfFeatures = "Display Layer's Feature Count?";
+
+	protected String sLblDBFColumnTruncation = "Extract DBF 10 char name from:";
+	protected String sRbBegin10 = "First 10 Chars";
+	protected String sRbBegin10TT = "OBK__FLACHEN__BIOTOPTYP_ => OBK__FLACH";
+	protected String sRbLast10 = "Last 10 Chars";
+	protected String sRbLast10TT = "OBK__FLACHEN__BIOTOPTYP_ => BIOTOPTYP_";
+	protected String sTfQueryLimitTT = "Value must be an integer value >= 0 (0 means no limit is applied).";
+	
+	private void loadPreferenceStrings() {
+		sTpMiscellaneous = Resources.getString("sTpMiscellaneous");
+		sTpSpatialView = Resources.getString("sTpSpatialView");
+		sTpVisualisation = Resources.getString("sTpVisualisation");
+		sTpImportExport = Resources.getString("sTpImportExport");
+
+		sBtnSRID = Resources.getString("sBtnSRID");
+		sCbColourDimInfo = Resources.getString("sCbColourDimInfo");
+		sCbColourDimInfoTT = Resources.getString("sCbColourDimInfoTT");
+		sCbColourSdoGeometry = Resources.getString("sCbColourSdoGeometry");
+		sCbColourSdoGeometryTT = Resources.getString("sCbColourSdoGeometryTT");
+		sCbMinResolution = Resources.getString("sCbMinResolution");
+		sCbSchemaPrefix = Resources.getString("sCbSchemaPrefix");
+		sCbSchemaPrefixTT = Resources.getString("sCbSchemaPrefixTT");
+		sCbSdoGeomCoordNumbering = Resources.getString("sCbSdoGeomCoordNumbering");
+		sCbSdoGeomCoordNumberingTT = Resources.getString("sCbSdoGeomCoordNumberingTT");
+		sCbSdoGeometryFormat = Resources.getString("sCbSdoGeometryFormat");
+		sCbSdoGeometryFormatTT = Resources.getString("sCbSdoGeometryFormatTT");
+		sCmbSdoGeometryBracketTT = Resources.getString("sCmbSdoGeometryBracketTT");
+		sCmbSdoGeometryVisualFormatTT = Resources.getString("sCmbSdoGeometryVisualFormatTT");
+		sCbRandomRendering = Resources.getString("sCbRandomRendering");
+		sCbLogSearchStats = Resources.getString("sCbLogSearchStats");
+		sCmbTOCPositionTT = Resources.getString("sCmbTOCPositionTT");
+		sLblAffix = Resources.getString("sLblAffix");
+		sLblDefFetchSize = Resources.getString("sLblDefFetchSize");
+		sLblFeatureColour = Resources.getString("sLblFeatureColour");
+		sLblFeatureColourTT = Resources.getString("sLblFeatureColourTT");
+		sLblMBRSaveSize = Resources.getString("sLblMBRSaveSize");
+		sLblMapBackground = Resources.getString("sLblMapBackground");
+		sLblNewLayerPosition = Resources.getString("sLblNewLayerPosition");
+		sLblPanZoomChange = Resources.getString("sLblPanZoomChange");
+		sLblRefreshImage = Resources.getString("sLblRefreshImage");
+		sLblSdoGeometryBracketing = Resources.getString("sLblSdoGeometryBracketing");
+		sLblSdoGeometryVisualFormat = Resources.getString("sLblSdoGeometryVisualFormat");
+		sLblSearchPixels = Resources.getString("sLblSearchPixels");
+		sLblTOCPosition = Resources.getString("sLblTOCPosition");
+		sPnlMbrSource = Resources.getString("sPnlMbrSource");
+		sDefSRID = Resources.getString("sDefSRID");
+		sPnlSelections = Resources.getString("sPnlSelections");
+		sRbLayerMBRIndex = Resources.getString("sRbLayerMBRIndex");
+		sRbLayerMBRMetadata = Resources.getString("sRbLayerMBRMetadata");
+		sRbPrefix = Resources.getString("sRbPrefix");
+		sRbSuffix = Resources.getString("sRbSuffix");
+		sLblTableCountLimit = Resources.getString("sLblTableCountLimit");
+		sLblQueryLimit = Resources.getString("sLblQueryLimit");
+		sLblTableCountLimitTT = Resources.getString("sLblTableCountLimitTT");
+		sCbSdoNN  = Resources.getString("sCbSdoNN");
+		sCbSdoNNTT= Resources.getString("sCbSdoNNTT");
+        sCbUseDialog  = Resources.getString("sCbUseDialog");
+        sCbUseDialogTT= Resources.getString("sCbUseDialogTT");
+		sPnlNullValueSubstitution = Resources.getString("sPnlNullValueSubstitution");
+		sLblNullString = Resources.getString("sLblNullString");
+		sLblNullNumber = Resources.getString("sLblNullNumber");
+		sLblNullInteger = Resources.getString("sLblNullInteger");
+		sLblNullDate = Resources.getString("sLblNullDate");
+		sTfNullStringTT = Resources.getString("sTfNullStringTT");
+		sTfNullNumberTT = Resources.getString("sTfNullNumberTT");
+		sTfNullDateTT = Resources.getString("sTfNullDateTT");
+		sTfNullIntegerTT = Resources.getString("sTfNullIntegerTT");
+		sCbDbaseNullWriteString = Resources.getString("sCbDbaseNullWriteString");
+		sCbPrefixWithMDSYS = Resources.getString("sCbPrefixWithMDSYS");
+		sCbFastPicklerConversion = Resources.getString("sCbFastPicklerConversion");
+		sCbMapScale = Resources.getString("sCbMapScale");
+		sCbNumberOfFeatures = Resources.getString("sCbNumberOfFeatures");
+		sLblDBFColumnTruncation = Resources.getString("sLblDBFColumnTruncation");
+		sRbBegin10 = Resources.getString("sRbBegin10");
+		sRbBegin10TT = Resources.getString("sRbBegin10TT");
+		sRbLast10 = Resources.getString("sRbLast10");
+		sRbLast10TT = Resources.getString("sRbLast10TT");
+		sTfQueryLimitTT = Resources.getString("sTfQueryLimitTT");
+		sLblPreviewImageWidth = Resources.getString("sLblPreviewImageWidth");
+		sLblPreviewImageHeight = Resources.getString("sLblPreviewImageHeight");
+		sCbPreviewVertexNumbering = Resources.getString("sCbPreviewVertexNumbering");
+		sCbPreviewHorizontalLabels = Resources.getString("sCbPreviewHorizontalLabels");
+		sLblMinMbrAspectRatio = Resources.getString("sLblMinMbrAspectRatio");
+	}
+
+	private void applyPreferenceStrings() {
+		tpPreferences.setTitleAt(0, sTpSpatialView);
+		tpPreferences.setTitleAt(1, sTpVisualisation);
+		tpPreferences.setTitleAt(2, sTpMiscellaneous);
+		tpPreferences.setTitleAt(3, sTpImportExport);
+
+		btnSRID.setText(sBtnSRID);
+		cbColourDimInfo.setText(sCbColourDimInfo);
+		cbColourDimInfo.setToolTipText(sCbColourDimInfoTT);
+		cbColourSdoGeometry.setText(sCbColourSdoGeometry);
+		cbColourSdoGeometry.setToolTipText(sCbColourSdoGeometryTT);
+		cbMinResolution.setText(sCbMinResolution);
+		cbSchemaPrefix.setText(sCbSchemaPrefix);
+		cbSchemaPrefix.setToolTipText(sCbSchemaPrefixTT);
+		cbSdoGeomCoordNumbering.setText(sCbSdoGeomCoordNumbering);
+		cbSdoGeomCoordNumbering.setToolTipText(sCbSdoGeomCoordNumberingTT);
+		cbSdoGeometryFormat.setText(sCbSdoGeometryFormat);
+		cbSdoGeometryFormat.setToolTipText(sCbSdoGeometryFormatTT);
+		cmbSdoGeometryBracket.setToolTipText(sCmbSdoGeometryBracketTT);
+		cmbSdoGeometryVisualFormat.setToolTipText(sCmbSdoGeometryVisualFormatTT);
+		cbRandomRendering.setText(sCbRandomRendering);
+		cmbTOCPosition.setToolTipText(sCmbTOCPositionTT);
+		cbLogSearchStats.setText(sCbLogSearchStats);
+		lblAffix.setText(sLblAffix);
+		lblDefFetchSize.setText(sLblDefFetchSize);
+		lblMBRSaveSize.setText(sLblMBRSaveSize);
+		btnFeatureColour.setToolTipText(sLblFeatureColourTT);
+		btnMapBackground.setToolTipText(sLblMapBackground);
+		lblNewLayerPosition.setText(sLblNewLayerPosition);
+		lblPanZoomChange.setText(String.format(sLblPanZoomChange, Constants.VAL_PAN_ZOOM_PERCENTAGE));
+		lblRefreshImage.setText(sLblRefreshImage);
+		lblSdoGeometryBracketing.setText(sLblSdoGeometryBracketing);
+		lblSdoGeometryVisualFormat.setText(sLblSdoGeometryVisualFormat);
+		lblSearchPixels.setText(sLblSearchPixels);
+		lblTOCPosition.setText(sLblTOCPosition);
+		pnlMbrSource.setBorder(BorderFactory.createTitledBorder(sPnlMbrSource));
+		this.lblDefaultSRID.setText(sDefSRID);
+		rbLayerMBRIndex.setText(sRbLayerMBRIndex);
+		rbLayerMBRMetadata.setText(sRbLayerMBRMetadata);
+		rbPrefix.setText(sRbPrefix);
+		rbSuffix.setText(sRbSuffix);
+		lblTableCountLimit.setText(sLblTableCountLimit);
+		lblTableCountLimit.setToolTipText(sLblTableCountLimitTT);
+		pnlNullValueSubstitution.setBorder(BorderFactory.createTitledBorder(sPnlNullValueSubstitution));
+		lblNullString.setText(sLblNullString);
+		lblNullNumber.setText(sLblNullNumber);
+		lblNullInteger.setText(sLblNullInteger);
+		lblNullDate.setText(sLblNullDate);
+		tfNullString.setToolTipText(sTfNullStringTT);
+		tfNullString.setToolTipText(sTfNullStringTT);
+		tfNullNumber.setToolTipText(sTfNullNumberTT);
+		tfNullInteger.setToolTipText(sTfNullIntegerTT);
+		tfNullDate.setToolTipText(sTfNullDateTT);
+		cbDbaseNullWriteString.setText(sCbDbaseNullWriteString);
+		cbPrefixWithMDSYS.setText(sCbPrefixWithMDSYS);
+		cbFastPicklerConversion.setText(sCbFastPicklerConversion);
+		cbMapScale.setText(sCbMapScale);
+		cbNumberOfFeatures.setText(sCbNumberOfFeatures);
+		lblDBFColumnTruncation.setText(sLblDBFColumnTruncation);
+		rbBegin10.setText(sRbBegin10);
+		rbBegin10.setToolTipText(sRbBegin10TT);
+		rbLast10.setText(sRbLast10);
+		rbLast10.setToolTipText(sRbLast10TT);
+		lblQueryLimit.setText(sLblQueryLimit);
+		tfQueryLimit.setToolTipText(sTfQueryLimitTT);
+		lblImageWidth.setText(sLblPreviewImageWidth);
+		cbPreviewHorizontalLabels.setText(sCbPreviewHorizontalLabels);
+		cbPreviewVertexNumbering.setText(sCbPreviewVertexNumbering);
+		lblImageWidth.setText(sLblPreviewImageWidth);
+		lblWidthHeightPixels.setText(sLblPreviewImageHeight);
+		lblMinMbrAspectRatio.setText(sLblMinMbrAspectRatio);
 	}
 
 }

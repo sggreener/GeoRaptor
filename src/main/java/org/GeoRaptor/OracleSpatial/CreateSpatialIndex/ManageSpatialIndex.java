@@ -18,6 +18,7 @@ import java.sql.Statement;
 
 import java.util.List;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
@@ -38,7 +39,7 @@ import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
 
-public class ManageSpatialIndex extends javax.swing.JDialog 
+public class ManageSpatialIndex extends javax.swing.JDialog
 {
 
 	private static final long serialVersionUID = -2509004245331206103L;
@@ -52,14 +53,14 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	private static ManageSpatialIndex classInstance;
 
 	/**
-	 * Reference to resource manager for accesing messages in properties file
+	 * Reference to resource manager for accessing messages in properties file
 	 */
 	private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex";
 	protected PropertiesManager propertyManager = null;
 	protected ErrorDialogHandler errorDialogHandler = null;
 
 	/**
-	 * Database connection
+	 * Database connection name
 	 */
 	protected String connName;
 
@@ -93,15 +94,8 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	private String sSldrBatchSizePrefix = "DML Batch Size (";
 	private String sSldrParallelPrefix = "Degree (";
 
-	private ManageSpatialIndex() {
-		this(null, "", false);
-		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-	}
-
-	/** Creates new form ManageSpatialIndex */
-	private ManageSpatialIndex(java.awt.Frame parent, String title, boolean modal) {
-		super(parent, title, modal);
-
+	private ManageSpatialIndex() 
+	{
 		try {
 			// Get localisation file
 			//
@@ -127,9 +121,9 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 		// Blank out lblMessage label (dots useful for design)
 		//
 		this.lblMessage.setText("");
-		this.setPreferredSize(this.panelMain.getPreferredSize());
+		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		this.pack();
 		this.setResizable(false);
-        //pack();
 	}
 
 	public static ManageSpatialIndex getInstance() {
@@ -148,11 +142,11 @@ public class ManageSpatialIndex extends javax.swing.JDialog
     private javax.swing.JCheckBox chkEditSQL;
     private javax.swing.JCheckBox chkIsGeodeticIndex;
     private javax.swing.JCheckBox chkLayerGTypeApply;
-    private javax.swing.JComboBox<String> cmbColumnName;
-    private javax.swing.JComboBox<String> cmbDimension;
-    private javax.swing.JComboBox<String> cmbIndexTablespaces;
-    private javax.swing.JComboBox<String> cmbLayerGType;
-    private javax.swing.JComboBox<String> cmbWorkTablespaces;
+    private javax.swing.JComboBox cmbColumnName;
+    private javax.swing.JComboBox cmbDimension;
+    private javax.swing.JComboBox cmbIndexTablespaces;
+    private javax.swing.JComboBox cmbLayerGType;
+    private javax.swing.JComboBox cmbWorkTablespaces;
     private javax.swing.JButton discoverLayerGTypeBTN;
     private javax.swing.JLabel lblBatchSize;
     private javax.swing.JLabel lblColumnName;
@@ -192,19 +186,19 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         panelParameter = new javax.swing.JPanel();
         panelLayerGtype = new javax.swing.JPanel();
         discoverLayerGTypeBTN = new javax.swing.JButton();
-        cmbLayerGType = new javax.swing.JComboBox<String>();
+        cmbLayerGType = new javax.swing.JComboBox();
         lblLayerType = new javax.swing.JLabel();
         chkLayerGTypeApply = new javax.swing.JCheckBox();
         llblSamplePct = new javax.swing.JLabel();
         sldrSample = new javax.swing.JSlider();
         panelTablespace = new javax.swing.JPanel();
-        cmbIndexTablespaces = new javax.swing.JComboBox<String>();
+        cmbIndexTablespaces = new javax.swing.JComboBox();
         lblIndexTablespace = new javax.swing.JLabel();
-        cmbWorkTablespaces = new javax.swing.JComboBox<String>();
+        cmbWorkTablespaces = new javax.swing.JComboBox();
         lblWorkTablespace = new javax.swing.JLabel();
         pnlMiscellaneous = new javax.swing.JPanel();
         chkIsGeodeticIndex = new javax.swing.JCheckBox();
-        cmbDimension = new javax.swing.JComboBox<String>();
+        cmbDimension = new javax.swing.JComboBox();
         cbNonLeaf = new javax.swing.JCheckBox();
         lblDimension = new javax.swing.JLabel();
         sldrBatchSize = new javax.swing.JSlider();
@@ -228,13 +222,14 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         txtIndexName = new javax.swing.JTextField();
         lblIndexName = new javax.swing.JLabel();
         lblColumnName = new javax.swing.JLabel();
-        cmbColumnName = new javax.swing.JComboBox<String>();
+        cmbColumnName = new javax.swing.JComboBox();
         txtTablename = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("GeoRaptor Create Index");
         setLocationByPlatform(true);
         setMaximumSize(null);
+        setMinimumSize(new java.awt.Dimension(650, 660));
         setName("indexDialog"); // NOI18N
         setPreferredSize(new java.awt.Dimension(650, 660));
         getContentPane().setLayout(new java.awt.BorderLayout(5, 5));
@@ -245,10 +240,12 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
         panelParameter.setBorder(javax.swing.BorderFactory.createTitledBorder("Parameters"));
         panelParameter.setMaximumSize(null);
+        panelParameter.setMinimumSize(new java.awt.Dimension(611, 288));
         panelParameter.setPreferredSize(new java.awt.Dimension(611, 288));
 
         panelLayerGtype.setBorder(javax.swing.BorderFactory.createTitledBorder("Layer GType"));
         panelLayerGtype.setMaximumSize(null);
+        panelLayerGtype.setMinimumSize(new java.awt.Dimension(579, 99));
         panelLayerGtype.setPreferredSize(new java.awt.Dimension(579, 99));
 
         discoverLayerGTypeBTN.setText("Discover");
@@ -261,7 +258,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
+        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
         cmbLayerGType.setMaximumSize(null);
         cmbLayerGType.setMinimumSize(null);
         cmbLayerGType.setPreferredSize(new java.awt.Dimension(204, 20));
@@ -354,9 +351,10 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
         panelTablespace.setBorder(javax.swing.BorderFactory.createTitledBorder("Tablespace"));
         panelTablespace.setMaximumSize(null);
+        panelTablespace.setMinimumSize(new java.awt.Dimension(579, 45));
         panelTablespace.setPreferredSize(new java.awt.Dimension(579, 45));
 
-        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbIndexTablespaces.setMaximumSize(null);
         cmbIndexTablespaces.setMinimumSize(null);
         cmbIndexTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -372,7 +370,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         lblIndexTablespace.setMinimumSize(null);
         lblIndexTablespace.setPreferredSize(new java.awt.Dimension(46, 14));
 
-        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbWorkTablespaces.setMaximumSize(null);
         cmbWorkTablespaces.setMinimumSize(null);
         cmbWorkTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -415,6 +413,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
         pnlMiscellaneous.setBorder(javax.swing.BorderFactory.createTitledBorder("Miscellaneous"));
         pnlMiscellaneous.setMaximumSize(null);
+        pnlMiscellaneous.setMinimumSize(new java.awt.Dimension(579, 99));
         pnlMiscellaneous.setPreferredSize(new java.awt.Dimension(579, 99));
 
         chkIsGeodeticIndex.setText("Geodetic:");
@@ -427,7 +426,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "2", "3", "4" }));
+        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "2", "3", "4" }));
         cmbDimension.setLightWeightPopupEnabled(false);
         cmbDimension.setMaximumSize(null);
         cmbDimension.setMinimumSize(null);
@@ -451,6 +450,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         lblDimension.setMaximumSize(null);
         lblDimension.setMinimumSize(null);
 
+        sldrBatchSize.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
         sldrBatchSize.setMajorTickSpacing(1000);
         sldrBatchSize.setMaximum(10000);
         sldrBatchSize.setMinimum(1000);
@@ -458,7 +458,9 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         sldrBatchSize.setPaintLabels(true);
         sldrBatchSize.setPaintTicks(true);
         sldrBatchSize.setSnapToTicks(true);
-        sldrBatchSize.setPreferredSize(new java.awt.Dimension(315, 31));
+        sldrBatchSize.setMaximumSize(new java.awt.Dimension(300, 70));
+        sldrBatchSize.setMinimumSize(new java.awt.Dimension(300, 70));
+        sldrBatchSize.setPreferredSize(new java.awt.Dimension(300, 50));
         sldrBatchSize.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 sldrBatchSizeStateChanged(evt);
@@ -491,7 +493,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(lblBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(sldrBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(sldrBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         pnlMiscellaneousLayout.setVerticalGroup(
@@ -499,7 +501,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             .addGroup(pnlMiscellaneousLayout.createSequentialGroup()
                 .addGroup(pnlMiscellaneousLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pnlMiscellaneousLayout.createSequentialGroup()
-                        .addComponent(sldrBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(sldrBatchSize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlMiscellaneousLayout.createSequentialGroup()
                         .addGroup(pnlMiscellaneousLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -520,19 +522,19 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             .addGroup(panelParameterLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelParameterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(panelTablespace, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(panelTablespace, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(panelLayerGtype, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pnlMiscellaneous, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(pnlMiscellaneous, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         panelParameterLayout.setVerticalGroup(
             panelParameterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(panelParameterLayout.createSequentialGroup()
-                .addComponent(panelTablespace, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(panelTablespace, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelLayerGtype, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(panelLayerGtype, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pnlMiscellaneous, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(pnlMiscellaneous, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -540,6 +542,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         panelSQL.setAutoscrolls(true);
         panelSQL.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         panelSQL.setMaximumSize(null);
+        panelSQL.setMinimumSize(new java.awt.Dimension(611, 164));
         panelSQL.setPreferredSize(new java.awt.Dimension(611, 164));
         panelSQL.setVerifyInputWhenFocusTarget(false);
 
@@ -555,7 +558,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         txtSQL.setDisabledTextColor(new java.awt.Color(204, 204, 204));
         txtSQL.setEnabled(false);
         txtSQL.setMaximumSize(null);
-        txtSQL.setMinimumSize(null);
+        txtSQL.setMinimumSize(new java.awt.Dimension(564, 564));
         scrpSQL.setViewportView(txtSQL);
 
         chkEditSQL.setText("Edit");
@@ -570,9 +573,9 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
+        btnCreateIndex.setBackground(new java.awt.Color(51, 204, 0));
+        btnCreateIndex.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         btnCreateIndex.setText("Create Index");
-        btnCreateIndex.setMaximumSize(null);
-        btnCreateIndex.setMinimumSize(null);
         btnCreateIndex.setPreferredSize(new java.awt.Dimension(98, 23));
         btnCreateIndex.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -595,18 +598,18 @@ public class ManageSpatialIndex extends javax.swing.JDialog
                 .addContainerGap()
                 .addGroup(panelSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(panelSQLLayout.createSequentialGroup()
-                        .addComponent(btnCreateIndex, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnCreateIndex, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnCopySqlToClipboard)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 275, Short.MAX_VALUE)
                         .addComponent(chkEditSQL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(scrpSQL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(scrpSQL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
         panelSQLLayout.setVerticalGroup(
             panelSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(panelSQLLayout.createSequentialGroup()
-                .addComponent(scrpSQL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(scrpSQL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(panelSQLLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(chkEditSQL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -624,8 +627,8 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         lblMessage.setPreferredSize(new java.awt.Dimension(478, 14));
 
         btnClose.setText("Close");
-        btnClose.setMaximumSize(new java.awt.Dimension(61, 22));
-        btnClose.setMinimumSize(null);
+        btnClose.setMaximumSize(null);
+        btnClose.setMinimumSize(new java.awt.Dimension(61, 22));
         btnClose.setPreferredSize(new java.awt.Dimension(61, 22));
         btnClose.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -634,8 +637,8 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         });
 
         btnHelp.setText("Help");
-        btnHelp.setMaximumSize(new java.awt.Dimension(61, 22));
-        btnHelp.setMinimumSize(null);
+        btnHelp.setMaximumSize(null);
+        btnHelp.setMinimumSize(new java.awt.Dimension(61, 22));
         btnHelp.setPreferredSize(new java.awt.Dimension(61, 22));
         btnHelp.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -665,6 +668,8 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
         pnlParallelism.setBorder(javax.swing.BorderFactory.createTitledBorder("Parallelism"));
         pnlParallelism.setMaximumSize(null);
+        pnlParallelism.setMinimumSize(new java.awt.Dimension(290, 110));
+        pnlParallelism.setNextFocusableComponent(panelTablespace);
         pnlParallelism.setPreferredSize(new java.awt.Dimension(290, 110));
 
         lblParallel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -688,6 +693,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         sldrParallel.setValue(0);
         sldrParallel.setMaximumSize(new java.awt.Dimension(180, 45));
         sldrParallel.setMinimumSize(new java.awt.Dimension(180, 45));
+        sldrParallel.setNextFocusableComponent(cmbWorkTablespaces);
         sldrParallel.setPreferredSize(new java.awt.Dimension(180, 45));
         sldrParallel.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -721,10 +727,9 @@ public class ManageSpatialIndex extends javax.swing.JDialog
                 .addGap(30, 30, 30))
         );
 
-        lblParallel.getAccessibleContext().setAccessibleName("Degree (0):");
-
         pnlIndexObject.setBorder(javax.swing.BorderFactory.createTitledBorder("Index Object Properties"));
         pnlIndexObject.setMaximumSize(null);
+        pnlIndexObject.setMinimumSize(new java.awt.Dimension(315, 110));
 
         lblTablename.setLabelFor(txtTablename);
         lblTablename.setText("Object name:");
@@ -792,7 +797,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
                         .addComponent(pnlIndexObject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(pnlParallelism, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(panelSQL, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(panelSQL, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(panelParameter, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(panelButtonMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addGap(10, 10, 10))
@@ -805,9 +810,9 @@ public class ManageSpatialIndex extends javax.swing.JDialog
                     .addComponent(pnlParallelism, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(pnlIndexObject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelParameter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(panelParameter, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(panelSQL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(panelSQL, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(panelButtonMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(17, 17, 17))
@@ -947,8 +952,11 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	 *         depending on which context menu New constants used from
 	 *         ManageSpatialIndex.properties.
 	 */
-	public boolean setInit(String _connectionName, String _schemaName, String _objectName, String _columnName,
-			String _userName) {
+	public boolean setInit(String _connectionName, 
+			               String _schemaName, 
+			               String _objectName, 
+			               String _columnName,
+			               String _userName) {
 		if (Strings.isEmpty(_connectionName)) {
 			LOGGER.error("No connection name was supplied.");
 			return false;
@@ -1160,8 +1168,14 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 	 * @author Simon Greener, April 20th 2010 Refactored to be more commoditised If
 	 *         _columnName is null then gets index associated with first
 	 */
-	private String getIndexName(Connection _conn, String _schemaName, String _tableName, String _columnName) {
-		Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+	private String getIndexName(Connection _conn, 
+			                    String _schemaName, 
+			                    String _tableName, 
+			                    String _columnName) 
+	{
+		Connection conn = _conn==null 
+				          ? DatabaseConnections.getInstance().getConnection(this.connName)
+                          : _conn;
 		String indexName = "";
 		String columnClause = (Strings.isEmpty(_columnName) ? ")"
 				: "and aic.COLUMN_NAME = '" + _columnName.toUpperCase() + "' ) \n");
@@ -1172,7 +1186,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 				+ "                where aic.index_owner = ai.owner \n"
 				+ "                  and aic.table_name  = ai.table_name \n" + columnClause + "   and rownum < 2";
 		try {
-			PreparedStatement psIndicies = (_conn != null) ? _conn.prepareStatement(sql) : (conn.prepareStatement(sql));
+			PreparedStatement psIndicies = conn.prepareStatement(sql);
 			psIndicies.setString(1, Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase());
 			psIndicies.setString(2, _tableName);
 			if (columnClause.contains("?"))
@@ -1344,7 +1358,10 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 		String sComplete = "";
 		try {
 			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
-			if (conn == null || DatabaseConnections.getInstance().isConnectionOpen(this.connName) == false) {
+			if (conn == null 
+                || 
+                DatabaseConnections.getInstance().isConnectionOpen(this.connName) == false) 
+			{
 				return this.propertyManager.getMsg("ERROR_MESSAGE_CONN_UNAVAILABLE", this.connName);
 			}
 			executeIndexSQL eis = new executeIndexSQL(conn, this.txtSQL.getText());
@@ -1352,8 +1369,11 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			progress.setCancelable(true);
 			eis.setProgressBar(progress);
 			progress.start("Working, please wait...", null);
-			sComplete = this.propertyManager.getMsg("CREATE_SUCCESFUL",
-					Strings.isEmpty(this.txtIndexName.getText()) ? "" : this.txtIndexName.getText());
+			sComplete = this.propertyManager
+					        .getMsg("CREATE_SUCCESFUL",
+			                        Strings.isEmpty(this.txtIndexName.getText()) 
+			                        ? "" 
+			                        : this.txtIndexName.getText());
 			if (!Strings.isEmpty(eis.errorMessage)) {
 				Toolkit.getDefaultToolkit().beep();
 				if (this.isVisible())
@@ -1435,7 +1455,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			spatialIndexName = spatialIndexName.substring(0, spatialIndexName.indexOf("("));
 
 			Object[] options = { this.propertyManager.getMsg("BUTTON_DROP_INDEX"),
-					this.propertyManager.getMsg("BUTTON_CANCEL") };
+					             this.propertyManager.getMsg("BUTTON_CANCEL") };
 			if (this.isVisible())
 				this.setAlwaysOnTop(false);
 			int n = JOptionPane.showOptionDialog(this, this.propertyManager.getMsg("DROP_INDEX_TEXT", spatialIndexName),

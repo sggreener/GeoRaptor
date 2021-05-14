@@ -197,6 +197,7 @@ public class Preferences extends HashStructureAdapter {
         return _hash.getInt(Constants.KEY_PREVIEW_IMAGE_VERTEX_MARK_SIZE, 
                             Constants.VAL_PREVIEW_IMAGE_VERTEX_MARK_SIZE);
     }
+    
     // -----------------------------------------------
     
     public void setGroupingSeparator(boolean _value) {
@@ -220,7 +221,9 @@ public class Preferences extends HashStructureAdapter {
         return _hash.getBoolean(Constants.KEY_MDSYS_PREFIX, 
                                 Constants.VAL_MDSYS_PREFIX);
     }
-        
+    
+    // ---------------------------------------------------------
+    
     public static String getDefaultNullValue(int _type) 
     {
         switch (_type)
@@ -836,5 +839,16 @@ public class Preferences extends HashStructureAdapter {
     public boolean isSdoGeometryProcessingFormat() {
         return _hash.getBoolean(Constants.KEY_SDO_GEOMETRY_PROCESS_FORMAT, Constants.VAL_SDO_GEOMETRY_PROCESS_FORMAT);
     }
+
+    public void setUseDialog(boolean _value) {
+        synchronized (_hash) {
+            _hash.putBoolean(Constants.KEY_USE_DIALOG, _value);
+        }
+    }    
+    public boolean getUseDialog() {
+        return _hash.getBoolean(Constants.KEY_USE_DIALOG, 
+                                Constants.VAL_USE_DIALOG);
+    }
+    
 
 }
