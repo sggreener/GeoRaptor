@@ -16,7 +16,6 @@ import java.sql.Struct;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,7 +103,8 @@ public class RenderResultSet
     /** 
      * Properties File Manager
      **/
-    private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.Grid.gridcontextmenu";
+    private static final String propertiesFile = 
+    		"org.GeoRaptor.OracleSpatial.Grid.gridcontextmenu";
     protected PropertiesManager propertyManager;
 
     @SuppressWarnings("unused")
@@ -171,6 +171,9 @@ public class RenderResultSet
     
     private static final int COMMAND_GRID_VISUAL_THUMBNAIL = Ide.findOrCreateCmdID("cmdGridVisualTHUMBNAIL");
     private static IdeAction ACTION_GRID_VISUAL_THUMBNAIL = null;
+
+    private static final int COMMAND_GRID_VISUAL_GEOJSON= Ide.findOrCreateCmdID("cmdGridVisualGeoJSON");
+    private static IdeAction ACTION_GRID_VISUAL_GEOJSON = null;
 
     // DimInfo
     private static final int COMMAND_COPY_DIMINFO2SDO = Ide.findOrCreateCmdID("cmdGridClipboardDimInfo2SDO");
@@ -249,6 +252,7 @@ public class RenderResultSet
         if (RenderResultSet.ACTION_GRID_VISUAL_GML==null)        { RenderResultSet.ACTION_GRID_VISUAL_GML = createAction(COMMAND_GRID_VISUAL_GML,this.propertyManager.getMsg("VisualGML"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_ICON==null)       { RenderResultSet.ACTION_GRID_VISUAL_ICON = createAction(COMMAND_GRID_VISUAL_ICON,this.propertyManager.getMsg("VisualICON"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL==null)  { RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL = createAction(COMMAND_GRID_VISUAL_THUMBNAIL,this.propertyManager.getMsg("VisualTHUMBNAIL"),null); }
+        if (RenderResultSet.ACTION_GRID_VISUAL_GEOJSON==null)    { RenderResultSet.ACTION_GRID_VISUAL_GEOJSON   = createAction(COMMAND_GRID_VISUAL_GEOJSON,this.propertyManager.getMsg("VisualGEOJSON"),null); }
     }
 
     public boolean handleEvent(IdeAction _ideAction, 
@@ -300,6 +304,7 @@ public class RenderResultSet
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_GML             ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.GML3);         } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_ICON            ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.ICON);         } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_THUMBNAIL       ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.THUMBNAIL);    } else
+        if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_GEOJSON         ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.GEOJSON);      } else
         if ( _ideAction.getCommandId() == COMMAND_VIEW_SELECTED_GEOMS ||
              _ideAction.getCommandId() == COMMAND_ZOOM_SELECTED_GEOMS         ) { 
             return mapSelectedGeometries(_ideAction.getCommandId(),cNoLabel);
@@ -403,21 +408,30 @@ public class RenderResultSet
               JMenuItem VisualEWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_EWKT);
               VisualMenu.add(VisualEWKTMenuItem,2);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.EWKT ) VisualEWKTMenuItem.setIcon(iconTick);
+              
               JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
               VisualMenu.add(VisualWKTMenuItem,3);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
+              
               JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
               VisualMenu.add(VisualKMLMenuItem,4);        
               if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
+              
               JMenuItem VisualGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GML);
               VisualMenu.add(VisualGMLMenuItem,5);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.GML3 ) VisualGMLMenuItem.setIcon(iconTick);
+              
               JMenuItem VisualIconMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_ICON);
               VisualMenu.add(VisualIconMenuItem,6);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.ICON ) VisualIconMenuItem.setIcon(iconTick);
+              
               JMenuItem VisualThumbnailMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL);
               VisualMenu.add(VisualThumbnailMenuItem,7);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.THUMBNAIL ) VisualThumbnailMenuItem.setIcon(iconTick);
+            
+              JMenuItem VisualGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GEOJSON);
+              VisualMenu.add(VisualGeoJSONMenuItem,8);
+              if ( mainPrefs.getVisualFormat()==Constants.renderType.GEOJSON) VisualGeoJSONMenuItem.setIcon(iconTick);
             GeoRaptorMenu.add(VisualMenu,menuIndex++);
             
             contextMenu.add(GeoRaptorMenu);

@@ -22,28 +22,27 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
-import oracle.dbtools.raptor.controls.cellrenderers.ICellRenderer;
-
-import oracle.spatial.geometry.JGeometry;
-import oracle.spatial.util.GML2;
-import oracle.spatial.util.GML3;
-import oracle.spatial.util.KML2;
-import oracle.spatial.util.WKT;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
-import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
+import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.geotools.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
-import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.io.WKTWriter;
+import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
+
+import oracle.dbtools.raptor.controls.cellrenderers.ICellRenderer;
+import oracle.spatial.geometry.JGeometry;
+import oracle.spatial.util.GML2;
+import oracle.spatial.util.GML3;
+import oracle.spatial.util.KML2;
+import oracle.spatial.util.WKT;
 
 
 public class SpatialRenderer 
@@ -631,6 +630,12 @@ public class SpatialRenderer
             	visualFormat = Constants.renderType.SDO_GEOMETRY;
 
             WKT w = null;
+            double  precisionModelScale = Tools.getPrecisionScale(this.preferences.getPrecision());
+    		PrecisionModel           pm = null;
+            GeometryFactory geomFactory = null;
+            OraReader     geomConverter = null;
+    		Geometry                  g = null;
+    		
             switch ( visualFormat )
             {
             case SDO_GEOMETRY:
@@ -651,7 +656,16 @@ public class SpatialRenderer
                              : RenderTool.renderGeometryAsPlainText(jGeo, sqlTypeName, this.preferences.getSdoGeometryBracketType(),Constants.MAX_PRECISION);
                   }
                   break;
-                  
+
+            case GEOJSON:
+                pm = new PrecisionModel(precisionModelScale);
+                geomFactory = new GeometryFactory(pm);
+                geomConverter = new OraReader(geomFactory);
+        		g = geomConverter.read(stValue);
+            	GeoJsonWriter gjw = new GeoJsonWriter(coordDims);
+            	gjw.setEncodeCRS(true);
+            	clipText = gjw.write(g);
+            	break;
             case WKT:
             	// WKT is 2D
         		w = new WKT();
@@ -665,11 +679,10 @@ public class SpatialRenderer
                 		w = new WKT();
                 		clipText = new String(w.fromStruct(stValue));
                 	} else {
-                        double  precisionModelScale = Tools.getPrecisionScale(this.preferences.getPrecision());
-                		PrecisionModel           pm = new PrecisionModel(precisionModelScale);
-                        GeometryFactory geomFactory = new GeometryFactory(pm);
-                        OraReader     geomConverter = new OraReader(geomFactory);
-                		Geometry                  g = geomConverter.read(stValue);
+                        pm = new PrecisionModel(precisionModelScale);
+                        geomFactory = new GeometryFactory(pm);
+                        geomConverter = new OraReader(geomFactory);
+                		g = geomConverter.read(stValue);
                 		WKTWriter              wktw = new WKTWriter(coordDims);
                 		clipText = wktw.write(g);
 

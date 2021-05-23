@@ -258,7 +258,7 @@ public class Constants {
 	}
 
 	public static enum renderType {
-		SDO_GEOMETRY, EWKT, WKT, GML2, GML3, KML, KML2, ICON, THUMBNAIL
+		SDO_GEOMETRY, EWKT, WKT, GEOJSON, GML2, GML3, KML, KML2, ICON, THUMBNAIL
 	}
 
 	public static String[] getRenderTypes() {
