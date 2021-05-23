@@ -37,6 +37,12 @@ import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.WKTReader;
+import org.locationtech.jts.io.WKTWriter;
+import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 
@@ -60,7 +66,7 @@ public class SpatialRenderer
     /**
      * For access to preferences.
      */
-    protected Preferences GeoRaptorPrefs;
+    protected Preferences preferences;
     
     /**
      * @author : Simon Greener - 13th April 2010 
@@ -68,7 +74,7 @@ public class SpatialRenderer
      **/
     public SpatialRenderer() 
     {
-        this.GeoRaptorPrefs = MainSettings.getInstance().getPreferences();
+        this.preferences = MainSettings.getInstance().getPreferences();
         this.cl = this.getClass().getClassLoader();
         this.iconQuestionMark = new ImageIcon(cl.getResource(iconDirectory + "icon_question_mark.png"));
     }
@@ -173,8 +179,9 @@ public class SpatialRenderer
     { 
       if ( _geoStruct == null ) return new JLabel(Constants.NULL);      
       JLabel retLabel = new JLabel();
-      switch ( this.GeoRaptorPrefs.getVisualFormat() ) {
+      switch ( this.preferences.getVisualFormat() ) {
           case SDO_GEOMETRY : 
+          case EWKT         :
           case WKT          :
           case GML2         :
           case GML3         :
@@ -299,8 +306,8 @@ public class SpatialRenderer
         // Normalise image
         // Because mainly used in rowset image we normalise so that the X dimension is > Y dimension
         double normaliseRatio = ((mbr.getWidth() / mbr.getHeight()) < 1) ? ((mbr.getHeight() / mbr.getWidth())): ((mbr.getWidth() / mbr.getHeight()));
-        Dimension imageSize = new Dimension((int)((_imageSize == null ? GeoRaptorPrefs.getPreviewImageWidth()  : _imageSize.getWidth()) * normaliseRatio),
-                                            (int) (_imageSize == null ? GeoRaptorPrefs.getPreviewImageHeight() : _imageSize.getHeight()));
+        Dimension imageSize = new Dimension((int)((_imageSize == null ? preferences.getPreviewImageWidth()  : _imageSize.getWidth()) * normaliseRatio),
+                                            (int) (_imageSize == null ? preferences.getPreviewImageHeight() : _imageSize.getHeight()));
         // Don't want image to disappear to nothing.....
         //
         if ( imageSize.width < 5 ) {
@@ -495,7 +502,7 @@ public class SpatialRenderer
         {
         	// is this really geometry / vertex type column?
             boolean colourSDOGeomElems = _allowColouring 
-                            ? this.GeoRaptorPrefs.isColourSdoGeomElements() 
+                            ? this.preferences.isColourSdoGeomElements() 
                             : false;
             if ( _value instanceof java.sql.Struct) 
             {
@@ -523,21 +530,21 @@ public class SpatialRenderer
                 {
                     clipText = RenderTool.renderDimArray(aryValue,
                                                          _allowColouring 
-                                                         ? this.GeoRaptorPrefs.isColourDimInfo() 
+                                                         ? this.preferences.isColourDimInfo() 
                                                          : false);
                 } else if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_ELEM_ARRAY)) {
                     clipText = RenderTool.renderElemInfoArray(OraUtil.toIntArray(aryValue,Integer.MIN_VALUE),
                                                               colourSDOGeomElems,
                                                               colourSDOGeomElems, /* wrap with HTML */
-                                                              this.GeoRaptorPrefs.getSdoGeometryBracketType());
+                                                              this.preferences.getSdoGeometryBracketType());
                 } else if (sqlTypeName.equals(Constants.TAG_MDSYS_SDO_ORD_ARRAY)) {
                     clipText = RenderTool.renderSdoOrdinates(OraUtil.toDoubleArray(aryValue,Double.NaN),
                                                              colourSDOGeomElems,
                                                              colourSDOGeomElems, /* wrap with HTML */
                                                              0,  /* We don't know its dimensionality to let function know to simply render the ordinates as is */
                                                              null,  /* No elemOrds to indicate start of each element */
-                                                             this.GeoRaptorPrefs.getSdoGeometryBracketType(),
-                                                             this.GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
+                                                             this.preferences.getSdoGeometryBracketType(),
+                                                             this.preferences.isSdoGeometryCoordinateNumbering(),
                                                              Constants.MAX_PRECISION);
                 }
             } else {
@@ -569,10 +576,10 @@ public class SpatialRenderer
         try { sqlTypeName = _colValue.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("renderSdoGeometry: Failed to get sqlTypeName of Struct:\n"+e.toString()); return ""; }
         Struct stValue = _colValue;
         
-        boolean colourSDOGeomElems = _allowColouring ? this.GeoRaptorPrefs.isColourSdoGeomElements() : false;
+        boolean colourSDOGeomElems = _allowColouring ? this.preferences.isColourSdoGeomElements() : false;
 
         Constants.geometrySourceType geomSourceType = 
-        		this.GeoRaptorPrefs.isSdoGeometryProcessingFormat()
+        		this.preferences.isSdoGeometryProcessingFormat()
                 ? Constants.geometrySourceType.SDO_GEOMETRY
                 : Constants.geometrySourceType.JGEOMETRY;
         
@@ -590,7 +597,7 @@ public class SpatialRenderer
             }
         }
 
-        Constants.renderType visualFormat = this.GeoRaptorPrefs.getVisualFormat();
+        Constants.renderType visualFormat = this.preferences.getVisualFormat();
         // If ICON or THUMBNAIL drop back to SDO_GEOMETRY text
         //
         if (visualFormat == Constants.renderType.ICON ||
@@ -612,79 +619,100 @@ public class SpatialRenderer
         
         try 
         {
-            if ( visualFormat != Constants.renderType.SDO_GEOMETRY ) {
-                // If sdo_geometry object is 3D then certain renders cannot occur
-                if (SDO_GEOMETRY.getDimension(stValue,2) >= 3 ) {
-                    if ( visualFormat == Constants.renderType.WKT ||
-                         visualFormat == Constants.renderType.KML )
-                         visualFormat = Constants.renderType.SDO_GEOMETRY;
-                }
+
+            if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
+                stValue = SDO_GEOMETRY.getSdoFromST(_colValue);
             }
 
+            int mDim         = SDO_GEOMETRY.getMeasureDimension(stValue);
+           	int srid         = SDO_GEOMETRY.getSRID(stValue);
+        	int coordDims    = SDO_GEOMETRY.getDimension(stValue,2);        	
+            if (coordDims >= 3 && visualFormat == Constants.renderType.KML )
+            	visualFormat = Constants.renderType.SDO_GEOMETRY;
+
+            WKT w = null;
             switch ( visualFormat )
             {
             case SDO_GEOMETRY:
                 if ( colourSDOGeomElems  ) {
                     clipText = ( geomSourceType == Constants.geometrySourceType.SDO_GEOMETRY )
                                ? RenderTool.renderStructAsHTML(stValue,
-                                                               this.GeoRaptorPrefs.getSdoGeometryBracketType(),
-                                                               this.GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
+                                                               this.preferences.getSdoGeometryBracketType(),
+                                                               this.preferences.isSdoGeometryCoordinateNumbering(),
                                                                Constants.MAX_PRECISION)
                                : RenderTool.renderGeometryAsHTML(jGeo, 
                                                                  sqlTypeName, 
-                                                                 this.GeoRaptorPrefs.getSdoGeometryBracketType(),
-                                                                 this.GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
+                                                                 this.preferences.getSdoGeometryBracketType(),
+                                                                 this.preferences.isSdoGeometryCoordinateNumbering(),
                                                                  Constants.MAX_PRECISION);
                   } else {
                     clipText = ( geomSourceType == Constants.geometrySourceType.SDO_GEOMETRY )
-                             ? RenderTool.renderStructAsPlainText(stValue,this.GeoRaptorPrefs.getSdoGeometryBracketType(),Constants.MAX_PRECISION)
-                             : RenderTool.renderGeometryAsPlainText(jGeo, sqlTypeName, this.GeoRaptorPrefs.getSdoGeometryBracketType(),Constants.MAX_PRECISION);
+                             ? RenderTool.renderStructAsPlainText(stValue,this.preferences.getSdoGeometryBracketType(),Constants.MAX_PRECISION)
+                             : RenderTool.renderGeometryAsPlainText(jGeo, sqlTypeName, this.preferences.getSdoGeometryBracketType(),Constants.MAX_PRECISION);
                   }
                   break;
-            default :
-                if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
-                   stValue = SDO_GEOMETRY.getSdoFromST(_colValue);
-                }
-                if ( visualFormat == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(stValue) ) {
+                  
+            case WKT:
+            	// WKT is 2D
+        		w = new WKT();
+        		clipText = new String(w.fromStruct(stValue));
+        		break;
+        		
+            case EWKT : 
+            		// JTS does not handle geometries with CircularStrings 
+                	if ( SDO_GEOMETRY.hasArc(stValue) ) {
+                		// This degrades geometry to 2D but unless I encode my own WKT writer...
+                		w = new WKT();
+                		clipText = new String(w.fromStruct(stValue));
+                	} else {
+                        double  precisionModelScale = Tools.getPrecisionScale(this.preferences.getPrecision());
+                		PrecisionModel           pm = new PrecisionModel(precisionModelScale);
+                        GeometryFactory geomFactory = new GeometryFactory(pm);
+                        OraReader     geomConverter = new OraReader(geomFactory);
+                		Geometry                  g = geomConverter.read(stValue);
+                		WKTWriter              wktw = new WKTWriter(coordDims);
+                		clipText = wktw.write(g);
+
+                		// JTS WKT writer doesn't interpret measures in the Oracle way
+                		if ( mDim == 3 && coordDims == 3 ) 
+                			clipText = clipText.replace("Z","M");
+                		else if ( mDim == 4 )
+                			clipText = clipText.replace("Z","ZM");
+                	}
+                    clipText = "SRID=" + (srid==Constants.SRID_NULL?"NULL":String.valueOf(srid)) + ";" + clipText;
                     visualFormat = Constants.renderType.WKT;
-                    WKT w = new WKT();
-                    clipText = new String(w.fromStruct(stValue));
-                } else {
-                    switch (visualFormat) {
-                    case KML2 : KML2.setConnection(this.dbConnection);
-                                clipText = KML2.to_KMLGeometry(stValue);
-                                break;
-                    case GML2 : GML2.setConnection(this.dbConnection);
-                                clipText = GML2.to_GMLGeometry(stValue);
-                                break;
-                    case GML3 : GML3.setConnection(this.dbConnection);
-                                clipText = GML3.to_GML3Geometry(stValue);
-                                break;
-					   default: break;
-                    }
-                }
+                    break;
+                    
+            case KML2 : KML2.setConnection(this.dbConnection);
+                        clipText = KML2.to_KMLGeometry(stValue);
+                        break;
+            case GML2 : GML2.setConnection(this.dbConnection);
+                        clipText = GML2.to_GMLGeometry(stValue);
+                        break;
+            case GML3 : GML3.setConnection(this.dbConnection);
+                        clipText = GML3.to_GML3Geometry(stValue);
+                        break;
+            default: break;
             }
         } catch (Exception _e) {
-        	int coordDimension  = SDO_GEOMETRY.getDimension(stValue,2);
-        	int sdoFullGType    = SDO_GEOMETRY.getFullGType(stValue,2000);
-        	int sdoGType        = SDO_GEOMETRY.getGType(stValue,2000);
-        	String geometryType = SDO_GEOMETRY.getGeometryType(sdoGType);
-        	LOGGER.error("Error rendering " + coordDimension + "D (" + sdoFullGType + ") " + geometryType + " as " + visualFormat.toString() + " (invalid or unsupported geometry?)");
+        	clipText = "";  // Force SDO_GEOMETRY rendering.
         }
         
-        if ( visualFormat != Constants.renderType.SDO_GEOMETRY && Strings.isEmpty(clipText) ) 
+        if ( visualFormat != Constants.renderType.SDO_GEOMETRY 
+             && 
+             Strings.isEmpty(clipText) ) 
         { 
               try 
               {
                   if ( colourSDOGeomElems ) 
                   { 
                       clipText = RenderTool.renderStructAsHTML(stValue,
-                                                               GeoRaptorPrefs.getSdoGeometryBracketType(),
-                                                               GeoRaptorPrefs.isSdoGeometryCoordinateNumbering(),
+                                                               preferences.getSdoGeometryBracketType(),
+                                                               preferences.isSdoGeometryCoordinateNumbering(),
                                                                Constants.MAX_PRECISION);
                   } else {
                       clipText = RenderTool.renderStructAsPlainText(stValue,
-                                                                    this.GeoRaptorPrefs.getSdoGeometryBracketType(),
+                                                                    this.preferences.getSdoGeometryBracketType(),
                                                                     Constants.MAX_PRECISION);
                   }
               } catch (SQLException e) {

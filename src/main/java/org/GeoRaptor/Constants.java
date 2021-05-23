@@ -258,15 +258,19 @@ public class Constants {
 	}
 
 	public static enum renderType {
-		SDO_GEOMETRY, WKT, GML2, GML3, KML, KML2, ICON, THUMBNAIL
+		SDO_GEOMETRY, EWKT, WKT, GML2, GML3, KML, KML2, ICON, THUMBNAIL
 	}
 
 	public static String[] getRenderTypes() {
 		return new String[] {
 				Constants.renderType.SDO_GEOMETRY.toString().toUpperCase(),
-				Constants.renderType.WKT.toString().toUpperCase(), Constants.renderType.GML2.toString().toUpperCase(),
-				Constants.renderType.GML3.toString().toUpperCase(), Constants.renderType.KML.toString().toUpperCase(),
-				Constants.renderType.KML2.toString().toUpperCase(), Constants.renderType.ICON.toString().toUpperCase(),
+				Constants.renderType.EWKT.toString().toUpperCase(), 
+				Constants.renderType.WKT.toString().toUpperCase(),  
+				Constants.renderType.GML2.toString().toUpperCase(),
+				Constants.renderType.GML3.toString().toUpperCase(), 
+				Constants.renderType.KML.toString().toUpperCase(),
+				Constants.renderType.KML2.toString().toUpperCase(), 
+				Constants.renderType.ICON.toString().toUpperCase(),
 				Constants.renderType.THUMBNAIL.toString().toUpperCase() };
 	}
 
@@ -511,6 +515,7 @@ public class Constants {
 	public static final String KEY_GEOMETRY_COLUMN_NAME = "defGeomColName";
 	public static final String KEY_LAYER_RENDER_RANDOM = "layerRenderRandom";
 	public static final String KEY_USE_DIALOG = "useDialogForMessages";
+    public static final String KEY_COORDINATE_PRECISION = "coordinatePrecision";
 	
 	/**
 	 * Preference Default Values: One needed per KEY above
@@ -591,5 +596,5 @@ public class Constants {
 			+ "<MapBackground>-1</MapBackground><ScaleBar>true</ScaleBar><SRIDBaseUnitType>M</SRIDBaseUnitType>"
 			+ "<Layers></Layers>" + "</View></Views></SpatialPanel></GeoRaptor>";
 	public static final boolean VAL_USE_DIALOG = true;
-
+    public static final int VAL_COORDINATE_PRECISION = 8;
 }

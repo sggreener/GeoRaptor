@@ -1,4 +1,4 @@
-﻿<?xml version = '1.0' encoding = 'UTF-8'?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <snippets>
   <group category="GeoRaptor - Sample Spatial Tables" language="PLSQL">
     <snippet name="ORACLE_TEST_GEOMETRIES Table and Data" description="Test geometries From Oracle documentation">

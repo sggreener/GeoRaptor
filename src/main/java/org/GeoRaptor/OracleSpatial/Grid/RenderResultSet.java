@@ -154,9 +154,12 @@ public class RenderResultSet
     private static final int COMMAND_GRID_VISUAL_SDO = Ide.findOrCreateCmdID("cmdGridVisualSDO");
     private static IdeAction ACTION_GRID_VISUAL_SDO = null;
     
+    private static final int COMMAND_GRID_VISUAL_EWKT = Ide.findOrCreateCmdID("cmdGridVisualEWKT");
+    private static IdeAction ACTION_GRID_VISUAL_EWKT = null;
+    
     private static final int COMMAND_GRID_VISUAL_WKT = Ide.findOrCreateCmdID("cmdGridVisualWKT");
     private static IdeAction ACTION_GRID_VISUAL_WKT = null;
-    
+
     private static final int COMMAND_GRID_VISUAL_KML = Ide.findOrCreateCmdID("cmdGridVisualKML");
     private static IdeAction ACTION_GRID_VISUAL_KML = null;
     
@@ -240,9 +243,10 @@ public class RenderResultSet
 
         if (RenderResultSet.ACTION_GRID_VISUAL_SDO == null)      { RenderResultSet.ACTION_GRID_VISUAL_SDO = createAction(COMMAND_GRID_VISUAL_SDO,this.propertyManager.getMsg("VisualSDO"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR==null) { RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR = createAction(COMMAND_GRID_VISUAL_SDO_COLOUR,this.propertyManager.getMsg("VisualSDOColoured"),null); }        
-        if (RenderResultSet.ACTION_GRID_VISUAL_WKT== null)       { RenderResultSet.ACTION_GRID_VISUAL_WKT = createAction(COMMAND_GRID_VISUAL_WKT,this.propertyManager.getMsg("VisualWKT"),null); }
-        if (RenderResultSet.ACTION_GRID_VISUAL_KML== null)       { RenderResultSet.ACTION_GRID_VISUAL_KML = createAction(COMMAND_GRID_VISUAL_KML,this.propertyManager.getMsg("VisualKML"),null); }
-        if (RenderResultSet.ACTION_GRID_VISUAL_GML== null)       { RenderResultSet.ACTION_GRID_VISUAL_GML = createAction(COMMAND_GRID_VISUAL_GML,this.propertyManager.getMsg("VisualGML"),null); }
+        if (RenderResultSet.ACTION_GRID_VISUAL_EWKT==null)       { RenderResultSet.ACTION_GRID_VISUAL_EWKT = createAction(COMMAND_GRID_VISUAL_EWKT,this.propertyManager.getMsg("VisualEWKT"),null); }
+        if (RenderResultSet.ACTION_GRID_VISUAL_WKT==null)        { RenderResultSet.ACTION_GRID_VISUAL_WKT = createAction(COMMAND_GRID_VISUAL_WKT,this.propertyManager.getMsg("VisualWKT"),null); }
+        if (RenderResultSet.ACTION_GRID_VISUAL_KML==null)        { RenderResultSet.ACTION_GRID_VISUAL_KML = createAction(COMMAND_GRID_VISUAL_KML,this.propertyManager.getMsg("VisualKML"),null); }
+        if (RenderResultSet.ACTION_GRID_VISUAL_GML==null)        { RenderResultSet.ACTION_GRID_VISUAL_GML = createAction(COMMAND_GRID_VISUAL_GML,this.propertyManager.getMsg("VisualGML"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_ICON==null)       { RenderResultSet.ACTION_GRID_VISUAL_ICON = createAction(COMMAND_GRID_VISUAL_ICON,this.propertyManager.getMsg("VisualICON"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL==null)  { RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL = createAction(COMMAND_GRID_VISUAL_THUMBNAIL,this.propertyManager.getMsg("VisualTHUMBNAIL"),null); }
     }
@@ -290,6 +294,7 @@ public class RenderResultSet
                                                                                   mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.SDO_GEOMETRY); } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_SDO_COLOUR      ) { mainPrefs.setColourSdoGeomElements(true);
                                                                                   mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.SDO_GEOMETRY); } else
+        if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_EWKT            ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.EWKT);         } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_WKT             ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.WKT);          } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_KML             ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.KML2);         } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_GML             ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.GML3);         } else
@@ -395,20 +400,23 @@ public class RenderResultSet
                   else
                       VisualSDOMenuItem.setIcon(iconTick);
               }
+              JMenuItem VisualEWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_EWKT);
+              VisualMenu.add(VisualEWKTMenuItem,2);
+              if ( mainPrefs.getVisualFormat()==Constants.renderType.EWKT ) VisualEWKTMenuItem.setIcon(iconTick);
               JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
-              VisualMenu.add(VisualWKTMenuItem,2);
+              VisualMenu.add(VisualWKTMenuItem,3);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
               JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
-              VisualMenu.add(VisualKMLMenuItem,3);        
+              VisualMenu.add(VisualKMLMenuItem,4);        
               if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
               JMenuItem VisualGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GML);
-              VisualMenu.add(VisualGMLMenuItem,4);
+              VisualMenu.add(VisualGMLMenuItem,5);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.GML3 ) VisualGMLMenuItem.setIcon(iconTick);
               JMenuItem VisualIconMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_ICON);
-              VisualMenu.add(VisualIconMenuItem,5);
+              VisualMenu.add(VisualIconMenuItem,6);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.ICON ) VisualIconMenuItem.setIcon(iconTick);
               JMenuItem VisualThumbnailMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL);
-              VisualMenu.add(VisualThumbnailMenuItem,6);
+              VisualMenu.add(VisualThumbnailMenuItem,7);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.THUMBNAIL ) VisualThumbnailMenuItem.setIcon(iconTick);
             GeoRaptorMenu.add(VisualMenu,menuIndex++);
             
@@ -772,7 +780,7 @@ public class RenderResultSet
                                              : "  targetNamespace=\"http://www.safe.com/gml/fme\"";
   
             xsdFile = new BufferedWriter(new FileWriter(xsdFileName)); 
-            xsdFile.write("<?xml version='1.0'  encoding='" + _characterSet + "' ?>" + newLine);
+            xsdFile.write("<?xml version=\"1.0\"  encoding=\"" + _characterSet + "\" ?>" + newLine);
             xsdFile.write("<xs:schema " + newLine +
                           xmlns_xs + newLine +
                           xmlns_gml + newLine +

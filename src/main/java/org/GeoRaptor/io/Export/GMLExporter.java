@@ -137,7 +137,7 @@ public class GMLExporter implements IExporter
         this.srsNameSpace = null; 
         this.prevSRID = Constants.SRID_NULL;
         this.srsDimension = 2;
-        this.gmlFile.write("<?xml version='1.0'  encoding='" + _encoding + "' ?>" + newLine);
+        this.gmlFile.write("<?xml version=\"1.0\"  encoding=\"" + _encoding + "\" ?>" + newLine);
         if ( this.attributeFlavour == Constants.XMLAttributeFlavour.OGR ) {
           this.gmlFile.write("<ogr:FeatureCollection" + newLine + 
                               "     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" + newLine +

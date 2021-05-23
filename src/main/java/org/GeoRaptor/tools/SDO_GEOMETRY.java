@@ -647,9 +647,8 @@ public class SDO_GEOMETRY
           return false;
         }
     }
-        
-    public static int[] getSdoElemInfo(Struct _struct,
-                                       int    _nullValue) 
+
+    public static int[] getSdoElemInfo(Struct _struct) 
     {
         if (_struct == null) {
             return null;
@@ -661,7 +660,7 @@ public class SDO_GEOMETRY
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
             Object[] data = (Object[])stGeom.getAttributes();
-            return OraUtil.toIntArray((Array)data[3], _nullValue);
+            return OraUtil.toIntArray((Array)data[3],0);
         } catch (SQLException sqle) {
             return null;
         }
@@ -734,7 +733,8 @@ public class SDO_GEOMETRY
             } 
             Object[] data = (Object[])stGeom.getAttributes();
             return OraUtil.toDoubleArray((Array)data[4], _nullValue);
-        } catch (SQLException sqle) {
+        } catch (Exception e) {
+        	LOGGER.warn("Error converting SDO_ORDINATES, possibly NULL valued ordinate.");
             return null;
         }
     }
@@ -841,34 +841,45 @@ public class SDO_GEOMETRY
     {
       if (_struct == null) 
     	  return false;
-      try {
+      
+      try 
+      {
           Struct stGeom = _struct;
           String sqlTypeName = _struct.getSQLTypeName();
           if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
               stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
           } 
 
-          if (SDO_GEOMETRY.getGType(stGeom,-1) == 1  )
+          int gtype = SDO_GEOMETRY.getGType(stGeom,-1);
+          if (gtype == -1 || gtype == 0 || gtype == 1 || gtype == 5 )
               return false;
           
-          int[] eia = SDO_GEOMETRY.getSdoElemInfo(stGeom,-1);
+          int[] eia = SDO_GEOMETRY.getSdoElemInfo(stGeom);
           if ( eia == null )
         	  return false;
-          
+
+          int       elements = ( eia.length / 3 );
+          int          etype = 0;
+          int interpretation = 0;
           for (int i = 1; 
-        		   i < (eia.length / 3); 
-        		   i = (i * 3) + 1) 
+        		   i <= elements; 
+        		   i++) 
           {
-              if (  (eia[i] == 4 || eia[i] == 1005 || eia[i] == 2005 ) 
-                   ||
-                   ((eia[i] == 1003 || eia[i] == 2003) && (eia[i+1] == 2 || eia[i+1] == 4))
-                   ||
-                    (eia[i] == 2 && eia[i + 1] == 2)) {
+        	  etype          = eia[(i - 1) * 3 + 1];
+        	  interpretation = eia[(i - 1) * 3 + 2];
+              if ( etype == 2 && interpretation == 2) 
                   return true;
-              }
+              if ( etype == 4 || etype == 1005 || etype == 2005 )
+            	  return true;
+              if ( (etype == 1003 || etype == 2003) 
+                   && 
+                   (interpretation == 2 || interpretation == 4))
+            	  return true;
           }
           return false;
       } catch (SQLException sqle) {
+System.out.println("hasArc");
+sqle.printStackTrace();
         return false;
       }
     }

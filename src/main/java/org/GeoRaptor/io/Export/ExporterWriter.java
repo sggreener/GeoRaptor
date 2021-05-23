@@ -142,7 +142,7 @@ public class ExporterWriter
                                                : "  targetNamespace=\"http://www.safe.com/gml/fme\"";
     
               xsdFile = new BufferedWriter(new FileWriter(xsdFileName)); 
-              xsdFile.write("<?xml version='1.0'  encoding='" + this.getCharacterSet() + "' ?>" + newLine);
+              xsdFile.write("<?xml version=\"1.0\"  encoding=\"" + this.getCharacterSet() + "\" ?>" + newLine);
               xsdFile.write("<xs:schema " + newLine +
                             xmlns_xs + newLine +
                             xmlns_gml + newLine +

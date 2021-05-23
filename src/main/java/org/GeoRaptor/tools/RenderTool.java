@@ -129,7 +129,7 @@ public class RenderTool {
         final int          GTYPE = SDO_GEOMETRY.getFullGType(stGeom,0);
         final int           SRID = SDO_GEOMETRY.getSRID(stGeom);
         final double     POINT[] = SDO_GEOMETRY.getSdoPoint(stGeom,Double.NaN);
-        final int     ELEMINFO[] = SDO_GEOMETRY.getSdoElemInfo(stGeom,0);
+        final int     ELEMINFO[] = SDO_GEOMETRY.getSdoElemInfo(stGeom);
         final double ORDINATES[] = SDO_GEOMETRY.getSdoOrdinates(stGeom,Double.NaN);
         return (_renderAsHTML ? renderGeometryElementsAsHTML(sqlTypeName, GTYPE, SRID, POINT, ELEMINFO, ORDINATES, _bracket, _coordNumbering, _ordPrecision)
                               : renderGeometryElements      (sqlTypeName, GTYPE, SRID, POINT, ELEMINFO, ORDINATES, _bracket, _ordPrecision) );

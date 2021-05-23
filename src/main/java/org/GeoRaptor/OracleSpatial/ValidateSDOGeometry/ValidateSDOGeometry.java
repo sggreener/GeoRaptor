@@ -1270,8 +1270,7 @@ implements Observer
                                     break;
                 case ELEMENT_INFO : sBuffer.append(
                                         RenderTool.renderElemInfoArray(
-                                           SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn),
-                                                                       0), 
+                                           SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(row,ValidationTableModel.geometryColumn)), 
                                            false, 
                                            false, 
                                            Constants.bracketType.NONE));
@@ -1292,8 +1291,7 @@ implements Observer
                                     break;
                 case ELEMENT_INFO : sBuffer.append(
                                         RenderTool.renderElemInfoArray(
-                                        		SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(viewRow,ValidationTableModel.geometryColumn),
-                                        				                    0), 
+                                        		SDO_GEOMETRY.getSdoElemInfo((Struct)this.vtModel.getValueAt(viewRow,ValidationTableModel.geometryColumn)), 
                                                 false, 
                                                 false, 
                                                 Constants.bracketType.NONE));

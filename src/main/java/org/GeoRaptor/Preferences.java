@@ -12,13 +12,6 @@ import oracle.javatools.data.PropertyStorage;
 
 import oracle.jdbc.OracleTypes;
 
-/**
- * 
- * @author Bessie Gong 
- * @version 24 Jul 2019
- *	
- *	The entity of preference
- */
 public class Preferences extends HashStructureAdapter {
 
 	private static final String DATA_KEY = "org.GeoRaptor.Preferences";
@@ -850,5 +843,16 @@ public class Preferences extends HashStructureAdapter {
                                 Constants.VAL_USE_DIALOG);
     }
     
+    public void setPrecision(int _precision) 
+    {
+        synchronized (_hash) {
+            _hash.putInt(Constants.KEY_COORDINATE_PRECISION, _precision);
+        }
+    }
+    
+    public int getPrecision() {
+        return _hash.getInt(Constants.KEY_COORDINATE_PRECISION, 
+        		            Constants.VAL_COORDINATE_PRECISION);
+    }
 
 }

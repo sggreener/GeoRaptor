@@ -128,7 +128,7 @@ public class KMLExporter implements IExporter
             Strings.isEmpty(this.kmlFilename)
                           ? ""
                           : "    <name>" + this.kmlFilename + "</name>" + newLine;
-        this.kmlFile.write("<?xml version='1.0'  encoding='" + _encoding + "' ?>" + newLine +
+        this.kmlFile.write("<?xml version=\"1.0\"  encoding=\"" + _encoding + "\" ?>" + newLine +
               "<kml xmlns= " + KmlNameSpace + ">" + newLine +
               "  <Document>" + newLine +
               baseName );
