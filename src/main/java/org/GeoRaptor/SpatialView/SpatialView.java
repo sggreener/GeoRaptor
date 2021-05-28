@@ -666,15 +666,16 @@ LOGGER.debug("*** Removing " + _layerName);
         }
         // Ensure one side is not 0 in length
         //
-        if ( mbr.getWidth()==0 || mbr.getHeight()==0 ) {
-            double halfSide = Math.max(mbr.getWidth(),mbr.getHeight()) / 2.0;
-            if (halfSide==0.0f) {
-                halfSide -= 0.05;
-            }
+        if ( mbr.getWidth()==0 || mbr.getHeight()==0 ) 
+        {
+        	double halfSide = Math.max(mbr.getWidth(),
+                                       mbr.getHeight()) / 2.0;
+            if ( halfSide == 0.0 ) { halfSide = 0.5; }
             mbr = new Envelope(mbr.centre().getX() - halfSide,
-                                      mbr.centre().getY() - halfSide,
-                                      mbr.centre().getX() + halfSide,
-                                      mbr.centre().getY() + halfSide);
+                               mbr.centre().getY() - halfSide,
+                               mbr.centre().getX() + halfSide,
+                               mbr.centre().getY() + halfSide,
+                               _zoomLayer.getSRIDAsInteger());
         }
         this.setMBR(mbr);
         return true;

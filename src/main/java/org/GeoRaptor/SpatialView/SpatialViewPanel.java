@@ -1482,7 +1482,11 @@ extends JPanel
           targetView.setDistanceUnitType();
           targetView.setAreaUnitType();
           // Now add layer to the new view
-          if ( targetView.addLayer(_layer,_layer.isDraw(),true/*active*/,_zoom) ) {
+          if ( targetView.addLayer(_layer,
+        		                   _layer.isDraw(),
+        		                   true/*make active*/,
+        		                   _zoom) ) 
+          {
             // set MBR of new View
             //
             if ( ! targetView.initializeMBR(_layer) ) {

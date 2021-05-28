@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -95,8 +96,8 @@ public class ExporterWriter
       private int                  SRID = Constants.SRID_NULL;
       private boolean        attributes = false; 
       private boolean  skipNullGeometry = true;
-      private ShapeType  shapefileType = ShapeType.UNDEFINED; 
-
+      private ShapeType  shapefileType = ShapeType.UNDEFINED;
+      
       private String        errorMessage = "";
       private int           rowsExported = 0;
       private int                 commit = 100;
@@ -481,7 +482,10 @@ public class ExporterWriter
             private int                                    geoColumn = -1;
             private LinkedHashMap<Integer,Integer>    skippedRecords = new LinkedHashMap<Integer,Integer>(Constants.SHAPE_TYPE.values().length);
             private int                                totalRowCount = -1;
-            
+            private String                            DATETIMEFORMAT = "yyyy/MM/dd hh:mm:ss a";
+            private String                           DBASEDATEFORMAT = "yyyyMMdd";
+            private SimpleDateFormat                             sdf = null; 
+
             private LinkedHashMap<Integer,RowSetMetaData> getExportMetadata() 
             {
                 if ( this.meta ==null  )
@@ -540,7 +544,6 @@ public class ExporterWriter
                 }
             }
         
-
             protected void export() 
             {
                 OracleResultSet rSet = null;
@@ -557,25 +560,31 @@ public class ExporterWriter
                     setTotalRows();
                     
                     lblStatus.setText(propertyManager.getMsg("EXECUTING_QUERY"));
-                    
+                     
                     st = (OracleStatement)getConn().createStatement(OracleResultSet.TYPE_FORWARD_ONLY,
                                                                     OracleResultSet.CONCUR_READ_ONLY);
                     st.setFetchDirection(OracleResultSet.FETCH_FORWARD);
                     st.setFetchSize(geoRaptorPreferences.getFetchSize());
                     rSet      = (OracleResultSet)st.executeQuery(sql);
-                    // Setting up metadata
                     
+                    // Setting up metadata
                     this.meta       = (OracleResultSetMetaData)rSet.getMetaData();
                     this.resultMeta = getExportMetadata();
                   
+                    this.sdf = new SimpleDateFormat(DATETIMEFORMAT);
                     switch ( getExportType() ) {
-                      case GML : geoExporter = new GMLExporter(getConn(),getExportFileName(),getTotalRows()); 
-                                 if ( isAttributes() ) 
-                                     writeXSD(rSet);
-                                 break;
-                      case KML : geoExporter = new KMLExporter(getConn(),getExportFileName(),getTotalRows()); break;
-                      case SHP : geoExporter = new SHPExporter(getConn(),getExportFileName(),getTotalRows()); break;
-                      case TAB : geoExporter = new TABExporter(getConn(),getExportFileName(),getTotalRows()); break;
+                      case GEOJSON : geoExporter = new GeoJSONExporter(getConn(),getExportFileName(),getTotalRows()); break;
+                      case GML     : geoExporter = new GMLExporter(getConn(),getExportFileName(),getTotalRows());
+                                     if ( isAttributes() ) 
+                                         writeXSD(rSet);
+                                     break;
+                      case KML     : geoExporter = new KMLExporter(getConn(),getExportFileName(),getTotalRows()); break;
+                      case SHP     : geoExporter = new SHPExporter(getConn(),getExportFileName(),getTotalRows());
+                                     this.sdf = new SimpleDateFormat(DBASEDATEFORMAT);
+                                     break;
+                      case TAB     : geoExporter = new TABExporter(getConn(),getExportFileName(),getTotalRows()); 
+                                     this.sdf = new SimpleDateFormat(DBASEDATEFORMAT);
+                                     break;
                     }
                     geoExporter.setBaseName(getExportBaseName());
                     geoExporter.setAttributeFlavour(getAttributeFlavour());
@@ -692,14 +701,20 @@ public class ExporterWriter
                                     continue;
                                 }
                                 
-                                if ( Tools.isSupportedType(rsMD.getColumnType(1),rsMD.getColumnTypeName(1)) ) {
-                                    // dbase Specific date issue 
+                                if ( Tools.isSupportedType(rsMD.getColumnType(1),
+                                		                   rsMD.getColumnTypeName(1)) ) 
+                                {
                                     if ( rsMD.getColumnTypeName(1).equalsIgnoreCase("DATE") ) {
-                                        geoExporter.printColumn(rSet.getDate(col)!=null 
-                                                                ? rSet.getDate(col).toString()
-                                                                : Preferences.getInstance().getNullDate(),
-                                                                rsMD); // This gives us yyyy-MM-DD as required by dBase etc.
+                                    	String sDate = null;
+                                    	if ( rSet.getDate(col)!=null ) {
+                                           	// DBase sdf formatter does not have time ...
+                                   			sDate = this.sdf.format(rSet.getDate(col));
+                                    	} else {
+                                    		sDate = Preferences.getInstance().getNullDate();
+                                    	}
+                                        geoExporter.printColumn(sDate,rsMD);
                                     } else {
+                                        //columnValue = SQLConversionTools.convertToString(conn,rSet.getObject(col),rsMD);
                                         columnValue = SQLConversionTools.convertToString(conn,rSet,col);
                                         if ( columnValue == null ) {
                                             if ((getExportType().compareTo(Constants.EXPORT_TYPE.SHP)==0 ||

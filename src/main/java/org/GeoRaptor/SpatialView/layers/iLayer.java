@@ -135,7 +135,11 @@ public interface iLayer  {
 	
 	void setGeometryType(Constants.GEOMETRY_TYPES _geometryType);
 
- 	int getSRIDAsInteger();
+	String getSRID();
+
+	int getSRIDAsInteger();
+
+	Constants.SRID_TYPE getSRIDType();
 
 	Connection getConnection();
 
@@ -145,11 +149,7 @@ public interface iLayer  {
 
 	void setView(SpatialView spatialView);
 
-	String getSRID();
-
 	String getConnectionName();
-
-	Constants.SRID_TYPE getSRIDType();
 
 	boolean isConnectionOpen();
 

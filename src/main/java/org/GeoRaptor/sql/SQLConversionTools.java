@@ -109,6 +109,9 @@ public class SQLConversionTools {
              * meta.getColumnLabel(_col) + "," + meta.getColumnDisplaySize(_col) + "," +
              * meta.getColumnType(_col)  + "/" + meta.getColumnTypeName(_col) + "("+
              * meta.getPrecision(_col)   + "," + meta.getScale(_col) +")");*/
+			
+            int dataTypeScale     = meta.getScale(1);
+            int dataTypePrecision = meta.getPrecision(1);
 
             DecimalFormat df = Tools.getDecimalFormatter(meta.getScale(_col)==0?-1:meta.getScale(_col));
             
@@ -125,18 +128,41 @@ public class SQLConversionTools {
 			case Types.CLOB:     value = readClob(_rSet.getClob(_col));   break;
 			case Types.TINYINT: 
 			case Types.SMALLINT:
-			case Types.INTEGER:  Integer intValue = _rSet.getInt(_col);   value = String.valueOf(intValue);  break;
+			case Types.INTEGER:  Integer intValue  = _rSet.getInt(_col);  value = String.valueOf(intValue);  break;
 			case Types.BIGINT:      Long longValue = _rSet.getLong(_col); value = String.valueOf(longValue); break;
-            case OracleTypes.BINARY_DOUBLE:
-            case OracleTypes.BINARY_FLOAT:
-    			//case OracleTypes.BINARY_DOUBLE: BINARY_DOUBLE bdbl = new BINARY_DOUBLE(_ors.getOracleObject(_col).getBytes()); value = df.format(new Double(bdbl.stringValue())); break;				
-    			//case OracleTypes.BINARY_FLOAT: BINARY_FLOAT bflt = (BINARY_FLOAT) _ors.getOracleObject(_col); value = df.format(new Float(bflt.stringValue())); break;
-			case Types.FLOAT:
-			case Types.DOUBLE:
+			
+			case Types.FLOAT: 
+            case OracleTypes.BINARY_FLOAT  : float f = _rSet.getFloat(_col); 
+                                             return df.format(f);
+     
+			case Types.DOUBLE: 			
+            case OracleTypes.BINARY_DOUBLE : double d = _rSet.getDouble(_col); 
+                                             return df.format(d); 
+
 			case Types.DECIMAL:
 			case OracleTypes.NUMBER:
-				BigDecimal bd = (BigDecimal)_rSet.getObject(_col);
-				value = ( meta.getScale(_col)==0 ) ? bd.toBigInteger().toString() : df.format(Double.valueOf(bd.doubleValue())); break;
+			     Object obj = _rSet.getObject(_col);
+			     BigDecimal bd = null;
+                 if ( obj instanceof java.math.BigDecimal ) {
+	                  bd = (BigDecimal)obj;
+	                  return df.format(obj);
+	              }
+                  NUMBER num = (NUMBER)_rSet.getObject(_col);
+	              if ( dataTypeScale == 0 ) 
+	              {
+	                  if (dataTypePrecision == 0)  { Long    l = new Long(-1);        if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue()); }
+	                  if (dataTypePrecision <= 3 ) { Byte    b = new Byte((byte)255); if ( num.isConvertibleTo(b.getClass()) ) return String.valueOf(num.byteValue()); } 
+	                  if (dataTypePrecision <= 5 ) { Short   s = -1;                  if ( num.isConvertibleTo(s.getClass()) ) return String.valueOf(num.shortValue()); } 
+	                  if (dataTypePrecision <= 9 ) { Integer i = new Integer(-1);     if ( num.isConvertibleTo(i.getClass()) ) return String.valueOf(num.intValue()); }
+	                  Long l = new Long(-1); 
+	                  if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue());
+	              }
+	              if ( dataTypePrecision <= 63  ) { Float  flt  = new Float(Float.NaN);   if ( num.isConvertibleTo(flt.getClass()) ) return String.valueOf(df.format(num.floatValue())); }
+	              if ( dataTypePrecision == 126 ) { Double dbl  = new Double(Double.NaN); if ( num.isConvertibleTo(dbl.getClass()) ) return String.valueOf(df.format(num.doubleValue())); }
+	              bd = new BigDecimal(Double.NaN);
+	              if ( num.isConvertibleTo(bd.getClass()) ) return String.valueOf(df.format(num.bigDecimalValue()));
+	              return num.stringValue();
+
 			case OracleTypes.TIMESTAMPTZ:  value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPTZ(_col).stringValue(conn); break;
 			case OracleTypes.TIMESTAMPLTZ: value = ((oracle.jdbc.OracleResultSet)_rSet).getTIMESTAMPLTZ(_col).stringValue(conn); break;
 			case OracleTypes.INTERVALYM:   value = ((oracle.jdbc.OracleResultSet)_rSet).getINTERVALYM(_col).stringValue(); break;
@@ -162,7 +188,6 @@ public class SQLConversionTools {
 			}
 			
 		} catch (Exception e) {
-			System.out.println(e.toString());
 			value = null;
 		}
 		return value;
@@ -235,7 +260,6 @@ public class SQLConversionTools {
 			}
 			
 		} catch (Exception e) {
-			System.out.println(e.toString());
 			value = null;
 		}
 		return value;
@@ -298,12 +322,17 @@ public class SQLConversionTools {
                   retStr = (String)_object; 
               }
               return retStr;
+              
+            case Types.DOUBLE              : 
+            case OracleTypes.BINARY_DOUBLE : double bdbl = (double)_object; return df.format(bdbl);
+
+            case Types.FLOAT               : 
+            case OracleTypes.BINARY_FLOAT  : float  bflt =  (float)_object; return df.format(bflt);
+
             case Types.TINYINT      : /* Integer data from 0 through 255. Storage size is 1 byte. */
             case Types.SMALLINT     : /* Integer data from -2^15 (-32,768) through 2^15 - 1 (32,767). Storage size is 2 bytes. */
             case Types.BIGINT       : /* Integer (whole number) data from -2^63 (-9,223,372,036,854,775,808) through 2^63-1 (9,223,372,036,854,775,807). Storage size is 8 bytes. */
             case Types.INTEGER      : /* Integer (whole number) data from -2^31 (-2,147,483,648) through 2^31 - 1 (2,147,483,647). Storage size is 4 bytes. The SQL-92 synonym for int is integer. */
-            case Types.FLOAT        : 
-            case Types.DOUBLE       : 
             case Types.DECIMAL      : 
             case OracleTypes.NUMBER :
               BigDecimal bd = null;
@@ -325,8 +354,7 @@ public class SQLConversionTools {
               bd = new BigDecimal(Double.NaN);
               if ( num.isConvertibleTo(bd.getClass()) ) return String.valueOf(df.format(num.bigDecimalValue()));
               return num.stringValue();
-            case OracleTypes.BINARY_DOUBLE : BINARY_DOUBLE bdbl = (BINARY_DOUBLE)_object; return df.format(new Double(bdbl.stringValue())); // bdbl.doubleValue(); throws "Conversion to double failed" 
-            case OracleTypes.BINARY_FLOAT  : BINARY_FLOAT  bflt =  (BINARY_FLOAT)_object; return df.format(new Float(bflt.stringValue())); // bflt.floatValue();  throws "Conversion to double failed" 
+
             case OracleTypes.TIMESTAMPTZ   : return((TIMESTAMPTZ)_object).stringValue(conn);
             case OracleTypes.TIMESTAMPLTZ  : return((TIMESTAMPLTZ)_object).stringValue(conn);
             case OracleTypes.INTERVALYM    : return((INTERVALYM)_object).stringValue();  
@@ -336,6 +364,8 @@ public class SQLConversionTools {
             case OracleTypes.DATE          :
                 if ( _object instanceof String && columnTypeName.equalsIgnoreCase("DATE")) {
                     return (String)_object;
+                } else if (_object instanceof oracle.sql.DATE || _object instanceof Date ) {
+                    return ((DATE)_object).toString();
                 }
                 TIMESTAMP ts = (TIMESTAMP) _object;
                 Timestamp ti = new Timestamp(1000000); if ( ts.isConvertibleTo(ti.getClass()) ) { return String.valueOf(ts.timestampValue().toString()); }

@@ -42,6 +42,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.Styling;
+import org.GeoRaptor.io.Export.GeoJSONExporter;
 import org.GeoRaptor.io.Export.GMLExporter;
 import org.GeoRaptor.io.Export.IExporter;
 import org.GeoRaptor.io.Export.KMLExporter;
@@ -135,6 +136,9 @@ public class RenderResultSet
     
     private static final int COMMAND_CREATE_IMAGE_SELECTED_GEOMS = Ide.findOrCreateCmdID("cmdCreateImageSelectedGeometries");
     private static IdeAction ACTION_CREATE_IMAGE_SELECTED_GEOMS = null;
+
+    private static final int COMMAND_GRID_EXPORT_GEOJSON = Ide.findOrCreateCmdID("cmdGridExportGeoJSON");
+    private static IdeAction ACTION_GRID_EXPORT_GEOJSON = null;
 
     private static final int COMMAND_GRID_EXPORT_GML = Ide.findOrCreateCmdID("cmdGridExportGML");
     private static IdeAction ACTION_GRID_EXPORT_GML = null;
@@ -239,10 +243,11 @@ public class RenderResultSet
         if (RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR == null) { 
             RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR = createAction(COMMAND_COPY_GEOMMBR2CLIPBOARD,this.propertyManager.getMsg("CopyGeometriesMBR"),null); }
         
-        if (RenderResultSet.ACTION_GRID_EXPORT_GML == null) { RenderResultSet.ACTION_GRID_EXPORT_GML = createAction(COMMAND_GRID_EXPORT_GML,this.propertyManager.getMsg("ExportGML"),null); }
-        if (RenderResultSet.ACTION_GRID_EXPORT_KML == null) { RenderResultSet.ACTION_GRID_EXPORT_KML = createAction(COMMAND_GRID_EXPORT_KML,this.propertyManager.getMsg("ExportKML"),null); }
-        if (RenderResultSet.ACTION_GRID_EXPORT_SHP == null) { RenderResultSet.ACTION_GRID_EXPORT_SHP = createAction(COMMAND_GRID_EXPORT_SHP,this.propertyManager.getMsg("ExportSHP"),null); }
-        if (RenderResultSet.ACTION_GRID_EXPORT_TAB == null) { RenderResultSet.ACTION_GRID_EXPORT_TAB = createAction(COMMAND_GRID_EXPORT_TAB,this.propertyManager.getMsg("ExportTAB"),null); }
+        if (RenderResultSet.ACTION_GRID_EXPORT_GEOJSON == null) { RenderResultSet.ACTION_GRID_EXPORT_GEOJSON = createAction(COMMAND_GRID_EXPORT_GEOJSON,this.propertyManager.getMsg("ExportGeoJSON"),null); }
+        if (RenderResultSet.ACTION_GRID_EXPORT_GML     == null) { RenderResultSet.ACTION_GRID_EXPORT_GML     = createAction(COMMAND_GRID_EXPORT_GML,this.propertyManager.getMsg("ExportGML"),null); }
+        if (RenderResultSet.ACTION_GRID_EXPORT_KML     == null) { RenderResultSet.ACTION_GRID_EXPORT_KML     = createAction(COMMAND_GRID_EXPORT_KML,this.propertyManager.getMsg("ExportKML"),null); }
+        if (RenderResultSet.ACTION_GRID_EXPORT_SHP     == null) { RenderResultSet.ACTION_GRID_EXPORT_SHP     = createAction(COMMAND_GRID_EXPORT_SHP,this.propertyManager.getMsg("ExportSHP"),null); }
+        if (RenderResultSet.ACTION_GRID_EXPORT_TAB     == null) { RenderResultSet.ACTION_GRID_EXPORT_TAB     = createAction(COMMAND_GRID_EXPORT_TAB,this.propertyManager.getMsg("ExportTAB"),null); }
 
         if (RenderResultSet.ACTION_GRID_VISUAL_SDO == null)      { RenderResultSet.ACTION_GRID_VISUAL_SDO = createAction(COMMAND_GRID_VISUAL_SDO,this.propertyManager.getMsg("VisualSDO"),null); }
         if (RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR==null) { RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR = createAction(COMMAND_GRID_VISUAL_SDO_COLOUR,this.propertyManager.getMsg("VisualSDOColoured"),null); }        
@@ -286,6 +291,7 @@ public class RenderResultSet
         if ( _ideAction.getCommandId() == COMMAND_UPDATE_METADATA             ) { copySdoMetadataSQLClipboard(sqlType.UPDATE); } else 
         if ( _ideAction.getCommandId() == COMMAND_DELETE_METADATA             ) { copySdoMetadataSQLClipboard(sqlType.DELETE); } else 
         if ( _ideAction.getCommandId() == COMMAND_MAP_DIMINFO                 ) { return mapSelectedDimInfos();                } else
+        if ( _ideAction.getCommandId() == COMMAND_GRID_EXPORT_GEOJSON         ) { exportResultSet(Constants.EXPORT_TYPE.GEOJSON);} else
         if ( _ideAction.getCommandId() == COMMAND_GRID_EXPORT_GML             ) { exportResultSet(Constants.EXPORT_TYPE.GML);  } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_EXPORT_KML             ) { exportResultSet(Constants.EXPORT_TYPE.KML);  } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_EXPORT_SHP             ) { exportResultSet(Constants.EXPORT_TYPE.SHP);  } else
@@ -384,14 +390,16 @@ public class RenderResultSet
                 GeoRaptorMenu.add(CopyGeometriesMenu,menuIndex++);
 
             JMenu ExportMenu = new JMenu(this.propertyManager.getMsg("EXPORT"));
+                JMenuItem ExportGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GEOJSON);
+                ExportMenu.add(ExportGeoJSONMenuItem,0);
                 JMenuItem ExportGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GML);
-                ExportMenu.add(ExportGMLMenuItem,0);
+                ExportMenu.add(ExportGMLMenuItem,1);
                 JMenuItem ExportKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_KML);
-                ExportMenu.add(ExportKMLMenuItem,1);        
+                ExportMenu.add(ExportKMLMenuItem,2);        
                 JMenuItem ExportSHPMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_SHP);
-                ExportMenu.add(ExportSHPMenuItem,2);        
+                ExportMenu.add(ExportSHPMenuItem,3);        
                 JMenuItem ExportTABMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_TAB);
-                ExportMenu.add(ExportTABMenuItem,3);
+                ExportMenu.add(ExportTABMenuItem,4);
                 GeoRaptorMenu.add(ExportMenu,menuIndex++);
             
             JMenu VisualMenu = new JMenu(this.propertyManager.getMsg("VISUAL"));
@@ -408,31 +416,33 @@ public class RenderResultSet
               JMenuItem VisualEWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_EWKT);
               VisualMenu.add(VisualEWKTMenuItem,2);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.EWKT ) VisualEWKTMenuItem.setIcon(iconTick);
-              
-              JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
-              VisualMenu.add(VisualWKTMenuItem,3);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
-              
-              JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
-              VisualMenu.add(VisualKMLMenuItem,4);        
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
+
+              JMenuItem VisualGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GEOJSON);
+              VisualMenu.add(VisualGeoJSONMenuItem,3);
+              if ( mainPrefs.getVisualFormat()==Constants.renderType.GEOJSON) VisualGeoJSONMenuItem.setIcon(iconTick);
               
               JMenuItem VisualGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GML);
-              VisualMenu.add(VisualGMLMenuItem,5);
+              VisualMenu.add(VisualGMLMenuItem,4);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.GML3 ) VisualGMLMenuItem.setIcon(iconTick);
-              
+
+              JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
+              VisualMenu.add(VisualKMLMenuItem,5);        
+              if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
+
+              JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
+              VisualMenu.add(VisualWKTMenuItem,6);
+              if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
+
               JMenuItem VisualIconMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_ICON);
-              VisualMenu.add(VisualIconMenuItem,6);
+              VisualMenu.add(VisualIconMenuItem,7);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.ICON ) VisualIconMenuItem.setIcon(iconTick);
               
               JMenuItem VisualThumbnailMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL);
-              VisualMenu.add(VisualThumbnailMenuItem,7);
+              VisualMenu.add(VisualThumbnailMenuItem,8);
               if ( mainPrefs.getVisualFormat()==Constants.renderType.THUMBNAIL ) VisualThumbnailMenuItem.setIcon(iconTick);
-            
-              JMenuItem VisualGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GEOJSON);
-              VisualMenu.add(VisualGeoJSONMenuItem,8);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.GEOJSON) VisualGeoJSONMenuItem.setIcon(iconTick);
+
             GeoRaptorMenu.add(VisualMenu,menuIndex++);
+
             
             contextMenu.add(GeoRaptorMenu);
         }
@@ -1184,6 +1194,7 @@ public class RenderResultSet
                                          characterSet,
                                          resultMeta,
                                          this.geometryMetadata);
+          
           long startTime = System.currentTimeMillis(); 
           ProgressBar progress = new ProgressBar(this._table, 
                                                  _exportType.toString() + " Exporter", 
@@ -1679,12 +1690,7 @@ public class RenderResultSet
         while (iter.hasNext() ) {
             clipboardText += (Strings.isEmpty(clipboardText) ? "" : "\n" ) 
 			                 +
-			                 RenderTool.renderGeometryAsPlainText(
-					               iter.next(), 
-					               Constants.TAG_MDSYS_SDO_GEOMETRY,
-					               Constants.bracketType.NONE,
-					               Constants.MAX_PRECISION
-			                 );
+			                 SDO_GEOMETRY.getGeometryAsString(iter.next());
         }
         if (Strings.isEmpty(clipboardText) ) {
             return false;
@@ -2548,6 +2554,7 @@ public class RenderResultSet
           try 
           {
               switch ( this.exportType ) {
+                case GEOJSON: geoExporter = new GeoJSONExporter(this.conn,this.options.getFilename(),rowsToProcess); break;
                 case GML : geoExporter = new GMLExporter(this.conn,this.options.getFilename(),rowsToProcess);
                            if ( this.options.hasAttributes() ) {
                                writeXSD(this.options.getEntityName(),
@@ -2683,15 +2690,17 @@ public class RenderResultSet
                           
                           // TOBEDONE For shapefiles must export at least a row id
                           //
-                          if ( this.options.hasAttributes() == false ) {
+                          if ( ! this.options.hasAttributes() ) {
                               continue;
                           }
 
-                          if ( Tools.isSupportedType(columnMetadata.getColumnType(1),columnMetadata.getColumnTypeName(1)) ) {
-                              geoExporter.printColumn(SQLConversionTools.convertToString(this.conn,
-                                                                                         _table.getValueAt(viewRow,viewCol),
-                                                                                         columnMetadata),
-                                                      columnMetadata);
+                          if ( Tools.isSupportedType(columnMetadata.getColumnType(1),
+                        		                     columnMetadata.getColumnTypeName(1)) ) 
+                          {
+                        	  String value = SQLConversionTools.convertToString(this.conn,
+                                                                                _table.getValueAt(viewRow,viewCol),
+                                                                                columnMetadata);
+                              geoExporter.printColumn(value,columnMetadata);
                           } else {
                               if ( row == 1 ) {
                                   LOGGER.warn("runExport.run: Output of column " + columnMetadata.getColumnName(1) + " of type " + columnMetadata.getColumnTypeName(1) + " is not supported");

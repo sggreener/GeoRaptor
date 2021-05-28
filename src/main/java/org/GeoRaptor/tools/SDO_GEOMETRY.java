@@ -1,12 +1,8 @@
 package org.GeoRaptor.tools;
 
-
 import java.math.BigDecimal;
-import java.nio.DoubleBuffer;
-import java.nio.IntBuffer;
 import java.sql.Array;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.DecimalFormat;
@@ -24,11 +20,12 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.WKTWriter;
+import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.locationtech.jts.io.oracle.OraGeom;
 import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
-import oracle.jdbc.OracleConnection;
 import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
 import oracle.spatial.util.GML2;
@@ -36,7 +33,6 @@ import oracle.spatial.util.GML3;
 import oracle.spatial.util.GeometryExceptionWithContext;
 import oracle.spatial.util.KML2;
 import oracle.spatial.util.WKT;
-import oracle.sql.Datum;
 import oracle.sql.NUMBER;
 
 public class SDO_GEOMETRY 
@@ -45,16 +41,9 @@ public class SDO_GEOMETRY
     /**
      * For access to logger subsystem
      */
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.SDO_Geometry");
+    private static final Logger LOGGER = 
+      org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.SDO_Geometry");
 
-    /**
-     * For access to preferences
-     */
-    protected static Preferences geoRaptorPreferences = null;
-
-    private static int defaultGTYPE = 0;
-    private static int defaultDimension = 2;
-    
     public static double[] reverseOrdinates(int      _dim,
                                             double[] _ordinates) 
     {
@@ -325,93 +314,146 @@ public class SDO_GEOMETRY
      *          Moved from RenderResultset
     */
      
-	public static String getGeometryAsString(Struct _struct) 
+	public static String getGeometryAsString(JGeometry _jGeom) 
     {
+		Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+		Struct sGeom = JGeom.toStruct(_jGeom,conn);
+		return getGeometryAsString(sGeom);
+    }
+	
+	public static String getGeometryAsString(Struct _struct) 
+	    {
         if ( _struct==null ) {
             return "";
         }
+        Preferences preferences = MainSettings.getInstance().getPreferences();
+        Constants.renderType visualType = preferences.getVisualFormat();
+        
+        // If visualisation is not SDO_GEOMETRY we need a connection
+        // to use sdoutl.jar/JTS conversion routines so grab first available
+        //
         Connection conn = DatabaseConnections.getInstance().getActiveConnection(); 
-        geoRaptorPreferences = MainSettings.getInstance().getPreferences();
+        if ( conn == null ) {
+        	conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+        }
+        if ( conn == null && ( visualType != Constants.renderType.SDO_GEOMETRY ) )
+        {
+        	visualType = Constants.renderType.SDO_GEOMETRY;
+        }
         
         // get geometry structure
         String clipText = "";
         try {
 			Struct structGeom = _struct;
-            String sqlTypeName = _struct.getSQLTypeName();
-            if ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) {
+            if ( _struct.getSQLTypeName().indexOf("MDSYS.ST_")==0 ) {
                 structGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
-            Constants.renderType visualType = geoRaptorPreferences.getVisualFormat();
-
-            if ( conn == null && ( visualType != Constants.renderType.SDO_GEOMETRY ) )
-            {
-                // Drop back to ordinary sdoGeometry
-                visualType = Constants.renderType.SDO_GEOMETRY;
-            }
 
             // Images cannot be converted to clipboard as text
             //
-            if (visualType == Constants.renderType.ICON || visualType == Constants.renderType.THUMBNAIL ) {
+            if (visualType == Constants.renderType.ICON || 
+                visualType == Constants.renderType.THUMBNAIL ) {
                 visualType = Constants.renderType.SDO_GEOMETRY;
             }
 
-            if ( visualType != Constants.renderType.SDO_GEOMETRY ) {
-                // If sdo_geometry object is 3D then certain renders cannot occur
-                Object[] data = (Object[])structGeom.getAttributes();
-                int gtype = OraUtil.toInteger(data[0],Integer.MAX_VALUE);
+            int mDim           = SDO_GEOMETRY.getMeasureDimension(structGeom);
+            boolean hasArc     = SDO_GEOMETRY.hasArc(structGeom);
+            boolean isCompound = SDO_GEOMETRY.hasCompoundCurve(structGeom);
+        	int  coordDims     = SDO_GEOMETRY.getDimension(structGeom,2);
+           	int srid           = SDO_GEOMETRY.getSRID(structGeom);
 
-                if ( ( gtype / 1000 ) >= 3 )
-                {
-                    if ( visualType == Constants.renderType.WKT ||
-                         visualType == Constants.renderType.KML ) 
-                    {
-                         visualType = Constants.renderType.SDO_GEOMETRY;
-                    }
-                }
-             }
-            // create label
-            // get geometry structure       
-            switch ( visualType )
+            // If sdo_geometry object has LRS or Compound Elements then 
+           	// GML/KML rendering cannot occur
+            if ( ( mDim != 0 || isCompound )
+                 && (   visualType == Constants.renderType.KML2 
+                     || visualType == Constants.renderType.KML 
+                     || visualType == Constants.renderType.GML2 
+                     || visualType == Constants.renderType.GML3 )
+            	    ) 
             {
+           		visualType = Constants.renderType.SDO_GEOMETRY;
+            }
+        	if ( coordDims >= 3 && visualType == Constants.renderType.KML )
+        		visualType = Constants.renderType.SDO_GEOMETRY;
+            	
+            WKT w = null;
+            int decimalPlaces = preferences.getPrecision();
+            double  precisionModelScale = Tools.getPrecisionScale(decimalPlaces);
+    		PrecisionModel           pm = null;
+            GeometryFactory geomFactory = null;
+            OraReader     geomConverter = null;
+    		Geometry                  g = null;
+
+            // Do conversion       
+            switch ( visualType )
+            {                    
+                case GEOJSON:
+                    pm = new PrecisionModel(precisionModelScale);
+                    geomFactory = new GeometryFactory(pm);
+                    geomConverter = new OraReader(geomFactory);
+            		g = geomConverter.read(structGeom);
+                	GeoJsonWriter gjw = new GeoJsonWriter(decimalPlaces);
+                	gjw.setEncodeCRS(true);
+                	clipText = gjw.write(g);
+                	break;
+                	
+                case WKT:
+                	// WKT is 2D
+            		w = new WKT();
+            		clipText = new String(w.fromStruct(structGeom));
+            		break;
+            		
+                case EWKT : 
+            		// JTS does not handle geometries with CircularStrings 
+                	if ( hasArc ) {
+                		// This degrades geometry to 2D but unless I encode my own WKT writer...
+                		w = new WKT();
+                		clipText = new String(w.fromStruct(structGeom));
+                	} else {
+                        pm = new PrecisionModel(precisionModelScale);
+                        geomFactory = new GeometryFactory(pm);
+                        geomConverter = new OraReader(geomFactory);
+                		g = geomConverter.read(structGeom);
+                		WKTWriter              wktw = new WKTWriter(coordDims);
+                		clipText = wktw.write(g);
+
+                		// JTS WKT writer doesn't interpret measures in the Oracle way
+                		if ( mDim == 3 && coordDims == 3 ) 
+                			clipText = clipText.replace("Z","M");
+                		else if ( mDim == 4 )
+                			clipText = clipText.replace("Z","ZM");
+                	}
+                    clipText = "SRID=" + (srid==Constants.SRID_NULL?"NULL":String.valueOf(srid)) + ";" + clipText;
+                    break;
+                        
+                case KML  : /* Always render with KML2 */
+                case KML2 : KML2.setConnection(conn);
+                            clipText = KML2.to_KMLGeometry(structGeom);
+                            break;
+                            
+                case GML2 : GML2.setConnection(conn);
+                            clipText = GML2.to_GMLGeometry(structGeom);
+                            break;
+                            
+                case GML3 : GML3.setConnection(conn);
+                            clipText = GML3.to_GML3Geometry(structGeom);
+                            break;
+                            
                 case SDO_GEOMETRY:
+                default: 
                     clipText = RenderTool.renderStructAsPlainText(
                                                 structGeom,
                                                 Constants.bracketType.NONE,
                                                 Constants.MAX_PRECISION);
                     break;
-                case WKT  :
-                case KML2 :
-                case GML2 :
-                case GML3 : 
-                  if ( visualType == Constants.renderType.WKT || SDO_GEOMETRY.hasArc(structGeom) ) {
-                      WKT w = new WKT();
-                      clipText = new String(w.fromStruct(structGeom));
-                  } else {
-                      switch (visualType) {
-                      case KML2 : KML2.setConnection(conn);
-                                  clipText = KML2.to_KMLGeometry(structGeom);
-                                  break;
-                      case GML2 : GML2.setConnection(conn);
-                                  clipText = GML2.to_GMLGeometry(structGeom);
-                                  break;
-                      case GML3 : GML3.setConnection(conn);
-                                  clipText = GML3.to_GML3Geometry(structGeom);
-                                  break;
-					default:
-						break;
-                      }
-                  }
-			default:
-				break;
             }
     
-        } catch (Exception _e) {
-            clipText = _e.getLocalizedMessage();
+        } catch (Exception e) {
+            clipText = "";
         }
         return clipText;
     }
 
-        
     public static int getFullGType(Struct _struct,
                                    int    _nullValue) 
     {
@@ -446,7 +488,7 @@ public class SDO_GEOMETRY
     
     
     public static int getGType(Struct _struct) {
-      return getGType(_struct,defaultGTYPE);
+      return getGType(_struct,0);
     }
     
     public static int getGType(Struct _struct,
@@ -466,7 +508,7 @@ public class SDO_GEOMETRY
             return 0;
         }
         int fullGtype = getFullGType (_struct,0);
-        int dimension = defaultDimension;
+        int dimension = 2;
         if ( fullGtype != 0 ) {
             dimension = (int)((fullGtype % 1000) / 100);
         }
@@ -836,12 +878,33 @@ public class SDO_GEOMETRY
      * @return
      * @author Simon Greener, January 12th 2011
      */
-    
     public static boolean hasArc(Struct _struct) 
     {
+    	int compoundType = compound(_struct);
+    	switch (compoundType) {
+    	case 0 : return false;
+    	case 1 : return true;
+    	case 2 : return true;
+    	}
+    	return false;
+    }
+
+    public static boolean hasCompoundCurve(Struct _struct) 
+    {
+    	// Is a compound linestring that is made up of LineStrings and CircularStrings
+    	int compoundType = compound(_struct);
+    	switch (compoundType) {
+    	case 0 : return false; // Stroked object or point
+    	case 1 : return false; // Single CircularString or Circle
+    	case 2 : return true;  // CompoundCurve
+    	}
+    	return false; 
+    }
+
+    public static int compound(Struct _struct) 
+    {
       if (_struct == null) 
-    	  return false;
-      
+    	  return 0;
       try 
       {
           Struct stGeom = _struct;
@@ -852,11 +915,11 @@ public class SDO_GEOMETRY
 
           int gtype = SDO_GEOMETRY.getGType(stGeom,-1);
           if (gtype == -1 || gtype == 0 || gtype == 1 || gtype == 5 )
-              return false;
+              return 0;
           
           int[] eia = SDO_GEOMETRY.getSdoElemInfo(stGeom);
           if ( eia == null )
-        	  return false;
+        	  return 0;
 
           int       elements = ( eia.length / 3 );
           int          etype = 0;
@@ -868,19 +931,17 @@ public class SDO_GEOMETRY
         	  etype          = eia[(i - 1) * 3 + 1];
         	  interpretation = eia[(i - 1) * 3 + 2];
               if ( etype == 2 && interpretation == 2) 
-                  return true;
+                  return 1; // Single CircularString
               if ( etype == 4 || etype == 1005 || etype == 2005 )
-            	  return true;
+            	  return 2;  // CompoundCurve
               if ( (etype == 1003 || etype == 2003) 
                    && 
                    (interpretation == 2 || interpretation == 4))
-            	  return true;
+            	  return 1; // CircularString ring or Circle
           }
-          return false;
+          return 0;
       } catch (SQLException sqle) {
-System.out.println("hasArc");
-sqle.printStackTrace();
-        return false;
+        return 0;
       }
     }
   

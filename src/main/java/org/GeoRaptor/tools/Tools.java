@@ -58,6 +58,7 @@ import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.geom.PrecisionModel;
 
 public class Tools {
 
@@ -152,7 +153,8 @@ public class Tools {
         return precisionModelScale;
     }
     
-    public static ArrayList<String> getCharsets(String _oracleCharset) {
+    public static ArrayList<String> getCharsets(String _oracleCharset) 
+    {
         DBConfig dbConf = DBConfig.getInstance();
         // String nlsLength   = dbConf.getString(DBConfig.NLS_LENGTH);  // CHAR or BYTE
         String expEncoding = dbConf.getString(DBConfig.EXPORT_ENCODING);
@@ -162,7 +164,7 @@ public class Tools {
         EnvironOptions environOptions = (EnvironOptions)ideSettings.getData("environment-options");
         envEncoding = environOptions.getEncoding();
 
-        String[] encodings = { _oracleCharset, expEncoding, envEncoding, "Cp1252", "ISO-8859-1", "UTF-8", "US-ASCII", "UTF-16" };
+        String[] encodings = { "UTF-8", _oracleCharset, expEncoding, envEncoding, "Cp1252", "ISO-8859-1", "US-ASCII", "UTF-16" };
         ArrayList<String> myCharsets = new ArrayList<String>();
         for (int i=0; i<encodings.length;i++) {
             if ( !Strings.isEmpty(encodings[i]) ) {
@@ -215,6 +217,20 @@ public class Tools {
         //
         DecimalFormat dFormat = getNLSDecimalFormat(_maxFractionDigits,_includeGroupingSeparator);
         return dFormat; 
+    }
+    
+    public static DecimalFormat getDecimalFormatter(PrecisionModel precisionModel) 
+    {
+        // the default number of decimal places is 16, which is sufficient
+        // to accomodate the maximum precision of a double.
+        int decimalPlaces = precisionModel.getMaximumSignificantDigits();
+        // specify decimal separator explicitly to avoid problems in other
+        // locales
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        return new DecimalFormat("#" + 
+                                 (decimalPlaces > 0 ? "." : "") + Strings.stringOfChar('#', decimalPlaces), 
+                                 symbols);
     }
     
     public static DecimalFormat getDecimalFormatter(int _maxFractionDigits) {
@@ -339,6 +355,16 @@ public class Tools {
                 );
     }
 
+    public static boolean isNumericType(int columnType) 
+    {
+    	return (columnType == Types.SMALLINT  || columnType == Types.TINYINT ||
+				columnType == Types.INTEGER   || columnType == Types.BIGINT ||  
+				columnType == Types.NUMERIC /* OracleTypes.NUMBER */ ||
+				columnType == Types.FLOAT     || columnType == OracleTypes.BINARY_FLOAT ||
+				columnType == Types.DOUBLE    || columnType == OracleTypes.BINARY_DOUBLE
+				);
+	}
+    
     public static String dataTypeToXSD(OracleResultSetMetaData _meta,
                                        int                     _column) 
     throws SQLException 
@@ -375,7 +401,6 @@ public class Tools {
         
           case OracleTypes.BINARY_FLOAT  : return "float";   // 32bit binary number
           case OracleTypes.BINARY_DOUBLE : return "double";  // 64 bit binary float
-                                            
         
           case Types.DECIMAL : 
           case OracleTypes.NUMBER :

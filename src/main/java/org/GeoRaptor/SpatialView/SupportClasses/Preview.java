@@ -217,9 +217,10 @@ implements ComponentListener
                                        this.mbr.getHeight()) / 2.0;
             if ( halfSide == 0.0 ) { halfSide = 0.5; }
             this.mbr = new Envelope(this.mbr.centre().getX() - halfSide,
-                                           this.mbr.centre().getY() - halfSide,
-                                           this.mbr.centre().getX() + halfSide,
-                                           this.mbr.centre().getY() + halfSide);
+                                    this.mbr.centre().getY() - halfSide,
+                                    this.mbr.centre().getX() + halfSide,
+                                    this.mbr.centre().getY() + halfSide,
+                                    SRID);
         }
         // Normalise MBR if ratio > 10
         //

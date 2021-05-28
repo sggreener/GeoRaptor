@@ -179,7 +179,8 @@ public class SpatialRenderer
       if ( _geoStruct == null ) return new JLabel(Constants.NULL);      
       JLabel retLabel = new JLabel();
       switch ( this.preferences.getVisualFormat() ) {
-          case SDO_GEOMETRY : 
+          case SDO_GEOMETRY :
+          case GEOJSON      :
           case EWKT         :
           case WKT          :
           case GML2         :
@@ -221,17 +222,17 @@ public class SpatialRenderer
     {
         if ( _geoStruct == null ) return new JLabel(Constants.NULL);
         String sqlTypeName = "";
-        try { sqlTypeName = _geoStruct.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("getPreview: Failed to get sqlTypeName of Struct");  return new JLabel(Constants.NULL);}
+        try { sqlTypeName = _geoStruct.getSQLTypeName(); } catch (SQLException e) {return new JLabel(Constants.NULL);}
         Struct stGeom = ( sqlTypeName.indexOf("MDSYS.ST_")==0 ) 
-                        ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
-                        : _geoStruct;
-        JGeometry geom = null;
-        try { geom = JGeometry.loadJS(stGeom); } catch (SQLException e) { geom = null; }
-        if ( geom == null ) {
+                          ? SDO_GEOMETRY.getSdoFromST(_geoStruct) 
+                          : _geoStruct;
+        JGeometry jGeom = null;
+        try { jGeom = JGeometry.loadJS(stGeom); } catch (SQLException e) { jGeom = null; }
+        if ( jGeom == null ) {
             LOGGER.error("Failed to get convert STRUCT to JGeometry");
             return new JLabel(this.renderGeoObject(stGeom,true));
         }
-        return getPreview(geom,null,_imageSize);
+        return getPreview(jGeom,null,_imageSize);
     }
 
     public JLabel getPreview(JGeometry _geom, 
@@ -244,8 +245,9 @@ public class SpatialRenderer
                              List<JGeometry> _geomSet,
                              Dimension       _imageSize)
     {
-        if ( _geom    == null && 
-             _geomSet == null ||
+        if ( (_geom    == null && 
+              _geomSet == null ) 
+             ||
              (_geomSet != null && 
               _geomSet.size() == 0 ) )  {
             return new JLabel(Constants.NULL);
@@ -253,7 +255,7 @@ public class SpatialRenderer
 
         List<JGeometry> geoSet = null;
         
-        JGeometry jGeom = _geom!=null?_geom:(_geomSet.size()==1?_geomSet.get(0):null);    
+        JGeometry jGeom = _geom!=null?_geom:(_geomSet.size()==1?_geomSet.get(0):null);
         if ( jGeom != null ) {
             int gtype = jGeom.getType();
             if (gtype == JGeometry.GTYPE_COLLECTION ) {
@@ -273,32 +275,27 @@ public class SpatialRenderer
             geoSet = new ArrayList<JGeometry>(_geomSet.size());
             geoSet.addAll(_geomSet);
         }
-        
+
         JLabel retLabel = new JLabel();
         Envelope mbr = JGeom.getGeoMBR(geoSet);
         if (mbr == null) {
             LOGGER.error("Failed to get geometry(s) MBR");
             return retLabel;
         }
+        
         // If either side of MBR is 0 then modify it.
         //
         if ( mbr.getWidth()==0 || mbr.getHeight()==0 ) {
-            double halfSide = Math.max(mbr.getWidth(),
-                                       mbr.getHeight()) / 2.0;
-            if ( halfSide == 0.0 ) halfSide = 0.5;
+            double side = Math.max(mbr.getWidth(),mbr.getHeight());
+            if ( side == 0.0 ) side = 0.5;
             if ( mbr.getWidth()==0 ) {
-                mbr = new Envelope(mbr.centre().getX() - halfSide,
-                                          mbr.centre().getY(),
-                                          mbr.centre().getX() + halfSide,
-                                          mbr.centre().getY());
-            } 
+                mbr = new Envelope(mbr.centre(),side,mbr.getHeight()); 
+            }
             if ( mbr.getHeight()==0 ) {
-                mbr = new Envelope(mbr.centre().getX(),
-                                          mbr.centre().getY() - halfSide,
-                                          mbr.centre().getX(),
-                                          mbr.centre().getY() + halfSide);
+              mbr = new Envelope(mbr.centre(),mbr.getWidth(),side); 
             }
         }
+        
         // Expand MBR
         //
         mbr = mbr.increaseByPercent(10);
@@ -344,6 +341,7 @@ public class SpatialRenderer
         while (iter.hasNext()) {
             jGeom = iter.next();
             gtype = jGeom.getType();
+            
             if ( gtype != JGeometry.GTYPE_MULTIPOINT &&
                  gtype != JGeometry.GTYPE_POINT ) { 
                 try {
@@ -549,9 +547,8 @@ public class SpatialRenderer
             } else {
                 clipText = Constants.NULL;
             }
-        } catch (Exception _e) {
-        	_e.printStackTrace();
-            clipText = sqlTypeName + " rendering Failed (" + _e.getMessage() + ")";
+        } catch (Exception e) {
+            clipText = sqlTypeName + " rendering Failed (" + e.getMessage() + ")";
         }
         return clipText;
    }
@@ -572,7 +569,7 @@ public class SpatialRenderer
             return "NULL";
         }
         String sqlTypeName;
-        try { sqlTypeName = _colValue.getSQLTypeName(); } catch (SQLException e) {LOGGER.error("renderSdoGeometry: Failed to get sqlTypeName of Struct:\n"+e.toString()); return ""; }
+        try { sqlTypeName = _colValue.getSQLTypeName(); } catch (SQLException e) {return "NULL"; }
         Struct stValue = _colValue;
         
         boolean colourSDOGeomElems = _allowColouring ? this.preferences.isColourSdoGeomElements() : false;
@@ -597,22 +594,18 @@ public class SpatialRenderer
         }
 
         Constants.renderType visualFormat = this.preferences.getVisualFormat();
-        // If ICON or THUMBNAIL drop back to SDO_GEOMETRY text
-        //
-        if (visualFormat == Constants.renderType.ICON ||
-            visualFormat == Constants.renderType.THUMBNAIL) 
-        {
-            visualFormat = Constants.renderType.SDO_GEOMETRY;
-        }
 
         // If visualisation is not SDO_GEOMETRY we need a connection
         // to use sdoutl.jar conversion routines so grab first available
         //
-        if ( this.dbConnection == null && ( visualFormat != Constants.renderType.SDO_GEOMETRY ) )
-        {
+        if ( this.dbConnection == null ) {
             this.dbConnection = DatabaseConnections.getInstance().getActiveConnection();
             if ( dbConnection == null ) {
-                visualFormat = Constants.renderType.SDO_GEOMETRY;
+            	this.dbConnection = DatabaseConnections.getInstance().getAnyOpenConnection();
+                if ( this.dbConnection == null && visualFormat != Constants.renderType.SDO_GEOMETRY ) {
+                    // Drop back to ordinary sdoGeometry
+                	visualFormat = Constants.renderType.SDO_GEOMETRY;
+                }
             }
         }
         
@@ -623,22 +616,18 @@ public class SpatialRenderer
                 stValue = SDO_GEOMETRY.getSdoFromST(_colValue);
             }
 
-            int mDim         = SDO_GEOMETRY.getMeasureDimension(stValue);
-           	int srid         = SDO_GEOMETRY.getSRID(stValue);
-        	int coordDims    = SDO_GEOMETRY.getDimension(stValue,2);        	
-            if (coordDims >= 3 && visualFormat == Constants.renderType.KML )
-            	visualFormat = Constants.renderType.SDO_GEOMETRY;
-
-            WKT w = null;
-            double  precisionModelScale = Tools.getPrecisionScale(this.preferences.getPrecision());
-    		PrecisionModel           pm = null;
-            GeometryFactory geomFactory = null;
-            OraReader     geomConverter = null;
-    		Geometry                  g = null;
-    		
             switch ( visualFormat )
             {
+            case GEOJSON:
+            case EWKT:
+            case WKT:
+            case KML:
+            case KML2:
+            case GML2:
+            case GML3: clipText = SDO_GEOMETRY.getGeometryAsString(stValue);
+                       break;
             case SDO_GEOMETRY:
+            default: /* Icon / Thumnail */ 
                 if ( colourSDOGeomElems  ) {
                     clipText = ( geomSourceType == Constants.geometrySourceType.SDO_GEOMETRY )
                                ? RenderTool.renderStructAsHTML(stValue,
@@ -657,55 +646,6 @@ public class SpatialRenderer
                   }
                   break;
 
-            case GEOJSON:
-                pm = new PrecisionModel(precisionModelScale);
-                geomFactory = new GeometryFactory(pm);
-                geomConverter = new OraReader(geomFactory);
-        		g = geomConverter.read(stValue);
-            	GeoJsonWriter gjw = new GeoJsonWriter(coordDims);
-            	gjw.setEncodeCRS(true);
-            	clipText = gjw.write(g);
-            	break;
-            case WKT:
-            	// WKT is 2D
-        		w = new WKT();
-        		clipText = new String(w.fromStruct(stValue));
-        		break;
-        		
-            case EWKT : 
-            		// JTS does not handle geometries with CircularStrings 
-                	if ( SDO_GEOMETRY.hasArc(stValue) ) {
-                		// This degrades geometry to 2D but unless I encode my own WKT writer...
-                		w = new WKT();
-                		clipText = new String(w.fromStruct(stValue));
-                	} else {
-                        pm = new PrecisionModel(precisionModelScale);
-                        geomFactory = new GeometryFactory(pm);
-                        geomConverter = new OraReader(geomFactory);
-                		g = geomConverter.read(stValue);
-                		WKTWriter              wktw = new WKTWriter(coordDims);
-                		clipText = wktw.write(g);
-
-                		// JTS WKT writer doesn't interpret measures in the Oracle way
-                		if ( mDim == 3 && coordDims == 3 ) 
-                			clipText = clipText.replace("Z","M");
-                		else if ( mDim == 4 )
-                			clipText = clipText.replace("Z","ZM");
-                	}
-                    clipText = "SRID=" + (srid==Constants.SRID_NULL?"NULL":String.valueOf(srid)) + ";" + clipText;
-                    visualFormat = Constants.renderType.WKT;
-                    break;
-                    
-            case KML2 : KML2.setConnection(this.dbConnection);
-                        clipText = KML2.to_KMLGeometry(stValue);
-                        break;
-            case GML2 : GML2.setConnection(this.dbConnection);
-                        clipText = GML2.to_GMLGeometry(stValue);
-                        break;
-            case GML3 : GML3.setConnection(this.dbConnection);
-                        clipText = GML3.to_GML3Geometry(stValue);
-                        break;
-            default: break;
             }
         } catch (Exception _e) {
         	clipText = "";  // Force SDO_GEOMETRY rendering.
@@ -728,7 +668,7 @@ public class SpatialRenderer
                                                                     this.preferences.getSdoGeometryBracketType(),
                                                                     Constants.MAX_PRECISION);
                   }
-              } catch (SQLException e) {
+              } catch (Exception e) {
                     return null;
               }
         }

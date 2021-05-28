@@ -49,12 +49,14 @@ implements Comparable<Object>
     public double minX, 
                   minY, 
                   maxX, 
-                  maxY;
-    
+                  maxY,
+                  minZ,
+                  maxZ;
+
     protected int decimalPlaces = 8;
-   
+
     protected int SRID = Constants.SRID_NULL;
-    
+
     public Envelope(int _precision) {
         this.decimalPlaces = _precision;
         setNull();
@@ -68,7 +70,8 @@ implements Comparable<Object>
      *@param  _y1  the first y-value
      *@param  _y2  the second y-value
      */
-    public void init(double _x1, double _y1, double _x2, double _y2)
+    public void init(double _x1, double _y1, 
+    		         double _x2, double _y2)
     {
         if (_x1 < _x2) {
             this.minX = new BigDecimal(_x1).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -87,7 +90,7 @@ implements Comparable<Object>
     }
 
     public Envelope(double _minX, double _minY,
-            double _maxX, double _maxY) 
+                    double _maxX, double _maxY) 
     {
     	this.init(_minX,_minY,_maxX,_maxY);
     	this.SRID = Constants.SRID_NULL;
@@ -99,7 +102,7 @@ implements Comparable<Object>
         this.init(_minX,_minY,_maxX,_maxY);
         this.SRID = _SRID;
     }
-    
+
     public Envelope(int _precision,
             double _minX, double _minY,
             double _maxX, double _maxY)
@@ -152,7 +155,7 @@ implements Comparable<Object>
                   _centre.getY() + _height);
         this.SRID = Constants.SRID_NULL;
     }
-    
+
     public Envelope(List<QueryRow> _geoSet) {
         this.setNull();
         if (_geoSet == null) {
@@ -165,7 +168,7 @@ implements Comparable<Object>
             }
         }
     }
-    
+
     public Envelope(JGeometry _geo) 
     {
         this.setNull();

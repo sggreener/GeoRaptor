@@ -175,7 +175,7 @@ public class KMLExporter implements IExporter
             // Mappable column?
             //
             if (!Strings.isEmpty(_columnMetaData.getCatalogName(1)) )   // Catalog name holds name of actual geometry column 
-            { 
+            {
                 if ( _columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) )
                 {
                     kmlText = "";
@@ -220,17 +220,17 @@ public class KMLExporter implements IExporter
                         this.styleUrlIsColumn = true;
                     } else {
                         try {
-            /**
-            * <ExtendedData>             OR  <ExtendedData xmlns:prefix="camp">           OR <ExtendedData>
-            *   <Data name="holeNumber">       <camp:number>14</camp:number>                   <SchemaData schemaUrl="#TrailHeadTypeId">
-            *     <value>1</value>             <camp:parkingSpaces>2</camp:parkingSpaces>        <SimpleData name="TrailHeadName">Mount Everest</SimpleData>
-            *   </Data>                        <camp:tentSites>4</camp:tentSites>                <SimpleData name="TrailLength">347.45</SimpleData>
-            *   <Data name="holePar">                                                            <SimpleData name="ElevationGain">10000</SimpleData>
-            *     <value>4</value>                                                             </SchemaData>
-            *   </Data>
-            * </ExtendedData>                </ExtendedData>                                 </ExtendedData> 
-            *                                // Where camp will be the tablename/filename 
-            */
+/**
+* <ExtendedData>          OR  <ExtendedData xmlns:prefix="camp">        OR <ExtendedData>
+*   <Data name="holeNumber">    <camp:number>14</camp:number>                <SchemaData schemaUrl="#TrailHeadTypeId">
+*     <value>1</value>          <camp:parkingSpaces>2</camp:parkingSpaces>     <SimpleData name="TrailHeadName">Mount Everest</SimpleData>
+*   </Data>                     <camp:tentSites>4</camp:tentSites>             <SimpleData name="TrailLength">347.45</SimpleData>
+*   <Data name="holePar">                                                      <SimpleData name="ElevationGain">10000</SimpleData>
+*     <value>4</value>                                                       </SchemaData>
+*   </Data>
+* </ExtendedData>             </ExtendedData>                              </ExtendedData> 
+*                                // Where camp will be the tablename/filename 
+*/
                             this.extendedData += "        <Data name=" + "\"" + columnName + "\">" + newLine +
                                                  "          <value>" + Strings.escapeHTML((String)_object) + "</value>" + newLine +
                                                  "        </Data>" + newLine;

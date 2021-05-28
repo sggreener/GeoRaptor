@@ -230,16 +230,17 @@ public class Constants {
 	};
 
 	public static enum EXPORT_TYPE {
-		GML, KML, SHP, TAB
+		GEOJSON, GML, KML, SHP, TAB
 	};
 
 	public static javax.swing.DefaultComboBoxModel<String> getExportTypeAsCombo() {
 		return new javax.swing.DefaultComboBoxModel<String>(
 				new String[] { 
-                    Constants.EXPORT_TYPE.GML.toString(), 
-                    Constants.EXPORT_TYPE.KML.toString(),
-					Constants.EXPORT_TYPE.SHP.toString(), 
-					Constants.EXPORT_TYPE.TAB.toString() });
+	                    Constants.EXPORT_TYPE.GEOJSON.toString(), 
+	                    Constants.EXPORT_TYPE.GML.toString(),
+	                    Constants.EXPORT_TYPE.KML.toString(),
+	                    Constants.EXPORT_TYPE.SHP.toString(),
+	                    Constants.EXPORT_TYPE.TAB.toString() });
 	}
 
 	public static enum XMLAttributeFlavour {

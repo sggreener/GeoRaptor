@@ -340,4 +340,20 @@ public class Strings {
         return objectString(_schemaName,_tableName,_columnName,Constants.TABLE_COLUMN_SEPARATOR);
     }
 
+    /**
+     * Returns a <code>String</code> of repeated characters.
+     * 
+     * @param ch
+     *        the character to repeat
+     * @param count
+     *        the number of times to repeat the character
+     * @return a <code>String</code> of characters
+     */
+    public static String stringOfChar(char ch, int count) {
+        StringBuffer buf = new StringBuffer();
+        for (int i = 0; i < count; i++) {
+            buf.append(ch);
+        }
+        return buf.toString();
+    }
 }
