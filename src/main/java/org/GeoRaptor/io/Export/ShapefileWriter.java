@@ -32,6 +32,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import org.GeoRaptor.tools.FileUtils;
@@ -327,13 +328,13 @@ public class ShapefileWriter
      * @method write
      * @author Simon Greener, February 2011
      **/
-    public void write(LinkedHashSet<Geometry>  _geometries) 
+    public void write(LinkedHashMap<Integer,Geometry>  _geometries) 
     throws IOException 
     {
         if ( _geometries == null || _geometries.size() == 0 ) {
             return;
         }
-        Iterator<Geometry> iter = _geometries.iterator();
+        Iterator<Geometry> iter = _geometries.values().iterator();
         while (iter.hasNext()) {
             Geometry geom = (Geometry)iter.next();
             writeGeometry(geom);

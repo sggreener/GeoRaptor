@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 
 import javax.sql.RowSetMetaData;
 
@@ -69,7 +68,7 @@ public class SHPExporter implements IExporter {
     
     private DBaseWriter.XBASE_TYPES             attributeFlavour = DBaseWriter.XBASE_TYPES.DBASEIII;
     
-    private LinkedHashSet<Geometry>                      geomSet = null;
+    private LinkedHashMap<Integer,Geometry>              geomSet = null;
     private int                                           commit = 100;
     private OraReader                              geomConverter = null; 
     private GeometryFactory                          geomFactory = null;
@@ -249,9 +248,9 @@ public class SHPExporter implements IExporter {
     {
         Geometry jGeom = Struct2Geometry(_shape);
         if ( jGeom == null ) {
-          this.geomSet.add((Geometry)null);
+          this.geomSet.put(this.row,(Geometry)null);
         } else {
-          this.geomSet.add(jGeom);
+          this.geomSet.put(this.row,jGeom);
         }
     }
     
@@ -261,7 +260,7 @@ public class SHPExporter implements IExporter {
         // Write the collection
         //
         this.shpWriter.write(this.geomSet);
-        this.geomSet = new LinkedHashSet<Geometry>(this.getCommit());
+        this.geomSet = new LinkedHashMap<Integer,Geometry>(this.getCommit());
     }
 
     public void start(String _encoding) 
@@ -270,7 +269,7 @@ public class SHPExporter implements IExporter {
         this.row = 0;        
         try {
             if ( this.geomSet == null ) {
-                this.geomSet = new LinkedHashSet<Geometry>(this.getCommit());
+                this.geomSet = new LinkedHashMap<Integer,Geometry>(this.getCommit());
             }
             // Create required sdo_geometry to shape conversion functions
             //
