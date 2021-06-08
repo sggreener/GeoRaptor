@@ -913,7 +913,8 @@ extends JPanel
          this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
      }
 
-    private void zoomInButton() {
+    private void zoomInButton() 
+    {
         this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.ZOOM_IN);
         // perform zoom operation
         this.activeView.getMapPanel().Zoom(org.GeoRaptor
@@ -926,7 +927,8 @@ extends JPanel
         this.activeView.getMapPanel().refreshAll();
     }
 
-    private void zoomOutButton() {
+    private void zoomOutButton() 
+    {
         this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.ZOOM_OUT);
         // perform zoom operation
         this.activeView.getMapPanel().Zoom(org.GeoRaptor
@@ -938,7 +940,8 @@ extends JPanel
         this.activeView.getMapPanel().refreshAll();
     }
 
-    private void zoomBoundsButton() {
+    private void zoomBoundsButton() 
+    {
         // if query operation is already selected, deselect it.
         if (this.voListener.getSpatialViewOpr() == ViewOperationListener.VIEW_OPERATION.ZOOM_BOUNDS) {
             this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
@@ -952,20 +955,23 @@ extends JPanel
         }
     }
 
-    private void moveButton() {
+    private void moveButton() 
+    {
         if (this.voListener.getSpatialViewOpr() != ViewOperationListener.VIEW_OPERATION.MOVE) {
             this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.MOVE);
         }
     }
 
-    public void redraw() {
+    public void redraw() 
+    {
         this.voListener.setSpatialViewOpr(ViewOperationListener.VIEW_OPERATION.NONE);
         // perform reload operation
         this.activeView.getMapPanel().setRedrawBIOnly(MapPanel.REDRAW_BI.IMAGE_SIZE_CHANGE);
         this.activeView.getMapPanel().refreshAll();
     }
 
-    private void copyImageButton() {
+    private void copyImageButton() 
+    {
         // copy image to clipboard
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         MyImageSelection myI = new MyImageSelection(this.activeView.getMapPanel().getBiImage());
@@ -980,7 +986,8 @@ extends JPanel
      */
     public void zoomFullButton(iLayer _zoomLayer) 
     {
-        if (this.activeView.initializeMBR(_zoomLayer)) {
+    	boolean ok = this.activeView.initializeMBR(_zoomLayer);
+        if ( ok ) {
             // zoom to whole world
             this.voListener.setSpatialViewOpr(_zoomLayer==null
                                               ?ViewOperationListener.VIEW_OPERATION.ZOOM_FULL
@@ -1050,7 +1057,8 @@ extends JPanel
      // Need to create a default view like SRID:NULL but use defaultSRID 
      // and let SpatialView constructor create name from SRID
      //
-    public boolean createDefaultView(boolean _active) {
+    public boolean createDefaultView(boolean _active) 
+    {
         String defaultViewName = SpatialView.createViewName(preferences.getSRID());
         SpatialView defaultSpatialView = this.getView(defaultViewName);
         if ( defaultSpatialView==null ) {
@@ -1405,8 +1413,8 @@ extends JPanel
                                               true /* draw - should be GeoRaptor Property */
                                               );        
         // See if we can discover a better MBR than that derived from metadata.
-        if (layer.setLayerMBR(mEntry.getMBR(),
-                              layer.getSRIDAsInteger())==false) {
+        boolean ok = layer.setLayerMBR(mEntry.getMBR(),layer.getSRIDAsInteger()); 
+        if ( ! ok ) {
             return LayerReturnCode.MBR;
         }
 
@@ -1443,12 +1451,16 @@ extends JPanel
                                 boolean _zoom)
   {
       SpatialView targetView = null;
+      
       // 1. Does a view exist with same SRID as layer?
       //
       targetView = getViewBySRID(_layer.getSRID());
       if (targetView != null) {
           // Yes, so add layer to the view (addLayer checks layerName)
-          if ( targetView.addLayer(_layer,_layer.isDraw(),true/*active*/, _zoom) ) {
+          if ( targetView.addLayer(_layer,
+        		                   _layer.isDraw(),
+        		                   true/*active*/, 
+        		                   _zoom) ) {
               this.setActiveView(targetView);
               return true;
           } else {
@@ -1482,10 +1494,11 @@ extends JPanel
           targetView.setDistanceUnitType();
           targetView.setAreaUnitType();
           // Now add layer to the new view
-          if ( targetView.addLayer(_layer,
-        		                   _layer.isDraw(),
-        		                   true/*make active*/,
-        		                   _zoom) ) 
+          boolean ok =targetView.addLayer(_layer,
+        		                          _layer.isDraw(),
+        		                          true/*make active*/,
+        		                          _zoom); 
+          if ( ok ) 
           {
             // set MBR of new View
             //

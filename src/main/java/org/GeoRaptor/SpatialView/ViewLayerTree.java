@@ -93,8 +93,6 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
-import org.GeoRaptor.tools.RenderTool;
-import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
@@ -186,6 +184,8 @@ public class ViewLayerTree
     private ImageIcon iconNavigationUp     = new ImageIcon(cl.getResource(iconDirectory + "navigation_up.png"));
     private ImageIcon iconNavigationDown   = new ImageIcon(cl.getResource(iconDirectory + "navigation_down.png"));
     private ImageIcon iconNavigationBottom = new ImageIcon(cl.getResource(iconDirectory + "navigation_bottom.png"));
+    
+    private ImageIcon iconLayerRename      = new ImageIcon(cl.getResource(iconDirectory + "layer_menu_rename.png"));
     private ImageIcon iconLayerProperties  = new ImageIcon(cl.getResource(iconDirectory + "layer_menu_properties.png"));
     private ImageIcon iconQuery            = new ImageIcon(cl.getResource(iconDirectory + "layer_menu_query.png"));
     private ImageIcon iconQuestionMark     = new ImageIcon(cl.getResource(iconDirectory + "icon_question_mark.png"));
@@ -1814,7 +1814,6 @@ public class ViewLayerTree
                     }
                 }
             };
-            
         popup.add(showLayerMBR);
 
         String setLayerMBRMenu = ( selectedNodeIsLayer 
@@ -1854,6 +1853,7 @@ public class ViewLayerTree
                 }
             };
         popup.add(setLayerMBR);
+        
         String showLayerAttrMenuText = selectedNodeIsLayer
                                    ? ( selectionModel.getSelectionCount()==1 
                                        ? this.propertyManager.getMsg("LAYER_MENU_SHOW_SELECTED_LAYER_ATTRIBUTES",shortVisibleName)
@@ -2038,34 +2038,60 @@ public class ViewLayerTree
         {
             popup.addSeparator();
             String layerSaveMenu = selectedNodeIsLayer
-                                           ? ( selectionModel.getSelectionCount()==1 
-                                               ? this.propertyManager.getMsg("LAYER_MENU_SAVE_ONE_SELECTED_LAYER",shortVisibleName)
-                                               : this.propertyManager.getMsg("LAYER_MENU_SAVE_SELECTED_LAYERS",selectionModel.getSelectionCount())
-                                             )
-                                           : this.propertyManager.getMsg("LAYER_MENU_SAVE_LAYER",shortVisibleName);
+                                   ? ( selectionModel.getSelectionCount()==1 
+                                       ? this.propertyManager.getMsg("LAYER_MENU_SAVE_ONE_SELECTED_LAYER",shortVisibleName)
+                                       : this.propertyManager.getMsg("LAYER_MENU_SAVE_SELECTED_LAYERS",selectionModel.getSelectionCount())
+                                     )
+                                   : this.propertyManager.getMsg("LAYER_MENU_SAVE_LAYER",shortVisibleName);
             AbstractAction LayerSave =
                 new AbstractAction(layerSaveMenu,iconSaveFile) {
-                   /**
-					 * 
-					 */
 					private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e) {
-                  if ( getSelectionModel().getSelectionCount() > 1 ) {
-                      _view.getSpatialView().saveToDisk(getSelectedLayers(_view));
-                  } else {
-                      fLayerNode.getSpatialLayer().savePropertiesToDisk();
-                  }
-              }
+					
+					public void actionPerformed(ActionEvent e) {
+						if ( getSelectionModel().getSelectionCount() > 1 ) {
+							_view.getSpatialView().saveToDisk(getSelectedLayers(_view));
+						} else {
+							fLayerNode.getSpatialLayer().savePropertiesToDisk();
+						}
+					}
             };
             popup.add(LayerSave);
         }
         popup.addSeparator();
-        AbstractAction a1 = 
-            new AbstractAction(this.propertyManager.getMsg("TREE_PROPERTIES"),iconLayerProperties) {
-                /**
-				 * 
-				 */
+
+        String renameLayer = this.propertyManager.getMsg("LAYER_MENU_RENAME_LAYER") +
+        		             " \"" + shortVisibleName + "\"";
+        AbstractAction setLayerRename = 
+                new AbstractAction(renameLayer,iconLayerRename) {
+    				private static final long serialVersionUID = 1L;
+    				public void actionPerformed(ActionEvent e) 
+                    {
+    					String layerName = null;
+                        DefaultMutableTreeNode node = null;
+                        // Apply only to single layer
+                        if ( getSelectionModel().getSelectionCount() == 1 ) {
+                            TreePath[] nodes = getSelectionModel().getSelectionPaths();
+                            node = (DefaultMutableTreeNode)nodes[0].getLastPathComponent();
+                            if ( node instanceof LayerNode ) {
+                            	// TOBEDONE Dedicated rename dialog allowing use of old value
+                            	layerName = ((LayerNode)node).getSpatialLayer().getLayerName();
+                            } else {
+                            	return;
+                            }
+                            layerName = JOptionPane.showInputDialog("New Visible Name:");
+                            if ( ! Strings.isEmpty(layerName) ) {
+                                ((LayerNode)node).setVisibleName(layerName);
+                                DefaultTreeModel model = ((DefaultTreeModel)getModel());
+                                model.nodeChanged(node);
+                            }
+                        }
+                    }
+                };
+            popup.add(setLayerRename);
+
+        AbstractAction layerProperties = 
+            new AbstractAction(this.propertyManager.getMsg("TREE_PROPERTIES"),
+            		           iconLayerProperties) {
 				private static final long serialVersionUID = 1L;
 
 				public void actionPerformed(ActionEvent e) {
@@ -2074,7 +2100,7 @@ public class ViewLayerTree
                     slp.setVisible(true);
                 }
             };
-        popup.add(a1);
+        popup.add(layerProperties);
         return popup;
     }
     

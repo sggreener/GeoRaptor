@@ -406,14 +406,19 @@ LOGGER.debug("*** Removing " + _layerName);
           LOGGER.info("Layer " + _layer.getVisibleName() + " could not be add to "+this.getVisibleName());
           return false;
       }
+      
       vNode.addLayer(_layer,_isDrawn,_isActive);
       // Set view reference in new layer
       _layer.setView(this);
+      
       // Compute precision and initialize View's MBR when first new layer is added.
       if ( this.getLayerCount() == 1 ) 
       {
-          this.setPrecision(_layer.getPrecision(true));  // Only one layer: assign its precision to view
-          if ( ! this.initializeMBR(_layer) ) {
+          // Assign layer's precision to view
+          this.setPrecision(_layer.getPrecision(true));
+          // Assign layer's MBR to view
+          boolean ok = this.initializeMBR(_layer); 
+          if ( ! ok  ) {
               LOGGER.info(this.getVisibleName() + "'s MBR could not be set for layer " + _layer.getVisibleName());
           }
       } else if ( _zoom ) {
@@ -664,6 +669,7 @@ LOGGER.debug("*** Removing " + _layerName);
             LOGGER.debug(this.getViewName() + " View's mbr is not set.");
             return false;
         }
+        
         // Ensure one side is not 0 in length
         //
         if ( mbr.getWidth()==0 || mbr.getHeight()==0 ) 
