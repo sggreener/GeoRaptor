@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.UUID;
 
 import javax.sql.RowSetMetaData;
 import javax.swing.ImageIcon;
@@ -125,11 +126,11 @@ public class RenderResultSet
     private static final int COMMAND_COPY_GEOMS2CLIPBOARD = Ide.findOrCreateCmdID("cmdGridClipboardGeometries");
     private static IdeAction ACTION_COPY_GEOMS2CLIPBOARD = null;
 
-    private static final int COMMAND_VIEW_SELECTED_GEOMS = Ide.findOrCreateCmdID("cmdGridRenderResultSet");
-    private static IdeAction ACTION_VIEW_SELECTED_GEOMS = null;
-
     private static final int COMMAND_CREATE_QUERY_LAYER = Ide.findOrCreateCmdID("cmdWorksheetSQLLayer");
     private static IdeAction ACTION_CREATE_QUERY_LAYER = null;
+
+    private static final int COMMAND_VIEW_SELECTED_GEOMS = Ide.findOrCreateCmdID("cmdGridRenderResultSet");
+    private static IdeAction ACTION_VIEW_SELECTED_GEOMS = null;
 
     private static final int COMMAND_ZOOM_SELECTED_GEOMS = Ide.findOrCreateCmdID("cmdGridZoomSelectedGeometries");
     private static IdeAction ACTION_ZOOM_SELECTED_GEOMS = null;
@@ -228,20 +229,14 @@ public class RenderResultSet
         if (RenderResultSet.ACTION_UPDATE_METADATA == null) { RenderResultSet.ACTION_UPDATE_METADATA = createAction(COMMAND_UPDATE_METADATA,this.propertyManager.getMsg("CreateSdoMetadataUpdate"),null);  }
         if (RenderResultSet.ACTION_DELETE_METADATA == null) { RenderResultSet.ACTION_DELETE_METADATA = createAction(COMMAND_DELETE_METADATA,this.propertyManager.getMsg("CreateSdoMetadataDelete"),null); }
 
-        if (RenderResultSet.ACTION_VIEW_SELECTED_GEOMS == null) { 
-            RenderResultSet.ACTION_VIEW_SELECTED_GEOMS = createAction(COMMAND_VIEW_SELECTED_GEOMS,this.propertyManager.getMsg("RenderResultSet"),null); }
-        if (RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS == null) { 
-            RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS = createAction(COMMAND_ZOOM_SELECTED_GEOMS, this.propertyManager.getMsg("ZoomRenderResultSet"),null); }
-
-        if (RenderResultSet.ACTION_CREATE_QUERY_LAYER == null)          { 
-            RenderResultSet.ACTION_CREATE_QUERY_LAYER = createAction(COMMAND_CREATE_QUERY_LAYER, this.propertyManager.getMsg("CreateLayerFromWorksheet"),null); }
-        if (RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS == null) { 
-            RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS = createAction(COMMAND_CREATE_IMAGE_SELECTED_GEOMS, this.propertyManager.getMsg("createImageSelectedGeometries"),null); }
+        if (RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS == null) { RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS = createAction(COMMAND_ZOOM_SELECTED_GEOMS,this.propertyManager.getMsg("ZoomRenderResultSet"),null); }
+        if (RenderResultSet.ACTION_VIEW_SELECTED_GEOMS == null) { RenderResultSet.ACTION_VIEW_SELECTED_GEOMS = createAction(COMMAND_VIEW_SELECTED_GEOMS,this.propertyManager.getMsg("RenderResultSet"),null); }
+        
+        if (RenderResultSet.ACTION_CREATE_QUERY_LAYER == null)          { RenderResultSet.ACTION_CREATE_QUERY_LAYER = createAction(COMMAND_CREATE_QUERY_LAYER, this.propertyManager.getMsg("CreateLayerFromWorksheet"),null); }
+        if (RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS == null) { RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS = createAction(COMMAND_CREATE_IMAGE_SELECTED_GEOMS, this.propertyManager.getMsg("createImageSelectedGeometries"),null); }
    
-        if (RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD == null)    { 
-            RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD = createAction(COMMAND_COPY_GEOMS2CLIPBOARD,this.propertyManager.getMsg("CopyGeometries"), null); } 
-        if (RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR == null) { 
-            RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR = createAction(COMMAND_COPY_GEOMMBR2CLIPBOARD,this.propertyManager.getMsg("CopyGeometriesMBR"),null); }
+        if (RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD == null)    { RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD = createAction(COMMAND_COPY_GEOMS2CLIPBOARD,this.propertyManager.getMsg("CopyGeometries"), null); } 
+        if (RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR == null) { RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR = createAction(COMMAND_COPY_GEOMMBR2CLIPBOARD,this.propertyManager.getMsg("CopyGeometriesMBR"),null); }
         
         if (RenderResultSet.ACTION_GRID_EXPORT_GEOJSON == null) { RenderResultSet.ACTION_GRID_EXPORT_GEOJSON = createAction(COMMAND_GRID_EXPORT_GEOJSON,this.propertyManager.getMsg("ExportGeoJSON"),null); }
         if (RenderResultSet.ACTION_GRID_EXPORT_GML     == null) { RenderResultSet.ACTION_GRID_EXPORT_GML     = createAction(COMMAND_GRID_EXPORT_GML,this.propertyManager.getMsg("ExportGML"),null); }
@@ -285,6 +280,7 @@ public class RenderResultSet
               return false;
           }
         }
+
         if ( _ideAction.getCommandId() == COMMAND_COPY_DIMINFO2SDO            ) { copyDimInfoToClipboard(DiminfoCopyType.SDO_GEOMETRY); } else        
         if ( _ideAction.getCommandId() == COMMAND_COPY_DIMINFO2CLIPBOARD      ) { copyDimInfoToClipboard(DiminfoCopyType.DIMINFO);      } else        
         if ( _ideAction.getCommandId() == COMMAND_INSERT_METADATA             ) { copySdoMetadataSQLClipboard(sqlType.INSERT); } else 
@@ -311,11 +307,13 @@ public class RenderResultSet
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_ICON            ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.ICON);         } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_THUMBNAIL       ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.THUMBNAIL);    } else
         if ( _ideAction.getCommandId() == COMMAND_GRID_VISUAL_GEOJSON         ) { mainPrefs.setSdoGeometryVisualFormat(Constants.renderType.GEOJSON);      } else
+
         if ( _ideAction.getCommandId() == COMMAND_VIEW_SELECTED_GEOMS ||
-             _ideAction.getCommandId() == COMMAND_ZOOM_SELECTED_GEOMS         ) { 
+             _ideAction.getCommandId() == COMMAND_ZOOM_SELECTED_GEOMS         ) {
             return mapSelectedGeometries(_ideAction.getCommandId(),cNoLabel);
         } else {
-            IdeAction labelAction = RenderResultSet.labelMenuActions.get(Integer.valueOf(_ideAction.getCommandId())); 
+        	// A sub-menu of labels
+            IdeAction labelAction = RenderResultSet.labelMenuActions.get(Integer.valueOf(_ideAction.getCommandId()));
             if (labelAction != null) {
                 return mapSelectedGeometries(labelAction.getCommandId(),
                                              (String)labelAction.getValue(IdeAction.NAME));
@@ -348,116 +346,126 @@ public class RenderResultSet
             GeoRaptorMenu.add(MapDimInfoJMenuItem,1);
             contextMenu.add(GeoRaptorMenu);                
             return;
+        } 
+        
+        // Build sdo_geometry menu
+        int menuIndex=0;
+        
+        // Reset/clear list of label sub menus.
+        RenderResultSet.labelMenuActions = new LinkedHashMap<Integer,IdeAction>();
+        
+        String ZoomLayerLabel = this.propertyManager.getMsg("ZoomRenderResultSet");
+        // May need Label submenu
+        JMenu ZoomLayerLabelMenu = addLabelSubMenu(contextMenu,
+             	                                   RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS,
+               		                               ZoomLayerLabel);
+        if ( ZoomLayerLabelMenu.getMenuComponentCount()==0 ) {
+            JMenuItem menuZoomItem = contextMenu.createMenuItem(RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS); 
+            GeoRaptorMenu.add(menuZoomItem,menuIndex++);
         } else {
-            int menuIndex=0;
-            JMenu ZoomMenu = new JMenu(this.propertyManager.getMsg("ZoomRenderResultSet"));
-                /* Layer Menus that need Label submenu */
-                ZoomMenu = addLabelSubMenu(contextMenu,RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS,ZoomMenu);
-                if ( ZoomMenu.getMenuComponentCount()==0 ) {
-                    JMenuItem menuZoom = contextMenu.createMenuItem(RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS); 
-                    GeoRaptorMenu.add(menuZoom,menuIndex++);
-                } else {
-                    GeoRaptorMenu.add(ZoomMenu,menuIndex++);
-                }
-
-            JMenu ViewMenu = new JMenu(this.propertyManager.getMsg("RenderResultSet"));
-                ViewMenu = addLabelSubMenu(contextMenu,RenderResultSet.ACTION_VIEW_SELECTED_GEOMS,ViewMenu);
-                if ( ViewMenu.getMenuComponentCount()==0 ) {
-                    JMenuItem ViewMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_VIEW_SELECTED_GEOMS); 
-                    GeoRaptorMenu.add(ViewMenuItem,menuIndex++);
-                } else {
-                    GeoRaptorMenu.add(ViewMenu,menuIndex++);
-                }
-
-            JMenu QueryLayerMenu = new JMenu(this.propertyManager.getMsg("CreateLayerFromWorksheet"));
-                QueryLayerMenu = addLabelSubMenu(contextMenu,RenderResultSet.ACTION_CREATE_QUERY_LAYER,QueryLayerMenu);
-                if ( QueryLayerMenu.getMenuComponentCount()==0 ) {
-                    JMenuItem QueryMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_CREATE_QUERY_LAYER); 
-                    GeoRaptorMenu.add(QueryMenuItem,menuIndex++);
-                } else {
-                    GeoRaptorMenu.add(QueryLayerMenu,menuIndex++);
-                }
-
-            /* Rest of Menus */
-            JMenuItem menuImageSelectedGeoms= contextMenu.createMenuItem(RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS);
-                GeoRaptorMenu.add(menuImageSelectedGeoms,menuIndex++);
-
-            JMenu CopyGeometriesMenu = new JMenu(this.propertyManager.getMsg("CopyMenu"));
-                JMenuItem clipboardGeomJMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD);
-                CopyGeometriesMenu.add(clipboardGeomJMenuItem,0);
-                JMenuItem geometryMBRMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR);
-                CopyGeometriesMenu.add(geometryMBRMenuItem,1);
-                GeoRaptorMenu.add(CopyGeometriesMenu,menuIndex++);
-
-            JMenu ExportMenu = new JMenu(this.propertyManager.getMsg("EXPORT"));
-                JMenuItem ExportGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GEOJSON);
-                ExportMenu.add(ExportGeoJSONMenuItem,0);
-                JMenuItem ExportGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GML);
-                ExportMenu.add(ExportGMLMenuItem,1);
-                JMenuItem ExportKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_KML);
-                ExportMenu.add(ExportKMLMenuItem,2);        
-                JMenuItem ExportSHPMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_SHP);
-                ExportMenu.add(ExportSHPMenuItem,3);        
-                JMenuItem ExportTABMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_TAB);
-                ExportMenu.add(ExportTABMenuItem,4);
-                GeoRaptorMenu.add(ExportMenu,menuIndex++);
-            
-            JMenu VisualMenu = new JMenu(this.propertyManager.getMsg("VISUAL"));
-              JMenuItem VisualSDOMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_SDO);
-              VisualMenu.add(VisualSDOMenuItem,0);
-              JMenuItem VisualSDOColouredMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR);
-              VisualMenu.add(VisualSDOColouredMenuItem,1);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.SDO_GEOMETRY ) {
-                  if ( mainPrefs.isColourSdoGeomElements() )
-                      VisualSDOColouredMenuItem.setIcon(iconTick);
-                  else
-                      VisualSDOMenuItem.setIcon(iconTick);
-              }
-              JMenuItem VisualEWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_EWKT);
-              VisualMenu.add(VisualEWKTMenuItem,2);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.EWKT ) VisualEWKTMenuItem.setIcon(iconTick);
-
-              JMenuItem VisualGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GEOJSON);
-              VisualMenu.add(VisualGeoJSONMenuItem,3);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.GEOJSON) VisualGeoJSONMenuItem.setIcon(iconTick);
-              
-              JMenuItem VisualGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GML);
-              VisualMenu.add(VisualGMLMenuItem,4);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.GML3 ) VisualGMLMenuItem.setIcon(iconTick);
-
-              JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
-              VisualMenu.add(VisualKMLMenuItem,5);        
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
-
-              JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
-              VisualMenu.add(VisualWKTMenuItem,6);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
-
-              JMenuItem VisualIconMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_ICON);
-              VisualMenu.add(VisualIconMenuItem,7);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.ICON ) VisualIconMenuItem.setIcon(iconTick);
-              
-              JMenuItem VisualThumbnailMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL);
-              VisualMenu.add(VisualThumbnailMenuItem,8);
-              if ( mainPrefs.getVisualFormat()==Constants.renderType.THUMBNAIL ) VisualThumbnailMenuItem.setIcon(iconTick);
-
-            GeoRaptorMenu.add(VisualMenu,menuIndex++);
-
-            
-            contextMenu.add(GeoRaptorMenu);
+            GeoRaptorMenu.add(ZoomLayerLabelMenu,menuIndex++);
         }
+
+        String AddLayerLabel = this.propertyManager.getMsg("RenderResultSet");
+        JMenu AddLayerLabelMenu = addLabelSubMenu(contextMenu,
+                                                  RenderResultSet.ACTION_VIEW_SELECTED_GEOMS,
+                		                          AddLayerLabel);
+        if ( AddLayerLabelMenu.getMenuComponentCount()==0 ) {
+        	JMenuItem AddLayerMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_VIEW_SELECTED_GEOMS);
+        	GeoRaptorMenu.add(AddLayerMenuItem,menuIndex++);
+        } else {
+        	GeoRaptorMenu.add(AddLayerLabelMenu,menuIndex++);
+        }
+
+        String QueryLayerLabel = this.propertyManager.getMsg("CreateLayerFromWorksheet");
+        JMenu QueryLayerMenu = addLabelSubMenu(contextMenu,
+        		                               RenderResultSet.ACTION_CREATE_QUERY_LAYER,
+        		                               QueryLayerLabel);
+        if ( QueryLayerMenu.getMenuComponentCount()==0 ) {
+        	JMenuItem QueryMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_CREATE_QUERY_LAYER);
+        	GeoRaptorMenu.add(QueryMenuItem,menuIndex++);
+        } else {
+        	GeoRaptorMenu.add(QueryLayerMenu,menuIndex++);
+        }
+
+        /* Rest of Menus */
+        JMenuItem menuImageSelectedGeoms= contextMenu.createMenuItem(RenderResultSet.ACTION_CREATE_IMAGE_SELECTED_GEOMS);
+            GeoRaptorMenu.add(menuImageSelectedGeoms,menuIndex++);
+
+        JMenu CopyGeometriesMenu = new JMenu(this.propertyManager.getMsg("CopyMenu"));
+            JMenuItem clipboardGeomJMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_COPY_GEOMS2CLIPBOARD);
+            CopyGeometriesMenu.add(clipboardGeomJMenuItem,0);
+            JMenuItem geometryMBRMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_COPY_SELECTED_GEOMS2MBR);
+            CopyGeometriesMenu.add(geometryMBRMenuItem,1);
+            GeoRaptorMenu.add(CopyGeometriesMenu,menuIndex++);
+
+        JMenu ExportMenu = new JMenu(this.propertyManager.getMsg("EXPORT"));
+            JMenuItem ExportGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GEOJSON);
+            ExportMenu.add(ExportGeoJSONMenuItem,0);
+            JMenuItem ExportGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_GML);
+            ExportMenu.add(ExportGMLMenuItem,1);
+            JMenuItem ExportKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_KML);
+            ExportMenu.add(ExportKMLMenuItem,2);        
+            JMenuItem ExportSHPMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_SHP);
+            ExportMenu.add(ExportSHPMenuItem,3);        
+            JMenuItem ExportTABMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_EXPORT_TAB);
+            ExportMenu.add(ExportTABMenuItem,4);
+            GeoRaptorMenu.add(ExportMenu,menuIndex++);
+        
+        JMenu VisualMenu = new JMenu(this.propertyManager.getMsg("VISUAL"));
+          JMenuItem VisualSDOMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_SDO);
+          VisualMenu.add(VisualSDOMenuItem,0);
+          JMenuItem VisualSDOColouredMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_SDO_COLOUR);
+          VisualMenu.add(VisualSDOColouredMenuItem,1);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.SDO_GEOMETRY ) {
+              if ( mainPrefs.isColourSdoGeomElements() )
+                  VisualSDOColouredMenuItem.setIcon(iconTick);
+              else
+                  VisualSDOMenuItem.setIcon(iconTick);
+          }
+          JMenuItem VisualEWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_EWKT);
+          VisualMenu.add(VisualEWKTMenuItem,2);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.EWKT ) VisualEWKTMenuItem.setIcon(iconTick);
+
+          JMenuItem VisualGeoJSONMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GEOJSON);
+          VisualMenu.add(VisualGeoJSONMenuItem,3);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.GEOJSON) VisualGeoJSONMenuItem.setIcon(iconTick);
+          
+          JMenuItem VisualGMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_GML);
+          VisualMenu.add(VisualGMLMenuItem,4);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.GML3 ) VisualGMLMenuItem.setIcon(iconTick);
+
+          JMenuItem VisualKMLMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_KML);
+          VisualMenu.add(VisualKMLMenuItem,5);        
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.KML2 ) VisualKMLMenuItem.setIcon(iconTick);
+
+          JMenuItem VisualWKTMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_WKT);
+          VisualMenu.add(VisualWKTMenuItem,6);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.WKT ) VisualWKTMenuItem.setIcon(iconTick);
+
+          JMenuItem VisualIconMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_ICON);
+          VisualMenu.add(VisualIconMenuItem,7);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.ICON ) VisualIconMenuItem.setIcon(iconTick);
+          
+          JMenuItem VisualThumbnailMenuItem = contextMenu.createMenuItem(RenderResultSet.ACTION_GRID_VISUAL_THUMBNAIL);
+          VisualMenu.add(VisualThumbnailMenuItem,8);
+          if ( mainPrefs.getVisualFormat()==Constants.renderType.THUMBNAIL ) VisualThumbnailMenuItem.setIcon(iconTick);
+
+        GeoRaptorMenu.add(VisualMenu,menuIndex++);
+        
+        contextMenu.add(GeoRaptorMenu);
     }
 
     private JMenu addLabelSubMenu(ContextMenu _contextMenu,
                                     IdeAction _ideAction,
-                                    JMenu     _subMenu) 
+                                    String    _subMenuLabel)
     {
-
-        RenderResultSet.labelMenuActions = new LinkedHashMap<Integer,IdeAction>();
-
         if ( this.rst == null || this.meta==null  ) {
             return null;
         }
+        
+        JMenu subMenu = new JMenu(_subMenuLabel);
+        
         try 
         {
             int colsToProcess = this.rst.getSelectedColumnCount()!=0
@@ -468,13 +476,15 @@ public class RenderResultSet
                             : this._table.getSelectedColumns();
             int viewCol = -1;
             String columnName = "";
+
+            if (colsToProcess <= 1) {
+            	return subMenu; // 0 items
+            }
             
             JMenuItem menuItem = null;
-            if (colsToProcess>1) {
-                menuItem = _contextMenu.createMenuItem(_ideAction);
-                menuItem.setText(cNoLabel);
-                _subMenu.add(menuItem,0);
-            }
+            menuItem = _contextMenu.createMenuItem(_ideAction);
+            menuItem.setText(cNoLabel); // Always first in sub menu
+            subMenu.add(menuItem,0);
 
             for (int col = 0; col < colsToProcess; col++) 
             {
@@ -483,22 +493,42 @@ public class RenderResultSet
                     viewCol = columns[col];
                 }
                 columnName = this.rst.getColumnName(viewCol);
-                for (int rCol=1;rCol<=this.meta.getColumnCount();rCol++) {
-                    try {
-                        if ( this.meta.getColumnLabel(rCol).equalsIgnoreCase(columnName) ) {
+                for (int rCol=1;rCol<=this.meta.getColumnCount();rCol++) 
+                {
+                    try 
+                    {
+                    	int columnType        = this.meta.getColumnType(rCol);
+                    	String columnTypeName = this.meta.getColumnTypeName(rCol);
+                        if ( this.meta.getColumnLabel(rCol).equalsIgnoreCase(columnName) ) 
+                        {
+                        	// If we have selected only one column, and that column is a STRUCT / Geom
+                        	// there are no label columns to process.
+                        	//
+                        	if ( columnType == Types.STRUCT && colsToProcess == 1 )
+                        		return subMenu;
+                        	
                             if (this.meta.getColumnType(rCol) != Types.STRUCT
                                 && 
-                                Tools.isSupportedType(this.meta.getColumnType(rCol),
-                                                      this.meta.getColumnTypeName(rCol))
+                                Tools.isSupportedType(columnType,columnTypeName)
                                 &&
                                 colsToProcess > 1 /* More than just geometry column */ ) 
                             {
-                                Integer labelCmdId = Integer.valueOf(Ide.findOrCreateCmdID(columnName));
-                                IdeAction ideAction = createAction(labelCmdId,columnName,null);
+                              	// We need a unique name across all possible instances of the column sub menus.
+                              	// This is an ugly hack until I can work out a more automated way.
+                              	//
+                              	String commandName = columnName;
+                              	if ( _ideAction == RenderResultSet.ACTION_ZOOM_SELECTED_GEOMS )
+                              		commandName = "Z:"+columnName;
+                                  else if (_ideAction == RenderResultSet.ACTION_VIEW_SELECTED_GEOMS )
+                              		commandName = "A:"+columnName;
+                                  else // RenderResultSet.ACTION_CREATE_QUERY_LAYER
+                              		commandName = "Q:"+columnName;
+                               	Integer labelCmdId = Integer.valueOf(Ide.findOrCreateCmdID(commandName));
+                                IdeAction ideAction = createAction(labelCmdId,commandName,null);
                                 RenderResultSet.labelMenuActions.put(labelCmdId,ideAction);
-                                menuItem = _contextMenu.createMenuItem(ideAction);
-                                menuItem.setText(columnName);
-                                _subMenu.add(menuItem);
+                                JMenuItem mItem = _contextMenu.createMenuItem(ideAction);
+                                mItem.setText(columnName);
+                                subMenu.add(mItem);
                             }
                             break;
                         }
@@ -511,7 +541,7 @@ public class RenderResultSet
             LOGGER.warn("RenderResultSet.getLabels(): SQLException - " + sqle.getMessage());
             sqle.printStackTrace();
       }
-      return _subMenu;
+      return subMenu;
     }
     
     protected boolean canShow(ContextMenu _contextMenu) 
@@ -1855,6 +1885,8 @@ public class RenderResultSet
     private boolean mapSelectedGeometries(   int _commandId,
                                           String _labelMenuValue) 
     {
+    	// Get rid of Z: or A: or Q: prefix
+    	String labelName = _labelMenuValue.substring(2); 
         try
         {
             if ( this.rst == null ) {
@@ -1875,6 +1907,7 @@ public class RenderResultSet
             if ( svp == null ) {
                 throw new IllegalArgumentException("Could not access GeoRaptor's Spatial View Panel.");
             }
+            
             // MAKE SURE THE VIEW IS OPEN ...
             //
             SpatialViewPanel.getInstance().show();
@@ -1911,14 +1944,14 @@ public class RenderResultSet
             // Create a layer name from information gathered
             //
             String layerName = "";
-            if ( !Strings.isEmpty(this.rst.getName()) ) {
+            if ( ! Strings.isEmpty(this.rst.getName()) ) {
               layerName = this.rst.getName();
             } else {
               layerName = this.rst.getDefaultExportName();
             }
             layerName = (Strings.isEmpty(layerName)?"":layerName+" ") +
                         mappableColumnName + 
-                        (Strings.isEmpty(_labelMenuValue)|| _labelMenuValue.equalsIgnoreCase(cNoLabel) ? "" : "_" + _labelMenuValue) + 
+                        (Strings.isEmpty(labelName)|| labelName.equalsIgnoreCase(cNoLabel) ? "" : "_" + _labelMenuValue) + 
                         ((this.rst.getSelectedRowCount()!=0||this.rst.getSelectedColumnCount()!=0)
                         ? " (Selection)" 
                         : " (RecordSet)"
@@ -2053,13 +2086,12 @@ public class RenderResultSet
                     	  continue;
                           //rowID = SQLConversionTools.convertToString(conn,columnName,this._table.getValueAt(viewRow,viewCol));
                       } else {
-                              if ( Tools.dataTypeIsSupported(classname) ) {
-                                String value = SQLConversionTools.convertToString(conn,
-                                                                                  columnName,
-                                                                                  this._table.getValueAt(viewRow,viewCol));
-                                // Object value = this._table.getValueAt(viewRow,viewCol);
-                                attr.put(columnName, value==null ? null : value );
-                              }
+                    	  if ( Tools.dataTypeIsSupported(classname) ) {
+                    		  String value = SQLConversionTools.convertToString(conn,
+                                                                                columnName,
+                                                                                this._table.getValueAt(viewRow,viewCol));
+                              attr.put(columnName, value==null ? null : value );
+                          }
                       }
                   } catch (Exception e) {
                     LOGGER.error("RenderResultSet.processResultSet(): Error converting column/type " + columnName + "/" + classname);                      
@@ -2068,23 +2100,29 @@ public class RenderResultSet
                 // rowid is always column 0 in the underlying tableModel
                 if ( jGeom!=null )
                     try {
-                        sGraphicLayer.add(new QueryRow(rowID,
-                                                       (attr==null || attr.size()==0?null:new LinkedHashMap<String,Object>(attr)),
-                                                       jGeom,
-                                                       conn));
+                        sGraphicLayer.add(
+                                new QueryRow(rowID,
+                                             (attr==null || attr.size()==0?null:new LinkedHashMap<String,Object>(attr)),
+                                             jGeom,
+                                             conn)
+                        );
                     } catch (Exception e) {
                         LOGGER.warn("RenderResultSet.mapSelectedGeometries: QueryRow create error = " + e.getMessage());
                     }
             }
+            
             // Map result
+            //
             if ( sGraphicLayer.getCacheCount() != 0 ) 
             {
                 // Need to calculate and set layerMBR()
                 sGraphicLayer.setLayerMBR();
+                
                 // Set label field if not cNoLabel
-                if ( ! (Strings.isEmpty(_labelMenuValue) || _labelMenuValue.equalsIgnoreCase(cNoLabel)) ) {
-                    sGraphicLayer.getStyling().setLabelColumn(_labelMenuValue);
+                if ( ! (Strings.isEmpty(labelName) || labelName.equalsIgnoreCase(cNoLabel)) ) {
+                    sGraphicLayer.getStyling().setLabelColumn(labelName);
                 }
+                
                 // We display the whole set via graphic theme 
                 //
                 sGraphicLayer.setGeometryType(geometryType);
