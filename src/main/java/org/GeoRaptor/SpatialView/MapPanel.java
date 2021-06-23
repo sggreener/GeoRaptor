@@ -146,11 +146,11 @@ public class MapPanel
     /**
      * Screen size of map panel
      */
-    protected Envelope   window = null;
-    protected Dimension     clientView = null;
-    protected Point2D      startScreen = null, 
-                         currentScreen = null,
-                            startWorld = null;
+    protected Envelope      window = null;
+    protected Dimension clientView = null;
+    protected Point2D  startScreen = null, 
+                     currentScreen = null,
+                        startWorld = null;
 
     protected double              zoomFactor = 1.0;
     protected static final double moveFactor = 0.1;
@@ -172,6 +172,8 @@ public class MapPanel
     protected String            MAPEXTENT_NOT_SET = "Map extent not set";
     protected String           NO_DRAWABLE_LAYERS = "No drawable layers.";
     private String                  MAP_MENU_JUMP = "Jump to new XY Location.";
+    private String  MAP_MENU_JUMP_TO_SDO_GEOMETRY = "Jump to SDO_GEOMETRY";
+    private String QUESTION_MENU_JUMP_SDO_GEOMETRY= "Enter SDO_GEOMETRY (text):";
     private String              MAP_MENU_COPY_MBR = "Copy Map Extent to Clipboard.";
     private String           MAP_MENU_COPY_CENTRE = "Copy Map Centre Point to Clipboard.";
     private String         MAP_MENU_PROJECT_POINT = "Copy Map Point to Clipboard as Lat/Long (4326).";
@@ -252,6 +254,7 @@ public class MapPanel
     protected ImageIcon  iconMenuProjectPoint = null; 
     protected ImageIcon      iconMenuXYPoint = null; 
     protected ImageIcon         iconJump2MBR = null;
+    protected ImageIcon iconJump2SdoGeometry = null;
     protected JLabel messageNoQueryableLayer = null;
 
     private MapPanel() 
@@ -273,6 +276,8 @@ public class MapPanel
             this.MAPEXTENT_NOT_SET             = this.propertyManager.getMsg("MAPEXTENT_NOT_SET");
             this.NO_DRAWABLE_LAYERS            = this.propertyManager.getMsg("NO_DRAWABLE_LAYERS");
             this.MAP_MENU_JUMP                 = this.propertyManager.getMsg("MAP_MENU_JUMP");
+            this.MAP_MENU_JUMP_TO_SDO_GEOMETRY = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_SDO_GEOMETRY");
+            this.QUESTION_MENU_JUMP_SDO_GEOMETRY = this.propertyManager.getMsg("QUESTION_MENU_JUMP_SDO_GEOMETRY");
             this.MAP_MENU_COPY_MBR             = this.propertyManager.getMsg("MAP_MENU_COPY_MBR");
             this.MAP_MENU_COPY_CENTRE          = this.propertyManager.getMsg("MAP_MENU_COPY_CENTRE");
             this.MAP_MENU_PROJECT_POINT        = this.propertyManager.getMsg("MAP_MENU_PROJECT_POINT");
@@ -284,6 +289,7 @@ public class MapPanel
             this.iconMenuProjectPoint          = new ImageIcon(getClass().getClassLoader().getResource("org/GeoRaptor/SpatialView/images/project_xy_to_geodetic.png"));
             this.iconMenuXYPoint               = new ImageIcon(getClass().getClassLoader().getResource("org/GeoRaptor/SpatialView/images/xy_to_geometry.png"));
             this.iconJump2MBR                  = new ImageIcon(getClass().getClassLoader().getResource("org/GeoRaptor/SpatialView/images/layer_menu_move_view.png"));
+            this.iconJump2SdoGeometry          = new ImageIcon(getClass().getClassLoader().getResource("org/GeoRaptor/SpatialView/images/map_sdo_geometry_text.png"));
             this.messageNoQueryableLayer       = new JLabel(noQueryableLayer, iconNoQueryableLayer, JLabel.TRAILING);
 
         } catch (Exception e) {
@@ -1417,50 +1423,28 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                     this.redrawBIOnly = REDRAW_BI.IMAGE_SIZE_CHANGE;
                     this.refreshAll();
                     break;
-				case CREATE_LINE:
-					break;
-				case CREATE_MULTIPOINT:
-					break;
-				case CREATE_POINT:
-					break;
-				case CREATE_POLYGON:
-					break;
-				case DATA_RELOAD:
-					break;
-				case IMAGE_COPY:
-					break;
-				case MBR_NEXT:
-					break;
-				case MBR_PREV:
-					break;
-				case MEASURE_DISTANCE:
-					break;
-				case MEASURE_POLYGON:
-					break;
-				case NONE:
-					break;
-				case QUERY_LINE:
-					break;
-				case QUERY_MULTIPOINT:
-					break;
-				case QUERY_POINT:
-					break;
-				case QUERY_POLYGON:
-					break;
-				case VIEW_DELETE:
-					break;
-				case VIEW_SWITCH:
-					break;
-				case ZOOM_FULL:
-					break;
-				case ZOOM_IN:
-					break;
-				case ZOOM_LAYER:
-					break;
-				case ZOOM_OUT:
-					break;
-				default:
-					break;
+				case CREATE_LINE:       break;
+				case CREATE_MULTIPOINT: break;
+				case CREATE_POINT:      break;
+				case CREATE_POLYGON:    break;
+				case DATA_RELOAD:       break;
+				case IMAGE_COPY:        break; 
+				case MBR_NEXT:          break;
+				case MBR_PREV:          break;
+				case MEASURE_DISTANCE:  break;
+				case MEASURE_POLYGON:   break;
+				case NONE:              break;
+				case QUERY_LINE:        break;
+				case QUERY_MULTIPOINT:  break;
+				case QUERY_POINT:       break;
+				case QUERY_POLYGON:     break;
+				case VIEW_DELETE:       break;
+				case VIEW_SWITCH:       break;
+				case ZOOM_FULL:         break;
+				case ZOOM_IN:           break;
+				case ZOOM_LAYER:        break;
+				case ZOOM_OUT:          break;
+				default:                break;
                 }
             } else if ((_mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
             {
@@ -1594,6 +1578,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                         // Create Menu
                         JPopupMenu popup = new JPopupMenu(Constants.GEORAPTOR);                        
                         final MouseEvent mouseEvent = _mouseEvent;
+                        
                         AbstractAction jumpLocation = 
                             new AbstractAction(this.MAP_MENU_JUMP,this.iconJump2MBR) {
 								private static final long serialVersionUID = 4434653818566059963L;
@@ -1603,6 +1588,38 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                 }
                             };
                         popup.add(jumpLocation);
+
+                        AbstractAction jumpSdoGeometry = 
+                            new AbstractAction(this.MAP_MENU_JUMP_TO_SDO_GEOMETRY,this.iconJump2SdoGeometry) {
+								private static final long serialVersionUID = 4434653818566059964L;
+
+								public void actionPerformed(ActionEvent e) {
+									String sdoGeometry = "";
+                                    sdoGeometry = JOptionPane.showInputDialog(QUESTION_MENU_JUMP_SDO_GEOMETRY);
+                                    if ( Strings.isEmpty(sdoGeometry))
+                                    	return;
+                                    // Test convert string 
+                                    try 
+                                    {
+                                    	Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection(); 
+                                    	Struct stGeom = Queries.getSdoGeometry(conn,sdoGeometry);
+                                    	final Envelope mbr = SDO_GEOMETRY.getGeoMBR(stGeom);
+                                        final JGeometry jGeom = JGeometry.loadJS(stGeom);
+                                        SpatialViewPanel.getInstance()
+                                                        .showGeometry(null,/*final iLayer*/
+                                                                      jGeom, 
+                                                                      null,
+                                                                      mbr,
+                                                                      true, /* Selection Colouring */
+                                                                      true, /* zoom */
+                                                                      true /* Draw After */ ); 
+                                    } catch (Exception ce) {
+                                        LOGGER.error ("Could not convert input to SDO_GEOMETRY");
+                                    }
+                                }
+                            };
+                        popup.add(jumpSdoGeometry);
+                        
                         AbstractAction copyMBRAsSdoGeometry = 
                             new AbstractAction(this.MAP_MENU_COPY_MBR,this.iconMenuCopyMbr) {
 								private static final long serialVersionUID = 2329631276044216612L;
@@ -1620,6 +1637,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                 }
                             };
                         popup.add(copyMBRAsSdoGeometry);
+                        
                         AbstractAction copyMBRCenterAsSdoGeometry = 
                             new AbstractAction(this.MAP_MENU_COPY_CENTRE,this.iconMenuCopyCentre) {
 								private static final long serialVersionUID = -8820662543240339163L;
@@ -1638,6 +1656,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                 }
                             };
                         popup.add(copyMBRCenterAsSdoGeometry);
+                        
                         // Convert clicked point (not centre) to geometry (offer geodetic when projected)
                         final Point2D mPoint = this.pixelToWorld(new Point2D.Double(_mouseEvent.getX(), _mouseEvent.getY()));
                         AbstractAction xyToSdoGeometry = 
@@ -1655,6 +1674,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                             }
                         };
                         popup.add(xyToSdoGeometry);
+                        
                         if ( ! this.spatialView.isGeodetic() ) {
                             // Allow coordinate shown as lat/long
                             AbstractAction projectToGeodeticSdoGeometry = 

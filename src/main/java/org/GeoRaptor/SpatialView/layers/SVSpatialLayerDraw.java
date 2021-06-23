@@ -179,7 +179,7 @@ public class SVSpatialLayerDraw {
     {
 		Styling styling = this.layer.getStyling();
     	Color pointColor = ( _pointColorValue != null ) ? _pointColorValue : styling.getPointColor(null);  
-    	Color lineColor = ( _lineColorValue != null ) ? _lineColorValue : styling.getLineColor(null);  
+    	Color lineColor  = ( _lineColorValue  != null ) ? _lineColorValue  : styling.getLineColor(null);  
     	Color shadeColor = ( _shadeColorValue != null ) ? _shadeColorValue : styling.getShadeColor(null);  
 
         if ( this.graphics2D==null ) {
@@ -290,7 +290,6 @@ public class SVSpatialLayerDraw {
                     styling.isMarkVertex()    ||
                     styling.isMarkSegment()  )
                 {
-                    // DEBUG 
                     markGeometry(_geo);
                 }
 

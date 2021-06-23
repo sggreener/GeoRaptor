@@ -847,8 +847,9 @@ public class Styling {
 			return (this.lineColor == null) ? Color.BLACK : new Color(this.lineColor.getRGB());
 		} else if (this.getLineColorType() == Styling.STYLING_TYPE.RANDOM) {
 			// To try and be a little faster we don't use Tools.getRandomColor()
-			return new Color(this.randomColorGenerator.nextInt(256), this.randomColorGenerator.nextInt(256),
-					this.randomColorGenerator.nextInt(256));
+			return new Color(this.randomColorGenerator.nextInt(256),
+					         this.randomColorGenerator.nextInt(256),
+					         this.randomColorGenerator.nextInt(256));
 		} else if (this.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
 			if (Strings.isEmpty(_columnValue)) {
 				return Color.GRAY; // Hint that the colour of the objects is not fixed.

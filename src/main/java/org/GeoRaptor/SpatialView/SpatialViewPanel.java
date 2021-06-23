@@ -1926,10 +1926,9 @@ extends JPanel
         // Get right view to draw geometries in by checking SRID compatibility
         // Question: What if passed in _layer is not null and has a layer?
         //
-        int geomSRID = (_jGeom!=null 
+        int geomSRID = (_jGeom!=null)
                         ? _jGeom.getSRID() 
-                        : SDO_GEOMETRY.getSRID(_geomSet.get(0).getGeoValue(),Constants.SRID_NULL) 
-                       );
+                        : SDO_GEOMETRY.getSRID(_geomSet.get(0).getGeoValue(),Constants.SRID_NULL);
         if ( geomSRID == 0 )
         	geomSRID = Constants.NULL_SRID;
         
@@ -1959,9 +1958,7 @@ extends JPanel
         //
         Envelope mbr = null;
         if ( _mbr == null || _mbr.isNull() ) {
-            mbr = _geomSet == null 
-                  ? JGeom.getGeoMBR(_jGeom)
-                  : new Envelope(_geomSet);
+            mbr = (_geomSet == null) ? JGeom.getGeoMBR(_jGeom) : new Envelope(_geomSet);
         } else {
             mbr = new Envelope(_mbr);
         }
@@ -1974,7 +1971,10 @@ extends JPanel
         // If a Point is being drawn (point's width/height may be 0 pixels)
         // then we can't expand by 10% but have to add simply 4 pixels
         //
-        if ( mbr.getWidth() == 0 && mbr.getHeight() == 0 ) {
+        if ( (_jGeom!=null && _jGeom.getType()==JGeometry.GTYPE_POINT )
+        	 ||
+        	 ( mbr.getWidth() == 0 && mbr.getHeight() == 0 ) ) 
+        {
             Point2D.Double p = null;
             try {
                 p = mappingView.getMapPanel().getPixelSize();
@@ -2004,8 +2004,8 @@ extends JPanel
         
         // If layer not supplied can we get our properties from the active layer?
         //
-        iLayer propertiesLayer = null;
-        if ( _iLayer == null ) {
+        iLayer propertiesLayer = _iLayer;
+        if ( propertiesLayer == null ) {
             propertiesLayer = mappingView.getActiveLayer();
             if  (propertiesLayer == null) 
             {
@@ -2031,6 +2031,7 @@ extends JPanel
                     propertiesLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.CIRCLE);
                     propertiesLayer.getStyling().setPointColor(Colours.getRandomColor());
                     propertiesLayer.getStyling().setLineColor(Colours.getRandomColor());
+                    propertiesLayer.getStyling().setLineWidth(2);
                     propertiesLayer.getStyling().setShadeColor(Colours.getRandomColor());
                     propertiesLayer.getStyling().setShadeTransLevel(0.5f);
                     propertiesLayer.getStyling().setPointColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
@@ -2038,8 +2039,6 @@ extends JPanel
                     propertiesLayer.getStyling().setShadeType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
                 }
             } 
-        } else {
-            propertiesLayer = _iLayer;
         }
         
         if ( propertiesLayer.getConnection()==null ) {
