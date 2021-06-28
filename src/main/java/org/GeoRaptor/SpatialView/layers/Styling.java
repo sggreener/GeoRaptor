@@ -29,12 +29,15 @@ public class Styling {
 			.getLogger("org.GeoRaptor.SpatialView.layers.Styling");
 
 	public static enum STYLING_TYPE {
-		NONE, CONSTANT, COLUMN, RANDOM
+		NONE, 
+		CONSTANT, 
+		COLUMN, 
+		RANDOM
 	};
 
 	protected Color lineColor      = Color.BLACK;
 	protected Color pointColor     = Color.BLACK;
-	protected Color selectionColor = new Color(255, 255, 0, 80); // Yellow
+	protected Color selectionColor = new Color(255, 255, 0, 40); // Yellow
 	protected Color shadeColor     = Color.WHITE;
 
 	protected Constants.GEOMETRY_LABEL_POINT geometryLabelPoint = Constants.GEOMETRY_LABEL_POINT.MIDDLE_VERTEX;
@@ -69,8 +72,8 @@ public class Styling {
 	protected Styling.STYLING_TYPE shadeType      = Styling.STYLING_TYPE.RANDOM;
 
 	protected float selectionShadeTransLevel = 1.0f;
-	protected float lineTransLevel           = 1.0f;
-	protected float shadeTransLevel          = 1.0f;
+	protected float lineTransLevel    = 1.0f;
+	protected float shadeTransLevel   = 1.0f;
 	protected int markOffset          = 2;
 	protected int labelOffset         = 4;
 	protected int lineWidth           = 1;

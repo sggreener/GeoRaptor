@@ -1946,7 +1946,6 @@ extends JPanel
             return;
         }
         int viewSRID = mappingView.getSRIDAsInteger();
-        System.out.println("View SRID="+viewSRID);
         
         boolean zoom = _zoom;
         
@@ -2019,7 +2018,6 @@ extends JPanel
         //
         if ( propertiesLayer == null ) 
         {
-System.out.println("....propertiesLayer from First Layer is null");
             // Make a temporary layer...
             //
             MetadataEntry me = new MetadataEntry(null,"ASCETATE",null,String.valueOf(viewSRID));
@@ -2044,13 +2042,10 @@ System.out.println("....propertiesLayer from First Layer is null");
             propertiesLayer.getStyling().setShadeType(     preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
         }
 
-System.out.println("propertiesLayer is " + propertiesLayer.getLayerName());
-
         if ( Strings.isEmpty(propertiesLayer.getConnectionName()) ) 
             propertiesLayer.setConnection(mappingView.getConnectionName());
         if ( Strings.isEmpty(propertiesLayer.getConnectionName()) )
         	propertiesLayer.setConnection(DatabaseConnections.getInstance().getAnyOpenConnectionName());
-System.out.println("propertiesLayer.getConnection=" + propertiesLayer.getConnectionName());
 
         // Temporary layer with only those layer properties so that our changed 
         // rendering (see selection) won't affect original layer

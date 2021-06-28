@@ -1678,9 +1678,9 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
 	                                                             jGeom, 
 	                                                             null,  /* geomSet */
 	                                                             mbr,
-	                                                             true, /* Selection Colouring */
-	                                                             true, /* zoom */
-	                                                             true /* Draw After */ 
+	                                                             false, /* Selection Colouring */
+	                                                             true,  /* zoom */
+	                                                             true   /* Draw After */ 
 	                                                             ); 
 										} catch (SQLException e1) {
 											// TODO Auto-generated catch block
