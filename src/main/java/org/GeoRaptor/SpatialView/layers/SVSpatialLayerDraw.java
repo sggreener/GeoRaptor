@@ -1592,7 +1592,7 @@ public class SVSpatialLayerDraw {
             styling.setPointColor(savePointColor );
             styling.setPointColorType(savePointColorSource);
         } catch (Exception e) {
-            LOGGER.error("Problem marking GeoPoints() " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

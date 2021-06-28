@@ -36,6 +36,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
@@ -94,9 +95,14 @@ import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
+import org.locationtech.jts.io.oracle.OraWriter;
 
 import oracle.jdeveloper.layout.VerticalFlowLayout;
 import oracle.spatial.geometry.JGeometry;
+import oracle.spatial.util.WKT;
 
 
 /**
@@ -172,8 +178,11 @@ public class MapPanel
     protected String            MAPEXTENT_NOT_SET = "Map extent not set";
     protected String           NO_DRAWABLE_LAYERS = "No drawable layers.";
     private String                  MAP_MENU_JUMP = "Jump to new XY Location.";
-    private String  MAP_MENU_JUMP_TO_SDO_GEOMETRY = "Jump to SDO_GEOMETRY";
-    private String QUESTION_MENU_JUMP_SDO_GEOMETRY= "Enter SDO_GEOMETRY (text):";
+    private String            MAP_MENU_JUMP_TO_GEOMETRY = "Jump to a Geometry";
+    private String MAP_MENU_QUESTION_JUMP_TO_GEOMETRY   = "Enter Sdo/WKT Geometry (text):";
+    private String MAP_MENU_JUMP_TO_GEOMETRY_WKT_ERROR  = "WKT Geometry could not be converted to an SDO_GEOMETRY.";
+    private String MAP_MENU_JUMP_TO_GEOMETRY_EWKT_ERROR = "EWKT ZM tag detected.";
+    private String MAP_MENU_JUMP_TO_GEOMETRY_CONVERT    = "Could not convert input to SDO_GEOMETRY";
     private String              MAP_MENU_COPY_MBR = "Copy Map Extent to Clipboard.";
     private String           MAP_MENU_COPY_CENTRE = "Copy Map Centre Point to Clipboard.";
     private String         MAP_MENU_PROJECT_POINT = "Copy Map Point to Clipboard as Lat/Long (4326).";
@@ -276,8 +285,11 @@ public class MapPanel
             this.MAPEXTENT_NOT_SET             = this.propertyManager.getMsg("MAPEXTENT_NOT_SET");
             this.NO_DRAWABLE_LAYERS            = this.propertyManager.getMsg("NO_DRAWABLE_LAYERS");
             this.MAP_MENU_JUMP                 = this.propertyManager.getMsg("MAP_MENU_JUMP");
-            this.MAP_MENU_JUMP_TO_SDO_GEOMETRY = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_SDO_GEOMETRY");
-            this.QUESTION_MENU_JUMP_SDO_GEOMETRY = this.propertyManager.getMsg("QUESTION_MENU_JUMP_SDO_GEOMETRY");
+            this.MAP_MENU_JUMP_TO_GEOMETRY            = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_GEOMETRY");
+            this.MAP_MENU_QUESTION_JUMP_TO_GEOMETRY   = this.propertyManager.getMsg("MAP_MENU_QUESTION_JUMP_TO_GEOMETRY");
+            this.MAP_MENU_JUMP_TO_GEOMETRY_WKT_ERROR  = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_GEOMETRY_WKT_ERROR");
+            this.MAP_MENU_JUMP_TO_GEOMETRY_EWKT_ERROR = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_GEOMETRY_EWKT_ERROR");
+            this.MAP_MENU_JUMP_TO_GEOMETRY_CONVERT    = this.propertyManager.getMsg("MAP_MENU_JUMP_TO_GEOMETRY_CONVERT");
             this.MAP_MENU_COPY_MBR             = this.propertyManager.getMsg("MAP_MENU_COPY_MBR");
             this.MAP_MENU_COPY_CENTRE          = this.propertyManager.getMsg("MAP_MENU_COPY_CENTRE");
             this.MAP_MENU_PROJECT_POINT        = this.propertyManager.getMsg("MAP_MENU_PROJECT_POINT");
@@ -432,7 +444,7 @@ public class MapPanel
      * @author Simon Greener, April 2010, Added to support java.awt.shape rendering.
      */
     public void setWorldToScreenTransform(Envelope _mapExtent,
-                                                Dimension _screenSize) 
+                                         Dimension _screenSize) 
     {
         setWorldToScreenTransform( _mapExtent.minX,
                                    _mapExtent.minY,
@@ -1589,36 +1601,95 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                             };
                         popup.add(jumpLocation);
 
-                        AbstractAction jumpSdoGeometry = 
-                            new AbstractAction(this.MAP_MENU_JUMP_TO_SDO_GEOMETRY,this.iconJump2SdoGeometry) {
+                        AbstractAction jumpToGeometry = 
+                            new AbstractAction(this.MAP_MENU_JUMP_TO_GEOMETRY,
+                            		           this.iconJump2SdoGeometry) {
 								private static final long serialVersionUID = 4434653818566059964L;
 
-								public void actionPerformed(ActionEvent e) {
-									String sdoGeometry = "";
-                                    sdoGeometry = JOptionPane.showInputDialog(QUESTION_MENU_JUMP_SDO_GEOMETRY);
-                                    if ( Strings.isEmpty(sdoGeometry))
+								public void actionPerformed(ActionEvent e) 
+								{
+									String sGeometry = "";
+                                    sGeometry = JOptionPane.showInputDialog(MAP_MENU_QUESTION_JUMP_TO_GEOMETRY);
+                                    if ( Strings.isEmpty(sGeometry))
                                     	return;
-                                    // Test convert string 
-                                    try 
+                                	Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection();
+                                	// Default SRID for WKT input
+                                	int srid = spatialView.getSRIDAsInteger();
+                                    Struct stGeom = null;
+                                    boolean isSdoGeometry = sGeometry.indexOf("SDO_GEOMETRY") != -1;
+                                    if ( isSdoGeometry ) 
                                     {
-                                    	Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection(); 
-                                    	Struct stGeom = Queries.getSdoGeometry(conn,sdoGeometry);
-                                    	final Envelope mbr = SDO_GEOMETRY.getGeoMBR(stGeom);
-                                        final JGeometry jGeom = JGeometry.loadJS(stGeom);
-                                        SpatialViewPanel.getInstance()
-                                                        .showGeometry(null,/*final iLayer*/
-                                                                      jGeom, 
-                                                                      null,
-                                                                      mbr,
-                                                                      true, /* Selection Colouring */
-                                                                      true, /* zoom */
-                                                                      true /* Draw After */ ); 
-                                    } catch (Exception ce) {
-                                        LOGGER.error ("Could not convert input to SDO_GEOMETRY");
+	                                    try 
+	                                    {
+	                                    	stGeom = Queries.getSdoGeometry(conn,sGeometry);
+     	                                } catch (Exception ce) {
+                                            LOGGER.error (MAP_MENU_JUMP_TO_GEOMETRY_CONVERT);
+     	                                }
+                                    } else {
+                                    	// We assume it is a WKT/EWKT
+                                    	//
+                                        if ( sGeometry.startsWith("SRID=") ) 
+                                        {
+                                        	// EWTK
+                                        	// Extract SRID and over write default 
+                                        	int semicolon = sGeometry.indexOf(";");
+                                        	String sSrid = sGeometry.substring(5,semicolon).replace("NULL","-1");
+                                        	srid = Integer.valueOf(sSrid).intValue();
+                                        	// Remove SRID=<value>; prefix to return pure WKT
+                                        	sGeometry = sGeometry.substring(semicolon+1);
+                                        }
+                                        
+                                        try 
+                                        {
+                                        	// Last EWKT check before conversion
+                                            // sdoutl.jar handles 2D and 3D geometries but not 4D
+                                            // sdoutl.jar does not handle EWKT tags Z, M and ZM
+                                        	if ( sGeometry.indexOf("ZM") != -1 )
+                                        		throw new IOException(MAP_MENU_JUMP_TO_GEOMETRY_EWKT_ERROR);
+                                        	// Get rid of Z or M tag
+                                        	// NB: We use display 2D XY ordinates anyway
+                                        	sGeometry = sGeometry.replace("Z","").replace("M","");
+                                        	// Now convert stripped WKT
+                                        	WKT wkt = new WKT();
+                                        	stGeom = wkt.toStruct(sGeometry.getBytes(),conn);
+                                        	stGeom = SDO_GEOMETRY.setSRID(stGeom,srid);
+										} catch (IOException ioe) {
+											 LOGGER.warn(MAP_MENU_JUMP_TO_GEOMETRY_WKT_ERROR + " " +
+										                 ioe.getMessage());
+											 return;
+										} catch (Exception e1) {
+ 											 LOGGER.warn(MAP_MENU_JUMP_TO_GEOMETRY_WKT_ERROR);
+ 											 stGeom = null;
+										} 
                                     }
-                                }
+	                                if (stGeom != null )
+	                                {
+	                                    JGeometry jGeom;
+										try 
+										{
+		                                	Envelope mbr = SDO_GEOMETRY.getGeoMBR(stGeom);
+											jGeom = JGeometry.loadJS(stGeom);
+											// For some reason the conversion removes SRID so reapply
+											jGeom.setSRID(srid);  
+											// showGeometry checks SRID of geometry and chooses right view
+											SpatialViewPanel
+											       .getInstance()
+	                                               .showGeometry(null,/*final iLayer*/
+	                                                             jGeom, 
+	                                                             null,  /* geomSet */
+	                                                             mbr,
+	                                                             true, /* Selection Colouring */
+	                                                             true, /* zoom */
+	                                                             true /* Draw After */ 
+	                                                             ); 
+										} catch (SQLException e1) {
+											// TODO Auto-generated catch block
+											e1.printStackTrace();
+										}
+                                    }
+								}
                             };
-                        popup.add(jumpSdoGeometry);
+                        popup.add(jumpToGeometry);
                         
                         AbstractAction copyMBRAsSdoGeometry = 
                             new AbstractAction(this.MAP_MENU_COPY_MBR,this.iconMenuCopyMbr) {
@@ -1685,7 +1756,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                                         try 
                                         {
                                         	if ( spatialView.getSRIDAsInteger() == Constants.SRID_NULL ) {
-                                        	  LOGGER.info("Can't project source geoemtries with NULL SRID.");
+                                        	  LOGGER.warn("Can't project source geometries with NULL SRID.");
                                         	} else {
                                         	  Connection conn = spatialView.getActiveLayer().getConnection();
                                               Point2D pPoint = Queries.projectPoint(conn, mPoint, spatialView.getSRIDAsInteger(), 4326);

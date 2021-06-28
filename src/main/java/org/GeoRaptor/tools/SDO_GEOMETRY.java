@@ -382,23 +382,24 @@ public class SDO_GEOMETRY
     		PrecisionModel           pm = null;
             GeometryFactory geomFactory = null;
             OraReader     geomConverter = null;
-    		Geometry                  g = null;
+    		Geometry               geom = null;
 
             // Do conversion       
             switch ( visualType )
             {                    
                 case GEOJSON:
-                    pm = new PrecisionModel(precisionModelScale);
-                    geomFactory = new GeometryFactory(pm);
-                    geomConverter = new OraReader(geomFactory);
-            		g = geomConverter.read(structGeom);
+                    pm                = new PrecisionModel(precisionModelScale);
+                    geomFactory       = new GeometryFactory(pm);
+                    geomConverter     = new OraReader(geomFactory);
+            		geom              = geomConverter.read(structGeom);
                 	GeoJsonWriter gjw = new GeoJsonWriter(decimalPlaces);
                 	gjw.setEncodeCRS(true);
-                	clipText = gjw.write(g);
+                	clipText = gjw.write(geom);
                 	break;
                 	
                 case WKT:
                 	// WKT is 2D
+                	// Use Oracle Spatial WKT not JTS WKTReader
             		w = new WKT();
             		clipText = new String(w.fromStruct(structGeom));
             		break;
@@ -410,12 +411,12 @@ public class SDO_GEOMETRY
                 		w = new WKT();
                 		clipText = new String(w.fromStruct(structGeom));
                 	} else {
-                        pm = new PrecisionModel(precisionModelScale);
-                        geomFactory = new GeometryFactory(pm);
-                        geomConverter = new OraReader(geomFactory);
-                		g = geomConverter.read(structGeom);
-                		WKTWriter              wktw = new WKTWriter(coordDims);
-                		clipText = wktw.write(g);
+                        pm             = new PrecisionModel(precisionModelScale);
+                        geomFactory    = new GeometryFactory(pm);
+                        geomConverter  = new OraReader(geomFactory);
+                		geom           = geomConverter.read(structGeom);
+                		WKTWriter wktw = new WKTWriter(coordDims);
+                		clipText       = wktw.write(geom);
 
                 		// JTS WKT writer doesn't interpret measures in the Oracle way
                 		if ( mDim == 3 && coordDims == 3 ) 
@@ -425,7 +426,7 @@ public class SDO_GEOMETRY
                 	}
                     clipText = "SRID=" + (srid==Constants.SRID_NULL?"NULL":String.valueOf(srid)) + ";" + clipText;
                     break;
-                        
+
                 case KML  : /* Always render with KML2 */
                 case KML2 : KML2.setConnection(conn);
                             clipText = KML2.to_KMLGeometry(structGeom);
@@ -438,7 +439,7 @@ public class SDO_GEOMETRY
                 case GML3 : GML3.setConnection(conn);
                             clipText = GML3.to_GML3Geometry(structGeom);
                             break;
-                            
+
                 case SDO_GEOMETRY:
                 default: 
                     clipText = RenderTool.renderStructAsPlainText(
@@ -447,7 +448,7 @@ public class SDO_GEOMETRY
                                                 Constants.MAX_PRECISION);
                     break;
             }
-    
+
         } catch (Exception e) {
             clipText = "";
         }
@@ -544,7 +545,9 @@ public class SDO_GEOMETRY
                 stGeom = SDO_GEOMETRY.getSdoFromST(_struct);
             } 
             Object[] data = (Object[])stGeom.getAttributes();
-            return OraUtil.toInteger(data[1], _nullValue);
+            int srid = OraUtil.toInteger(data[1], _nullValue);
+            if ( srid == 0 ) srid = Constants.NULL_SRID;
+            return srid;
         } catch (SQLException sqle) {
             return _nullValue;
         }

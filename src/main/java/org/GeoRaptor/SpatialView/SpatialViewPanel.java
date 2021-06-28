@@ -85,6 +85,7 @@ import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.io.ExtensionFileFilter;
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
+import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
@@ -1926,12 +1927,12 @@ extends JPanel
         // Get right view to draw geometries in by checking SRID compatibility
         // Question: What if passed in _layer is not null and has a layer?
         //
-        int geomSRID = (_jGeom!=null)
-                        ? _jGeom.getSRID() 
-                        : SDO_GEOMETRY.getSRID(_geomSet.get(0).getGeoValue(),Constants.SRID_NULL);
-        if ( geomSRID == 0 )
-        	geomSRID = Constants.NULL_SRID;
-        
+        int geomSRID = Constants.SRID_NULL;
+        if ( _jGeom!=null )
+        	geomSRID = _jGeom.getSRID() == 0 ? Constants.SRID_NULL : _jGeom.getSRID();
+        else
+        	geomSRID = SDO_GEOMETRY.getSRID(_geomSet.get(0).getGeoValue(),Constants.SRID_NULL);
+
         SpatialView mappingView = null;
         mappingView = this.getMostSuitableView(geomSRID);
         if ( mappingView==null ) {
@@ -1945,9 +1946,11 @@ extends JPanel
             return;
         }
         int viewSRID = mappingView.getSRIDAsInteger();
+        System.out.println("View SRID="+viewSRID);
+        
         boolean zoom = _zoom;
         
-        // ... And set it active if not already
+        // ... And set view active if not already
         //
         if ( ! this.activeView.getViewName().equals(mappingView.getViewName()) ) {
             this.setActiveView(mappingView);
@@ -1958,7 +1961,7 @@ extends JPanel
         //
         Envelope mbr = null;
         if ( _mbr == null || _mbr.isNull() ) {
-            mbr = (_geomSet == null) ? JGeom.getGeoMBR(_jGeom) : new Envelope(_geomSet);
+            mbr = (_jGeom != null) ? JGeom.getGeoMBR(_jGeom) : new Envelope(_geomSet);
         } else {
             mbr = new Envelope(_mbr);
         }
@@ -1997,56 +2000,60 @@ extends JPanel
         // because if we need world to screen transformation set to be able to
         // view anything.
         //
-        if ( mappingView.getMapPanel().getWorldToScreenTransform()==null ) {
-            // Force setting of WorldToScreenTransform()
+        if ( mappingView.getMapPanel().getWorldToScreenTransform()==null
+             ||
+             mappingView.getLayerCount() == 0 ) {
+            mappingView.getMapPanel()
+                       .setWorldToScreenTransform(mbr,
+                    		                      mappingView.getMapPanel().getDimension());
             zoom = true;
         }
         
         // If layer not supplied can we get our properties from the active layer?
         //
         iLayer propertiesLayer = _iLayer;
-        if ( propertiesLayer == null ) {
-            propertiesLayer = mappingView.getActiveLayer();
-            if  (propertiesLayer == null) 
-            {
-                // Get first layer to use for properties
-                //
-                propertiesLayer = mappingView.getFirstLayer();
-                // If there isn't any layers then create one
-                //
-                if ( propertiesLayer == null ) {
-                    // Make a temporary layer...
-                    //
-                    MetadataEntry me = new MetadataEntry(null,"ASCETATE",null,String.valueOf(viewSRID));
-                    me.add(mbr);
-                    propertiesLayer = new SVGraphicLayer(
-                                            mappingView,
-                                            "Layer Name",
-                                            "Screen Name",
-                                            "A temporary layer for properties only",
-                                            me,
-                                            true);
-                    propertiesLayer.setMBR(mbr);
-                    propertiesLayer.getStyling().setPointSize(12);
-                    propertiesLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.CIRCLE);
-                    propertiesLayer.getStyling().setPointColor(Colours.getRandomColor());
-                    propertiesLayer.getStyling().setLineColor(Colours.getRandomColor());
-                    propertiesLayer.getStyling().setLineWidth(2);
-                    propertiesLayer.getStyling().setShadeColor(Colours.getRandomColor());
-                    propertiesLayer.getStyling().setShadeTransLevel(0.5f);
-                    propertiesLayer.getStyling().setPointColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                    propertiesLayer.getStyling().setLineColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                    propertiesLayer.getStyling().setShadeType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-                }
-            } 
-        }
-        
-        if ( propertiesLayer.getConnection()==null ) {
-            propertiesLayer.setConnection(mappingView.getConnectionName());
+        if ( propertiesLayer == null ) propertiesLayer = mappingView.getActiveLayer();
+        if  (propertiesLayer == null ) propertiesLayer = mappingView.getFirstLayer();
+
+        // If after all that there isn't a layer then create one
+        //
+        if ( propertiesLayer == null ) 
+        {
+System.out.println("....propertiesLayer from First Layer is null");
+            // Make a temporary layer...
+            //
+            MetadataEntry me = new MetadataEntry(null,"ASCETATE",null,String.valueOf(viewSRID));
+            me.add(mbr);
+            propertiesLayer = new SVGraphicLayer(
+                                    mappingView,
+                                    "*Temporary Layer Name*",
+                                    "*Screen Name*",
+                                    "A temporary layer for properties only",
+                                    me,
+                                    true);
+            propertiesLayer.setMBR(mbr); // Not needed?
+            propertiesLayer.getStyling().setPointSize(12);
+            propertiesLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.CIRCLE);
+            propertiesLayer.getStyling().setPointColor(Colours.getRandomColor());
+            propertiesLayer.getStyling().setLineColor(Colours.getRandomColor());
+            propertiesLayer.getStyling().setLineWidth(2);
+            propertiesLayer.getStyling().setShadeColor(Colours.getRandomColor());
+            propertiesLayer.getStyling().setShadeTransLevel(0.5f);
+            propertiesLayer.getStyling().setPointColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+            propertiesLayer.getStyling().setLineColorType( preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+            propertiesLayer.getStyling().setShadeType(     preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
         }
 
+System.out.println("propertiesLayer is " + propertiesLayer.getLayerName());
+
+        if ( Strings.isEmpty(propertiesLayer.getConnectionName()) ) 
+            propertiesLayer.setConnection(mappingView.getConnectionName());
+        if ( Strings.isEmpty(propertiesLayer.getConnectionName()) )
+        	propertiesLayer.setConnection(DatabaseConnections.getInstance().getAnyOpenConnectionName());
+System.out.println("propertiesLayer.getConnection=" + propertiesLayer.getConnectionName());
+
         // Temporary layer with only those layer properties so that our changed 
-        // rendering (se selection) won't affect original layer
+        // rendering (see selection) won't affect original layer
         //
         iLayer tLayer = null;
         try {

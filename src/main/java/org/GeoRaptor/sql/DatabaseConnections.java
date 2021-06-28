@@ -155,7 +155,25 @@ public class DatabaseConnections {
         }
         return conn;
     }    
-    
+
+    public String getAnyOpenConnectionName() 
+    {
+        this.setConnections(true);
+        String conn = null;
+        if ( conn==null ) {
+           // Iterate over the whole set...
+           Iterator<DatabaseConnection> iter = this.cache.values().iterator();
+           while (iter.hasNext()) {
+               DatabaseConnection dbConn = iter.next();
+               if (dbConn.isOpen()) {
+                   conn = dbConn.getConnectionName();
+                   break;
+               }
+           }
+        }
+        return conn;
+    }    
+
     public javax.swing.DefaultComboBoxModel<String> getComboBoxModel(String _defaultConnName) 
     {
         if ( this.cache == null || this.cache.size()==0 ) {
