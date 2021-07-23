@@ -62,10 +62,19 @@ public class Constants {
 		// conversion
 		// Can't subclass ShapeType as is a final class
 		//
-		ARC(ShapeType.ARC.id), ARCM(ShapeType.ARCM.id), ARCZ(ShapeType.ARCZ.id), MULTIPOINT(ShapeType.MULTIPOINT.id),
-		MULTIPOINTM(ShapeType.MULTIPOINTM.id), MULTIPOINTZ(ShapeType.MULTIPOINTZ.id), POINT(ShapeType.POINT.id),
-		POINTM(ShapeType.POINTM.id), POINTZ(ShapeType.POINTZ.id), POLYGON(ShapeType.POLYGON.id),
-		POLYGONM(ShapeType.POLYGONM.id), POLYGONZ(ShapeType.POLYGONZ.id), UNDEFINED(ShapeType.UNDEFINED.id);
+		ARC(ShapeType.ARC.id),  
+		ARCM(ShapeType.ARCM.id), 		
+		ARCZ(ShapeType.ARCZ.id), 
+		MULTIPOINT(ShapeType.MULTIPOINT.id), 
+		MULTIPOINTM(ShapeType.MULTIPOINTM.id), 
+		MULTIPOINTZ(ShapeType.MULTIPOINTZ.id), 
+		POINT(ShapeType.POINT.id), 
+		POINTM(ShapeType.POINTM.id), 
+		POINTZ(ShapeType.POINTZ.id), 
+		POLYGON(ShapeType.POLYGON.id), 
+		POLYGONM(ShapeType.POLYGONM.id), 
+		POLYGONZ(ShapeType.POLYGONZ.id), 
+		UNDEFINED(ShapeType.UNDEFINED.id);
 
 		public final int id;
 
@@ -137,11 +146,11 @@ public class Constants {
 	public static javax.swing.DefaultComboBoxModel<String> getSegmentArrowsType() {
 		return new javax.swing.DefaultComboBoxModel<String>(
                    new String[] { 
-                       "None" /* Constants.SEGMENT_ARROWS_TYPE.NONE */,
-				       "Start" /* Constants.SEGMENT_ARROWS_TYPE.START */, 
-                       "Middle" /* Constants.SEGMENT_ARROWS_TYPE.MIDDLE */,
-                       "End" /* Constants.SEGMENT_ARROWS_TYPE.END */, 
-                        "End Only" /* Constants.SEGMENT_ARROWS_TYPE.END_ONLY */
+                       "None"     /* Constants.SEGMENT_ARROWS_TYPE.NONE */,
+				       "Start"    /* Constants.SEGMENT_ARROWS_TYPE.START */, 
+                       "Middle"   /* Constants.SEGMENT_ARROWS_TYPE.MIDDLE */,
+                       "End"      /* Constants.SEGMENT_ARROWS_TYPE.END */, 
+                       "End Only" /* Constants.SEGMENT_ARROWS_TYPE.END_ONLY */
 		});
 	}
 

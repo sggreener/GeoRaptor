@@ -1,10 +1,5 @@
 package org.GeoRaptor.SpatialView.layers;
 
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.PrecisionModel;
-import org.locationtech.jts.io.oracle.OraReader;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -19,15 +14,11 @@ import java.awt.geom.Line2D;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
-
-import java.sql.Connection;
 import java.io.IOException;
-
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.text.AttributedString;
 import java.text.DecimalFormat;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
@@ -36,16 +27,11 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import oracle.spatial.geometry.ElementExtractor;
-import oracle.spatial.geometry.J3D_Geometry;
-import oracle.spatial.geometry.JGeometry;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Messages;
+import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.LineStyle;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
-import org.GeoRaptor.sql.Queries;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.Coordinate;
@@ -55,8 +41,15 @@ import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.oracle.OraReader;
+
+import oracle.spatial.geometry.ElementExtractor;
+import oracle.spatial.geometry.J3D_Geometry;
+import oracle.spatial.geometry.JGeometry;
 
 public class SVSpatialLayerDraw {
 
@@ -65,8 +58,8 @@ public class SVSpatialLayerDraw {
     /**
      * Reference to main class
      */
-    protected iLayer layer;
-    private Graphics2D graphics2D;
+    protected    iLayer      layer = null;
+    private  Graphics2D graphics2D = null;
     private BasicStroke markStroke = null;
 
     public static final int    ALIGN_TOP = 1;
@@ -77,17 +70,16 @@ public class SVSpatialLayerDraw {
     public static final int  ALIGN_RIGHT = 1;
 
     private int horizPosn = ALIGN_LEFT;
-    private int vertPosn = ALIGN_BOTTOM;
+    private int vertPosn  = ALIGN_BOTTOM;
 
     public SVSpatialLayerDraw(iLayer _sLayer) 
     {
         this.layer = _sLayer;
     	
-    	if ( this.layer.getStyling() != null)
-          this.markStroke = new BasicStroke(
-                                     this.layer.getStyling().getLineWidth() + 1,
-                                     BasicStroke.CAP_ROUND,
-                                     BasicStroke.JOIN_ROUND);        	
+        this.markStroke = new BasicStroke(
+                                   this.layer.getStyling().getLineWidth() + 1,
+                                   BasicStroke.CAP_ROUND,
+                                   BasicStroke.JOIN_ROUND);        	
     }
 
 	public void callDrawFunction(Struct _struct, 
@@ -127,22 +119,30 @@ public class SVSpatialLayerDraw {
 
 	public void callDrawFunction(
 			JGeometry _geo, 
-			Styling _styling, 
-			String _label, 
-			Color _shadeValue,
-			Color _pointColorValue, 
-			Color _lineColorValue, 
-			int _pointSizeValue, 
-			double _rotationAngle
+			Styling   _styling, 
+			String    _label, 
+			Color     _shadeValue,
+			Color     _pointColorValue, 
+			Color     _lineColorValue, 
+			int       _pointSizeValue, 
+			double    _rotationAngle
 	) 
     throws IOException 
 	{
 		if (_geo == null) {
 			return;
 		}
-		drawGeometry(_geo, _label, _shadeValue, _pointColorValue, _lineColorValue, _pointSizeValue,
-				_styling.getRotationTarget(), _rotationAngle, _styling.getLabelAttributes(),
-				_styling.getLabelPosition(), _styling.getLabelOffset());
+		drawGeometry(_geo, 
+				     _label, 
+				     _shadeValue, 
+				     _pointColorValue, 
+				     _lineColorValue, 
+				     _pointSizeValue,
+				     _styling.getRotationTarget(), 
+				     _rotationAngle, 
+				     _styling.getLabelAttributes(),
+				     _styling.getLabelPosition(), 
+				     _styling.getLabelOffset());
 	}
 
     /**
@@ -172,22 +172,36 @@ public class SVSpatialLayerDraw {
                              Constants.ROTATE      _rotate,
                              double                _angle,
                              AttributeSet          _attributes,
-                             Constants.
-                              TEXT_OFFSET_POSITION _labelPosition,
+                             Constants.TEXT_OFFSET_POSITION _labelPosition,
                              int                   _labelOffset)
     throws IOException
     {
+        if (_geo == null) {
+            return;
+        }
+        
 		Styling styling = this.layer.getStyling();
-    	Color pointColor = ( _pointColorValue != null ) ? _pointColorValue : styling.getPointColor(null);  
-    	Color lineColor  = ( _lineColorValue  != null ) ? _lineColorValue  : styling.getLineColor(null);  
-    	Color shadeColor = ( _shadeColorValue != null ) ? _shadeColorValue : styling.getShadeColor(null);  
+		
+    	Color pointColor = null;
+    	if ( _pointColorValue != null ) 
+    		pointColor = _pointColorValue; 
+    	else 
+    		pointColor = styling.getPointColor(null);
+    	
+    	Color lineColor  = null;
+    	if ( _lineColorValue != null ) 
+    		lineColor = _lineColorValue;
+    	else
+    		lineColor = styling.getLineColor(null);
+    	
+    	Color shadeColor = null;
+    	if ( _shadeColorValue != null ) 
+    		shadeColor = _shadeColorValue;
+    	else
+    		shadeColor = styling.getShadeColor(null);  
 
         if ( this.graphics2D==null ) {
             throw new IOException("SVSpatialLayerDraw: No Graphics Context for drawing");
-        }
-        
-        if (_geo == null) {
-            return;
         }
         
         if (this.getWorldToScreenTransform()==null) {
@@ -198,7 +212,9 @@ public class SVSpatialLayerDraw {
         Shape shp = null;        
         this.setLabelPosition(_labelPosition);
         int gtype = _geo.getType();
+        
         switch (gtype) {
+        
         case JGeometry.GTYPE_COLLECTION:
             // Need to extract individual elements that can be mapped to Shapes
             JGeometry[] _geoList = _geo.getElements();
@@ -218,6 +234,7 @@ public class SVSpatialLayerDraw {
                 }
             }
             break;
+            
         case JGeometry.GTYPE_POINT:
             // Render the point
             try {
@@ -279,6 +296,7 @@ public class SVSpatialLayerDraw {
                 switch (gtype) {
                   case JGeometry.GTYPE_POLYGON      :
                   case JGeometry.GTYPE_MULTIPOLYGON : fillShape(shp, shadeColor);
+                  
                   case JGeometry.GTYPE_CURVE        :
                   case JGeometry.GTYPE_MULTICURVE   : drawShape(shp, lineColor);
                 }
@@ -526,58 +544,52 @@ public class SVSpatialLayerDraw {
             // Check geometry parameters
             //
             if ( _geom == null )
-                throw new SQLException("Supplied Sdo_Geometry is NULL.");
+                return null;
 
-        	Connection conn = this.layer.getConnection();
+            if ( _geom.isPoint() ) {
+          	  Point2D point = _geom.getJavaPoint();
+              return new Point2D.Double(point.getX(),point.getY());            	
+            }
+            
         	// JTS cannot handle Circles so "buffer" to get polygon
             if ( _geom.isCircle() ) {
-            	Envelope  mbr = new Envelope(_geom);
-            	Point2D point = mbr.centre();
-                return new Point2D.Double(point.getX(),point.getY()); 
+            	throw new Exception("Circle Detected."); 
             }
 
             // Convert to Struct ready for JTS Struct -> Geometry conversion
-       		stGeom = JGeom.toStruct(_geom,conn);
+        	stGeom = JGeom.toStruct(_geom,this.layer.getConnection());
             
             if ( stGeom == null ) {
-                throw new SQLException("Supplied Geometry could not be converted to an valid object.");
+                throw new Exception("Supplied Geometry could not be converted to an valid Struct object."); 
             }            
-                
-            // Extract SRID from SDO_GEOEMTRY
-            //
-            int SRID = _geom.getSRID();
-            
+
             // Convert Geometries
             //
-            double precisionModelScale = this.layer.getPrecision(false) < 0 
-                                  ? (double)(1.0/Math.pow(10, this.layer.getPrecision(false))) 
-                                  : (double)Math.pow(10, this.layer.getPrecision(false));
-
-            PrecisionModel   pm = new PrecisionModel(precisionModelScale);
-            GeometryFactory  gf = new GeometryFactory(pm,SRID); 
+            GeometryFactory  gf = new GeometryFactory(new PrecisionModel(),_geom.getSRID()); 
             OraReader converter = new OraReader(gf);
             Geometry        geo = converter.read(stGeom);
     
             // Check converted geometries are valid
             //
             if ( geo == null ) {
-               LOGGER.warn("SDO_Geometry conversion to JTS geometry returned NULL.");
-               return null;
+                throw new Exception("JTS Conversion of Struct to Geometry failed."); 
             }
             
             // Now do the calculation
             //
             org.locationtech.jts.geom.Point p = geo.getInteriorPoint();
             if ( p == null ) {
-                LOGGER.warn("Could not compute centroid.");
-                return null;
+                throw new Exception("JTS could not compute centroid.");
             }
             
             return new Point2D.Double(p.getX(),p.getY()); 
             
-          } catch(Exception e) {
-              LOGGER.warn("Error generating JTS Centroid: " + e.getMessage());
-              return null;
+          } catch (Exception e) {
+        	  LOGGER.warn("Error generating JTS Centroid: " + e.getMessage());
+        	  // Return centre of MBR
+        	  Envelope  mbr = new Envelope(_geom);
+        	  Point2D point = mbr.centre();
+              return new Point2D.Double(point.getX(),point.getY());
           }
      }
 
@@ -680,7 +692,7 @@ public class SVSpatialLayerDraw {
                                                     ? _angle : 0.0f);
         // Don't let any other linestyle affect drawing markers (as uses line settings)
         this.graphics2D.setStroke(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,1));
-        this.graphics2D.setColor(_pointColorValue);
+        this.graphics2D.setColor((_pointColorValue!=null)?_pointColorValue:Color.GRAY);
         this.graphics2D.fill(drawShape);
         this.graphics2D.draw(drawShape);
     }
@@ -849,7 +861,6 @@ public class SVSpatialLayerDraw {
             // Save colour of starting point
             Color oldColor = this.graphics2D.getColor();
             this.graphics2D.setColor(Color.GRAY);
-
             this.graphics2D.drawLine((int)_point.getX(), (int)_point.getY(),
                                      (int)_orientedPoint.getX(),
                                      (int)_orientedPoint.getY());
@@ -903,7 +914,7 @@ public class SVSpatialLayerDraw {
         this.graphics2D.setColor(_pointColorValue);
         PointMarker.MARKER_TYPES pointType = styling.getPointType();
         int pointSize = this.layer.getStyling().getPointSize(_pointSizeValue);
-        double angle = (_rotate == Constants.ROTATE.MARKER || _rotate == Constants.ROTATE.BOTH) ? _angle : 0.0f;
+        double angle  = (_rotate == Constants.ROTATE.MARKER || _rotate == Constants.ROTATE.BOTH) ? _angle : 0.0f;
 
         Envelope mapWindow = this.layer.getSpatialView().getMBR();
 
@@ -928,17 +939,28 @@ public class SVSpatialLayerDraw {
                               styling.getMarkLabelOffset());
                 }
                 if (!isOriented) {
-                    drawPoint(PointMarker.getPointShape(pointType,point,pointSize,angle));
+                	Shape shp = PointMarker.getPointShape(
+                			         pointType,
+                			         point,
+                			         pointSize,
+                			         angle);
+                    drawPoint(shp);
                     // Now draw label if required
                     if (!Strings.isEmpty(_label)) {
                         // Got point so now draw label
                         // if within Scale
                         //
                         if ( this.isWithinScale() ) {
-                            drawString(this.graphics2D,_label,
-                                       (int)point.getX(), (int)point.getY(),
-                                       this.horizPosn,    this.vertPosn,
-                                       _rotate,  _angle, _attributes, styling.getMarkLabelOffset());
+                            drawString(this.graphics2D,
+                            		   _label,
+                                       (int)point.getX(), 
+                                       (int)point.getY(),
+                                       this.horizPosn,
+                                       this.vertPosn,
+                                       _rotate,  
+                                       _angle, 
+                                       _attributes, 
+                                       styling.getMarkLabelOffset());
                         }
                         this.graphics2D.setColor(_pointColorValue);
                     }
@@ -993,18 +1015,12 @@ public class SVSpatialLayerDraw {
         }
     }
 
-    /**
-     * @param _shp Java2D AWT shape
-     * @author Simon Greener April 3rd 2010, Original Coding
-     * @author Simon Greener April 19rd 2010
-     *          Fixed code to mark start, points and direction
-     **/
     private void drawShape(Shape _shp,
                            Color _lineColorValue)
     {
         if (this.layer.getStyling().isPerformLine()) {
             this.graphics2D.setColor(_lineColorValue);
-            this.graphics2D.setStroke(this.layer.getStyling().getLineStroke());
+            this.graphics2D.setStroke(   this.layer.getStyling().getLineStroke());
             this.graphics2D.setComposite(this.layer.getStyling().getLineAlphaComposite());
             this.graphics2D.draw(_shp);
         }
@@ -1040,6 +1056,7 @@ public class SVSpatialLayerDraw {
                         } else {
                             markElement(element,false);
                         }
+                        
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON && element.getElemInfo().length == 3) {
                         // DEBUG LOGGER.info("markGeometry: GTYPE_POLYGON");
                         JGeometry jgeom = null;
@@ -1048,6 +1065,7 @@ public class SVSpatialLayerDraw {
                             jgeom = JGeom.fromEnvelope(jgeom);
                         }
                         markElement(jgeom,false);
+                        
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON ||
                                element.getType() == JGeometry.GTYPE_MULTIPOLYGON )
                     {
@@ -1932,9 +1950,12 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
         // if within Scale
         //
         if ( this.isWithinScale() ) {
-            drawString(this.graphics2D,_label,
-                       (int)point2D.getX(), (int)point2D.getY(), 
-                       this.horizPosn, this.vertPosn, 
+            drawString(this.graphics2D,
+            		   _label,
+                       (int)point2D.getX(), 
+                       (int)point2D.getY(), 
+                       this.horizPosn, 
+                       this.vertPosn, 
                        _rotate, 
                        _angle, 
                        _attributes,
@@ -1959,9 +1980,12 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
         // if within Scale
         //
         if ( this.isWithinScale() ) {
-            drawString(this.graphics2D,_label,
-                       (int)point2D.getX(), (int)point2D.getY(), 
-                       this.horizPosn, this.vertPosn, 
+            drawString(this.graphics2D,
+            		   _label,
+                       (int)point2D.getX(), 
+                       (int)point2D.getY(), 
+                       this.horizPosn, 
+                       this.vertPosn, 
                        _rotate, 
                        _angle, 
                        _attributes,

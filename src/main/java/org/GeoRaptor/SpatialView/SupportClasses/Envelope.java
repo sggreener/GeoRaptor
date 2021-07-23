@@ -266,10 +266,11 @@ implements Comparable<Object>
     /**
      * Check if MBR is set
      * @history: SGG - Changed 23/12/2015
+     * @history: SGG - Removed area check because initial MBRs for points will be 0.0
      */
     public boolean isSet() 
     {
-        return ! (this.isNull() || this.isInvalid() || this.area()==0.0);
+        return ! (this.isNull() || this.isInvalid());
     }
         
     /**
@@ -1096,6 +1097,20 @@ implements Comparable<Object>
                              this.minX,this.minY,this.maxX,this.maxY);
     }
 
+    public String toGeoJSON() {
+    	DecimalFormat df = Tools.getDecimalFormatter(this.decimalPlaces);
+    	String geoJson = "\"bbox\": [";
+    	geoJson += df.format(this.minX)
+    			   + "," +
+    			   df.format(this.minY)
+    			   + "," +
+    			   df.format(this.maxX)
+    			   + "," +
+    			   df.format(this.maxY)
+    			   + "]";
+        return geoJson;
+    }
+    
     /*  ==================================================================================== */
 
     /**

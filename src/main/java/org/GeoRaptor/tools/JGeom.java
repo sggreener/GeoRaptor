@@ -44,6 +44,8 @@ public class JGeom {
       {
     	  stGeom = JGeometry.storeJS(_jGeom,_conn);
       } catch (Exception e) {
+    	  e.printStackTrace();
+    	  // Fall back to string method...
     	  String sdo_geometry = null;
     	  sdo_geometry = RenderTool.renderGeometryAsPlainText(_jGeom, Constants.TAG_MDSYS_SDO_GEOMETRY, Constants.bracketType.NONE,12);
           try 

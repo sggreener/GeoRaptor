@@ -832,7 +832,7 @@ public class OraRowSetMetaDataImpl implements RowSetMetaData {
       case OracleTypes.BFILE         : className = (new oracle.sql.BFILE(null)).getClass().getName (); break;
       case OracleTypes.INTERVALDS    : className = (new oracle.sql.INTERVALDS("3 2:25:45.0")).getClass().getName (); break;
       case OracleTypes.INTERVALYM    : className = (new oracle.sql.INTERVALYM("1-3")).getClass().getName (); break;
-      case OracleTypes.TIMESTAMPTZ   : className = (new oracle.sql.TIMESTAMPTZ(null)).getClass().getName (); break;
+      case OracleTypes.TIMESTAMPTZ   : className = (new oracle.sql.TIMESTAMPTZ()).getClass().getName (); break;
       case OracleTypes.TIMESTAMPLTZ  : className = (new oracle.sql.TIMESTAMPLTZ(null)).getClass().getName (); break;
       case OracleTypes.STRUCT        : className = "oracle.sql.STRUCT"; break;
       }

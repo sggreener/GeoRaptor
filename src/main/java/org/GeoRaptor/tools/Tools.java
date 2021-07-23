@@ -243,7 +243,7 @@ public class Tools {
         DecimalFormat df = new DecimalFormat(dfPattern, new DecimalFormatSymbols(Locale.US));
         // Ensure we get a leading and trailing 0
         //
-        df.setMinimumFractionDigits(_maxFractionDigits >= 0 ? _maxFractionDigits : df.getMaximumFractionDigits() );
+        df.setMaximumFractionDigits(_maxFractionDigits >= 0 ? _maxFractionDigits : df.getMaximumFractionDigits() );
         df.setMinimumFractionDigits(1);
         df.setMinimumIntegerDigits(1);
         return df;

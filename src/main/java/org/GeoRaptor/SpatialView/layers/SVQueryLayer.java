@@ -1270,16 +1270,14 @@ implements iLayer
         //
         Envelope lMBR = new Envelope(this.getDefaultPrecision());
         
-        LOGGER.debug("SVQueryLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
-                         "\nSRIDTYPE=" + this.getSRIDType().toString()+
-                   "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
-        
         // If one method fails, a warning is written. When this happens we need to report success of later method
         boolean multiTry = false;
         
         if (this.hasIndex() &&
             this.getSRIDType().toString().startsWith("GEO") == false &&
-            this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
+            this.getPreferences()
+                .getLayerMBRSource()
+                .equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
         {
             try {
                 lMBR.setMBR(Queries.getExtentFromRTree(conn,
@@ -1294,7 +1292,7 @@ implements iLayer
                     return true;
                 } 
             } catch (SQLException e) {
-                LOGGER.warn(e.getMessage() + ": Will now try and extract MBR from metadata.");
+                LOGGER.warn("Could not extract extent from RTree index so will now try and extract from metadata.");
                 multiTry = true;
             }
         }
@@ -1304,9 +1302,9 @@ implements iLayer
         boolean hasMetadata = false;
         try {
             hasMetadata = Queries.hasGeomMetadataEntry(conn,
-                                                            this.getSchemaName(),
-                                                            this.getObjectName(),
-                                                            this.getGeoColumn());
+                                                       this.getSchemaName(),
+                                                       this.getObjectName(),
+                                                       this.getGeoColumn());
             // Try and extract from existing Metadata
             if ( hasMetadata ) {
                 try 
@@ -1319,17 +1317,17 @@ implements iLayer
                     if ( lMBR.isSet() ) {
                         super.setMBR(lMBR);
                         if (multiTry) {
-                            LOGGER.warn("Extracting MBR From Metadata Successful.");
+                            LOGGER.warn("Extracting extent from metadata successful.");
                         }
                         return true;
                     } 
                 } catch (Exception e) {
-                    LOGGER.warn("Error extracting MBR from metadata (" + e.getMessage() + "): Extracting MBR from a sample of records.");
+                    LOGGER.warn("Could not extract extent from metadata, so will now extract from a sample of records.");
                     multiTry = true;
                 }
             }  
         } catch (SQLException e) {
-            LOGGER.warn("No User_Sdo_Geom_Metadata: Skipping to extract MBR from a sample of records.");
+            LOGGER.warn("No User_Sdo_Geom_Metadata, so will now extract extent from a sample of records.");
             multiTry = true;
         }
         
@@ -1345,19 +1343,18 @@ implements iLayer
             if ( lMBR.isSet() ) {
                 super.setMBR(lMBR);
                 if (multiTry) {
-                    LOGGER.warn("Extracting MBR From Sample Successful.");
+                    LOGGER.warn("Extracting extent from sample successful.");
                 }
                 return true;
             } 
         } catch (SQLException e) {
-            LOGGER.warn("Failed to get MBR Through Sampling (" + e.getMessage() + ").");
+            LOGGER.warn("Failed to get extent through sampling (" + e.getMessage() + ").");
         }
         
-        LOGGER.debug("SVQueryLayer.setLayerMBR() setMBR=" + lMBR.toString());        
         if ( _defaultMBR!=null && 
              _defaultMBR.isSet() ) {
             super.setMBR(_defaultMBR);
-            LOGGER.warn("Default MBR Applied to Layer.");
+            LOGGER.warn("Default extent applied to layer.");
             return true;
         }
         return false;

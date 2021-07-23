@@ -526,7 +526,7 @@ public class SVTableLayer
                     return true;
                 } 
             } catch (SQLException e) {
-                LOGGER.warn(e.getMessage() + ": Will now try and extract MBR from metadata.");
+                LOGGER.warn("Could not extract extent from RTree index, so will extract from metadata.");
                 multiTry = true;
             }
         }
@@ -551,17 +551,17 @@ public class SVTableLayer
                     if ( lMBR.isSet() ) {
                         super.setMBR(lMBR);
                         if (multiTry) {
-                            LOGGER.warn("Extracting MBR From Metadata Successful.");
+                            LOGGER.warn("Extracting extent from metadata successful.");
                         }
                         return true;
                     } 
                 } catch (Exception e) {
-                    LOGGER.warn("Error extracting MBR from metadata (" + e.getMessage() + "): Extracting MBR from a sample of records.");
+                    LOGGER.warn("Could not extract extent from metadata, so will extract from a sample of records.");
                     multiTry = true;
                 }
             }  
         } catch (SQLException e) {
-            LOGGER.warn("No User_Sdo_Geom_Metadata: Skipping to extract MBR from a sample of records.");
+            LOGGER.warn("Could not extract extent from User_Sdo_Geom_Metadata, so will extract MBR from a sample of records.");
             multiTry = true;
         }
         
@@ -577,18 +577,18 @@ public class SVTableLayer
             if ( lMBR.isSet() ) {
                 super.setMBR(lMBR);
                 if (multiTry) {
-                    LOGGER.warn("Extracting MBR From Sample Successful.");
+                    LOGGER.warn("Extracting extent from sample successful.");
                 }
                 return true;
             } 
         } catch (SQLException e) {
-            LOGGER.warn("Failed to get MBR Through Sampling (" + e.getMessage() + ").");
+            LOGGER.warn("Failed to get extent through sampling (" + e.getMessage() + ").");
         }
         
         if ( _defaultMBR!=null && 
              _defaultMBR.isSet() ) {
             super.setMBR(_defaultMBR);
-            LOGGER.warn("Default MBR Applied to Layer.");
+            LOGGER.warn("Default extent applied to layer.");
             return true;
         }
         return false;

@@ -21,8 +21,6 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 
-import oracle.spatial.util.KML2;
-
 public class GeoJSONExporter 
 implements IExporter 
 {
@@ -40,8 +38,8 @@ implements IExporter
 	private int              geoColumn = 0;
 	private String       geoColumnName = null;
 	private String            geometry = null;  // geoJSON for each row
-	private boolean          writeBBOX = false;
-	private String                bbox = null;  // geoJSON for each row
+	private boolean          writeBBOX = true;
+	private String                bbox = null;  // geoJSON bbox for each row
 	private String          attributes = null;  // Attributes for each row
 	private boolean    needsIdentifier = false;
 	private Envelope               mbr = null;
@@ -55,6 +53,8 @@ implements IExporter
     public  static final String    featureCollectionOption = "FeatureCollection";
     public  static final String              featureOption = "Feature";
 
+    private Constants.renderType savedSdoGeometryVisualFormat = Constants.renderType.GEOJSON;
+    
     public GeoJSONExporter(Connection _conn,
                            String     _fileName,
                            int        _totalRows)
@@ -63,11 +63,13 @@ implements IExporter
     	this.conn                = _conn;
     	this.totalRows           = _totalRows;
         this.GeoJsonFilename     = _fileName;    
-    	this.formatter           = Tools.getDecimalFormatter();
-    	this.writeBBOX           = false;
+    	this.formatter           = Tools.getDecimalFormatter(8);
+    	this.writeBBOX           = false;  // Write BBOX of each geometry
     	this.needsIdentifier     = true;
     	this.attributeProperties = "\"properties\": {";
     	this.mbr                 = new Envelope(Preferences.getInstance().getPrecision());
+    	// Save user visual format for use in sdo_geometry attributes
+        this.savedSdoGeometryVisualFormat = Preferences.getInstance().getSdoGeometryVisualFormat();
     }
 
     public void setWriteBBOX(boolean _write) {
@@ -176,25 +178,10 @@ implements IExporter
 	public void setExportMetadata(LinkedHashMap<Integer, RowSetMetaData> _exportMetadata) {
 	}
 	
-
     private String writeNumber(double d) {
         return formatter!=null ? formatter.format(d) : String.valueOf(d);
     }
     
-    // TODO Support Envelopes > 2D
-    public String getBBOX(Struct _geometry)
-    {
-    	Envelope gMBR = SDO_GEOMETRY.getGeoMBR(_geometry);
-    	this.mbr.setMaxMBR(gMBR);
-        String envelope = ""; 
-        envelope = "\"bbox\": [" + 
-                         writeNumber(gMBR.getMinX()) + ", " +
-                         writeNumber(gMBR.getMinY()) + ", " +
-                         writeNumber(gMBR.getMaxX()) + ", " +
-                         writeNumber(gMBR.getMaxY()) + "]";
-        return envelope;
-    }
-
 	// ******************************************************
 	
 	@Override
@@ -208,7 +195,7 @@ implements IExporter
         // FeatureCollection always used
         this.rowBuffer.append("{" + newLine);
         this.rowBuffer.append("\"type\": \"FeatureCollection\",");
-        this.rowBuffer.append("\"features\": [ {");
+        this.rowBuffer.append("\"features\": [ " + newLine);
 	}
 
 	@Override
@@ -245,9 +232,23 @@ implements IExporter
                         this.geometry = "";
                         return;
                     }
+                    // Switch to GeoJSON writer. 
+                    Preferences.getInstance().setSdoGeometryVisualFormat(Constants.renderType.GEOJSON);
+                    
+                    // Create GeoJSON representation of sdo_geometry
                     this.geometry = SDO_GEOMETRY.getGeometryAsString(stValue);
+                    
+                    // Switch back for non-mapping sdo_geometry attributes 
+                    Preferences.getInstance().setSdoGeometryVisualFormat(this.savedSdoGeometryVisualFormat);
+                    
+                    // Get individual geometry MBR
+                	Envelope gMBR = SDO_GEOMETRY.getGeoMBR(stValue);
+                	
+                	// Add to whole dataset MBR
+                	this.mbr.setMaxMBR(gMBR); 
                     if ( this.getWriteBBOX() ) {
-                    	this.bbox = this.getBBOX(stValue);
+                    	// Record bbox for individual geometry
+                    	this.bbox = gMBR.toGeoJSON(); 
                     }
                 }
             } else { 
@@ -256,7 +257,7 @@ implements IExporter
             	if (_columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY)) {
                 	// Any secondary SDO_GEOMETRY columns are converted to a String
                     if ( _object instanceof Struct )
-                    	obj = SDO_GEOMETRY.getGeometryAsString((Struct)_object);
+                    	obj = SDO_GEOMETRY.getGeometryAsString((Struct)_object); // Uses this.savedSdoGeometryVisualFormat
                     else if (_object instanceof String)
                     	obj = (String)_object;
                     else
@@ -321,9 +322,11 @@ implements IExporter
 	@Override
 	public void end() throws IOException 
 	{
-        this.rowBuffer.append("} ] }");
+        // Write total BBOX of whole export data (this.mbr)
+        this.rowBuffer.append("]");
+        this.rowBuffer.append("," + this.mbr.toGeoJSON());
+        this.rowBuffer.append("\n}");
         this.GeoJsonFile.write(this.rowBuffer.toString());
-        // Write this.mbr
         this.GeoJsonFile.flush();
 	}
 

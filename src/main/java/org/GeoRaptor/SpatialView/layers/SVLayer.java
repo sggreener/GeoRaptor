@@ -64,7 +64,8 @@ public class SVLayer {
 									// The latter forms the initial extent of the layer but this
 									// could change as a user initiates MBR recalculation.
 
-	public SVLayer(SpatialView _spatialView) {
+	public SVLayer(SpatialView _spatialView) 
+	{
 		this.spatialView = _spatialView;
 		this.mbr         = new Envelope(Constants.MAX_PRECISION); // this.getDefaultPrecision());
 		this.setSRIDType(Constants.SRID_TYPE.UNKNOWN);
@@ -72,7 +73,8 @@ public class SVLayer {
 	}
 
 	public SVLayer(SpatialView   _spatialView, 
-                   MetadataEntry _me) {
+                   MetadataEntry _me) 
+	{
 		this(_spatialView);
 		if (_me != null) {
 			this.setMetadataEntry(_me);
@@ -85,7 +87,9 @@ public class SVLayer {
 	 * 
 	 * @param _XML String XML <Layer>...</Layer>
 	 */
-	public SVLayer(SpatialView _spatialView, String _XML) {
+	public SVLayer(SpatialView _spatialView, 
+			       String      _XML) 
+	{
 		this(_spatialView);
 		try {
 			Document doc = null;
@@ -129,14 +133,10 @@ public class SVLayer {
 			this.setPrecision(precision);
 			this.setGeometryType((String) xpath.evaluate("SVLayer/GeometryType/text()", _node, XPathConstants.STRING));
 			// Last spatial extent of view
-			this.mbr.minX = Double
-					.valueOf((String) xpath.evaluate("SVLayer/MBR/MinX/text()", _node, XPathConstants.STRING));
-			this.mbr.minY = Double
-					.valueOf((String) xpath.evaluate("SVLayer/MBR/MinY/text()", _node, XPathConstants.STRING));
-			this.mbr.maxX = Double
-					.valueOf((String) xpath.evaluate("SVLayer/MBR/MaxX/text()", _node, XPathConstants.STRING));
-			this.mbr.maxY = Double
-					.valueOf((String) xpath.evaluate("SVLayer/MBR/MaxY/text()", _node, XPathConstants.STRING));
+			this.mbr.minX = Double.valueOf((String) xpath.evaluate("SVLayer/MBR/MinX/text()", _node, XPathConstants.STRING));
+			this.mbr.minY = Double.valueOf((String) xpath.evaluate("SVLayer/MBR/MinY/text()", _node, XPathConstants.STRING));
+			this.mbr.maxX = Double.valueOf((String) xpath.evaluate("SVLayer/MBR/MaxX/text()", _node, XPathConstants.STRING));
+			this.mbr.maxY = Double.valueOf((String) xpath.evaluate("SVLayer/MBR/MaxY/text()", _node, XPathConstants.STRING));
 			// Set directly to avoid checking connection because we may be starting up
 			this.connName = (String) xpath.evaluate("SVLayer/ConnName/text()", _node, XPathConstants.STRING);
 			this.setSTGeometry((String) xpath.evaluate("SVLayer/isSTGeometry/text()", _node, XPathConstants.STRING));
@@ -379,20 +379,19 @@ public class SVLayer {
 	
 	public void setMetadataEntry(MetadataEntry _mEntry) {
 		this.mEntry = new MetadataEntry(_mEntry);
-		LOGGER.debug("SLayer.setMetadataEntry=" + this.mEntry.toString());
 		try {
 			if (this.getConnection() != null && !Strings.isEmpty(this.mEntry.getObjectName())) {
 				this.isSTGeometry = Queries.isSTGeometry((Connection) this.getConnection(),
-						this.mEntry.getSchemaName(), this.mEntry.getObjectName(), this.mEntry.getColumnName());
+						                                 this.mEntry.getSchemaName(), 
+						                                 this.mEntry.getObjectName(), 
+						                                 this.mEntry.getColumnName());
 			}
-			LOGGER.debug("SLayer.isSTGeometry=" + this.isSTGeometry);
 		} catch (Exception e) {
 			LOGGER.error("SVLayer.setMetadataEntry(): " + e.getMessage());
 		}
 	}
 
 	public MetadataEntry getMetadataEntry() {
-		LOGGER.debug("SLayer.getMetadataEntry=" + this.mEntry + " copy=" + this.mEntry.copy());
 		return this.mEntry.copy();
 	}
 

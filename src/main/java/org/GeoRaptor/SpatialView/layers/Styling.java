@@ -36,7 +36,7 @@ public class Styling {
 	};
 
 	protected Color lineColor      = Color.BLACK;
-	protected Color pointColor     = Color.BLACK;
+	protected Color pointColor     = Color.GRAY;
 	protected Color selectionColor = new Color(255, 255, 0, 40); // Yellow
 	protected Color shadeColor     = Color.WHITE;
 
@@ -670,7 +670,6 @@ public class Styling {
 		}
 		this.setPointSize(pointSize);
 		this.setPointType(PointMarker.getRandomMarker());
-		LOGGER.debug("pointSize set to " + pointSize + " pointType set to " + this.getPointType().toString());
 		this.setPointColor(Colours.getRandomColor());
 		this.setLineColor(Colours.getRandomColor());
 		this.setShadeColor(Colours.getRandomColor());
@@ -691,23 +690,23 @@ public class Styling {
 	 */
 	public Color getPointColor(String _columnValue)
 	{
-		if (this.isSelectionActive()) {
+		if (this.isSelectionActive()) 
 			return this.getSelectionColor();
-		} else if (this.getPointColorType() == Styling.STYLING_TYPE.CONSTANT) {
-			return (this.pointColor == null) ? Color.BLACK : new Color(this.pointColor.getRGB());
-		} else if (this.getPointColorType() == Styling.STYLING_TYPE.RANDOM) {
-			// To try and be a little faster we don't use Tools.getRandomColor()
-			return new Color(this.randomColorGenerator.nextInt(256), this.randomColorGenerator.nextInt(256),
-					this.randomColorGenerator.nextInt(256));
-		} else if (this.getPointColorType() == Styling.STYLING_TYPE.COLUMN) {
-			if (Strings.isEmpty(_columnValue)) {
-				return Color.GRAY; // Hint that the colour of the objects is not fixed.
-			} else {
-				// from RGBa also handles integer colours
-				return Colours.fromRGBa(_columnValue);
-			}
+		
+		switch (this.getPointColorType()) {
+		case CONSTANT : return ((this.pointColor == null) ? Color.GRAY : this.pointColor);
+		case RANDOM   : // To try and be a little faster we don't use Tools.getRandomColor()
+			            return new Color(this.randomColorGenerator.nextInt(256), 
+					                     this.randomColorGenerator.nextInt(256),
+					                     this.randomColorGenerator.nextInt(256));
+		case COLUMN   : if (Strings.isEmpty(_columnValue)) {
+				          return Color.GRAY; // Hint that the colour of the objects is not fixed.
+			            } else {
+                          // from RGBa also handles integer colours
+				          return Colours.fromRGBa(_columnValue);
+                        }
+		default       : return (this.pointColor == null) ? Color.BLACK : new Color(this.pointColor.getRGB());
 		}
-		return (this.pointColor == null) ? Color.BLACK : new Color(this.pointColor.getRGB());
 	}
 
 	public void setPointSizeColumn(String _sizeColumn) {
@@ -769,7 +768,8 @@ public class Styling {
 
 	public void setPointType(String _pointType) {
 		try {
-			this.pointType = Strings.isEmpty(_pointType) ? PointMarker.MARKER_TYPES.CIRCLE
+			this.pointType = Strings.isEmpty(_pointType) 
+					? PointMarker.MARKER_TYPES.CIRCLE
 					: PointMarker.MARKER_TYPES.valueOf(_pointType.toUpperCase());
 		} catch (Exception e) {
 			this.pointType = PointMarker.MARKER_TYPES.CIRCLE;
@@ -844,23 +844,26 @@ public class Styling {
 
 	public Color getLineColor(String _columnValue) 
 	{
-		if (this.isSelectionActive()) {
+		if (this.isSelectionActive()) 
 			return this.getSelectionColor();
-		} else if (this.getLineColorType() == Styling.STYLING_TYPE.CONSTANT) {
-			return (this.lineColor == null) ? Color.BLACK : new Color(this.lineColor.getRGB());
-		} else if (this.getLineColorType() == Styling.STYLING_TYPE.RANDOM) {
+		
+		if (this.getLineColorType() == Styling.STYLING_TYPE.CONSTANT) 
+			return ((this.lineColor == null) ? Color.BLACK : this.lineColor);
+		
+		if (this.getLineColorType() == Styling.STYLING_TYPE.RANDOM) 
 			// To try and be a little faster we don't use Tools.getRandomColor()
 			return new Color(this.randomColorGenerator.nextInt(256),
 					         this.randomColorGenerator.nextInt(256),
 					         this.randomColorGenerator.nextInt(256));
-		} else if (this.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
+		
+		if (this.getLineColorType() == Styling.STYLING_TYPE.COLUMN) {
 			if (Strings.isEmpty(_columnValue)) {
 				return Color.GRAY; // Hint that the colour of the objects is not fixed.
 			} else {
 				return Colours.fromRGBa(_columnValue);
 			}
 		} else {
-			return (this.lineColor == null) ? Color.BLACK : new Color(this.lineColor.getRGB());
+			return ((this.lineColor == null) ? Color.BLACK : this.lineColor);
 		}
 	}
 
@@ -895,7 +898,8 @@ public class Styling {
 			return this.getSelectionLineStroke();
 		else {
 			if (this.lineStroke == null)
-				this.lineStroke = LineStyle.getStroke(this.getLineStrokeType(), this.getLineWidth());
+				this.lineStroke = LineStyle.getStroke(this.getLineStrokeType(), 
+						                              this.getLineWidth());
 			return this.lineStroke;
 		}
 	}
@@ -1057,36 +1061,33 @@ public class Styling {
 	 */
 	public Color getShadeColor(String _columnValue) 
 	{
-		if (this.isSelectionActive()) {
+		if (this.isSelectionActive()) 
 			return this.getSelectionColor();
-		} else {
-			if (this.getShadeType() == Styling.STYLING_TYPE.RANDOM) {
+		
+		if (this.getShadeType() == Styling.STYLING_TYPE.RANDOM) 
 				// To try and be a little faster we don't use Tools.getRandomColor()
-				return new Color(
-						this.randomColorGenerator.nextInt(256), 
-						this.randomColorGenerator.nextInt(256),
-						this.randomColorGenerator.nextInt(256));
-			} else {
-				Color retColor = Color.BLACK;
-				if (this.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
-				{
-					try {
-						if (Strings.isEmpty(_columnValue)) {
-							// Hint that the colour of the objects is not fixed.
-							retColor = Color.GRAY; 
-						} else {
-							// from RGBa also handles integer colours
-							retColor = Colours.fromRGBa(_columnValue);
-						}
-					} catch (Exception e) {
-						retColor = Color.BLACK;
-					}
+				return new Color(this.randomColorGenerator.nextInt(256), 
+				                 this.randomColorGenerator.nextInt(256),
+						         this.randomColorGenerator.nextInt(256) );
+
+		Color retColor = Color.LIGHT_GRAY;
+		if (this.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
+		{
+			try {
+				if (Strings.isEmpty(_columnValue)) {
+					// Hint that the colour of the objects is not fixed.
+					retColor = Color.LIGHT_GRAY; 
 				} else {
-					retColor = this.shadeColor == null ? Color.BLACK : new Color(this.shadeColor.getRGB());
+					// from RGBa also handles integer colours
+					retColor = Colours.fromRGBa(_columnValue);
 				}
-				return retColor;
+			} catch (Exception e) {
+				retColor = Color.LIGHT_GRAY;
 			}
+		} else {
+			retColor = ((this.shadeColor==null) ? Color.BLACK : this.shadeColor);
 		}
+		return retColor;
 	}
 
 	public void setShadeTransLevel(float _shadeTransLevel) {

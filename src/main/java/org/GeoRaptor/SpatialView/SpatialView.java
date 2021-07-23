@@ -661,12 +661,14 @@ LOGGER.debug("*** Removing " + _layerName);
         Envelope mbr = null;
         if ( _zoomLayer != null ) {
             mbr = _zoomLayer.getMBR();
-        } else {
-            mbr = this.getMBRForDrawLayers();   
+        }
+        
+        if ( mbr == null || mbr.isSet() == false ) {
+        	mbr = this.getMBRForDrawLayers();   
         }
         
         if (mbr == null || mbr.isSet()==false )  {
-            LOGGER.debug(this.getViewName() + " View's mbr is not set.");
+            LOGGER.info(this.getViewName() + " View's mbr is not set.");
             return false;
         }
         

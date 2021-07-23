@@ -779,7 +779,8 @@ public class Preferences extends HashStructureAdapter {
 
     public void setSdoGeometryVisualFormat(Constants.renderType _visualFormat) {
         synchronized (_hash) {
-            _hash.putString(Constants.KEY_SDO_GEOMETRY_VISUAL_FORMAT, _visualFormat.toString());
+            _hash.putString(Constants.KEY_SDO_GEOMETRY_VISUAL_FORMAT, 
+            		        _visualFormat.toString());
         }
     }
 

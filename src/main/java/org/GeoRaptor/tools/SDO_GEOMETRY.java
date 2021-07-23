@@ -322,7 +322,7 @@ public class SDO_GEOMETRY
     }
 	
 	public static String getGeometryAsString(Struct _struct) 
-	    {
+	{
         if ( _struct==null ) {
             return "";
         }
@@ -486,8 +486,7 @@ public class SDO_GEOMETRY
           return _nullValue;
       }
     }
-    
-    
+        
     public static int getGType(Struct _struct) {
       return getGType(_struct,0);
     }
@@ -500,8 +499,7 @@ public class SDO_GEOMETRY
         }
         return getFullGType(_struct,_nullValue) % 10;    	
     }
-
-    
+ 
     public static int getMeasureDimension(Struct _struct) 
     {
         // Note Returning null for null sdo_geometry structure
@@ -515,8 +513,7 @@ public class SDO_GEOMETRY
         }
         return dimension;
     }
-
-    
+ 
     public static int getDimension(Struct _struct,
                                    int    _nullValue) 
     {
@@ -526,11 +523,9 @@ public class SDO_GEOMETRY
         return getFullGType(_struct,_nullValue) / 1000;
     }
 
-    
     public static int getSRID(Struct _struct) {
       return getSRID(_struct,Constants.SRID_NULL);
     }
-    
     
     public static int getSRID(Struct _struct,
                               int    _nullValue) 

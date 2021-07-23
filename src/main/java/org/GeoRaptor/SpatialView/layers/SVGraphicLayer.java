@@ -353,6 +353,9 @@ implements iLayer
 
     public Envelope getLayerMBR() 
     {
+    	if ( this.mbr == null || this.mbr.isSet()==false ) {
+    		this.setLayerMBR();
+    	}
         return new Envelope(this.mbr);
     }
 
@@ -362,7 +365,8 @@ implements iLayer
 		return this.setLayerMBR(_defaultMBR);
 	}
 
-    public boolean setLayerMBR(Envelope _mbr) {
+    public boolean setLayerMBR(Envelope _mbr) 
+    {
         if (_mbr == null) {
             return false;
         }
@@ -370,9 +374,9 @@ implements iLayer
             double halfSide = Math.max(_mbr.getWidth(),_mbr.getHeight()) / 2.0;
             if ( halfSide == 0.0 ) halfSide = 0.05;
             this.mbr = new Envelope(_mbr.centre().getX() - halfSide,
-                                           _mbr.centre().getY() - halfSide,
-                                           _mbr.centre().getX() + halfSide,
-                                           _mbr.centre().getY() + halfSide);
+                                    _mbr.centre().getY() - halfSide,
+                                    _mbr.centre().getX() + halfSide,
+                                    _mbr.centre().getY() + halfSide);
         } else {
             this.mbr = new Envelope(_mbr);
         }
@@ -673,14 +677,10 @@ implements iLayer
                     bLabel = true;
                 }
             }
-            String      shadeCol =
-                Strings.isEmpty(this.getStyling().getShadeColumn())     ?"":this.getStyling().getShadeColumn();
-            String pointColorCol =
-                Strings.isEmpty(this.getStyling().getPointColorColumn())?"":this.getStyling().getPointColorColumn();
-            String  lineColorCol =
-                Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
-            String  pointSizeCol =
-                Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
+            String      shadeCol = Strings.isEmpty(this.getStyling().getShadeColumn())     ?"":this.getStyling().getShadeColumn();
+            String pointColorCol = Strings.isEmpty(this.getStyling().getPointColorColumn())?"":this.getStyling().getPointColorColumn();
+            String  lineColorCol = Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
+            String  pointSizeCol = Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
             
             boolean bShade      = false,
                     bPointColor = false,
@@ -719,9 +719,9 @@ implements iLayer
                 {
                     // Draw the geometry using current display settings
                     String   sLabelText = (bLabel      ? SQLConversionTools.convertToString(conn,label,         qrow.getAttData().get(label)) : "");
-                    Color   cShadeValue = Colours.fromRGBa((bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol)) : Colours.transparentBlackRGBa)); 
+                    Color   cShadeValue = Colours.fromRGBa((bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol))      : Colours.transparentBlackRGBa)); 
                     Color   cPointValue = Colours.fromRGBa((bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : Colours.transparentBlackRGBa)); 
-                    Color    cLineValue = Colours.fromRGBa((bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)) : Colours.transparentBlackRGBa));
+                    Color    cLineValue = Colours.fromRGBa((bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol))  : Colours.transparentBlackRGBa));
                     int iPointSizeValue = (bPointSize  ? MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),4) : 4 );
                     double dRotateAngle = (bRotate     ? (this.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
                                                           ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(this.getStyling().getRotationColumn())).doubleValue() - 90.0f)) 
