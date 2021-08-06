@@ -166,11 +166,11 @@ public class Styling {
 	{
 		this();
 		if (_node == null ) {
-            System.out.println("Styling Constructor's Node is null");
+            LOGGER.warn("Styling Constructor's Node is null");
 			return; // Could throw error?
 		}
 		if ( ! _node.getNodeName().equals("Styling") ) {
-            System.out.println("Styling Constructor's Node is " + _node.getNodeName());
+            LOGGER.warn("Styling Constructor's Node is " + _node.getNodeName());
 			return; // Could throw error?
 		}
 		try {

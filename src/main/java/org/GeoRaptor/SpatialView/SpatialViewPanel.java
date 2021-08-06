@@ -274,10 +274,10 @@ extends JPanel
       
             SpatialViewPanel.classInstance = this;
         } catch (NullPointerException npe) {
-            System.err.println("Null Pointer Exception in SpatialViewPanel");
+            LOGGER.error("Null Pointer Exception in SpatialViewPanel");
             npe.printStackTrace();
         } catch (Exception e) {
-            System.err.println("Exception in SpatialViewPanel: " + e.getLocalizedMessage());
+            LOGGER.error("Exception in SpatialViewPanel: " + e.getLocalizedMessage());
         }
         this.viewLayerTree.expandAll();
     }
@@ -1288,7 +1288,8 @@ extends JPanel
             // **************************************************************
             // If supplied name is empty we need to ask for the column to map
             //
-            if (Strings.isEmpty(_columnName) ) { 
+            if (Strings.isEmpty(_columnName) ) 
+            { 
                 if ( geoColumns.size()==1 ) {
                     columnName = geoColumns.get(0);
                 } else {
@@ -1412,12 +1413,7 @@ extends JPanel
                                               layerName,
                                               mEntry,
                                               true /* draw - should be GeoRaptor Property */
-                                              );        
-        // See if we can discover a better MBR than that derived from metadata.
-        boolean ok = layer.setLayerMBR(mEntry.getMBR(),layer.getSRIDAsInteger()); 
-        if ( ! ok ) {
-            return LayerReturnCode.MBR;
-        }
+                                              ); 
 
         // ****************************
         // Set layer properties
@@ -1442,6 +1438,17 @@ extends JPanel
         } catch (SQLException e) {
             layer.setSTGeometry(false);
         }
+
+        // See if we can discover a better MBR than that derived from metadata.
+        //
+        if ( layer.hasIndex() ) 
+        {
+        	boolean ok = layer.setLayerMBRByIndex(mEntry.getMBR(),layer.getSRIDAsInteger());
+        	if ( ! ok ) {
+        		return LayerReturnCode.MBR;
+        	}
+        }
+
         // Add layer to relevant view
         //
         LayerReturnCode b = addLayerToView(layer,_zoom) ? LayerReturnCode.Success : LayerReturnCode.Fail;        
@@ -1452,11 +1459,11 @@ extends JPanel
                                 boolean _zoom)
   {
       SpatialView targetView = null;
-      
       // 1. Does a view exist with same SRID as layer?
       //
       targetView = getViewBySRID(_layer.getSRID());
-      if (targetView != null) {
+      if (targetView != null) 
+      {
           // Yes, so add layer to the view (addLayer checks layerName)
           if ( targetView.addLayer(_layer,
         		                   _layer.isDraw(),
@@ -1494,14 +1501,13 @@ extends JPanel
           targetView.setPrecision(_layer.getPrecision(false));
           targetView.setDistanceUnitType();
           targetView.setAreaUnitType();
-          // Now add layer to the new view
-          boolean ok =targetView.addLayer(_layer,
-        		                          _layer.isDraw(),
-        		                          true/*make active*/,
-        		                          _zoom); 
+          
+          boolean ok = targetView.addLayer(_layer,
+        		                           _layer.isDraw(),
+        		                           true/*make active*/,
+        		                           _zoom); 
           if ( ok ) 
           {
-            // set MBR of new View
             //
             if ( ! targetView.initializeMBR(_layer) ) {
                 LOGGER.warn("SpatialViewPanel: " + targetView.getVisibleName() + "'s MBR could not be set for layer " + _layer.getVisibleName());
@@ -1530,7 +1536,6 @@ extends JPanel
       // can only be determined after assignment to a view because
       // only then will both SRIDs be known
       //
-      //if ( ! _layer.CLASS_NAME.equalsIgnoreCase(Constants.KEY_SVWorksheetLayer) ) {
       _layer.setSQL(_layer.getInitSQL(_layer.getMetadataEntry().getColumnName()));
       return true;
   }
@@ -2132,7 +2137,7 @@ extends JPanel
                         }
                     }
                 } catch (Exception _e) {
-                    System.err.println("ShadeAfterDraw.Draw Function failed (" + _e.getMessage() + ")");
+                    LOGGER.error("ShadeAfterDraw.Draw Function failed (" + _e.getMessage() + ")");
                 }
             }
         }

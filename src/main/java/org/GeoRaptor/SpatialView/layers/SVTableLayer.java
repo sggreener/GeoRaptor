@@ -449,7 +449,8 @@ public class SVTableLayer
         return this.objectType.equals(Constants.OBJECT_TYPES.VIEW);
     }
     
-    public void setIndex() {
+    public void setIndex() 
+    {
         Connection conn = null; 
         try {
             conn = super.getConnection();
@@ -493,6 +494,39 @@ public class SVTableLayer
     public boolean hasIndex() {
         return this.indexExists;
     }
+
+    public boolean setLayerMBRByIndex(Envelope _defaultMBR,
+                                      int      _targetSRID)
+    {
+        Connection conn = super.getConnection();
+        
+        // If source is INDEX get MBR from RTree index
+        //
+        Envelope lMBR = new Envelope(this.getDefaultPrecision());
+        
+    	if (this.hasIndex() &&
+            this.getSRIDType().toString().startsWith("GEO") == false &&
+            this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
+        {
+    		try {
+    			lMBR.setMBR(
+                        Queries.getExtentFromRTree(conn,
+                                                   this.getSchemaName(),
+                                                   this.getObjectName(),
+                                                   this.getGeoColumn(),
+                                                   this.getSRID(),
+                                                   String.valueOf(_targetSRID))); 
+                if ( lMBR.isSet() ) {
+                    super.setMBR(lMBR);
+                    return true;
+                } 
+            } catch (SQLException e) {
+                LOGGER.warn("Could not extract extent from RTree index("+e.getMessage()+"), so will extract from metadata.");
+                return false;
+            }
+        }
+    	return false;
+    }
     
     public boolean setLayerMBR(Envelope _defaultMBR,
                                int      _targetSRID)
@@ -502,34 +536,15 @@ public class SVTableLayer
         // If source is INDEX get MBR from RTree index
         //
         Envelope lMBR = new Envelope(this.getDefaultPrecision());
-        
-        //System.out.println("SVTableLayer.setLayerMBR() hasIndex()=" + this.hasIndex() + 
-        //           "\nSRIDTYPE=" + this.getSRIDType().toString()+
-        //           "\nLayerMbrSource=" + this.getPreferences().getLayerMBRSource().toString());
-        
+                
         // If one method fails, a warning is written. When this happens we need to report success of later method
         boolean multiTry = false;
         
-        if (this.hasIndex() &&
-            this.getSRIDType().toString().startsWith("GEO") == false &&
-            this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
-        {
-            try {
-                lMBR.setMBR(Queries.getExtentFromRTree(conn,
-                                                       this.getSchemaName(),
-                                                       this.getObjectName(),
-                                                       this.getGeoColumn(),
-                                                       this.getSRID(),
-                                                       String.valueOf(_targetSRID))); 
-                if ( lMBR.isSet() ) {
-                    super.setMBR(lMBR);
-                    return true;
-                } 
-            } catch (SQLException e) {
-                LOGGER.warn("Could not extract extent from RTree index, so will extract from metadata.");
-                multiTry = true;
-            }
-        }
+        multiTry = ! setLayerMBRByIndex(_defaultMBR,
+        		                        _targetSRID);
+
+        if ( ! multiTry )
+        	return true;
         
         // Try and get Metadata from database.
         //
@@ -539,15 +554,18 @@ public class SVTableLayer
                                                        this.getSchemaName(),
                                                        this.getObjectName(),
                                                        this.getGeoColumn());
+
             // Try and extract from existing Metadata
-            if ( hasMetadata ) {
+            if ( hasMetadata ) 
+            {
                 try 
                 {
                     lMBR = Queries.getExtentFromDimInfo(conn, 
-                                                             this.getSchemaName(),
-                                                             this.getObjectName(), 
-                                                             this.getGeoColumn(),
-                                                             this.getSpatialView().getSRID());
+                                                        this.getSchemaName(),
+                                                        this.getObjectName(), 
+                                                        this.getGeoColumn(),
+                                                        this.getSpatialView().getSRID());
+
                     if ( lMBR.isSet() ) {
                         super.setMBR(lMBR);
                         if (multiTry) {

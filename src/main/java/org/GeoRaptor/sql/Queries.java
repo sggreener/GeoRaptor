@@ -1974,16 +1974,23 @@ public class Queries {
                                                propertyManager.getMsg("METADATA_TABLE_COLUMN_2")));
         }
         
-        String sourceSRID = Strings.isEmpty(_sourceSRID) ? "NULL" : _sourceSRID;
-        sourceSRID = sourceSRID.equalsIgnoreCase("-1") ? "NULL" : sourceSRID;
+        String sourceSRID = "";
+        if ( Strings.isEmpty(_sourceSRID) || _sourceSRID.equalsIgnoreCase("-1") )
+        	sourceSRID = "NULL";
+       	else
+            sourceSRID = _sourceSRID;
 
-        String destinationSRID = Strings.isEmpty(_destinationSRID) ? "NULL" : _destinationSRID;
-        destinationSRID = destinationSRID.equalsIgnoreCase("-1") ? "NULL" : destinationSRID;
+        String destinationSRID = "";
+        if ( Strings.isEmpty(_destinationSRID) || _destinationSRID.equalsIgnoreCase("-1") )
+        	destinationSRID = "NULL";
+        else
+        	destinationSRID = _destinationSRID;
 
         String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
         
-        String tableVerticesString = "";
-        if (sourceSRID.equalsIgnoreCase(destinationSRID) && sourceSRID.equalsIgnoreCase("NULL") ) {
+        String tableVerticesString = "         table(sdo_util.getVertices(asim.sdo_root_mbr)) v \n";
+        if (sourceSRID.equalsIgnoreCase(destinationSRID) 
+         && sourceSRID.equalsIgnoreCase("NULL") ) {
           tableVerticesString = "         table(sdo_util.getVertices(asim.sdo_root_mbr)) v \n";
         } else if (sourceSRID.equalsIgnoreCase(destinationSRID)==false ) {
           // NOTE: sdo_root_mbr SDO_GEOMETRY does not have a SRID set!

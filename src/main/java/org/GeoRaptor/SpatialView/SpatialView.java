@@ -227,7 +227,7 @@ public class SpatialView {
   private void fromXML(Node _node)
   {
       if ( _node == null || _node.getNodeName().equals("View")==false) {
-          System.out.println("Node is null or not View");
+          LOGGER.error("Node is null or not View");
           return;  // Should throw error
       }
       try 
@@ -408,10 +408,12 @@ LOGGER.debug("*** Removing " + _layerName);
       }
       
       vNode.addLayer(_layer,_isDrawn,_isActive);
+      
       // Set view reference in new layer
       _layer.setView(this);
       
       // Compute precision and initialize View's MBR when first new layer is added.
+      //
       if ( this.getLayerCount() == 1 ) 
       {
           // Assign layer's precision to view
