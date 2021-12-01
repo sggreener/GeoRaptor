@@ -3,7 +3,7 @@
 		<u:name>#EXTENSION_NAME#</u:name>
 		<u:version>#EXTENSION_VERSION#</u:version>
 		<u:author>#EXTENSION_OWNER#</u:author>
-		<u:author-url>http://georaptor.sourceforge.net</u:author-url>
+		<u:author-url>http://github.com/sggreener/GeoRaptor</u:author-url>
 		<u:description><![CDATA[#EXTENSION_DESCRIPTION#]]></u:description>
 		<u:requirements>
 			<u:requires-extension id="oracle.sqldeveloper" minVersion="#GEORAPTOR_VERSION#"/>
