@@ -2,9 +2,11 @@
 
 This is the GeoRaptor extension for SQL Developer 18, 19 and 20.
 
-It is currently in beta. Please raise issues at the project’s github site or contact me by email.
+It is currently in beta. Please raise issues at the project’s github site or contact author by email.
 
 ## Installation notes ##
+
+See https://www.spdba.com.au/georaptor-install/
 
 ### Manual installation ###
 
