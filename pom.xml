@@ -35,6 +35,17 @@
 				<sqldev.basedir>/Applications/SQLDeveloper19.1.0.app/Contents/Resources/sqldeveloper</sqldev.basedir>
 			</properties>
 		</profile>
+		<profile>
+			<id>linux</id>
+			<activation>
+				<os>
+					<family>Linux</family>
+				</os>
+			</activation>
+			<properties>
+				<sqldev.basedir>/opt/java/sqldeveloper</sqldev.basedir>
+			</properties>
+		</profile>
 	</profiles>
 
 	<dependencies>
@@ -176,6 +187,13 @@
 			<artifactId>jts-core</artifactId>
 			<version>1.16.1</version>
 			<type>bundle</type>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1.1</version>
 		</dependency>
 	
 		<!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
