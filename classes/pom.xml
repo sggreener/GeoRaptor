@@ -503,7 +503,7 @@
 	<!-- More Project Information -->
 	<name>org.GeoRaptor</name>
 	<description>Oracle Spatial extension for Oracle SQL Developer.</description>
-	<url>http://georaptor.sourceforge.net</url>
+	<url>http://github.com/sggreener/GeoRaptor</url>
 	<inceptionYear>2019</inceptionYear>
 	<licenses>
 		<license>

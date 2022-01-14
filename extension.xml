@@ -15,10 +15,9 @@
 	</feature>
 
 	<!-- register rules, actions, controllers and context menu items -->
-	<trigger-hooks
-		xmlns="http://xmlns.oracle.com/ide/extension">
+	<trigger-hooks xmlns="http://xmlns.oracle.com/ide/extension">
 		<rules>
-			<rule id="table-show-menu" type="context-has-element">
+            <rule id="table-show-menu" type="context-has-element">
 				<parameters>
 					<param name="element-class"
 						value="oracle.dbtools.raptor.navigator.impl.ObjectNode" />
@@ -52,88 +51,101 @@
 			</composite-rule>
 		</rules>
 		<triggers xmlns:c="http://xmlns.oracle.com/ide/customization">
-			<actions
-				xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+		    <sqldev-snippet-hook xmlns="http://xmlns.oracle.com/sqldeveloper/sqldev-snippet">
+               <snippet file="/org/GeoRaptor/snippets.xml" />
+            </sqldev-snippet-hook>
+            
+			<actions xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
 
 				<!-- object context menu -->
 				<action id="ZOOM_TO_MAP">
 					<properties>
-						<property name="Name">Zoom to Map</property>
+                        <property name="Name">${MAP_ZOOM_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${MAP_ZOOM_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="ADD_TO_MAP">
 					<properties>
-						<property name="Name">Add to Map</property>
+						<property name="Name">${MAP_ADD_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${MAP_ADD_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="CREATE_SPATIAL_INDEX">
 					<properties>
-						<property name="Name">Create Spatial Index</property>
+						<property name="Name">${SPINDEX_CREATE_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${SPINDEX_CREATE_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="DROP_SPATIAL_INDEX">
 					<properties>
-						<property name="Name">Drop Spatial Index</property>
+						<property name="Name">${SPINDEX_DROP_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${SPINDEX_DROP_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="MANAGE_METADATA">
 					<properties>
-						<property name="Name">Manage Metadata</property>
+						<property name="Name">${METADATA_MANAGE_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${METADATA_MANAGE_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="DROP_METADATA">
 					<properties>
-						<property name="Name">Drop Metadata</property>
+						<property name="Name">${METADATA_DROP_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${METADATA_DROP_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="EXPORT">
 					<properties>
-						<property name="Name">Export</property>
+						<property name="Name">${EXPORT_GEOMETRY_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${EXPORT_GEOMETRY_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 				<action id="VALIDATE_GEOMETRY">
 					<properties>
-						<property name="Name">Validate geometry</property>
+						<property name="Name">${VALIDATE_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${VALIDATE_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 
 				<!-- table context menu -->
 				<action id="IMPORT_SHAPEFILE">
 					<properties>
-						<property name="Name">Import Shapefile</property>
+						<property name="Name">${IMPORT_SHAPEFILE_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${IMPORT_SHAPEFILE_SUBMENU_ICON}</property>
 					</properties>
 				</action>
 
 				<!-- view menu -->
 				<action id="OPEN_MAP">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_1_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_ONE_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_MAP_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_MAP_ICON}</property>
 					</properties>
 				</action>
 				<action id="MANAGE_ALL_METADATA">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_2_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_TWO_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_METADATA_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_METADATA_ICON}</property>
 					</properties>
 				</action>
 				<action id="LOAD_SHAPEFILE">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_3_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_THREE_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_SHP_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_SHP_ICON}</property>
 					</properties>
 				</action>
 				<action id="ABOUT_GEORAPTOR">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_4_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_FOUR_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_ABOUT_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_ABOUT_ICON}</property>
 					</properties>
 				</action>
 			</actions>
 
 			<!-- controller -->
-			<controllers
-				xmlns="http://xmlns.oracle.com/ide/extension">
+			<controllers xmlns="http://xmlns.oracle.com/ide/extension">
+
+                <!-- Table/View/MVIew node controller-->
 				<controller
 					class="org.GeoRaptor.TableContextMenuController">
 					<update-rules>
@@ -150,6 +162,9 @@
 						</update-rule>
 					</update-rules>
 				</controller>
+                <!-- Controller for Table/View/MV columns???-->
+                
+                <!-- View Controller -->
 				<controller class="org.GeoRaptor.ViewController">
 					<update-rules>
 						<update-rule rule="always-enabled">
@@ -161,9 +176,7 @@
 					</update-rules>
 				</controller>
 			</controllers>
-			<!-- /controller -->
 
-			<!-- context-menu -->
 			<context-menu-hook rule="table-show-menu">
 				<site idref="db_nav" />
 				<menu>
@@ -200,9 +213,7 @@
 					</section>
 				</menu>
 			</context-menu-hook>
-			<!-- /context-menu -->
 
-			<!-- menu -->
 			<menu-hook
 				xmlns="http://jcp.org/jsr/198/extension-manifest">
 				<menus>
@@ -224,16 +235,13 @@
 					</menubar>
 				</menus>
 			</menu-hook>
-			<!-- /menu -->
 
-			<!-- preference -->
 			<settings-ui-hook>
 				<page id="PREFERENCES_PAGE_ID" parent-idref="/preferences">
 					<label>${PREFERENCES_TITLE}</label>
 					<traversable-class>org.GeoRaptor.PreferencePanel</traversable-class>
 				</page>
 			</settings-ui-hook>
-			<!-- /preference -->
 
 		</triggers>
 	</trigger-hooks>
@@ -247,9 +255,9 @@
                 <addin>org.GeoRaptor.OracleSpatial.Grid.SpatialColRendererAddin</addin>
 			</addins>
 			<gallery>
-				<item>
+				<item rule="always-enabled">
 					<name>org.GeoRaptor.MenuViewController</name>
-					<description>Oracle Spatial extension for Oracle SQL Developer</description>
+					<description>GeoRaptor is an Oracle Spatial extension for Oracle SQL Developer</description>
 					<help>Oracle Spatial extension for Oracle SQL Developer</help>
 					<category>General</category>
 					<folder>GeoRaptor</folder>
