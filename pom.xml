@@ -127,7 +127,7 @@
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>ojdbc11</artifactId>
-			<version>23.8.0.0.0</version>
+			<version>21.8.0.0.0</version>
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/jdbc/lib/ojdbc11.jar</systemPath>
 		</dependency>	
