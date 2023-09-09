@@ -10,7 +10,7 @@ See https://www.spdba.com.au/georaptor-install/
 
 ### Manual installation ###
 
-1. Build project with Maven
+1. Build project with Maven and JDK 11+
 2. Create "sqldeveloper/GeoRaptor" folder.
 3. Copy ./target/GeoRaptor.zip to "sqldeveloper/GeoRaptor" folder.
 4. Start SQL Developer
