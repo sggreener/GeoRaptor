@@ -126,10 +126,10 @@
 		</dependency>
 		<dependency>
 			<groupId>oracle</groupId>
-			<artifactId>ojdbc8</artifactId>
-			<version>12.2.0</version>
+			<artifactId>ojdbc11</artifactId>
+			<version>23.8.0.0.0</version>
 			<scope>system</scope>
-			<systemPath>${sqldev.basedir}/jdbc/lib/ojdbc8.jar</systemPath>
+			<systemPath>${sqldev.basedir}/jdbc/lib/ojdbc11.jar</systemPath>
 		</dependency>	
 		<dependency>
 			<groupId>oracle</groupId>
