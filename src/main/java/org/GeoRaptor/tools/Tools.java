@@ -10,44 +10,25 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.image.BufferedImage;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Types;
-
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
 
 import javax.ide.extension.Extension;
-
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-
-import oracle.dbtools.raptor.config.DBConfig;
-
-import oracle.ide.ExtensionRegistry;
-import oracle.ide.Ide;
-import oracle.ide.config.EnvironOptions;
-import oracle.ide.config.IdeSettings;
-
-import oracle.jdbc.OracleResultSetMetaData;
-import oracle.jdbc.OracleTypes;
-
-import oracle.spatial.geometry.JGeometry;
-
-import oracle.sql.NUMBER;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -59,6 +40,16 @@ import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.geotools.util.logging.Logger;
 import org.locationtech.jts.geom.PrecisionModel;
+
+import oracle.dbtools.raptor.config.DBConfig;
+import oracle.ide.ExtensionRegistry;
+import oracle.ide.Ide;
+import oracle.ide.config.EnvironOptions;
+import oracle.ide.config.IdeSettings;
+import oracle.jdbc.OracleResultSetMetaData;
+import oracle.jdbc.OracleTypes;
+import oracle.spatial.geometry.JGeometry;
+import oracle.sql.NUMBER;
 
 public class Tools {
 

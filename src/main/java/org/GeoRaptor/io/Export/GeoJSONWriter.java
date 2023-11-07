@@ -1,13 +1,11 @@
 package org.GeoRaptor.io.Export;
 
-import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.util.*;
 import java.io.*;
-import java.sql.Struct;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
@@ -224,7 +222,6 @@ public class GeoJSONWriter {
                                   StringBuffer _buffer) 
     throws IOException 
     {
-        Geometry envelope = _geometry.getEnvelope();
         String envelopeString = getBBOX(_geometry);
         if ( ! Strings.isEmpty(envelopeString) ) {
           indent(_level,
@@ -321,7 +318,8 @@ public class GeoJSONWriter {
      *        the <code>PrecisionModel</code> to use to convert from a
      *        precise coordinate to an external coordinate
      */
-    private static void appendPointTaggedText(Coordinate   _coordinate, 
+    @SuppressWarnings("unused")
+	private static void appendPointTaggedText(Coordinate   _coordinate, 
                                               int          _level,
                                               StringBuffer _buffer) 
     throws IOException {

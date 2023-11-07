@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.geotools.util.logging.Logger;
 import org.w3c.dom.Node;
 
-import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;

@@ -9,7 +9,6 @@ import javax.swing.JComboBox;
 import org.GeoRaptor.Messages;
 import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
-import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.util.logging.Logger;

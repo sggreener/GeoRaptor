@@ -83,8 +83,7 @@ final public class SpatialViewSettings {
 
                 // Now process View's layers
                 //
-                iLayer            iLayer = null;
-                SVTableLayer    sLayer = null;
+                SVTableLayer      sLayer = null;
                 SVQueryLayer      qLayer = null;
                 SVWorksheetLayer  wLayer = null;
                 NodeList lList = (NodeList) xpath.evaluate("Layers/Layer",vList.item(i),XPathConstants.NODESET);

@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.UUID;
 
 import javax.sql.RowSetMetaData;
 import javax.swing.ImageIcon;
@@ -43,8 +42,8 @@ import org.GeoRaptor.SpatialView.SupportClasses.QueryRow;
 import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.Styling;
-import org.GeoRaptor.io.Export.GeoJSONExporter;
 import org.GeoRaptor.io.Export.GMLExporter;
+import org.GeoRaptor.io.Export.GeoJSONExporter;
 import org.GeoRaptor.io.Export.IExporter;
 import org.GeoRaptor.io.Export.KMLExporter;
 import org.GeoRaptor.io.Export.SHPExporter;

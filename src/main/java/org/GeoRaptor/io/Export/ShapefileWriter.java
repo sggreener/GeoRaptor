@@ -1,5 +1,23 @@
 package org.GeoRaptor.io.Export;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+
+import org.GeoRaptor.tools.FileUtils;
+import org.geotools.data.shapefile.shp.ShapeHandler;
+import org.geotools.data.shapefile.shp.ShapeType;
+import org.geotools.data.shapefile.shp.ShapefileException;
+import org.geotools.data.shapefile.shp.ShapefileHeader;
+import org.geotools.resources.NIOUtilities;
+import org.geotools.util.logging.Logger;
 /*
  *    GeoTools - OpenSource mapping toolkit
  *    http://geotools.org
@@ -20,29 +38,6 @@ package org.GeoRaptor.io.Export;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-
-import org.GeoRaptor.tools.FileUtils;
-
-import org.geotools.data.shapefile.shp.ShapeHandler;
-import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.data.shapefile.shp.ShapefileException;
-import org.geotools.data.shapefile.shp.ShapefileHeader;
-import org.geotools.resources.NIOUtilities;
-import org.geotools.util.logging.Logger;
 
 
 /**

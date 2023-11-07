@@ -1,5 +1,16 @@
 package org.GeoRaptor.tools;
 
+import static java.awt.font.TextAttribute.FAMILY;
+import static java.awt.font.TextAttribute.POSTURE;
+import static java.awt.font.TextAttribute.POSTURE_OBLIQUE;
+import static java.awt.font.TextAttribute.SIZE;
+import static java.awt.font.TextAttribute.STRIKETHROUGH;
+import static java.awt.font.TextAttribute.STRIKETHROUGH_ON;
+import static java.awt.font.TextAttribute.UNDERLINE;
+import static java.awt.font.TextAttribute.UNDERLINE_LOW_ONE_PIXEL;
+import static java.awt.font.TextAttribute.WEIGHT;
+import static java.awt.font.TextAttribute.WEIGHT_BOLD;
+
 /**
  * Code published at:  http://www.java2s.com/Code/Java/Tiny-Application/AdvancedFontChooser.htm
  * Renamed to LabelStyler
@@ -17,26 +28,13 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.TextAttribute;
-import static java.awt.font.TextAttribute.FAMILY;
-import static java.awt.font.TextAttribute.POSTURE;
-import static java.awt.font.TextAttribute.POSTURE_OBLIQUE;
-import static java.awt.font.TextAttribute.SIZE;
-import static java.awt.font.TextAttribute.STRIKETHROUGH;
-import static java.awt.font.TextAttribute.STRIKETHROUGH_ON;
-import static java.awt.font.TextAttribute.UNDERLINE;
-import static java.awt.font.TextAttribute.UNDERLINE_LOW_ONE_PIXEL;
-import static java.awt.font.TextAttribute.WEIGHT;
-import static java.awt.font.TextAttribute.WEIGHT_BOLD;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
-
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -63,19 +61,14 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import oracle.jdeveloper.layout.VerticalFlowLayout;
-
-import org.GeoRaptor.Messages;
-
 import org.geotools.util.logging.Logger;
-
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+
+import oracle.jdeveloper.layout.VerticalFlowLayout;
 
 
 public class LabelStyler extends JDialog {

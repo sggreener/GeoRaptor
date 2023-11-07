@@ -3,14 +3,11 @@
  */
 package org.GeoRaptor;
 
-import java.net.URL;
+import org.GeoRaptor.OracleSpatial.Grid.RenderResultSet;
 
 import oracle.dbtools.raptor.controls.grid.RaptorGridTable;
 import oracle.dbtools.raptor.dialogs.actions.XMLBasedObjectAction;
-
 import oracle.ide.Addin;
-
-import org.GeoRaptor.OracleSpatial.Grid.RenderResultSet;
 
 
 /**
@@ -21,7 +18,8 @@ public class Menu implements Addin {
     /* (non-Javadoc)
      * @see oracle.ide.Addin#initialize()
      */
-    public void initialize() {
+    @SuppressWarnings("deprecation")
+	public void initialize() {
         // Add context menus
         XMLBasedObjectAction.registerContextMenus(this.getClass().getResource("menu.xml"));  
         

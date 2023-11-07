@@ -495,18 +495,25 @@ public class SVTableLayer
         return this.indexExists;
     }
 
-    public boolean setLayerMBRByIndex(Envelope _defaultMBR,
-                                      int      _targetSRID)
+    public void setLayerMBRByIndex(Envelope _defaultMBR,
+                                   int      _targetSRID)
     {
         Connection conn = super.getConnection();
         
         // If source is INDEX get MBR from RTree index
         //
         Envelope lMBR = new Envelope(this.getDefaultPrecision());
+        lMBR.setMBR(_defaultMBR );
         
-    	if (this.hasIndex() &&
-            this.getSRIDType().toString().startsWith("GEO") == false &&
-            this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
+        if (! this.hasIndex() ||
+            this.getSRIDType().toString().startsWith("GEO")) 
+        {
+        	if (lMBR.isSet() )
+        		super.setMBR(lMBR);
+        	return;
+        }
+        
+    	if (this.getPreferences().getLayerMBRSource().equalsIgnoreCase(Constants.CONST_LAYER_MBR_INDEX)) 
         {
     		try {
     			lMBR.setMBR(
@@ -516,16 +523,14 @@ public class SVTableLayer
                                                    this.getGeoColumn(),
                                                    this.getSRID(),
                                                    String.valueOf(_targetSRID))); 
-                if ( lMBR.isSet() ) {
-                    super.setMBR(lMBR);
-                    return true;
-                } 
             } catch (SQLException e) {
-                LOGGER.warn("Could not extract extent from RTree index("+e.getMessage()+"), so will extract from metadata.");
-                return false;
+                LOGGER.warn("Could not extract extent from RTree index("+e.getMessage()+"), so will set from supplied MRB (probably from metadata).");
+                lMBR.setMBR(_defaultMBR );
             }
         }
-    	return false;
+        if ( lMBR.isSet() ) {
+            super.setMBR(lMBR);
+        }
     }
     
     public boolean setLayerMBR(Envelope _defaultMBR,
@@ -540,8 +545,9 @@ public class SVTableLayer
         // If one method fails, a warning is written. When this happens we need to report success of later method
         boolean multiTry = false;
         
-        multiTry = ! setLayerMBRByIndex(_defaultMBR,
-        		                        _targetSRID);
+        setLayerMBRByIndex(_defaultMBR,_targetSRID);
+        
+        multiTry = ! this.getMBR().isSet(); 
 
         if ( ! multiTry )
         	return true;
@@ -708,7 +714,8 @@ public class SVTableLayer
         return sGeom;
     }
     
-    private static boolean columnExists(String _sql, String _column) 
+    @SuppressWarnings("unused")
+	private static boolean columnExists(String _sql, String _column) 
     {
         if (Strings.isEmpty(_sql) || Strings.isEmpty(_column) ) return false;
         // Quoted attributes can be upper/lower/mixed case and are unique enough
@@ -1225,7 +1232,8 @@ public class SVTableLayer
         return success;
     }
 
-    private boolean queryContainsOperator(String _querySQL) {
+    @SuppressWarnings("unused")
+	private boolean queryContainsOperator(String _querySQL) {
         Constants.SDO_OPERATORS[] sdoOperators = Constants.SDO_OPERATORS.values();
         for (int i=0; i < sdoOperators.length;i++) {
         	if ( _querySQL.contains("SDO_"+sdoOperators[i].toString()) ) 
@@ -1255,9 +1263,6 @@ public class SVTableLayer
     	Struct              rStruct = null; // read SDO_GEOMETRY column
         ArrayList<QueryRow>   rList = new ArrayList<QueryRow>(); // list of return rows
         
-        int         numSearchPixels = _numSearchPixels <= 0 
-                                      ? this.getPreferences().getSearchPixels() 
-                                      : _numSearchPixels;
         // Need future check for 3D indexed layers??
         // Sable 5-1 Data and Index Dimensionality, and Query Support
         //

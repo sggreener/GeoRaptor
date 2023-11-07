@@ -1,20 +1,8 @@
 package org.GeoRaptor;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.logging.Logger;
-
-import javax.swing.JEditorPane;
-import javax.swing.JOptionPane;
-
-import oracle.dbtools.raptor.utils.Connections;
 import oracle.ide.Context;
-import oracle.ide.Ide;
-import oracle.ide.config.Preferences;
 import oracle.ide.controller.Controller;
 import oracle.ide.controller.IdeAction;
-import oracle.ide.editor.Editor;
-import oracle.javatools.db.DBException;
 
 /**
  * 

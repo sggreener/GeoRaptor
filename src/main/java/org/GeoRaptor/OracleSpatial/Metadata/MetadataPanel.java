@@ -277,13 +277,13 @@ public class MetadataPanel extends javax.swing.JDialog {
         lblObject = new javax.swing.JLabel();
         tfSelectedObject = new javax.swing.JLabel();
         lblGeometryColumn = new javax.swing.JLabel();
-        cmbGeoColumns = new javax.swing.JComboBox();
+        cmbGeoColumns = new javax.swing.JComboBox<String>();
         lblSRID = new javax.swing.JLabel();
         tfSRID = new javax.swing.JTextField();
         btnSRID = new javax.swing.JButton();
         pnlConnection = new javax.swing.JPanel();
         lblDBConnection = new javax.swing.JLabel();
-        cmbConnections = new javax.swing.JComboBox();
+        cmbConnections = new javax.swing.JComboBox<String>();
         lblConnectedSchema = new javax.swing.JLabel();
         tfConnectedSchema = new javax.swing.JTextField();
         btnReloadConnections = new javax.swing.JButton();
@@ -338,14 +338,19 @@ public class MetadataPanel extends javax.swing.JDialog {
                 "Schema", "Table/View/MView", "Column", "SRID", "DimInfo"
             }
         ) {
-            Class[] types = new Class [] {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+			@SuppressWarnings("rawtypes")
+			Class[] types = new Class [] {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
                 false, false, false, false, false
             };
 
-            public Class getColumnClass(int columnIndex) {
+            public Class<?> getColumnClass(int columnIndex) {
                 return types [columnIndex];
             }
 
@@ -468,7 +473,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         lblGeometryColumn.setText("Geometry Column:");
 
         cmbGeoColumns.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        cmbGeoColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "GEOMETRY" }));
+        cmbGeoColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "GEOMETRY" }));
         cmbGeoColumns.setMaximumSize(null);
         cmbGeoColumns.setMinimumSize(null);
         cmbGeoColumns.setPreferredSize(new java.awt.Dimension(230, 20));
@@ -649,11 +654,16 @@ public class MetadataPanel extends javax.swing.JDialog {
                 "Dim Name", "SDO_LB", "SDO_UB", "SDO_TOLERANCE"
             }
         ) {
-            Class[] types = new Class [] {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+			@SuppressWarnings("rawtypes")
+			Class[] types = new Class [] {
                 java.lang.String.class, java.lang.Double.class, java.lang.Double.class, java.lang.Double.class
             };
 
-            public Class getColumnClass(int columnIndex) {
+            public Class<?> getColumnClass(int columnIndex) {
                 return types [columnIndex];
             }
         });
@@ -977,7 +987,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         this.cmbConnections.setModel(new DefaultComboBoxModel<String>(dbNames));
 
         if ( this.cmbConnections.getItemCount()==1 ) {
-            this.cmbConnections.getModel().setSelectedItem((String)this.cmbConnections.getItemAt(0));
+            this.cmbConnections.getModel().setSelectedItem(this.cmbConnections.getItemAt(0));
         } else {
             for ( int i=0; i<this.cmbConnections.getItemCount(); i++ ) {
                 DatabaseConnection dbConn = this.dbConnections.getConnectionAt(i);
@@ -1008,8 +1018,8 @@ public class MetadataPanel extends javax.swing.JDialog {
     private javax.swing.JCheckBox cbMissing;
     private javax.swing.JCheckBox cbObjectExists;
     private javax.swing.JCheckBox cbOrphan;
-    private javax.swing.JComboBox cmbConnections;
-    private javax.swing.JComboBox cmbGeoColumns;
+    private javax.swing.JComboBox<String> cmbConnections;
+    private javax.swing.JComboBox<String> cmbGeoColumns;
     private javax.swing.JLabel lblConnectedSchema;
     private javax.swing.JLabel lblDBConnection;
     private javax.swing.JLabel lblGeometryColumn;
@@ -1308,7 +1318,7 @@ public class MetadataPanel extends javax.swing.JDialog {
         //
         this.cmbConnections.setModel(this.dbConnections.getComboBoxModel(this.dbConnections.getConnectionAt(0).getConnectionName()));
         if ( this.cmbConnections.getItemCount()==1 ) {
-            this.cmbConnections.getModel().setSelectedItem((String)this.cmbConnections.getItemAt(0));
+            this.cmbConnections.getModel().setSelectedItem(this.cmbConnections.getItemAt(0));
         } else {
             for ( int i=0; i<this.cmbConnections.getItemCount(); i++ ) {
                 DatabaseConnection dbConn = this.dbConnections.getConnectionAt(i);
@@ -1488,7 +1498,7 @@ public class MetadataPanel extends javax.swing.JDialog {
             this.cmbGeoColumns.setSelectedIndex(0);
         } else {  // Passed in name is one of many sdo_geometry columns, find and set as selected
             for (int i = 0; i < this.cmbGeoColumns.getModel().getSize(); i++) {
-                    String geometryName = (String)this.cmbGeoColumns.getModel().getElementAt(i); 
+                    String geometryName = this.cmbGeoColumns.getModel().getElementAt(i); 
                     if ( geometryName.equalsIgnoreCase(this.columnName)) {
                         this.cmbGeoColumns.setSelectedIndex(i);
                         break;

@@ -1,8 +1,6 @@
 package org.GeoRaptor;
 
-import java.awt.Toolkit;
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import javax.swing.JOptionPane;
 
@@ -15,7 +13,6 @@ import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;

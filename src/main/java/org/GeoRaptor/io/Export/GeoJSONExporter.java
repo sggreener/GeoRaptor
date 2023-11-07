@@ -26,12 +26,10 @@ implements IExporter
 {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GeoJSONExporter");
 
-	private Connection            conn = null;
-    private BufferedWriter GeoJsonFile = null;
+	private BufferedWriter GeoJsonFile = null;
     private StringBuffer     rowBuffer = null;
     private String attributeProperties = null;
 	private String     GeoJsonFilename = null;
-	private String            baseName = null;
 	private int                    row = 0;
 	private int              totalRows = 0;
 	private int                 commit = 0;
@@ -60,7 +58,6 @@ implements IExporter
                            int        _totalRows)
     {
     	super();
-    	this.conn                = _conn;
     	this.totalRows           = _totalRows;
         this.GeoJsonFilename     = _fileName;    
     	this.formatter           = Tools.getDecimalFormatter(8);
@@ -105,7 +102,6 @@ implements IExporter
 
 	@Override
 	public void setBaseName(String _baseName) {
-        this.baseName = _baseName;
 	}
 
 	@Override
@@ -178,7 +174,8 @@ implements IExporter
 	public void setExportMetadata(LinkedHashMap<Integer, RowSetMetaData> _exportMetadata) {
 	}
 	
-    private String writeNumber(double d) {
+    @SuppressWarnings("unused")
+	private String writeNumber(double d) {
         return formatter!=null ? formatter.format(d) : String.valueOf(d);
     }
     

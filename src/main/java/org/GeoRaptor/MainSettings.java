@@ -14,7 +14,6 @@ import javax.xml.xpath.XPathFactory;
 import org.GeoRaptor.SpatialView.SpatialViewSettings;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-import org.GeoRaptor.tools.Tools;
 import org.geotools.util.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

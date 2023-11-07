@@ -142,11 +142,11 @@ public class ManageSpatialIndex extends javax.swing.JDialog
     private javax.swing.JCheckBox chkEditSQL;
     private javax.swing.JCheckBox chkIsGeodeticIndex;
     private javax.swing.JCheckBox chkLayerGTypeApply;
-    private javax.swing.JComboBox cmbColumnName;
-    private javax.swing.JComboBox cmbDimension;
-    private javax.swing.JComboBox cmbIndexTablespaces;
-    private javax.swing.JComboBox cmbLayerGType;
-    private javax.swing.JComboBox cmbWorkTablespaces;
+    private javax.swing.JComboBox<String> cmbColumnName;
+    private javax.swing.JComboBox<String> cmbDimension;
+    private javax.swing.JComboBox<String> cmbIndexTablespaces;
+    private javax.swing.JComboBox<String> cmbLayerGType;
+    private javax.swing.JComboBox<String> cmbWorkTablespaces;
     private javax.swing.JButton discoverLayerGTypeBTN;
     private javax.swing.JLabel lblBatchSize;
     private javax.swing.JLabel lblColumnName;
@@ -180,25 +180,26 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
 	// <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    @SuppressWarnings("deprecation")
+	private void initComponents() {
 
         panelMain = new javax.swing.JPanel();
         panelParameter = new javax.swing.JPanel();
         panelLayerGtype = new javax.swing.JPanel();
         discoverLayerGTypeBTN = new javax.swing.JButton();
-        cmbLayerGType = new javax.swing.JComboBox();
+        cmbLayerGType = new javax.swing.JComboBox<String>();
         lblLayerType = new javax.swing.JLabel();
         chkLayerGTypeApply = new javax.swing.JCheckBox();
         llblSamplePct = new javax.swing.JLabel();
         sldrSample = new javax.swing.JSlider();
         panelTablespace = new javax.swing.JPanel();
-        cmbIndexTablespaces = new javax.swing.JComboBox();
+        cmbIndexTablespaces = new javax.swing.JComboBox<String>();
         lblIndexTablespace = new javax.swing.JLabel();
-        cmbWorkTablespaces = new javax.swing.JComboBox();
+        cmbWorkTablespaces = new javax.swing.JComboBox<String>();
         lblWorkTablespace = new javax.swing.JLabel();
         pnlMiscellaneous = new javax.swing.JPanel();
         chkIsGeodeticIndex = new javax.swing.JCheckBox();
-        cmbDimension = new javax.swing.JComboBox();
+        cmbDimension = new javax.swing.JComboBox<String>();
         cbNonLeaf = new javax.swing.JCheckBox();
         lblDimension = new javax.swing.JLabel();
         sldrBatchSize = new javax.swing.JSlider();
@@ -222,7 +223,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         txtIndexName = new javax.swing.JTextField();
         lblIndexName = new javax.swing.JLabel();
         lblColumnName = new javax.swing.JLabel();
-        cmbColumnName = new javax.swing.JComboBox();
+        cmbColumnName = new javax.swing.JComboBox<String>();
         txtTablename = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -258,7 +259,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
+        cmbLayerGType.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<Select from List/Discover>>", "COLLECTION", "MULTILINE", "LINE", "MULTIPOINT", "POINT", "MULTIPOLYGON", "POLYGON" }));
         cmbLayerGType.setMaximumSize(null);
         cmbLayerGType.setMinimumSize(null);
         cmbLayerGType.setPreferredSize(new java.awt.Dimension(204, 20));
@@ -354,7 +355,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         panelTablespace.setMinimumSize(new java.awt.Dimension(579, 45));
         panelTablespace.setPreferredSize(new java.awt.Dimension(579, 45));
 
-        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbIndexTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbIndexTablespaces.setMaximumSize(null);
         cmbIndexTablespaces.setMinimumSize(null);
         cmbIndexTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -370,7 +371,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         lblIndexTablespace.setMinimumSize(null);
         lblIndexTablespace.setPreferredSize(new java.awt.Dimension(46, 14));
 
-        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "ATableSpaceNameA32CharactersLong" }));
+        cmbWorkTablespaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "ATableSpaceNameA32CharactersLong" }));
         cmbWorkTablespaces.setMaximumSize(null);
         cmbWorkTablespaces.setMinimumSize(null);
         cmbWorkTablespaces.setPreferredSize(new java.awt.Dimension(212, 20));
@@ -426,7 +427,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
             }
         });
 
-        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "2", "3", "4" }));
+        cmbDimension.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "2", "3", "4" }));
         cmbDimension.setLightWeightPopupEnabled(false);
         cmbDimension.setMaximumSize(null);
         cmbDimension.setMinimumSize(null);

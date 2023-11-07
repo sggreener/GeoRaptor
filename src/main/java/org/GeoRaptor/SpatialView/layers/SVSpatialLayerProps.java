@@ -274,11 +274,11 @@ public class SVSpatialLayerProps extends JDialog {
     private String LABEL_LINE_WIDTH = "Width:";
     private String BUTTON_LINE_COLOR = "Color";
 
-    private String LABEL_ARROW_NONE = "None";
-    private String LABEL_ARROW_START = "Start";
-    private String LABEL_ARROW_MIDDLE = "Middle";
-    private String LABEL_ARROW_END    = "End";
-    private String LABEL_ARROW_END_ONLY = "End Only";
+    //private String LABEL_ARROW_NONE = "None";
+    //private String LABEL_ARROW_START = "Start";
+    //private String LABEL_ARROW_MIDDLE = "Middle";
+    //private String LABEL_ARROW_END    = "End";
+    //private String LABEL_ARROW_END_ONLY = "End Only";
 
     //private String BORDER_ARROWS = "Mark Arrows";
     private String BORDER_MARK_VERTICES = "Mark Vertices";
@@ -1145,16 +1145,16 @@ public class SVSpatialLayerProps extends JDialog {
         geoColumnTF = new javax.swing.JTextField();
         lblSRID = new javax.swing.JLabel();
         sridTF = new javax.swing.JTextField();
-        cmbGTypes = new javax.swing.JComboBox();
+        cmbGTypes = new javax.swing.JComboBox<String>();
         lblGType = new javax.swing.JLabel();
         btnGTypeDiscover = new javax.swing.JButton();
-        cmbSRIDType = new javax.swing.JComboBox();
+        cmbSRIDType = new javax.swing.JComboBox<String>();
         btnDiscoverSRIDType = new javax.swing.JButton();
         lblTolerance = new javax.swing.JLabel();
         lblToleranceValue = new javax.swing.JLabel();
         lblSRIDType = new javax.swing.JLabel();
         tfPrecisionValue = new javax.swing.JTextField();
-        cmbConnections = new javax.swing.JComboBox();
+        cmbConnections = new javax.swing.JComboBox<String>();
         btnConnection = new javax.swing.JButton();
         lblPrecision = new javax.swing.JLabel();
         pnlProperties = new javax.swing.JTabbedPane();
@@ -1169,31 +1169,31 @@ public class SVSpatialLayerProps extends JDialog {
         pnlPoint = new javax.swing.JPanel();
         btnPointApply = new javax.swing.JButton();
         pnlPointColor = new javax.swing.JPanel();
-        cmbPointColorColumns = new javax.swing.JComboBox();
+        cmbPointColorColumns = new javax.swing.JComboBox<String>();
         rbPointColorRandom = new javax.swing.JRadioButton();
         pointColorButton = new javax.swing.JButton();
         rbPointColorColumn = new javax.swing.JRadioButton();
         rbPointColorSolid = new javax.swing.JRadioButton();
         lblPointStyle = new javax.swing.JLabel();
-        cmbPointTypes = new javax.swing.JComboBox();
+        cmbPointTypes = new javax.swing.JComboBox<String>();
         pnlPointSize = new javax.swing.JPanel();
         pointSizeTF = new javax.swing.JTextField();
         rbPointSizeFixed = new javax.swing.JRadioButton();
         sldrPointSize = new javax.swing.JSlider();
         rbPointSizeColumn = new javax.swing.JRadioButton();
-        cmbPointSizeColumns = new javax.swing.JComboBox();
+        cmbPointSizeColumns = new javax.swing.JComboBox<String>();
         pnlStroke = new javax.swing.JPanel();
         pnlMark = new javax.swing.JPanel();
         lblArrowPlacement = new javax.swing.JLabel();
-        cmbSegmentArrows = new javax.swing.JComboBox();
-        cmbMarkGeoPoints = new javax.swing.JComboBox();
+        cmbSegmentArrows = new javax.swing.JComboBox<String>();
+        cmbMarkGeoPoints = new javax.swing.JComboBox<String>();
         lblVertexAll = new javax.swing.JLabel();
         lblVertexStart = new javax.swing.JLabel();
-        cmbMarkGeoStart = new javax.swing.JComboBox();
+        cmbMarkGeoStart = new javax.swing.JComboBox<String>();
         pnlStrokeSizeStyle = new javax.swing.JPanel();
         lblLineWidth = new javax.swing.JLabel();
         lblLineStyles = new javax.swing.JLabel();
-        cmbLineStyles = new javax.swing.JComboBox();
+        cmbLineStyles = new javax.swing.JComboBox<String>();
         sldrLineWidth = new javax.swing.JSlider();
         lineWidthTF = new javax.swing.JTextField();
         btnStrokeApply = new javax.swing.JButton();
@@ -1202,7 +1202,7 @@ public class SVSpatialLayerProps extends JDialog {
         rbStrokeColorSolid = new javax.swing.JRadioButton();
         rbStrokeColorRandom = new javax.swing.JRadioButton();
         rbStrokeColorColumn = new javax.swing.JRadioButton();
-        cmbStrokeColorColumns = new javax.swing.JComboBox();
+        cmbStrokeColorColumns = new javax.swing.JComboBox<String>();
         rbStrokeColorNone = new javax.swing.JRadioButton();
         pnlStrokeTransparency = new javax.swing.JPanel();
         lblStrokeTransLevel = new javax.swing.JLabel();
@@ -1214,7 +1214,7 @@ public class SVSpatialLayerProps extends JDialog {
         pnlFillColor = new javax.swing.JPanel();
         noShadeRB = new javax.swing.JRadioButton();
         randomShadeRB = new javax.swing.JRadioButton();
-        cmbShadeColumns = new javax.swing.JComboBox();
+        cmbShadeColumns = new javax.swing.JComboBox<String>();
         fixShadeColorRB = new javax.swing.JRadioButton();
         fixShadeColorB = new javax.swing.JButton();
         columnShadeColorRB = new javax.swing.JRadioButton();
@@ -1228,9 +1228,9 @@ public class SVSpatialLayerProps extends JDialog {
         pnlVertexlMarking = new javax.swing.JPanel();
         pnlMarkStyle = new javax.swing.JPanel();
         cbOrientVertexLabel = new javax.swing.JCheckBox();
-        cmbVertexLabelContent = new javax.swing.JComboBox();
+        cmbVertexLabelContent = new javax.swing.JComboBox<String>();
         lblVertexLabelContent = new javax.swing.JLabel();
-        cmbMarkSegment = new javax.swing.JComboBox();
+        cmbMarkSegment = new javax.swing.JComboBox<String>();
         lblMarkSegment = new javax.swing.JLabel();
         pnlMarkPositionOffset = new javax.swing.JPanel();
         lblMarkOffset = new javax.swing.JLabel();
@@ -1246,10 +1246,10 @@ public class SVSpatialLayerProps extends JDialog {
         pnlLabelStyle = new javax.swing.JPanel();
         btnLabelStyling = new javax.swing.JButton();
         lblStyledLabel = new javax.swing.JLabel();
-        cmbLabelColumns = new javax.swing.JComboBox();
+        cmbLabelColumns = new javax.swing.JComboBox<String>();
         lblLabelColumn = new javax.swing.JLabel();
         lblGeometryLabelPoint = new javax.swing.JLabel();
-        cmbGeometryLabelPosition = new javax.swing.JComboBox();
+        cmbGeometryLabelPosition = new javax.swing.JComboBox<String>();
         pnlDisplayScale = new javax.swing.JPanel();
         lblHiScale = new javax.swing.JLabel();
         tfHiScale = new javax.swing.JTextField();
@@ -1259,8 +1259,8 @@ public class SVSpatialLayerProps extends JDialog {
         pnlRotation = new javax.swing.JPanel();
         lblRotationTarget = new javax.swing.JLabel();
         rbDegrees = new javax.swing.JRadioButton();
-        cmbRotationColumns = new javax.swing.JComboBox();
-        cmbRotationTarget = new javax.swing.JComboBox();
+        cmbRotationColumns = new javax.swing.JComboBox<String>();
+        cmbRotationTarget = new javax.swing.JComboBox<String>();
         lblRotationColumn = new javax.swing.JLabel();
         rbRadians = new javax.swing.JRadioButton();
         btnRotationApply = new javax.swing.JButton();
@@ -1270,9 +1270,9 @@ public class SVSpatialLayerProps extends JDialog {
         cbQueryShowQueryGeometry = new javax.swing.JCheckBox();
         cbQueryBufferGeometry = new javax.swing.JCheckBox();
         btnQueryApply = new javax.swing.JButton();
-        cmbSdoOperators = new javax.swing.JComboBox();
+        cmbSdoOperators = new javax.swing.JComboBox<String>();
         scrpQueryRelateMasks = new javax.swing.JScrollPane();
-        listRelateMasks = new javax.swing.JList();
+        listRelateMasks = new javax.swing.JList<String>();
         lblSdoOperator = new javax.swing.JLabel();
         lblRelateMasks = new javax.swing.JLabel();
         btnCopyQueryGeometry = new javax.swing.JButton();
@@ -1290,7 +1290,7 @@ public class SVSpatialLayerProps extends JDialog {
         btnSelectionColor = new javax.swing.JButton();
         sldrSelectionPointSize = new javax.swing.JSlider();
         sldrSelectionLineWidth = new javax.swing.JSlider();
-        cmbSelectionLineStyles = new javax.swing.JComboBox();
+        cmbSelectionLineStyles = new javax.swing.JComboBox<String>();
         lblSelectionLineStyles = new javax.swing.JLabel();
         btnSelectionApply = new javax.swing.JButton();
         btnHelp = new javax.swing.JButton();
@@ -1350,7 +1350,7 @@ public class SVSpatialLayerProps extends JDialog {
         sridTF.setMinimumSize(new java.awt.Dimension(70, 17));
         sridTF.setPreferredSize(new java.awt.Dimension(70, 17));
 
-        cmbGTypes.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "COLLECTION", "CIRCLE", "POINT", "MULTIPOINT", "LINE", "MULTILINE", "RECTANGLE", "POLYGON", "MULTIPOLYGON", "SOLID", "MULTISOLID" }));
+        cmbGTypes.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "COLLECTION", "CIRCLE", "POINT", "MULTIPOINT", "LINE", "MULTILINE", "RECTANGLE", "POLYGON", "MULTIPOLYGON", "SOLID", "MULTISOLID" }));
         cmbGTypes.setMaximumSize(new java.awt.Dimension(186, 22));
         cmbGTypes.setMinimumSize(new java.awt.Dimension(186, 22));
         cmbGTypes.setPreferredSize(new java.awt.Dimension(186, 22));
@@ -1373,7 +1373,7 @@ public class SVSpatialLayerProps extends JDialog {
             }
         });
 
-        cmbSRIDType.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "COMPOUND", "ENGINEERING", "GEODETIC_COMPOUND", "GEODETIC_GEOCENTRIC", "GEODETIC_GEOGRAPHIC2D", "GEODETIC_GEOGRAPHIC3D", "GEOGRAPHIC2D", "PROJECTED", "UNKNOWN" }));
+        cmbSRIDType.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "COMPOUND", "ENGINEERING", "GEODETIC_COMPOUND", "GEODETIC_GEOCENTRIC", "GEODETIC_GEOGRAPHIC2D", "GEODETIC_GEOGRAPHIC3D", "GEOGRAPHIC2D", "PROJECTED", "UNKNOWN" }));
         cmbSRIDType.setSelectedIndex(5);
         cmbSRIDType.setMaximumSize(new java.awt.Dimension(186, 22));
         cmbSRIDType.setMinimumSize(new java.awt.Dimension(186, 22));
@@ -1405,7 +1405,7 @@ public class SVSpatialLayerProps extends JDialog {
         tfPrecisionValue.setMinimumSize(new java.awt.Dimension(26, 17));
         tfPrecisionValue.setPreferredSize(new java.awt.Dimension(26, 17));
 
-        cmbConnections.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "GIS@GIS11GR2" }));
+        cmbConnections.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "GIS@GIS11GR2" }));
 
         btnConnection.setText("Refresh");
         btnConnection.addActionListener(new java.awt.event.ActionListener() {
@@ -1625,7 +1625,7 @@ public class SVSpatialLayerProps extends JDialog {
         pnlPointColor.setMinimumSize(new java.awt.Dimension(673, 140));
         pnlPointColor.setPreferredSize(new java.awt.Dimension(673, 140));
 
-        cmbPointColorColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbPointColorColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbPointColorColumns.setEnabled(false);
         cmbPointColorColumns.setMaximumSize(new java.awt.Dimension(253, 20));
         cmbPointColorColumns.setMinimumSize(new java.awt.Dimension(253, 20));
@@ -1762,7 +1762,7 @@ public class SVSpatialLayerProps extends JDialog {
             }
         });
 
-        cmbPointSizeColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbPointSizeColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbPointSizeColumns.setEnabled(false);
         cmbPointSizeColumns.setMaximumSize(new java.awt.Dimension(253, 20));
         cmbPointSizeColumns.setMinimumSize(new java.awt.Dimension(253, 20));
@@ -1840,12 +1840,12 @@ public class SVSpatialLayerProps extends JDialog {
         lblArrowPlacement.setMaximumSize(null);
         lblArrowPlacement.setMinimumSize(null);
 
-        cmbSegmentArrows.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "None", "Segment Start", "Segment Middle", "Segment End", "End of Line Only" }));
+        cmbSegmentArrows.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "None", "Segment Start", "Segment Middle", "Segment End", "End of Line Only" }));
         cmbSegmentArrows.setMaximumSize(null);
         cmbSegmentArrows.setMinimumSize(null);
         cmbSegmentArrows.setPreferredSize(new java.awt.Dimension(90, 20));
 
-        cmbMarkGeoPoints.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbMarkGeoPoints.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         cmbMarkGeoPoints.setMaximumSize(null);
         cmbMarkGeoPoints.setMinimumSize(null);
         cmbMarkGeoPoints.setPreferredSize(new java.awt.Dimension(90, 20));
@@ -1861,7 +1861,7 @@ public class SVSpatialLayerProps extends JDialog {
         lblVertexStart.setMaximumSize(null);
         lblVertexStart.setMinimumSize(null);
 
-        cmbMarkGeoStart.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbMarkGeoStart.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         cmbMarkGeoStart.setMaximumSize(null);
         cmbMarkGeoStart.setMinimumSize(null);
         cmbMarkGeoStart.setPreferredSize(new java.awt.Dimension(90, 20));
@@ -2029,7 +2029,7 @@ public class SVSpatialLayerProps extends JDialog {
             }
         });
 
-        cmbStrokeColorColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbStrokeColorColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbStrokeColorColumns.setEnabled(false);
         cmbStrokeColorColumns.setMaximumSize(new java.awt.Dimension(253, 20));
         cmbStrokeColorColumns.setMinimumSize(new java.awt.Dimension(253, 20));
@@ -2213,7 +2213,7 @@ public class SVSpatialLayerProps extends JDialog {
             }
         });
 
-        cmbShadeColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbShadeColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbShadeColumns.setEnabled(false);
         cmbShadeColumns.setMaximumSize(null);
         cmbShadeColumns.setMinimumSize(new java.awt.Dimension(201, 20));
@@ -2414,12 +2414,12 @@ public class SVSpatialLayerProps extends JDialog {
 
         cbOrientVertexLabel.setText("Orient to Line");
 
-        cmbVertexLabelContent.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "None", "Id", "(XY[Z[M]])", "<Id> (XY[Z[M]])", "<html>&lt;Id&gt;<BR/>(XY[Z[M]])</html>", "Cumulative Length", "(X)", "(Y)", "(Z)", "(M)" }));
+        cmbVertexLabelContent.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "None", "Id", "(XY[Z[M]])", "<Id> (XY[Z[M]])", "<html>&lt;Id&gt;<BR/>(XY[Z[M]])</html>", "Cumulative Length", "(X)", "(Y)", "(Z)", "(M)" }));
 
         lblVertexLabelContent.setLabelFor(cmbVertexLabelContent);
         lblVertexLabelContent.setText("Vertex:");
 
-        cmbMarkSegment.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "None", "Segment Length", "Cumulative Length", "Bearing", "Segment Identifier" }));
+        cmbMarkSegment.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "None", "Segment Length", "Cumulative Length", "Bearing", "Segment Identifier" }));
 
         lblMarkSegment.setLabelFor(cmbMarkSegment);
         lblMarkSegment.setText("Segment:");
@@ -2630,7 +2630,7 @@ public class SVSpatialLayerProps extends JDialog {
         );
 
         cmbLabelColumns.setMaximumRowCount(255);
-        cmbLabelColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbLabelColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbLabelColumns.setToolTipText("Select column in table to use as label");
         cmbLabelColumns.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         cmbLabelColumns.setMaximumSize(new java.awt.Dimension(190, 20));
@@ -2648,7 +2648,7 @@ public class SVSpatialLayerProps extends JDialog {
         lblGeometryLabelPoint.setLabelFor(cmbGeometryLabelPosition);
         lblGeometryLabelPoint.setText("Label Position:");
 
-        cmbGeometryLabelPosition.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "First Vertex ", "Middle Vertex", "End Vertex", "JTS Centroid", "SDO_POINT" }));
+        cmbGeometryLabelPosition.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "First Vertex ", "Middle Vertex", "End Vertex", "JTS Centroid", "SDO_POINT" }));
 
         javax.swing.GroupLayout pnlLabelGeometryLayout = new javax.swing.GroupLayout(pnlLabelGeometry);
         pnlLabelGeometry.setLayout(pnlLabelGeometryLayout);
@@ -2794,7 +2794,7 @@ public class SVSpatialLayerProps extends JDialog {
         rbDegrees.setToolTipText("Value in column is in degrees");
         rbDegrees.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
 
-        cmbRotationColumns.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "TheLargestColumnSizeIs30Chars" }));
+        cmbRotationColumns.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "TheLargestColumnSizeIs30Chars" }));
         cmbRotationColumns.setToolTipText("If label column selected, select column in table that contains rotation angle (otherwise 0)");
         cmbRotationColumns.setMaximumSize(new java.awt.Dimension(190, 20));
         cmbRotationColumns.setMinimumSize(new java.awt.Dimension(190, 20));
@@ -2805,7 +2805,7 @@ public class SVSpatialLayerProps extends JDialog {
             }
         });
 
-        cmbRotationTarget.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Marker", "Label", "Both", "None" }));
+        cmbRotationTarget.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "Marker", "Label", "Both", "None" }));
         cmbRotationTarget.setMaximumSize(new java.awt.Dimension(60, 20));
         cmbRotationTarget.setMinimumSize(new java.awt.Dimension(60, 20));
         cmbRotationTarget.setPreferredSize(new java.awt.Dimension(60, 20));
@@ -4360,7 +4360,7 @@ public class SVSpatialLayerProps extends JDialog {
     private javax.swing.JLabel lblVertexLabelContent;
     private javax.swing.JLabel lblVertexStart;
     private javax.swing.JTextField lineWidthTF;
-    private javax.swing.JList listRelateMasks;
+    private javax.swing.JList<String> listRelateMasks;
     private javax.swing.JTextField nameInputTF;
     private javax.swing.JRadioButton noShadeRB;
     private javax.swing.JPanel pnlDetails;

@@ -192,7 +192,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         btnLoad = new javax.swing.JButton();
         pnlShapefileSet = new javax.swing.JPanel();
         scrlShapefiles = new javax.swing.JScrollPane();
-        lstShapefiles = new javax.swing.JList();
+        lstShapefiles = new javax.swing.JList<String>();
         btnAddShp = new javax.swing.JButton();
         btnRemoveShp = new javax.swing.JButton();
         lblTotalRecords = new javax.swing.JLabel();
@@ -210,7 +210,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         lblDecimalPlaces = new javax.swing.JLabel();
         sldrCommitInterval = new javax.swing.JSlider();
         lblCommitInterval = new javax.swing.JLabel();
-        cmbDecimalPlaces = new javax.swing.JComboBox();
+        cmbDecimalPlaces = new javax.swing.JComboBox<String>();
         cbSpatialIndex = new javax.swing.JCheckBox();
         cbMetadata = new javax.swing.JCheckBox();
         lblTotalShapesToLoad = new javax.swing.JLabel();
@@ -221,9 +221,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
         tfGeometryColumn = new javax.swing.JTextField();
         btnSRID = new javax.swing.JButton();
         lblConnections = new javax.swing.JLabel();
-        cmbConnections = new javax.swing.JComboBox();
+        cmbConnections = new javax.swing.JComboBox<String>();
         lblSRID = new javax.swing.JLabel();
-        cmbFID = new javax.swing.JComboBox();
+        cmbFID = new javax.swing.JComboBox<String>();
         btnHelp = new javax.swing.JButton();
 
         fcShapefile.setCurrentDirectory(new java.io.File("C:\\"));
@@ -383,14 +383,19 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     "DBF Column", "Oracle Column", "Data Type", "Not Null"
                 }
             ) {
-                Class[] types = new Class [] {
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = 1L;
+				@SuppressWarnings("rawtypes")
+				Class[] types = new Class [] {
                     java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
                 };
                 boolean[] canEdit = new boolean [] {
                     false, true, true, true
                 };
 
-                public Class getColumnClass(int columnIndex) {
+                public Class<?> getColumnClass(int columnIndex) {
                     return types [columnIndex];
                 }
 
@@ -483,7 +488,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblCommitInterval.setName("lblCommitInterval"); // NOI18N
             lblCommitInterval.setPreferredSize(new java.awt.Dimension(104, 14));
 
-            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }));
+            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }));
             cmbDecimalPlaces.setMaximumSize(new java.awt.Dimension(86, 20));
             cmbDecimalPlaces.setName("cmbDecimalPlaces"); // NOI18N
 
@@ -614,7 +619,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblSRID.setName("lblSRID"); // NOI18N
             lblSRID.setPreferredSize(new java.awt.Dimension(28, 18));
 
-            cmbFID.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>" }));
+            cmbFID.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<NONE>>" }));
             cmbFID.setToolTipText("Select an existing field or enter new one.");
             cmbFID.setMaximumSize(new java.awt.Dimension(143, 20));
             cmbFID.setMinimumSize(new java.awt.Dimension(143, 20));
@@ -911,9 +916,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JCheckBox cbNoLogging;
     private javax.swing.JCheckBox cbSQL;
     private javax.swing.JCheckBox cbSpatialIndex;
-    private javax.swing.JComboBox cmbConnections;
-    private javax.swing.JComboBox cmbDecimalPlaces;
-    private javax.swing.JComboBox cmbFID;
+    private javax.swing.JComboBox<String> cmbConnections;
+    private javax.swing.JComboBox<String> cmbDecimalPlaces;
+    private javax.swing.JComboBox<String> cmbFID;
     private javax.swing.JFileChooser fcShapefile;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblCommitInterval;
@@ -925,7 +930,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JLabel lblTableName;
     private javax.swing.JLabel lblTotalRecords;
     private javax.swing.JLabel lblTotalShapesToLoad;
-    private javax.swing.JList lstShapefiles;
+    private javax.swing.JList<String> lstShapefiles;
     private javax.swing.JPanel pnlMisc;
     private javax.swing.JPanel pnlProcessingOptions;
     private javax.swing.JPanel pnlSQL;
@@ -957,7 +962,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.cmbConnections.setSelectedIndex(0); // This fires setting of userName() via cmbConnectionsActionPerformed
 		DatabaseConnection dbConn = DatabaseConnections
 				                        .getInstance()
-                                        .findDisplayName((String)this.cmbConnections.getItemAt(0));
+                                        .findDisplayName(this.cmbConnections.getItemAt(0));
 		if (dbConn == null || dbConn.isOpen() == false) {
 			this.setAlwaysOnTop(false);
 			JOptionPane.showMessageDialog(this, propertyManager.getMsg("SHPFILE_IMPORTER_NO_OPEN_CONN_ERROR"));

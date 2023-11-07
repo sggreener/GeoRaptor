@@ -19,7 +19,6 @@ package org.geotools.resources;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 
-import org.geotools.resources.NIOUtilities;
 import org.geotools.util.WeakCollectionCleaner;
 
 /**

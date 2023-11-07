@@ -9,7 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import java.text.DecimalFormat;
 
 import javax.swing.InputVerifier;
@@ -25,14 +24,10 @@ import javax.swing.SwingUtilities;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.SpatialView.SpatialView;
-import org.GeoRaptor.SpatialView.layers.iLayer;
-import org.GeoRaptor.SpatialView.layers.SVGraphicLayer;
-import org.GeoRaptor.SpatialView.layers.SVQueryLayer;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
@@ -46,6 +41,7 @@ public class SpatialQueryReview extends JDialog {
 
 	private static final long serialVersionUID = 6239461401678158741L;
 
+	@SuppressWarnings("unused")
 	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SpatialQueryReview");
 
     /**

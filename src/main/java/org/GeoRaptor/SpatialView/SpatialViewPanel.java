@@ -1443,10 +1443,8 @@ extends JPanel
         //
         if ( layer.hasIndex() ) 
         {
-        	boolean ok = layer.setLayerMBRByIndex(mEntry.getMBR(),layer.getSRIDAsInteger());
-        	if ( ! ok ) {
-        		return LayerReturnCode.MBR;
-        	}
+        	layer.setLayerMBRByIndex(mEntry.getMBR(),layer.getSRIDAsInteger());
+        	return layer.getMBR().isSet() ? LayerReturnCode.Success : LayerReturnCode.MBR;
         }
 
         // Add layer to relevant view

@@ -297,7 +297,6 @@ public class SQLConversionTools {
           // ie 255 will be TINYINT but 999 would not be
           //
           DecimalFormat df = Tools.getDecimalFormatter(dataTypeScale==0?-1:dataTypeScale, false);
-          Reader in = null;
           Connection conn = (_conn == null) ? DatabaseConnections.getInstance().getAnyOpenConnection()  : _conn;
           switch (columnType) 
           {

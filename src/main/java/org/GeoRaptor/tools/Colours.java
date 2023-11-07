@@ -1,9 +1,7 @@
 package org.GeoRaptor.tools;
 
 import java.awt.Color;
-
 import java.util.Random;
-import java.util.StringTokenizer;
 
 public class Colours {
 

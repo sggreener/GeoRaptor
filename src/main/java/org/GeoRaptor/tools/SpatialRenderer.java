@@ -29,20 +29,10 @@ import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.geotools.util.logging.Logger;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.PrecisionModel;
-import org.locationtech.jts.io.WKTWriter;
-import org.locationtech.jts.io.geojson.GeoJsonWriter;
-import org.locationtech.jts.io.oracle.OraReader;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.dbtools.raptor.controls.cellrenderers.ICellRenderer;
 import oracle.spatial.geometry.JGeometry;
-import oracle.spatial.util.GML2;
-import oracle.spatial.util.GML3;
-import oracle.spatial.util.KML2;
-import oracle.spatial.util.WKT;
 
 
 public class SpatialRenderer 

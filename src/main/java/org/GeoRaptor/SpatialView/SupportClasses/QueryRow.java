@@ -1,15 +1,11 @@
 package org.GeoRaptor.SpatialView.SupportClasses;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-
-import oracle.spatial.geometry.JGeometry;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -17,6 +13,8 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SpatialRenderer;
+
+import oracle.spatial.geometry.JGeometry;
 
 /**
  * Result row for "queryByPos" function
