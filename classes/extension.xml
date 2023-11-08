@@ -107,26 +107,26 @@
 				<!-- view menu -->
 				<action id="OPEN_MAP">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_1_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_ONE_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_MAP_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_MAP_ICON}</property>
 					</properties>
 				</action>
 				<action id="MANAGE_ALL_METADATA">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_2_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_TWO_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_METADATA_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_METADATA_ICON}</property>
 					</properties>
 				</action>
 				<action id="LOAD_SHAPEFILE">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_3_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_THREE_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_SHP_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_SHP_ICON}</property>
 					</properties>
 				</action>
 				<action id="ABOUT_GEORAPTOR">
 					<properties>
-						<property name="Name">${VIEW_SUBMENU_4_LABEL}</property>
-						<property name="SmallIcon">res:${SUBMENU_FOUR_ICON}</property>
+						<property name="Name">${VIEW_SUBMENU_ABOUT_LABEL}</property>
+						<property name="SmallIcon">res:${VIEW_SUBMENU_ABOUT_ICON}</property>
 					</properties>
 				</action>
 			</actions>
