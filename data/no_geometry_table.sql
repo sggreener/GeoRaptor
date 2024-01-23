@@ -1,0 +1,11 @@
+drop table no_geometry;
+create table no_geometry ( id integer, name varchar2(100));
+insert into no_geometry values(1,'1');
+insert into no_geometry values(2,'2');
+insert into no_geometry values(3,'3');
+insert into no_geometry values(4,'4');
+insert into no_geometry values(5,'5');
+insert into no_geometry values(6,'6');
+insert into no_geometry values(7,'7');
+insert into no_geometry values(8,'8');
+insert into no_geometry values(9,'9');

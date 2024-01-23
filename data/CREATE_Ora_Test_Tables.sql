@@ -108,7 +108,7 @@ INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('3D line',
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('2D Line with Measure',
   mdsys.sdo_geometry(3302, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 799.423, 63.157, 450.611, 802.963, 63.157)))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('4D line with Measure in 4',
-  mdsys.sdo_geometry(4002, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 802.963, 63.157, 0.0, 450.611, 799.423, 63.157, 1.0)))
+  mdsys.sdo_geometry(4402, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 802.963, 63.157, 0.0, 450.611, 799.423, 63.157, 1.0)))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES( 'Null Geometry', NULL)
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES( 'Wrong GType', 
   mdsys.sdo_geometry(2002, NULL, NULL, mdsys.sdo_elem_info_array(1,1,2), mdsys.sdo_ordinate_array(100.0, 100.0, 900.0, 900.0)))
@@ -244,7 +244,7 @@ show errors
 
 INSERT ALL
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('Single Point (SDO_POINT encoding)',
-  mdsys.sdo_geometry(2001, NULL, mdsys.sdo_point_type(900.0,900.0,NULL), NULL, NULL))
+  MDSYS.SDO_GEOMETRY(3001, 28355, MDSYS.SDO_POINT_TYPE(300000,5200000, 99), NULL, NULL))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('Single Point (Ordinate Encoding)',
   mdsys.sdo_geometry (2001, null, null, mdsys.sdo_elem_info_array (1,1,1), mdsys.sdo_ordinate_array (10,5)))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('Single Point With Too Many Ordinates',
@@ -330,7 +330,7 @@ INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('3D line',
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('2D Line with Measure',
   mdsys.sdo_geometry(3302, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 799.423, 63.157, 450.611, 802.963, 63.157)))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES ('4D line with Measure in 4',
-  mdsys.sdo_geometry(4002, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 802.963, 63.157, 0.0, 450.611, 799.423, 63.157, 1.0)))
+  mdsys.sdo_geometry(4402, NULL, NULL, mdsys.sdo_elem_info_array(1,2,1), mdsys.sdo_ordinate_array(442.062, 802.963, 63.157, 0.0, 450.611, 799.423, 63.157, 1.0)))
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES( 'Null Geometry', NULL)
 INTO ORACLE_TEST_GEOMETRIES (name, geometry) VALUES( 'Wrong GType', 
   mdsys.sdo_geometry(2002, NULL, NULL, mdsys.sdo_elem_info_array(1,1,2), mdsys.sdo_ordinate_array(100.0, 100.0, 900.0, 900.0)))
