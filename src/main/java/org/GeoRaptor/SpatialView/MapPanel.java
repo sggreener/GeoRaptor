@@ -74,6 +74,7 @@ import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.MathUtils;
 import org.GeoRaptor.tools.PropertiesManager;
+import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
@@ -1504,8 +1505,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                           Composite oldAlpha = this.getBiG2D().getComposite();
                           this.getBiG2D().setComposite( Styling.getAlphaComposite(0.3f) );
                           // close area shape 
-                          this.createShapeWorld.closePath();
-                          this.createShapeScreen.closePath();
+                          //this.createShapeWorld.closePath();
+                          //this.createShapeScreen.closePath();
                           this.getBiG2D().fill(new Area(createShapeScreen));
                           this.getBiG2D().setComposite(oldAlpha);
                       } 
@@ -1527,6 +1528,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                       // Build SDO_GEOMETRY from closed Path2D.Double (area) object
                       //
                       final JGeometry jGeom = getGeometryFromShape(createShapeWorld,svo);
+                      LOGGER.debug("getGeometryFromShape: " + RenderTool.renderGeometryAsPlainText(jGeom, Constants.TAG_MDSYS_SDO_GEOMETRY,Constants.bracketType.NONE,8));
                       if ( jGeom == null ) {
                         this.initialiseShapeActions();
                         spatialView.getSVPanel().setMessage(propertyManager.getMsg("SHAPE_CONVERSION_ERROR"),true);
