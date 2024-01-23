@@ -9,23 +9,18 @@ package org.GeoRaptor.OracleSpatial.CreateSpatialIndex;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import java.util.List;
 
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.Position;
-
-import oracle.ide.dialogs.ProgressBar;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
@@ -35,9 +30,10 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.ErrorDialogHandler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-
 import org.geotools.util.logging.Logger;
 import org.geotools.util.logging.Logging;
+
+import oracle.ide.dialogs.ProgressBar;
 
 public class ManageSpatialIndex extends javax.swing.JDialog
 {

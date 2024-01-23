@@ -47,7 +47,6 @@ import org.xBaseJ.fields.NumField;
 import org.xBaseJ.fields.PictureField;
 
 
-@SuppressWarnings("deprecation")
 public class SHPExporter implements IExporter {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.SHPExporter");

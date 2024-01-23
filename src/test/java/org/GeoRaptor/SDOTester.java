@@ -1,5 +1,6 @@
 package org.GeoRaptor;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -18,18 +19,19 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.sql.Types;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+
 import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
-import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
-import org.GeoRaptor.SpatialView.layers.SVSpatialLayer;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PrintGeometry;
-import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Tools;
 import org.locationtech.jts.geom.Geometry;
@@ -41,6 +43,7 @@ import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
+import oracle.spatial.util.WKT;
 
 public class SDOTester
 {
@@ -50,35 +53,32 @@ public class SDOTester
         try
         {
             System.out.println("Start");
-            /*
             int nTests = 10;
             for (int i = 0; i<=nTests; i++) 
               switch (i) {
               case 0 : TestOraUtil(); break;
               case 1 : TestStruct(); break;
               case 2 : TestDiminfo(); break;
-              case 3 : TestMetadata(); break;
+              //case 3 : TestMetadata(); break;
               case 4 : TestWriting(); break;
               case 5 : TestVertexType(); break;
               case 6 : TestPointType(); break;
               case 7 : dataTypeExamination(); break;
-              case 8 : TestConversionToString(); break;
-              case 9 : TestConversionToObject(); break;
-              case 10: getLayerGType(); 
+              //case 8 : TestConversionToString(); break;
+              //case 9 : TestConversionToObject(); break;
+              case 10: runQueries(); 
               }
-              */
-            //testBundle();
-            //testJMbr(new Envelope(0,0,10,10));
-            //getLayerGType();
-            //getRowid();
-        	//inspectStruct();
-            //testParameterCount();
-            
-	        String sql = "SELECT ? AS geom FROM DUAL";
-	        sql = sql.replace("SELECT ? AS geom FROM DUAL",
-  		          "SELECT MDSYS.SDO_GEOM.SDO_BUFFER(?,?,?,?) as geom FROM DUAL");
- System.out.println(sql);
-            
+            testBundle();
+            runQueries();
+            getRowid();
+        	inspectStruct();
+            testParameterCount();
+            testVersion();
+            testMetadata();
+            testArrayList();
+            yellowTest();
+            testJMbr();
+        	TestHasArc(); 
             System.out.println("Finished");
         }
         catch(Exception e)
@@ -86,12 +86,71 @@ public class SDOTester
             e.printStackTrace();
         }
     }
+
+	public static void yellowTest() {
+		JOptionPane pane = new JOptionPane("Yellow test",JOptionPane.PLAIN_MESSAGE ,JOptionPane.DEFAULT_OPTION);
+		pane.setBackground(new Color(255,255,0,40));
+		JDialog jd = pane.createDialog(null, "Message");
+		jd.setVisible(true);
+	}
+
+	public static void testArrayList() 
+	{
+		ArrayList<String> al = new ArrayList<String>(10);
+		for (int i=0;i<10;i++) 
+			al.add(String.valueOf(i));
+		for (int i=0;i<10;i++) 
+			System.out.println(al.get(i));
+		al.remove(0);
+		for (int i=0;i<9;i++) 
+			System.out.println(al.get(i));	
+	}
+	public static void testMetadata() 
+	{
+		// MEtadata testing.
+		Connection conn = null;
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+           	conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "SpDbA");
+           	String sql = "SELECT ROWID,\"ID\",\"LABEL\",\"ANGLEDEGREES\",t.GEOM as GEOM \r\n"
+        		+ "  FROM GEORAPTOR.PROJPOINT2D t \r\n"
+        		+ " WHERE t.GEOM IS NOT NULL\r\n"
+        		+ " AND t.GEOM.sdo_gtype is not null\r\n"
+        		+ " AND MDSYS.SDO_GEOM.VALIDATE_GEOMETRY(t.GEOM,0.005) = 'TRUE'\r\n"
+        		+ " AND MDSYS.SDO_GEOM.RELATE(t.GEOM,'ANYINTERACT',?,0.005) = 'TRUE'";
+            sql = sql.replace("MDSYS.SDO_GEOM.RELATE(t.GEOM,'ANYINTERACT',?,0.005) = 'TRUE'","1=0");
+           	PreparedStatement pstmt = conn.prepareStatement(sql);
+           	ResultSetMetaData rsmd = pstmt.getMetaData();
+            for (int col=1;col<=rsmd.getColumnCount();col++) {
+            	System.out.println(rsmd.getColumnLabel(col) + "," + rsmd.getColumnTypeName(col));
+            }
+           	pstmt.close();
+		} catch (Exception e ) {e.printStackTrace();}
+	}
 	
+	public static void testVersion() 
+	{
+		Connection conn = null;
+	    try {
+	    	Class.forName("oracle.jdbc.driver.OracleDriver");
+	    	conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "SpDbA");
+			int version = Queries.getDBVersion(conn);
+			System.out.println("Database version is " + version);
+	        conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+
+	}
 	public static void testParameterCount() 
 			throws Exception
 	{
         Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "SpDbA");
         PreparedStatement ps = conn.prepareStatement("SELECT ? as id, ? as id2 FROM DUAL");
         int alreadySetParameters = ps.getParameterMetaData().getParameterCount();
         System.out.println("Parameter Count: " + alreadySetParameters);
@@ -104,7 +163,7 @@ public class SDOTester
 	public static void getRowid() throws SQLException, ClassNotFoundException
 	{
         Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "SpDbA");
         Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
         ResultSet   results = statement.executeQuery("select rowid from projpoint2d where rownum < 2");
         if (results.next()) {
@@ -114,25 +173,24 @@ public class SDOTester
         results.close(); statement.close(); conn.close();
 	}
 
-	public static void testJMbr(Envelope _mbr)
-	throws SQLException, Exception
+	public static void testJMbr()
 	{
-        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
-        System.out.println(_mbr.toString());
-        JGeometry jGeom = JGeom.fromEnvelope(_mbr,8307);
-        
-        System.out.println(RenderTool.renderGeometryAsPlainText(jGeom, 
-                        		                                "MDSYS.SDO_GEOMETRY", 
-                        		                                Constants.bracketType.NONE, 
-                        		                                3));
-
-        Struct s;
-        s = JGeom.toStruct(jGeom,conn);
-        
-        System.out.println(RenderTool.renderStructAsPlainText(s, 
-                                                              Constants.bracketType.NONE, 
-                                                              3));
-        
+        Connection conn;
+		try {
+			conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
+            JGeometry jGeom = new JGeometry(146,-43,147,-42,8307);
+            Struct s = null;        
+            s = JGeometry.storeJS(jGeom,conn);
+            WKT w = new WKT();
+            System.out.println(new String(w.fromStruct(s)));
+        	/*  s = JGeom.toStruct(jGeom,conn);
+                System.out.println(RenderTool.renderStructAsPlainText(s,Constants.bracketType.NONE,3));
+                s = JGeometry.storeJS(jGeom,conn);
+                System.out.println(RenderTool.renderStructAsPlainText(s,Constants.bracketType.NONE,3));
+        	 */
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
 	}
 
 	public static void TestMetadata() {
@@ -152,7 +210,7 @@ public class SDOTester
 	public static void inspectStruct() 
 			throws SQLException
 	{
-        Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+        Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
         Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
         ResultSet   results = statement.executeQuery(
         "select SDO_GEOMETRY(2003,29182,MDSYS.SDO_POINT_TYPE(638254,7954500,NULL),SDO_ELEM_INFO_ARRAY(1,1003,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09,638235.33,7954554.09,638231.54,7954554.09,638231.54,7954538.73)) as geom from dual");
@@ -171,6 +229,50 @@ public class SDOTester
         }
         results.close(); statement.close(); database.close();
 	}
+
+	public static void TestHasArc() 
+	{
+        System.out.println("<TestHasArc>");
+        try
+        {
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
+            Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
+            ResultSet   results = statement.executeQuery(
+            "select 1 as gid, SDO_GEOMETRY(2002,29182,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09)) as geom from dual " 
+            + " union all " +
+            "select 2 as gid, SDO_GEOMETRY(2002,29182,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),SDO_ORDINATE_ARRAY(100.0,100.0,150.0,150.0,200.0,100.0)) as geom from dual " 
+            + " union all " +
+            "select 3 as gid, SDO_GEOMETRY(2002,29182,NULL,SDO_ELEM_INFO_ARRAY(1,4,2,1,2,2,7,2,1),SDO_ORDINATE_ARRAY(100.0,100.0,150.0,150.0,200.0,100.0,300.0,300.0)) as geom from dual " 
+            + " union all " +
+            "select 4 as gid, SDO_GEOMETRY(3302,29182,NULL,SDO_ELEM_INFO_ARRAY(1,4,2,1,2,2,7,2,1),SDO_ORDINATE_ARRAY(100.0,100.0,1.0,150.0,150.0,25.0,200.0,100.0,100.0,300.0,300.0,167.9)) as geom from dual"
+            + " union all " +
+            "select 5 as gid, SDO_GEOMETRY(2003,null, NULL,sdo_elem_info_array (1,1005,2, 1,2,1, 7,2,2),sdo_ordinate_array (10,128, 10,125, 20,125, 20,128, 15,130, 10,128)) as geom from dual"
+            + ""
+            );
+            Tools.setPrecisionScale(3);
+            Integer            gid = -1;
+            Struct         SdoGeom = null;
+            while (results.next()) {
+                try {
+                    gid  = OraUtil.toInteger(results.getObject("GID"),0);
+                    SdoGeom = (Struct)results.getObject("GEOM");
+                    int[] eia = SDO_GEOMETRY.getSdoElemInfo(SdoGeom);
+                    System.out.println(" Circular Arcs?= " + 
+                    (SDO_GEOMETRY.hasArc(SdoGeom) ?"EXIST":"DO NOT EXIST"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println("    HasArc Error" + e.toString());
+                }
+            }
+            results.close();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+        System.out.println("</TestHasArc>");
+		
+	}
 	
 	public static void TestStruct()
     {
@@ -178,8 +280,8 @@ public class SDOTester
         try
         {
         	//String url = "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcps)(HOST=localhost)(PORT=1522))(CONNECT_DATA=(SERVICE_NAME=GISDB12)))"; 
-            //String url = "jdbc:oracle:thin:@localhost:1522:GISDB12";
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            //String url = "jdbc:oracle:thin:@localhost:1521:GISDB";
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet   results = statement.executeQuery(
             "select 1 as gid, SDO_GEOMETRY(2002,29182,MDSYS.SDO_POINT_TYPE(638254,7954500,NULL),SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09)) as geom from dual " 
@@ -251,7 +353,7 @@ public class SDOTester
 
                     // Read sdo_elem_info
                     if ( SDO_GEOMETRY.hasElemInfoArray(SdoGeom) ) {
-                        sdo_elem_info = SDO_GEOMETRY.getSdoElemInfo(SdoGeom,0);
+                        sdo_elem_info = SDO_GEOMETRY.getSdoElemInfo(SdoGeom);
                       String sdo_elem_info_array = ",SDO_ELEM_INFO_ARRAY(" + sdo_elem_info[0];
                       for (int i=1;i<sdo_elem_info.length;i++) {
                       	sdo_elem_info_array += "," + sdo_elem_info[i];
@@ -303,7 +405,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             //DBConnection.setConnection(database);
             ResultSet results = statement.executeQuery(
@@ -358,7 +460,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet results = statement.executeQuery(
               "select diminfo from user_sdo_geom_metadata"
@@ -378,7 +480,7 @@ public class SDOTester
                     dimInfo = results.getArray("DIMINFO");
                     if ( results.wasNull() )
                         continue;
-                    JGeometry  jGeom = JGeom.getDimArrayAsJGeometry(dimInfo,4326);
+                    JGeometry  jGeom = JGeom.getDimArrayAsJGeometry(dimInfo,4326,false);
                     if ( jGeom != null ) {
                     	PrintGeometry.printElemInfoArray(jGeom);
                     	PrintGeometry.printOrdArray(jGeom);
@@ -406,7 +508,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet results = statement.executeQuery(
               "select 1 as gid, mdsys.vertex_type(1,2,3,4) as geom from dual "
@@ -449,7 +551,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet   results = statement.executeQuery(
                 "select 1 as gid, MDSYS.SDO_POINT_TYPE(1,2,3) as geom from dual"
@@ -491,15 +593,15 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet results = statement.executeQuery(
             		"SELECT GID, GEOM FROM spdba.BLACKMANSBAYHOUSES WHERE rownum <= 10"
             		+ " UNION ALL " +
-            		"SELECT GID, GEOM FROM spdba.parcels WHERE rownum <= 10"
+            		"SELECT GID, GEOM FROM spdba.BLACKMANSBAYCAD WHERE rownum <= 10"
             		+ " UNION ALL " +
-            		"SELECT GID, GEOM FROM spdba.streets WHERE rownum <= 10"
+            		"SELECT GID, GEOM FROM spdba.BLACKMANSBAYSTREETS WHERE rownum <= 10"
 
             //"select 1 as gid, SDO_GEOMETRY(2002,29182,MDSYS.SDO_POINT_TYPE(638254,7954500,NULL),SDO_ELEM_INFO_ARRAY(1,2,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09)) as geom from dual union all " +
             //"select 2 as gid, SDO_GEOMETRY(2003,29182,MDSYS.SDO_POINT_TYPE(638254,7954500,NULL),SDO_ELEM_INFO_ARRAY(1,1003,1),SDO_ORDINATE_ARRAY(638231.54,7954538.73,638235.33,7954554.09,638235.33,7954554.09,638231.54,7954554.09,638231.54,7954538.73)) as geom from dual union all "+
@@ -525,9 +627,9 @@ public class SDOTester
                     
                     // Tests OraRead/OraUtil/OraGeom as well
                     geo = or.read(SdoGeom);                    
-                    System.out.println(" WKT: " + wWkt.write(geo)); 
+                    System.out.println(" WKT: SRID=" + geo.getSRID() + ";"+ wWkt.write(geo)); 
 
-                    System.out.println("            " + SDO_GEOMETRY.getGeometryAsString(SdoGeom)); 
+                    //System.out.println("            " + SDO_GEOMETRY.getGeometryAsString(SdoGeom)); 
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.out.println("    Conversion error " + e.toString());
@@ -550,7 +652,7 @@ public class SDOTester
         try {
             // connect to test database
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement;
             statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             ResultSet results; 
@@ -593,7 +695,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet   results = statement.executeQuery(
                     "select rowid, short_col, int_col," +
@@ -647,7 +749,7 @@ public class SDOTester
         try
         {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "spdba", "sPdbA");
+            Connection database = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
             Statement statement = database.createStatement(ResultSet.TYPE_FORWARD_ONLY,ResultSet.CONCUR_READ_ONLY);
             ResultSet   results = statement.executeQuery(
                     "select rowid, short_col, int_col," +
@@ -884,22 +986,24 @@ public class SDOTester
 		return value;
 	}
 
-	public static void getLayerGType() throws Exception
+	public static void runQueries() throws Exception
 	{
         Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "codesys", "c0d3mgr");
-
+        Connection conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba", "sPdbA");
+        System.setProperty("user.home", "C:\\Users\\Simon\\AppData\\Roaming\\SQL Developer\\system21.2.0.187.1842\\o.sqldeveloper");
+        System.out.println("user.home: " + System.getProperty("user.home") );
+        
         boolean isGeodetic = Queries.querySridGeodetic(conn,"4326");
         System.out.println("Is SRID 4326 geodetic? " + String.valueOf(isGeodetic));
         
         String wkt = Queries.getSRIDWKT(conn,"4326");
-        System.out.println("SRID as WKT " + wkt);        
+        System.out.println("SRID as WKT " + wkt);
         
         String refSys = Queries.getSRIDRefSysKind(conn,"4326");
-        System.out.println("SRID RefSysKind " + refSys);        
+        System.out.println("SRID RefSysKind " + refSys);
        
         String uom = Queries.getSRIDBaseUnitOfMeasure(conn,"4326");
-        System.out.println("SRID Unit Of Measure " + uom);        
+        System.out.println("SRID Unit Of Measure " + uom);
 
         int layerSRID = Queries.getLayerSRID( conn,"CODESYS","AUSTRALIAN_QUAD","GEOM");
         System.out.println("Layer SRID for AUSTRALIAN_QUAD " + String.valueOf(layerSRID));

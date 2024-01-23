@@ -170,7 +170,7 @@ public class OraUtil
   }
 
   /**
-   * Convience method for ARRAY construction.
+   * Convenience method for ARRAY construction.
    * </p>
    */
   // Changed 17th August 2019
@@ -185,7 +185,7 @@ public class OraUtil
   }
 
   /**
-   * Convience method for ARRAY construction.
+   * Convenience method for ARRAY construction.
    */
   // Changed 17th August 2019
   public static Array toArray(int[] ints, 

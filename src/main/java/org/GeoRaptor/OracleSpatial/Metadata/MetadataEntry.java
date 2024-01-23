@@ -437,7 +437,7 @@ public class MetadataEntry
         }
         MetadataRow mrX = this.rows.get(0);
         MetadataRow mrY = this.rows.get(1);
-        return new Envelope(mrX.getSdoLB(),mrY.getSdoLB(),mrX.getSdoUB(),mrY.getSdoUB());
+        return new Envelope(mrX.getSdoLB(),mrY.getSdoLB(),mrX.getSdoUB(),mrY.getSdoUB(),this.getSRIDAsInteger());
     }
 
     public JGeometry getJGeometry() 

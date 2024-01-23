@@ -409,16 +409,16 @@ LOGGER.debug("*** Removing " + _layerName);
       
       vNode.addLayer(_layer,_isDrawn,_isActive);
       
-      // Set view reference in new layer
+      LOGGER.debug("Set view reference in new layer");
       _layer.setView(this);
       
-      // Compute precision and initialize View's MBR when first new layer is added.
+      LOGGER.debug("Compute precision and initialize View's MBR when first new layer is added.");
       //
       if ( this.getLayerCount() == 1 ) 
       {
-          // Assign layer's precision to view
+    	  LOGGER.debug("Assign layer's precision to view");
           this.setPrecision(_layer.getPrecision(true));
-          // Assign layer's MBR to view
+          LOGGER.debug("Assign layer's MBR to view");
           boolean ok = this.initializeMBR(_layer); 
           if ( ! ok  ) {
               LOGGER.info(this.getVisibleName() + "'s MBR could not be set for layer " + _layer.getVisibleName());
@@ -426,6 +426,7 @@ LOGGER.debug("*** Removing " + _layerName);
       } else if ( _zoom ) {
           this.setMBR(_layer.getMBR()); // Sets associated map extent calling Initialise()
       }
+      LOGGER.debug("Spatial View MBR is " + this.getMBR().toString());
       return true;
   }
 
@@ -653,7 +654,7 @@ LOGGER.debug("*** Removing " + _layerName);
     }
 
     /**
-     * Set initialite world parameters for provided layer or, if null, all layers.
+     * Set initializeMBR world parameters for provided layer or, if null, all layers.
      * @param _zoomLayer : Layer whose MBR is to be used to set extent of current view/map
      *                 If _layer is null, all layers in view will be used to compute a new MBR
      */
@@ -670,7 +671,8 @@ LOGGER.debug("*** Removing " + _layerName);
         }
         
         if (mbr == null || mbr.isSet()==false )  {
-            LOGGER.info(this.getViewName() + " View's mbr is not set.");
+        	if ( ! Strings.isEmpty(this.getViewName()) )
+        		LOGGER.info(this.getViewName() + " View's mbr is not set.");
             return false;
         }
         

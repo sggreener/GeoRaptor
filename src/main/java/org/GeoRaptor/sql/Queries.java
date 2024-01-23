@@ -40,7 +40,7 @@ public class Queries {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.MetadataTool");
 
     /**
-     * Reference to resource manager for accesing messages in properties file
+     * Reference to resource manager for accessing messages in properties file
      */
     protected static PropertiesManager propertyManager;
     private static final String propertiesFile = "org.GeoRaptor.OracleSpatial.Metadata.MetadataPanel";
@@ -615,41 +615,37 @@ public class Queries {
 
         String schema = Strings.isEmpty(_schemaName) ? "NULL" : _schemaName.toUpperCase();
         boolean mDataExists = false;
-        String columnClause = (Strings.isEmpty(_columnName)
-                              ? ""
-                              : "and asgm.COLUMN_NAME = ? \n");
-        String sql = 
+        String sql =
              "select asgm.column_name \n" +
              "  from all_sdo_geom_metadata asgm \n" +
              " where asgm.owner       = NVL(?,SYS_CONTEXT('USERENV','SESSION_USER')) \n" +
-             "   and asgm.table_name  = ? \n" + 
-                 columnClause +
-             "   and EXISTS(select 1 \n" +
-             "                from all_tab_columns atc \t" +
-             "               where atc.owner       = asgm.owner \n" +
-             "                 and atc.table_name  = asgm.table_name \n" +
-             "                 and atc.column_name = asgm.column_name ) \n" +
-              "order by asgm.table_name, asgm.column_name";
-        
+             "   and asgm.table_name  = ? \n" +
+             (Strings.isEmpty(_columnName) ? "" :
+             "   and asgm.column_name = ? \n") +
+             " order by asgm.table_name, asgm.column_name";
+
         PreparedStatement psTable = _conn.prepareStatement(sql);
         psTable.setString(1,schema);
         psTable.setString(2,_objectName.toUpperCase());
-        LOGGER.logSQL(sql + 
+        System.out.println(sql +
                       "\n? = " + schema +
                       "\n? = " + _objectName.toUpperCase());
-        
-        if ( columnClause.contains("?") ) {
+
+        if ( ! Strings.isEmpty(_columnName) ) {
            psTable.setString(3, _columnName.toUpperCase() );
+           System.out.println("? = " + _columnName.toUpperCase());
         }
+
         ResultSet rSet = psTable.executeQuery();
-        if (!rSet.isBeforeFirst() ) {    
+        if (!rSet.isBeforeFirst() ) {
           mDataExists = false;
         } else {
           mDataExists = rSet.next();
         }
+
         rSet.close();
         psTable.close();
-      
+
         return mDataExists;
     }
     

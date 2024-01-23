@@ -136,7 +136,7 @@ public class DatabaseConnection {
         if (Strings.isEmpty(this.connectionName) )
             return conn;
         try {
-            //conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:GISDB12", "georaptor", "georaptor");
+            //conn = (Connection)DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:GISDB", "spdba);
             conn = Connections.getInstance().getConnection(this.connectionName,true);
             if (conn.isWrapperFor(OracleConnection.class)){
             	return (OracleConnection)conn.unwrap(OracleConnection.class);  

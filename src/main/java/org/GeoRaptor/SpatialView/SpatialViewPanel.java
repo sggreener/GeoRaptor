@@ -1308,6 +1308,7 @@ extends JPanel
                                               null, // Use default icon
                                               entryList,
                                               entryList[0]);
+                    LOGGER.debug("Returned geometry column is: " + value);
                     if (Strings.isEmpty(value) ) {
                         return LayerReturnCode.Fail;
                     }
@@ -1340,7 +1341,7 @@ extends JPanel
                                           columnName,
                                           Constants.TABLE_COLUMN_SEPARATOR),
                            Constants.TABLE_COLUMN_SEPARATOR);
-        
+        LOGGER.debug("Get new layer's metadata for: " + schemaTableColumn);
         MetadataEntry mEntry = null;
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
@@ -1372,7 +1373,7 @@ extends JPanel
                 return LayerReturnCode.Fail;
             }
         }
-        
+        LOGGER.debug("Found metadata is: " + mEntry.toString());
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                 mEntry.getObjectName(), 
                                                 mEntry.getColumnName());
@@ -1383,7 +1384,7 @@ extends JPanel
         String layerGeometryType = "";
         try {
             // 0 Percentage means no sampling. 
-            // 1 means first one found ie ROWNUM < 2
+            // 1 means first one found i.e. ROWNUM < 2
             layerGeometryType = Queries.getLayerGeometryType(_conn,
                                                              mEntry.getSchemaName(), 
                                                              mEntry.getObjectName(), 
@@ -1398,6 +1399,7 @@ extends JPanel
             LOGGER.error("Add New Spatial Layer terminated.");
             return LayerReturnCode.Fail;
         }
+        LOGGER.debug("layer geometry type is: " + layerGeometryType);
         
         // *************************************************************************************
         // We have enough information to create a valid layer
@@ -1444,12 +1446,12 @@ extends JPanel
         if ( layer.hasIndex() ) 
         {
         	layer.setLayerMBRByIndex(mEntry.getMBR(),layer.getSRIDAsInteger());
-        	return layer.getMBR().isSet() ? LayerReturnCode.Success : LayerReturnCode.MBR;
         }
 
         // Add layer to relevant view
         //
-        LayerReturnCode b = addLayerToView(layer,_zoom) ? LayerReturnCode.Success : LayerReturnCode.Fail;        
+        LayerReturnCode b = addLayerToView(layer,_zoom) ? LayerReturnCode.Success : LayerReturnCode.Fail;
+        LOGGER.debug("Layer added: " + b.toString());
         return b;
     }
 
@@ -1491,7 +1493,7 @@ extends JPanel
       
       if ( selectedViewName.equals(createNewView) ) 
       {
-          // Create new view.
+    	  LOGGER.debug("SpatialViewPanel.addLayerToView: Create new view.");
           String createViewName = SpatialView.createViewName(_layer.getSRID());
           targetView = this.newView(createViewName,_layer.getSRID(),false);
           targetView.setSRID(_layer.getSRID());
@@ -1530,6 +1532,7 @@ extends JPanel
               }
           } 
       }
+      LOGGER.debug("SpatialViewPanel.addLayerToView: View MBR is " + targetView.getMBR().toString());
       // Create initial layer SQL with possible requirement to project
       // can only be determined after assignment to a view because
       // only then will both SRIDs be known

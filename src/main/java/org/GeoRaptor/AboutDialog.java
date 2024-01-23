@@ -12,18 +12,13 @@
 package org.GeoRaptor;
 
 import java.awt.Desktop;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.ResourceBundle;
 
 import javax.swing.ImageIcon;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import javax.swing.text.DefaultCaret;
 
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Tools;
-
 import org.geotools.util.logging.Logger;
 
 

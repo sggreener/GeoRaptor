@@ -93,9 +93,9 @@ public class Styling {
 	public Styling() {
 		this.setLineSeparator(System.getProperty("line.separator"));
         this.preferences = MainSettings.getInstance().getPreferences();
-        if ( this.preferences.isRandomRendering()) {
+        //if ( this.preferences.isRandomRendering()) {
           this.setAllRandom();
-        }
+        //}
 	}
 
 	// Copy constructor

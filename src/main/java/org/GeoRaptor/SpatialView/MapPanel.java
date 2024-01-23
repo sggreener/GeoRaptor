@@ -433,7 +433,7 @@ public class MapPanel
     }
 
     /**
-     * @method  setWorldToScreenTransform(double,double,double,dluble,Dimension)
+     * @method  setWorldToScreenTransform(double,double,double,double,Dimension)
      * @author Simon Greener, April 2010, Added to support java.awt.shape rendering.
      * 
      */
@@ -445,14 +445,15 @@ public class MapPanel
     {
         // LOGGER.info(String.format("%s: setWorldToScreenTransform(%f,%f,%f,%f)",this.spatialView.getViewName(),_minX,_minY,_maxX,_maxY));
         // LOGGER.info("(_maxX - _minX)="+(_maxX - _minX) + " (_maxY - _minY)=" + (_maxY - _minY));
-        // LOGGER.info("_screenSize.getWidth()="+_screenSize.getWidth()+" _screenSize.getHeight()="+_screenSize.getHeight());
+        LOGGER.debug("setWorldToScreenTransform: _screenSize.getWidth()="+_screenSize.getWidth()+" _screenSize.getHeight()="+_screenSize.getHeight());
         if ( _screenSize.getWidth()  == Double.NaN || 
              _screenSize.getWidth()  == Double.MAX_VALUE || 
              _screenSize.getWidth()  == 0.0f || 
              _screenSize.getHeight() == Double.NaN || 
              _screenSize.getHeight() == Double.MAX_VALUE ||
              _screenSize.getHeight()  == 0.0f ) {
-            LOGGER.debug("Can't set world to page due to screen not yet set.");
+        	// Probably an initialization issue
+            //LOGGER.debug("Can't set world to page due to screen not yet set.");
             return ;
         }
         double scaleX = _screenSize.getWidth()  / (_maxX - _minX);
@@ -2120,25 +2121,25 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
              _mbr.isNull() || 
              _mbr.isInvalid() ||
              _mbr.isEmpty() ) {
-            // LOGGER.debug("MapPanel.setWindow: Nothing to do");
+            LOGGER.debug("MapPanel.setWindow: Nothing to do");
             return;
         }
         // Create modifiable local window
         Envelope mbr = new Envelope(_mbr);
         
-        // LOGGER.debug("MapPanel.setWindow: Current window mbr = " + this.window.toString());
-        // LOGGER.debug("MapPanel.setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
-        // LOGGER.debug("MapPanel.setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
+        LOGGER.debug("MapPanel.setWindow: Current window mbr = " + this.window.toString());
+        LOGGER.debug("MapPanel.setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
+        LOGGER.debug("MapPanel.setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
 
         if ( mbr.equals(this.window) ) {
-        // LOGGER.debug("MapPanel.setWindows: mbr equals this.window.");
+            LOGGER.debug("MapPanel.setWindows: mbr equals this.window.");
             if (this.isWorldToScreenSet())  {
-                // LOGGER.debug("MapPanel.setWindow: Transform set. Nothing to do.");
+                LOGGER.debug("MapPanel.setWindow: Transform set. Nothing to do.");
                 return;
             }
         } else {
-            // LOGGER.debug("MapPanel.setWindow: mbr does not equal this.window.... ");
-            // LOGGER.debug("MapPanel.setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
+            LOGGER.debug("MapPanel.setWindow: mbr does not equal this.window.... ");
+            LOGGER.debug("MapPanel.setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
             // Ensure new MBR does not have one side == 0
             //
             if ( _mbr.getWidth()==0 || 
@@ -2150,7 +2151,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                 mbr = new Envelope(_mbr.centre(),halfSide,halfSide);
             }
         }
-        // LOGGER.debug("MapPanel.setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
+        LOGGER.debug("MapPanel.setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
         this.window.Normalize(this.clientView);
         this.window.setMBR(new Envelope(mbr));
         this.setWorldToScreenTransform(this.window.minX, 
