@@ -69,8 +69,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
@@ -114,7 +114,7 @@ import oracle.spatial.geometry.J3D_Geometry;
 import oracle.spatial.geometry.JGeometry;
 
 /**
- * Table manu point - validate values in selected geometry column
+ * Validate selected geometry column
  *
  * @author Matic Petek
  * @version 1.0
@@ -2213,7 +2213,7 @@ implements Observer
      *            - Brought errorList inside, renamed to dataVector to align more with DefaultTableModel
      *            - Changed to AbstractTableModel
      */
-    class ValidationTableModel extends DefaultTableModel // AbstractTableModel 
+    class ValidationTableModel extends AbstractTableModel 
     {
 		private static final long serialVersionUID = -2034788410206571099L;
 
@@ -2319,8 +2319,7 @@ implements Observer
             this.fireTableDataChanged();
         }
 
-        @SuppressWarnings("rawtypes")
-        public Vector getDataVector() {
+        public Vector<TableRow> getDataVector() {
             return new Vector<TableRow>(this.dataVector);
         }
 

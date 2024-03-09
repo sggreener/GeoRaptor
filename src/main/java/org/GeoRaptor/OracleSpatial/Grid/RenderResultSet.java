@@ -1825,6 +1825,7 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
             }
             schemaName = Strings.isEmpty(schemaName)?this.getUserName():schemaName;
             LOGGER.debug("createWorksheetSQLLayer: schemaName(" + schemaName+") tableName("+tableName + ")");
+            
             // MAKE SURE THE MAP VIEW IS OPEN ...
             //
             SpatialViewPanel.getInstance().show();
@@ -1845,6 +1846,7 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
             int[] rows = this.rst.getSelectedRows();
             int viewRow = -1;
         	LOGGER.debug("createWorksheetSQLLayer: Calculation of SQL's layer extent based on " + rowsToProcess + " rows.");
+        	
             for (int row=0; row < rowsToProcess; row++) 
             {
                 viewRow = row;
@@ -1873,6 +1875,7 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
                 throw new IllegalArgumentException("Cannot create starting MBR from result set, so is not mappable.");
             }
         	LOGGER.debug("createWorksheetSQLLayer: MetadataEntry=" + me.toString());
+        	
             // Create WorksheetLayer from known information
             SpatialView sView = svp.getMostSuitableView(SRID);
             sWorksheetLayer = new SVWorksheetLayer(sView,
@@ -1883,12 +1886,14 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
                                                    true       /*_draw*/,
                                                    sqlCmd     /*_querySQL*/,
                                                    (this._table.getRowCount()==rowsToProcess)?false:true /*_computeMBR*/);
+            
             // Set additional properties
             sWorksheetLayer.setConnection(this.getConnectionName());
             sWorksheetLayer.setGeometryType(geometryType);
             if ( this.mainPrefs.isRandomRendering()) {
                 sWorksheetLayer.getStyling().setAllRandom();
             }
+            
         	LOGGER.debug("createWorksheetSQLLayer: Colours (Point-Type,Line-Type,Shade-Type) (" +
         				sWorksheetLayer.getStyling().getPointColor().toString() + "-" +
         				sWorksheetLayer.getStyling().getPointColorType().toString() + "," +
@@ -1896,6 +1901,7 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
         				sWorksheetLayer.getStyling().getLineColorType().toString() + "," +
         				sWorksheetLayer.getStyling().getShadeColor().toString() + "-" +
         				sWorksheetLayer.getStyling().getShadeColorType().toString() + ")");
+        	
         	// Finally add to view
             if ( svp.addLayerToView(sWorksheetLayer,false/*zoom*/) ) {
                svp.redraw();
@@ -2598,7 +2604,7 @@ LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true))
           
           Integer recordCount = skippedRecords.get(shapeTypeId);
           if (recordCount==null) {
-              recordCount = new Integer(1);
+              recordCount = Integer.valueOf(1);
           } else {
               recordCount++;
           }

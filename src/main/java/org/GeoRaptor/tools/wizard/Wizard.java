@@ -176,7 +176,7 @@ public class Wizard extends WindowAdapter implements PropertyChangeListener {
     }
     
     /**
-     * Convienence method that displays a modal wizard dialog and blocks until the dialog
+     * Convenience method that displays a modal wizard dialog and blocks until the dialog
      * has completed.
      * @return Indicates how the dialog was closed. Compare this value against the RETURN_CODE
      * constants at the beginning of the class.
@@ -302,7 +302,7 @@ public class Wizard extends WindowAdapter implements PropertyChangeListener {
      * @param boolean newValue The new enabled status of the button.
      */ 
     public void setBackButtonEnabled(boolean newValue) {
-        wizardModel.setBackButtonEnabled(new Boolean(newValue));
+        wizardModel.setBackButtonEnabled(Boolean.valueOf(newValue));
     }
 
    /**
@@ -318,7 +318,7 @@ public class Wizard extends WindowAdapter implements PropertyChangeListener {
      * @param boolean newValue The new enabled status of the button.
      */ 
     public void setNextFinishButtonEnabled(boolean newValue) {
-        wizardModel.setNextFinishButtonEnabled(new Boolean(newValue));
+        wizardModel.setNextFinishButtonEnabled(Boolean.valueOf(newValue));
     }
  
    /**
@@ -334,7 +334,7 @@ public class Wizard extends WindowAdapter implements PropertyChangeListener {
      * @param boolean newValue The new enabled status of the button.
      */ 
     public void setCancelButtonEnabled(boolean newValue) {
-        wizardModel.setCancelButtonEnabled(new Boolean(newValue));
+        wizardModel.setCancelButtonEnabled(Boolean.valueOf(newValue));
     }
     
     /**

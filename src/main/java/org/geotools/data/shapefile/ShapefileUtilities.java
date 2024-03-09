@@ -33,11 +33,11 @@ public class ShapefileUtilities {
         if(colType == Integer.class) {
             object = o;
         } else if ((colType == Short.class) || (colType == Byte.class)) {
-            object = new Integer(((Number) o).intValue());
+            object = Integer.valueOf(((Number) o).intValue());
         } else if (colType == Double.class) {
             object = o;
         } else if (colType == Float.class) {
-            object = new Double(((Number) o).doubleValue());
+            object = Double.valueOf(((Number) o).doubleValue());
         } else if (Number.class.isAssignableFrom(colType)) {
             object = o;
         } else if(colType == String.class) {

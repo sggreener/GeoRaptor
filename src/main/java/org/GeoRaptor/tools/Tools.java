@@ -439,10 +439,10 @@ public class Tools {
         try {
             if ( _object instanceof oracle.sql.NUMBER ) {
                 NUMBER num = (NUMBER)_object;
-                Integer i = new Integer(-1); if ( num.isConvertibleTo(i.getClass()) )        return "INTEGER";
-                Short s   = -1; if ( num.isConvertibleTo(s.getClass()) )                     return "SHORT";
-                Long l    = new Long(-1); if ( num.isConvertibleTo(l.getClass()) )           return "LONG";
-                Double d  = new Double(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return "DOUBLE";
+                Integer i = Integer.valueOf(-1); if ( num.isConvertibleTo(i.getClass()) )        return "INTEGER";
+                Short s   = -1; if ( num.isConvertibleTo(s.getClass()) )                         return "SHORT";
+                Long l    = Long.valueOf(-1); if ( num.isConvertibleTo(l.getClass()) )           return "LONG";
+                Double d  = Double.valueOf(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return "DOUBLE";
             }
             return _object.getClass().toString().replace("class","").replace("oracle.sql.","").replace("java.lang.","").trim().toUpperCase();
         } catch (Exception e) {

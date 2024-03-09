@@ -279,18 +279,37 @@ extends JPanel
         this.viewLayerTree.expandAll();
     }
 
+    public void setVisible(boolean _show)
+    {
+    	LOGGER.debug("setVisible");
+    	if ( _show ) {
+	    	if ( this.viewFrame == null ) {
+	    		this.viewFrame = new JFrame(Constants.GEORAPTOR);
+	    		this.viewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	    		this.viewFrame.setSize(800, 600);
+	    	}
+	        this.viewFrame.setVisible(true);
+	        this.viewFrame.add(this);
+	//        this.viewFrame.pack();
+	    	this.redraw();
+    	} else {
+    		if ( this.viewFrame == null ) 
+    			this.viewFrame.setVisible(_show);
+    	}
+    }
+    
+	@SuppressWarnings("deprecation")
 	public void show()
     {
-    	if ( this.viewFrame == null ) {
-    		this.viewFrame = new JFrame(Constants.GEORAPTOR);
-    		this.viewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-    		this.viewFrame.setSize(800, 600);
-    	}
-        this.viewFrame.setVisible(true);
-        this.viewFrame.add(this);
-//        this.viewFrame.pack();
-    	this.redraw(); 
+		this.setVisible(true);
     }
+	
+	@SuppressWarnings("deprecation")
+	public void hide()
+	{
+		this.setVisible(false);
+	}
+	
     /** 
      * Icons
      */

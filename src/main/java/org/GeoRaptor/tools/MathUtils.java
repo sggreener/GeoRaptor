@@ -27,11 +27,11 @@ public class MathUtils {
         if ( _object instanceof oracle.sql.NUMBER ) {
           try {
               NUMBER num = (NUMBER)_object;
-              Integer i = new Integer(Integer.MIN_VALUE); if ( num.isConvertibleTo(i.getClass()) ) return num.intValue();
-              Short   s = new Short(Short.MIN_VALUE);     if ( num.isConvertibleTo(s.getClass()) ) return num.shortValue();
-              Long    l = new Long(Long.MIN_VALUE);       if ( num.isConvertibleTo(l.getClass()) ) return (int)num.longValue();
-              Float   f = new Float(Float.NaN);           if ( num.isConvertibleTo(f.getClass()) ) return (int)Math.round(num.floatValue());
-              Double  d = new Double(Double.NaN);         if ( num.isConvertibleTo(d.getClass()) ) return (int)Math.round(num.doubleValue());
+              Integer i = Integer.valueOf(Integer.MIN_VALUE); if ( num.isConvertibleTo(i.getClass()) ) return num.intValue();
+              Short   s = Short.valueOf(Short.MIN_VALUE);     if ( num.isConvertibleTo(s.getClass()) ) return num.shortValue();
+              Long    l = Long.valueOf(Long.MIN_VALUE);       if ( num.isConvertibleTo(l.getClass()) ) return (int)num.longValue();
+              Float   f = Float.valueOf(Float.NaN);           if ( num.isConvertibleTo(f.getClass()) ) return (int)Math.round(num.floatValue());
+              Double  d = Double.valueOf(Double.NaN);         if ( num.isConvertibleTo(d.getClass()) ) return (int)Math.round(num.doubleValue());
           } catch (SQLException e) {
               return _default;
           }

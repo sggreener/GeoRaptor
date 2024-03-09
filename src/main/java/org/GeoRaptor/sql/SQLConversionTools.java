@@ -150,16 +150,16 @@ public class SQLConversionTools {
                   NUMBER num = (NUMBER)_rSet.getObject(_col);
 	              if ( dataTypeScale == 0 ) 
 	              {
-	                  if (dataTypePrecision == 0)  { Long    l = new Long(-1);        if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue()); }
-	                  if (dataTypePrecision <= 3 ) { Byte    b = new Byte((byte)255); if ( num.isConvertibleTo(b.getClass()) ) return String.valueOf(num.byteValue()); } 
-	                  if (dataTypePrecision <= 5 ) { Short   s = -1;                  if ( num.isConvertibleTo(s.getClass()) ) return String.valueOf(num.shortValue()); } 
-	                  if (dataTypePrecision <= 9 ) { Integer i = new Integer(-1);     if ( num.isConvertibleTo(i.getClass()) ) return String.valueOf(num.intValue()); }
-	                  Long l = new Long(-1); 
+	                  if (dataTypePrecision == 0)  { Long    l = Long.valueOf(-1);        if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue()); }
+	                  if (dataTypePrecision <= 3 ) { Byte    b = Byte.valueOf((byte)255); if ( num.isConvertibleTo(b.getClass()) ) return String.valueOf(num.byteValue()); } 
+	                  if (dataTypePrecision <= 5 ) { Short   s = -1;                      if ( num.isConvertibleTo(s.getClass()) ) return String.valueOf(num.shortValue()); } 
+	                  if (dataTypePrecision <= 9 ) { Integer i = Integer.valueOf(-1);     if ( num.isConvertibleTo(i.getClass()) ) return String.valueOf(num.intValue()); }
+	                  Long l = Long.valueOf(-1); 
 	                  if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue());
 	              }
-	              if ( dataTypePrecision <= 63  ) { Float  flt  = new Float(Float.NaN);   if ( num.isConvertibleTo(flt.getClass()) ) return String.valueOf(df.format(num.floatValue())); }
-	              if ( dataTypePrecision == 126 ) { Double dbl  = new Double(Double.NaN); if ( num.isConvertibleTo(dbl.getClass()) ) return String.valueOf(df.format(num.doubleValue())); }
-	              bd = new BigDecimal(Double.NaN);
+	              if ( dataTypePrecision <= 63  ) { Float  flt  = Float.valueOf(Float.NaN);   if ( num.isConvertibleTo(flt.getClass()) ) return String.valueOf(df.format(num.floatValue())); }
+	              if ( dataTypePrecision == 126 ) { Double dbl  = Double.valueOf(Double.NaN); if ( num.isConvertibleTo(dbl.getClass()) ) return String.valueOf(df.format(num.doubleValue())); }
+	              bd = BigDecimal.valueOf(Double.NaN);
 	              if ( num.isConvertibleTo(bd.getClass()) ) return String.valueOf(df.format(num.bigDecimalValue()));
 	              return num.stringValue();
 
@@ -341,15 +341,15 @@ public class SQLConversionTools {
               }
               NUMBER num = (NUMBER)_object;
               if ( dataTypeScale == 0 ) {
-                  if (dataTypePrecision == 0)  { Long  l = new Long(-1);          if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue()); }
-                  if (dataTypePrecision <= 3 ) { Byte  b   = new Byte((byte)255); if ( num.isConvertibleTo(b.getClass()) ) return String.valueOf(num.byteValue()); } 
-                  if (dataTypePrecision <= 5 ) { Short s   = -1;                  if ( num.isConvertibleTo(s.getClass()) ) return String.valueOf(num.shortValue()); } 
-                  if (dataTypePrecision <= 9 ) { Integer i = new Integer(-1);     if ( num.isConvertibleTo(i.getClass()) ) return String.valueOf(num.intValue()); }
-                  Long l = new Long(-1); 
+                  if (dataTypePrecision == 0)  { Long  l = Long.valueOf(-1);          if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue()); }
+                  if (dataTypePrecision <= 3 ) { Byte  b   = Byte.valueOf((byte)255); if ( num.isConvertibleTo(b.getClass()) ) return String.valueOf(num.byteValue()); } 
+                  if (dataTypePrecision <= 5 ) { Short s   = -1;                      if ( num.isConvertibleTo(s.getClass()) ) return String.valueOf(num.shortValue()); } 
+                  if (dataTypePrecision <= 9 ) { Integer i = Integer.valueOf(-1);     if ( num.isConvertibleTo(i.getClass()) ) return String.valueOf(num.intValue()); }
+                  Long l = Long.valueOf(-1); 
                   if ( num.isConvertibleTo(l.getClass()) ) return String.valueOf(num.longValue());
               }
-              if ( dataTypePrecision <= 63  ) { Float  f  = new Float(Float.NaN);   if ( num.isConvertibleTo(f.getClass()) ) return String.valueOf(df.format(num.floatValue())); }
-              if ( dataTypePrecision == 126 ) { Double d  = new Double(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return String.valueOf(df.format(num.doubleValue())); }
+              if ( dataTypePrecision <= 63  ) { Float  f  = Float.valueOf(Float.NaN);   if ( num.isConvertibleTo(f.getClass()) ) return String.valueOf(df.format(num.floatValue())); }
+              if ( dataTypePrecision == 126 ) { Double d  = Double.valueOf(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return String.valueOf(df.format(num.doubleValue())); }
               bd = new BigDecimal(Double.NaN);
               if ( num.isConvertibleTo(bd.getClass()) ) return String.valueOf(df.format(num.bigDecimalValue()));
               return num.stringValue();
@@ -622,10 +622,10 @@ public class SQLConversionTools {
         try {
             if ( _object instanceof oracle.sql.NUMBER ) {
                 NUMBER num = (NUMBER)_object;
-                Integer i = new Integer(-1); if ( num.isConvertibleTo(i.getClass()) )        return "INTEGER";
-                Short s   = -1; if ( num.isConvertibleTo(s.getClass()) )                     return "SHORT";
-                Long l    = new Long(-1); if ( num.isConvertibleTo(l.getClass()) )           return "LONG";
-                Double d  = new Double(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return "DOUBLE";
+                Integer i = Integer.valueOf(-1); if ( num.isConvertibleTo(i.getClass()) )        return "INTEGER";
+                Short s   = -1; if ( num.isConvertibleTo(s.getClass()) )                         return "SHORT";
+                Long l    = Long.valueOf(-1); if ( num.isConvertibleTo(l.getClass()) )           return "LONG";
+                Double d  = Double.valueOf(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return "DOUBLE";
             }
             return _object.getClass().toString().replace("class","").replace("oracle.sql.","").replace("java.lang.","").trim().toUpperCase();
         } catch (Exception e) {
@@ -637,11 +637,11 @@ public class SQLConversionTools {
         if ( _object instanceof oracle.sql.NUMBER ) {
           try {
             NUMBER num = (NUMBER)_object;
-            Integer i = new Integer(-1);        if ( num.isConvertibleTo(i.getClass()) ) return num.intValue();
-            Short s   =             -1;         if ( num.isConvertibleTo(s.getClass()) ) return num.shortValue();
-            Long l    = new Long(-1);           if ( num.isConvertibleTo(l.getClass()) ) return (int)num.longValue();
-            Float  f  = new Float(Float.NaN);   if ( num.isConvertibleTo(f.getClass()) ) return (int)Math.round(num.floatValue());
-            Double d  = new Double(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return (int)Math.round(num.doubleValue());
+            Integer i = Integer.valueOf(-1);        if ( num.isConvertibleTo(i.getClass()) ) return num.intValue();
+            Short s   =             -1;             if ( num.isConvertibleTo(s.getClass()) ) return num.shortValue();
+            Long l    = Long.valueOf(-1);           if ( num.isConvertibleTo(l.getClass()) ) return (int)num.longValue();
+            Float  f  = Float.valueOf(Float.NaN);   if ( num.isConvertibleTo(f.getClass()) ) return (int)Math.round(num.floatValue());
+            Double d  = Double.valueOf(Double.NaN); if ( num.isConvertibleTo(d.getClass()) ) return (int)Math.round(num.doubleValue());
           } catch (SQLException e) {
               return _default;
           }

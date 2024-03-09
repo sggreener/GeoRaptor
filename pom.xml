@@ -60,6 +60,19 @@
 			<systemPath>${sqldev.basedir}/sqldeveloper/lib/dbtools-common.jar</systemPath>
 		</dependency>
 		
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api>
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-api</artifactId>
+		    <version>2.0.12</version>
+		    <exclusions> 
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency-->
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>oracle.dbtools-data</artifactId>
@@ -252,7 +265,6 @@
 
 	</dependencies>
 	
-	
 	<!-- Build Settings -->
 	<build>
 
@@ -269,6 +281,9 @@
 					<includes>
 						<include>**/*.java</include>
 					</includes>
+					<compilerArgs>
+			            <arg>-Xlint:all,-options,-path</arg>
+			        </compilerArgs>
 				</configuration>
 			</plugin>
 			

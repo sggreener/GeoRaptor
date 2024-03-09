@@ -176,7 +176,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 
 	// <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    @SuppressWarnings("deprecation")
+    //@SuppressWarnings("deprecation")
 	private void initComponents() {
 
         panelMain = new javax.swing.JPanel();
@@ -666,7 +666,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         pnlParallelism.setBorder(javax.swing.BorderFactory.createTitledBorder("Parallelism"));
         pnlParallelism.setMaximumSize(null);
         pnlParallelism.setMinimumSize(new java.awt.Dimension(290, 110));
-        pnlParallelism.setNextFocusableComponent(panelTablespace);
+        //pnlParallelism.setNextFocusableComponent(panelTablespace);
         pnlParallelism.setPreferredSize(new java.awt.Dimension(290, 110));
 
         lblParallel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -690,7 +690,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         sldrParallel.setValue(0);
         sldrParallel.setMaximumSize(new java.awt.Dimension(180, 45));
         sldrParallel.setMinimumSize(new java.awt.Dimension(180, 45));
-        sldrParallel.setNextFocusableComponent(cmbWorkTablespaces);
+        //sldrParallel.setNextFocusableComponent(cmbWorkTablespaces);
         sldrParallel.setPreferredSize(new java.awt.Dimension(180, 45));
         sldrParallel.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {

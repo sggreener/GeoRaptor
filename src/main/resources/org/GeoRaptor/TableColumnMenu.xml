@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<items xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="dialogs.xsd">
+
+  <folder type="COLUMN">
+
+        <name>GeoRaptor</name>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="ZOOM_TO_MAP">
+            <title>Zoom To Map...</title>
+            <iconName>${MAP_ZOOM_SUBMENU_ICON}</iconName>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="ADD_TO_MAP">
+            <title>Add To Map...</title>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="METADATA">
+            <title>Manage Spatial Metadata...</title>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="DROP_METADATA">
+            <title>Drop Spatial Metadata...</title>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="CREATE_SPATIAL_INDEX">
+            <title>Create Spatial Index...</title>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="DROP_SPATIAL_INDEX">
+            <title>Drop Spatial Index...</title>
+        </item>
+
+        <item type="TABLE_COLUMN"
+		    className="org.GeoRaptor.TableMenuAction"
+		    classArgs="EXPORT">
+            <title>Export...</title>
+        </item>
+
+    </folder>
+
+</items>
+
+	

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<items xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="dialogs.xsd">
+
+	<folder type="VIEW_COLUMN">
+  
+		<name>GeoRaptor</name>
+		
+		<item type="VIEW_COLUMN"
+		    className="org.GeoRaptor.ViewMenuAction"
+		    classArgs="ZOOM_TO_MAP">
+		    <title>Zoom To Map...</title>
+		    <iconName>/org/GeoRaptor/images/map_zoom.png</iconName> <!--${MAP_ZOOM_SUBMENU_ICON}</iconName-->
+		</item>
+		
+		<item type="VIEW_COLUMN"
+		    className="org.GeoRaptor.ViewMenuAction"
+		    classArgs="ADD_TO_MAP">
+		    <title>Add To Map...</title>
+		</item>
+		
+		<item type="VIEW_COLUMN"
+		    className="org.GeoRaptor.ViewMenuAction"
+		    classArgs="METADATA">
+		    <title>Manage Spatial Metadata...</title>
+		</item>
+
+		<item type="VIEW_COLUMN"
+		    className="org.GeoRaptor.ViewMenuAction"
+		    classArgs="DROP_METADATA">
+		    <title>Drop Spatial Metadata...</title>
+		</item>
+		  
+		<item type="VIEW_COLUMN"
+		    className="org.GeoRaptor.ViewMenuAction"
+		    classArgs="EXPORT">
+		    <title>Export...</title>
+		</item>
+      
+	</folder>
+</items>
+
+	

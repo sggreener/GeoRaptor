@@ -808,15 +808,15 @@ public class OraRowSetMetaDataImpl implements RowSetMetaData {
       int sqlType = getColumnType(columnIndex);
       switch (sqlType) {
       case Types.NUMERIC /* OracleTypes.NUMBER */ :  
-      case Types.DECIMAL:  className = (new java.math.BigDecimal(0)).getClass().getName (); break;
+      case Types.DECIMAL:  className = (java.math.BigDecimal.valueOf(0)).getClass().getName (); break;
       case Types.BIT:      className = (Boolean.valueOf(false)).getClass().getName (); break;
-      case Types.TINYINT:  className = (new Byte("0")).getClass().getName (); break;
-      case Types.SMALLINT: className = (new Short("0")).getClass().getName (); break;
-      case Types.INTEGER:  className = (new Integer(0)).getClass().getName (); break;
-      case Types.BIGINT:   className = (new Long(0)).getClass().getName (); break;
-      case Types.REAL:     className = (new Float(0)).getClass().getName (); break;
+      case Types.TINYINT:  className = (Byte.valueOf("0")).getClass().getName (); break;
+      case Types.SMALLINT: className = (Short.valueOf("0")).getClass().getName (); break;
+      case Types.INTEGER:  className = (Integer.valueOf(0)).getClass().getName (); break;
+      case Types.BIGINT:   className = (Long.valueOf(0)).getClass().getName (); break;
+      case Types.REAL:     className = (Float.valueOf(0)).getClass().getName (); break;
       case Types.FLOAT:    
-      case Types.DOUBLE:   className = (new Double(0)).getClass().getName(); break;
+      case Types.DOUBLE:   className = (Double.valueOf(0)).getClass().getName(); break;
       case Types.BINARY:   
       case Types.VARBINARY: 
       case Types.LONGVARBINARY: byte[] b = {};  className = (b.getClass()).getName(); break;

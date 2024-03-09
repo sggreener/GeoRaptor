@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import java.math.BigDecimal;
-
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
 import java.util.List;
@@ -74,18 +74,18 @@ implements Comparable<Object>
     		         double _x2, double _y2)
     {
         if (_x1 < _x2) {
-            this.minX = new BigDecimal(_x1).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
-            this.maxX = new BigDecimal(_x2).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
+            this.minX = new BigDecimal(_x1).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
+            this.maxX = new BigDecimal(_x2).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
         } else {
-            this.minX = new BigDecimal(_x2).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
-            this.maxX = new BigDecimal(_x1).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
+            this.minX = new BigDecimal(_x2).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
+            this.maxX = new BigDecimal(_x1).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
         } 
         if (_y1 < _y2) {
-            this.minY = new BigDecimal(_y1).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
-            this.maxY = new BigDecimal(_y2).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
+            this.minY = new BigDecimal(_y1).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
+            this.maxY = new BigDecimal(_y2).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
         } else {
-            this.minY = new BigDecimal(_y2).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
-            this.maxY = new BigDecimal(_y1).setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP).doubleValue();
+            this.minY = new BigDecimal(_y2).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
+            this.maxY = new BigDecimal(_y1).setScale(this.decimalPlaces, RoundingMode.HALF_UP).doubleValue();
         }
     }
 
@@ -718,10 +718,10 @@ implements Comparable<Object>
         BigDecimal oMaxX = new BigDecimal(_other.maxX);
         BigDecimal tMaxY = new BigDecimal(  this.maxY); 
         BigDecimal oMaxY = new BigDecimal(_other.maxY);
-        return (((tMinX.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP)).compareTo(oMinX.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP))==0) &&
-                ((tMinY.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP)).compareTo(oMinY.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP))==0) &&
-                ((tMaxX.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP)).compareTo(oMaxX.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP))==0) &&
-                ((tMaxY.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP)).compareTo(oMaxY.setScale(this.decimalPlaces, BigDecimal.ROUND_HALF_UP))==0) );
+        return (((tMinX.setScale(this.decimalPlaces, RoundingMode.HALF_UP)).compareTo(oMinX.setScale(this.decimalPlaces, RoundingMode.HALF_UP))==0) &&
+                ((tMinY.setScale(this.decimalPlaces, RoundingMode.HALF_UP)).compareTo(oMinY.setScale(this.decimalPlaces, RoundingMode.HALF_UP))==0) &&
+                ((tMaxX.setScale(this.decimalPlaces, RoundingMode.HALF_UP)).compareTo(oMaxX.setScale(this.decimalPlaces, RoundingMode.HALF_UP))==0) &&
+                ((tMaxY.setScale(this.decimalPlaces, RoundingMode.HALF_UP)).compareTo(oMaxY.setScale(this.decimalPlaces, RoundingMode.HALF_UP))==0) );
     }
 
     public enum zoom { NONE, IN, OUT, N, S, E, W, NE, SE, NW, SW, PAN, LEFT, RIGHT, UP, DOWN };

@@ -175,6 +175,7 @@ public class IndexFile {
 	      this.close();
 	      super.finalize();
 	  }
+	  
 	  /** Get the number of records in this index.
 	   * @return The number of records.
 	   */  

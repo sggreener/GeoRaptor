@@ -772,7 +772,7 @@ LOGGER.debug("ExportTask.export: rSet.next(): isBeforeFirst=" + rSet.isBeforeFir
                         geoExporter.endRow();
                         
                         rowsExported = geoExporter.getRowCount();
-LOGGER.debug("Rows exported = " + rowsExported);
+                        LOGGER.debug("Rows exported = " + rowsExported);
                         if ( (rowsExported % geoExporter.getCommit()) == 0 ) {
                             if ( totalRowCount == -1 ) {
                                 percentageProcessed = totalRowCount;
@@ -780,7 +780,7 @@ LOGGER.debug("Rows exported = " + rowsExported);
                                 percentageProcessed = (int)(((double)rowsExported/(double)totalRowCount) * 100.0);
                                 // Update progress
                             	LOGGER.debug("Exported " + percentageProcessed + "%" );
-                                publish(new Integer(percentageProcessed));
+                                publish(Integer.valueOf(percentageProcessed));
                             }
                         }
                         LOGGER.debug("Getting next row...");
@@ -816,7 +816,7 @@ LOGGER.debug("Finally....");
                 }
                 if ( totalRowCount != -1 ) {
                     // Update progress
-                    publish(new Integer(100));
+                    publish(Integer.valueOf(100));
                 }
                 lblProgress.setText("Rows Exported: " + (totalRowCount==-1 ? String.valueOf(rowsExported) : "100%"));
             }
@@ -845,7 +845,7 @@ LOGGER.debug("Finally....");
               
                 Integer recordCount = skippedRecords.get(shapeTypeId);
                 if (recordCount==null) {
-                    recordCount = new Integer(1);
+                    recordCount = Integer.valueOf(1);
                 }
                 else {
                     recordCount++;

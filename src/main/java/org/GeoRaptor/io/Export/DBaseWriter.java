@@ -654,26 +654,26 @@ public class DBaseWriter {
                  xbaseObject = resultSet.getTime(columnIndex);
                  break;
             case OracleTypes.SMALLINT :
-                 xbaseObject = new Short(resultSet.getShort(columnIndex));
+                 xbaseObject = Short.valueOf(resultSet.getShort(columnIndex));
                  break;
             case OracleTypes.INTEGER :
-                 xbaseObject = new Integer(resultSet.getInt(columnIndex));
+                 xbaseObject = Integer.valueOf(resultSet.getInt(columnIndex));
                  break;
             case OracleTypes.DECIMAL:
-                 xbaseObject = new BigDecimal(resultSet.getDouble(columnIndex));
+                 xbaseObject = BigDecimal.valueOf(resultSet.getDouble(columnIndex));
                  break;
             case OracleTypes.NUMERIC :
                 // If scale == 0 then make it a Long otherwise a Double
                 if ( dataScale == 0 )
-                    xbaseObject = new Long(resultSet.getLong(columnIndex));
+                    xbaseObject = Long.valueOf(resultSet.getLong(columnIndex));
                 else
-                    xbaseObject = new Double(resultSet.getDouble(columnIndex));
+                    xbaseObject = Double.valueOf(resultSet.getDouble(columnIndex));
                  break;
             case OracleTypes.FLOAT :
-                 xbaseObject = new Float(resultSet.getFloat(columnIndex));
+                 xbaseObject = Float.valueOf(resultSet.getFloat(columnIndex));
                  break;
             case OracleTypes.DOUBLE :
-                 xbaseObject = new Double(resultSet.getDouble(columnIndex));
+                 xbaseObject = Double.valueOf(resultSet.getDouble(columnIndex));
                  break;
              case -100: /* This is actually a TIMESTAMP */
              case OracleTypes.TIMESTAMP :
