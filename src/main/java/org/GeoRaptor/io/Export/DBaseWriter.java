@@ -26,7 +26,7 @@ import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.xBaseJ.DBF;
 import org.xBaseJ.xBaseJException;
 import org.xBaseJ.fields.CharField;
@@ -44,7 +44,7 @@ import oracle.sql.ROWID;
 
 public class DBaseWriter {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.DBaseWriter");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.DBaseWriter");
 
     /**
      * For access to the main GeoRaptor XML Preferences
@@ -481,6 +481,7 @@ public class DBaseWriter {
                 throw new IOException(this.propertyManager.getMsg("DBF_HeaderOneAttribute"));
             }
         } 
+        
         try {
             // Add to Field Array supported attributes
             //
@@ -503,6 +504,7 @@ public class DBaseWriter {
                                     rsmd.getColumnTypeName(1)))
                 {
                     try {
+                    	LOGGER.debug("createHeader: Adding column " + columnName);
                         // Create field
                         //
                         Field f = getXbaseField((OraRowSetMetaDataImpl)rsmd);
@@ -517,9 +519,10 @@ public class DBaseWriter {
                 }
             }
         } catch (Exception e) {
-           throw new IOException("DBaseWriter createHeader: Error is " + e.getMessage());
+           throw new IOException("DBaseWriter.createHeader: Error is " + e.getMessage() +"\nReduce number and size of columns to export.");
         }
     }
+    
     public void createDBF(String _sFileName,
                           String _encoding) 
     throws xBaseJException,

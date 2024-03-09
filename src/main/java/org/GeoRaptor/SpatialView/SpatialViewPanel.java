@@ -9,7 +9,6 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -37,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.AbstractButton;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -65,7 +63,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.GeoRaptor.AboutDialog;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
@@ -93,8 +90,8 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -413,10 +410,10 @@ extends JPanel
     private JButton reloadButton          = new JButton();
     private JButton copyImageButton       = new JButton();
     
-    private JComboBox<String> measureShapeCB      = null;
-    private JComboBox<String> createShapeCB = null;
+    private JComboBox<String> measureShapeCB = null;
+    private JComboBox<String> createShapeCB  = null;
     
-    private JButton btnGeoRaptorAbout     = new JButton();
+    private JLabel lblGeoRaptorIcon       = new JLabel();
   
     private JLabel lblMeasureInactive     = new JLabel();
     private JLabel lblMeasureLine         = new JLabel();
@@ -683,20 +680,11 @@ extends JPanel
         lblScale.setMinimumSize(new Dimension(10, 14));
         lblScale.setHorizontalAlignment(SwingConstants.TRAILING);
 
-        btnGeoRaptorAbout.setIcon(iconGeoRaptorAbout);
-        btnGeoRaptorAbout.setText(this.propertyManager.getMsg("GEORAPTOR_ABOUT"));
-        btnGeoRaptorAbout.setToolTipText(this.propertyManager.getMsg("GEORAPTOR_ABOUT_TT"));
-        btnGeoRaptorAbout.setMargin(new Insets(2, 2, 2, 2));
-        btnGeoRaptorAbout.setPreferredSize(new Dimension(100, 35));
-        btnGeoRaptorAbout.setVerticalTextPosition(AbstractButton.CENTER);
-        btnGeoRaptorAbout.setHorizontalTextPosition(AbstractButton.TRAILING);
-        btnGeoRaptorAbout.setVerticalAlignment(SwingConstants.CENTER);
-        btnGeoRaptorAbout.setHorizontalAlignment(SwingConstants.RIGHT);
-        btnGeoRaptorAbout.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                btnShowAbout();
-            }
-        });
+        lblGeoRaptorIcon.setIcon(iconGeoRaptorAbout);
+        lblGeoRaptorIcon.setBounds(2, 2, 2, 2);
+        lblGeoRaptorIcon.setPreferredSize(new Dimension(35, 35));
+        lblGeoRaptorIcon.setVerticalAlignment(SwingConstants.CENTER);
+        lblGeoRaptorIcon.setHorizontalAlignment(SwingConstants.CENTER);
         
         mainToolbar.setLayout(xyMainToolbarLayout);
         mainToolbar.setBounds(new Rectangle(0, 0, 640, 40));
@@ -756,7 +744,7 @@ extends JPanel
         
         pnlMainToolbar.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         pnlMainToolbar.add(mainToolbar, BorderLayout.LINE_START);
-        pnlMainToolbar.add(btnGeoRaptorAbout, BorderLayout.LINE_END);
+        pnlMainToolbar.add(lblGeoRaptorIcon, BorderLayout.LINE_END);
         
         this.add(pnlMainToolbar, BorderLayout.NORTH);
         this.add(mainSplit, BorderLayout.CENTER);
@@ -860,9 +848,7 @@ extends JPanel
         oprCancelButton.setIcon(operationProgressEnable);
         lblScale.setText("");
         
-        btnGeoRaptorAbout.setIcon(iconGeoRaptorAbout);
-        btnGeoRaptorAbout.setText(this.propertyManager.getMsg("GEORAPTOR_ABOUT"));
-        btnGeoRaptorAbout.setToolTipText(this.propertyManager.getMsg("GEORAPTOR_ABOUT_TT"));
+        lblGeoRaptorIcon.setIcon(iconGeoRaptorAbout);
 
         mousePosIcon.setIcon(mapMousePosition);
         mousePosIcon.setText(this.defaultCoordText);
@@ -1042,11 +1028,6 @@ extends JPanel
             //
             this.activeView.getMapPanel().initialiseShapeActions();
         }
-    }
-
-    protected void btnShowAbout() {
-        AboutDialog ad = new AboutDialog(null,true);
-        ad.setVisible(true);
     }
 
     /** ----------------------------------------------------------------
@@ -1280,7 +1261,7 @@ extends JPanel
               return LayerReturnCode.Fail;
             }
             if ( geoColumns==null || geoColumns.size()==0) {
-            	setMessage("No geometry columns exist in " + Strings.append(_schemaName, _objectName, "."),
+            	setMessage("org.GeoRaptor.SpatialView.SpatialViewPanel.addNewSpatialLayer No geometry columns exist in " + Strings.append(_schemaName, _objectName, "."),
             			   true);
             	return LayerReturnCode.Silent;
             } 
@@ -1293,7 +1274,7 @@ extends JPanel
                 if ( geoColumns.size()==1 ) {
                     columnName = geoColumns.get(0);
                 } else {
-                    LOGGER.info("Requesting column to map from geometry column list.");
+                    LOGGER.info("org.GeoRaptor.SpatialView.SpatialViewPanel.addNewSpatialLayer Requesting column to map from geometry column list.");
                     // Ask which one want to map
                     //
                     String entryList[] = new String[geoColumns.size()];
@@ -1308,7 +1289,7 @@ extends JPanel
                                               null, // Use default icon
                                               entryList,
                                               entryList[0]);
-                    LOGGER.debug("Returned geometry column is: " + value);
+                    LOGGER.debug("addNewSpatialLayer Returned geometry column is: " + value);
                     if (Strings.isEmpty(value) ) {
                         return LayerReturnCode.Fail;
                     }
@@ -1322,7 +1303,7 @@ extends JPanel
                     }
                 }
                 if (Strings.isEmpty(columnName) ) {
-                    LOGGER.error("Supplied column name " + _columnName + " does not exist in " +
+                    LOGGER.error("org.GeoRaptor.SpatialView.SpatialViewPanel.addNewSpatialLayer Supplied column name " + _columnName + " does not exist in " +
                                  Strings.append(_schemaName, _objectName, "."));
                     return LayerReturnCode.Fail;                    
                 }
@@ -1341,7 +1322,7 @@ extends JPanel
                                           columnName,
                                           Constants.TABLE_COLUMN_SEPARATOR),
                            Constants.TABLE_COLUMN_SEPARATOR);
-        LOGGER.debug("Get new layer's metadata for: " + schemaTableColumn);
+        LOGGER.debug("addNewSpatialLayer Get new layer's metadata for: " + schemaTableColumn);
         MetadataEntry mEntry = null;
         try {
             LinkedHashMap<String, MetadataEntry> metaEntries = null;
@@ -1373,7 +1354,7 @@ extends JPanel
                 return LayerReturnCode.Fail;
             }
         }
-        LOGGER.debug("Found metadata is: " + mEntry.toString());
+        LOGGER.debug("addNewSpatialLayer Found metadata is: " + mEntry.toString());
         String layerName = Strings.objectString(mEntry.getSchemaName(), 
                                                 mEntry.getObjectName(), 
                                                 mEntry.getColumnName());
@@ -1399,7 +1380,7 @@ extends JPanel
             LOGGER.error("Add New Spatial Layer terminated.");
             return LayerReturnCode.Fail;
         }
-        LOGGER.debug("layer geometry type is: " + layerGeometryType);
+        LOGGER.debug("addNewSpatialLayer layer geometry type is: " + layerGeometryType);
         
         // *************************************************************************************
         // We have enough information to create a valid layer
@@ -1420,10 +1401,10 @@ extends JPanel
         // ****************************
         // Set layer properties
         // 
-        layer.setConnectionName(_connectionName); LOGGER.debug("Connection Name set to " + _connectionName);
-        layer.setKeyColumn(null);                 LOGGER.debug("layer Key Column is " + layer.getKeyColumn());
-        layer.setGeometryType(layerGeometryType); LOGGER.debug("layer Geometry type is " + layerGeometryType);
-        layer.setSRIDType();                      LOGGER.debug("layer SRID type is " + layer.getSRIDType().toString());
+        layer.setConnectionName(_connectionName); LOGGER.debug("addNewSpatialLayer Connection Name set to " + _connectionName);
+        layer.setKeyColumn(null);                 LOGGER.debug("addNewSpatialLayer layer Key Column is " + layer.getKeyColumn());
+        layer.setGeometryType(layerGeometryType); LOGGER.debug("addNewSpatialLayer layer Geometry type is " + layerGeometryType);
+        layer.setSRIDType();                      LOGGER.debug("addNewSpatialLayer layer SRID type is " + layer.getSRIDType().toString());
         if ( layer.getSRIDType().toString().startsWith("GEO") ) {
             layer.setPrecision(Constants.MAX_PRECISION);
         } else {
@@ -1451,7 +1432,7 @@ extends JPanel
         // Add layer to relevant view
         //
         LayerReturnCode b = addLayerToView(layer,_zoom) ? LayerReturnCode.Success : LayerReturnCode.Fail;
-        LOGGER.debug("Layer added: " + b.toString());
+        LOGGER.debug("addNewSpatialLayer Layer added: " + b.toString());
         return b;
     }
 
@@ -1493,8 +1474,8 @@ extends JPanel
       
       if ( selectedViewName.equals(createNewView) ) 
       {
-    	  LOGGER.debug("SpatialViewPanel.addLayerToView: Create new view.");
           String createViewName = SpatialView.createViewName(_layer.getSRID());
+    	  LOGGER.debug("addLayerToView: Create new view called " + createViewName);
           targetView = this.newView(createViewName,_layer.getSRID(),false);
           targetView.setSRID(_layer.getSRID());
           targetView.setSRIDType(_layer.getSRIDType());
@@ -1510,7 +1491,7 @@ extends JPanel
           {
             //
             if ( ! targetView.initializeMBR(_layer) ) {
-                LOGGER.warn("SpatialViewPanel: " + targetView.getVisibleName() + "'s MBR could not be set for layer " + _layer.getVisibleName());
+                LOGGER.warn("org.GeoRaptor.SpatialView.SpatialViewPanel.addLayerToView: " + targetView.getVisibleName() + "'s MBR could not be set for layer " + _layer.getVisibleName());
             }
             this.setActiveView(targetView); // Will expand the provided view
             this.setToolbarEnabled(true);   // Make toolbar buttons active as we have a new view with a layer
@@ -1532,7 +1513,7 @@ extends JPanel
               }
           } 
       }
-      LOGGER.debug("SpatialViewPanel.addLayerToView: View MBR is " + targetView.getMBR().toString());
+      LOGGER.debug("addLayerToView: View MBR is " + targetView.getMBR().toString());
       // Create initial layer SQL with possible requirement to project
       // can only be determined after assignment to a view because
       // only then will both SRIDs be known
@@ -2037,7 +2018,7 @@ extends JPanel
                                     true);
             propertiesLayer.setMBR(mbr); // Not needed?
             propertiesLayer.getStyling().setPointSize(12);
-            propertiesLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.CIRCLE);
+            propertiesLayer.getStyling().setPointMarkerType(PointMarker.MARKER_TYPES.CIRCLE);
             propertiesLayer.getStyling().setPointColor(Colours.getRandomColor());
             propertiesLayer.getStyling().setLineColor(Colours.getRandomColor());
             propertiesLayer.getStyling().setLineWidth(2);
@@ -2045,7 +2026,7 @@ extends JPanel
             propertiesLayer.getStyling().setShadeTransLevel(0.5f);
             propertiesLayer.getStyling().setPointColorType(preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
             propertiesLayer.getStyling().setLineColorType( preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
-            propertiesLayer.getStyling().setShadeType(     preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
+            propertiesLayer.getStyling().setShadeColorType(     preferences.isRandomRendering()?Styling.STYLING_TYPE.RANDOM:Styling.STYLING_TYPE.CONSTANT);
         }
 
         if ( Strings.isEmpty(propertiesLayer.getConnectionName()) ) 
@@ -2096,8 +2077,8 @@ extends JPanel
             {
             	Styling styling = renderLayer.getStyling();
                 styling.setSelectionActive(this.selectionColouring);
-                if ( styling.getShadeType() == Styling.STYLING_TYPE.NONE ) {
-                	styling.setShadeType(Styling.STYLING_TYPE.CONSTANT );
+                if ( styling.getShadeColorType() == Styling.STYLING_TYPE.NONE ) {
+                	styling.setShadeColorType(Styling.STYLING_TYPE.CONSTANT );
                 	styling.setShadeTransLevel(0.25f);
                 }
                 if ( this.selectionColouring ) 

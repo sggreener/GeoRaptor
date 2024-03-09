@@ -13,10 +13,14 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.wizard.Wizard;
 import org.GeoRaptor.tools.wizard.WizardPanelDescriptor;
+import org.GeoRaptor.util.logging.Logger;
 
 
-public class ExporterWizard {
+public class ExporterWizard 
+{
     
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ui.ExporterWizard");
+
     private Wizard                                wizard = null;
     private int                          finalReturnCode = -1;
     protected ExporterWriter exporterWriter = null;
@@ -34,6 +38,7 @@ public class ExporterWizard {
            SQLException
     {
         super();
+        LOGGER.debug("ExporterWizard(" + _wizardTitle +",conn," + Strings.objectString(_schemaName, _objectName, _columnName) +")");
         this.wizard = new Wizard();
         this.wizard.getDialog().setTitle(_wizardTitle);
         String geometryColumn = checkGeometryColumn(_conn,
@@ -134,6 +139,7 @@ public class ExporterWizard {
         
     public void show() {
         this.finalReturnCode = wizard.showModalDialog();
+        LOGGER.debug("Show(): finalReturnCode is " + this.finalReturnCode);
         if ( this.finalReturnCode == 0 )
             writeToFile();
     }

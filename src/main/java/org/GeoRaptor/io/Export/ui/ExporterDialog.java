@@ -53,7 +53,7 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 public class ExporterDialog extends JDialog 
 {
@@ -64,7 +64,7 @@ public class ExporterDialog extends JDialog
 	private static final long serialVersionUID = -2415816894343885314L;
 
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ui.ExporterDialog");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ui.ExporterDialog");
 
     /**
      * Get reference to single instance of GeoRaptor's Preferences
@@ -357,8 +357,8 @@ public class ExporterDialog extends JDialog
     }
     
     public Object getShapefileType(boolean _asShapeType) {
-        Constants.SHAPE_TYPE tmpShpType = Constants.SHAPE_TYPE.valueOf(this.cmbShapeTypes.getSelectedItem().toString()); 
-          return _asShapeType 
+        Constants.SHAPE_TYPE tmpShpType = Constants.SHAPE_TYPE.valueOf(this.cmbShapeTypes.getSelectedItem().toString());
+        return _asShapeType 
                  ? ShapeType.forID(tmpShpType.id) 
                  : tmpShpType; 
     }
@@ -495,8 +495,8 @@ public class ExporterDialog extends JDialog
         } catch (IOException g) {
             f = new File(f.getParent());
         }
-        ExtensionFileFilter extFilter = new ExtensionFileFilter(EXPORT_TYPE.toString().toUpperCase() + " Files", 
-                                                     new String[] { EXPORT_TYPE.toString().toUpperCase() });
+        ExtensionFileFilter extFilter = new ExtensionFileFilter(  EXPORT_TYPE.toString().toUpperCase() + " Files", 
+                                                     new String[]{EXPORT_TYPE.toString().toUpperCase() });
         JFileChooser fc = new JFileChooser(f);
         fc.setFileFilter(extFilter);
         fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);

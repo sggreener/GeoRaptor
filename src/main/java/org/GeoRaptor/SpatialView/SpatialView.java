@@ -41,8 +41,8 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -360,7 +360,7 @@ public class SpatialView {
       return this.svp.getViewLayerTree().getLayers(this.getViewName());
   }
 
-  protected iLayer getLayer(String _layerName) {
+  public iLayer getLayer(String _layerName) {
       if ( this.svp.getViewLayerTree().getLayerCount(this.getViewName()) == 0 )
           return null;
       iLayer retLayer = null;

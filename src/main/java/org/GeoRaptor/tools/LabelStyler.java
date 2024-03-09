@@ -65,7 +65,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Node;
 
 import oracle.jdeveloper.layout.VerticalFlowLayout;
@@ -75,7 +75,7 @@ public class LabelStyler extends JDialog {
 
 	private static final long serialVersionUID = 4321686304382369642L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.LabelStyler");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.tools.LabelStyler");
 
   /** 
    * Properties File Manager

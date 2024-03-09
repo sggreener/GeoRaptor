@@ -20,13 +20,12 @@ import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.tools.Colours;
 import org.GeoRaptor.tools.LabelStyler;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Node;
 
 public class Styling {
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging 
-			.getLogger("org.GeoRaptor.SpatialView.layers.Styling");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.Styling");
 
 	public static enum STYLING_TYPE {
 		NONE, 
@@ -54,7 +53,7 @@ public class Styling {
 
 	protected PointMarker.MARKER_TYPES markGeoPoints = PointMarker.MARKER_TYPES.NONE;
 	protected PointMarker.MARKER_TYPES markGeoStart  = PointMarker.MARKER_TYPES.NONE;
-	protected PointMarker.MARKER_TYPES pointType     = PointMarker.MARKER_TYPES.CROSS;
+	protected PointMarker.MARKER_TYPES pointMarkerType = PointMarker.MARKER_TYPES.CROSS;
 	protected Random randomColorGenerator            = new Random();
 	protected SimpleAttributeSet labelAttributes     = null;
 	protected SimpleAttributeSet markLabelAttributes = null;
@@ -69,7 +68,7 @@ public class Styling {
 	protected Styling.STYLING_TYPE lineColorType  = Styling.STYLING_TYPE.CONSTANT;
 	protected Styling.STYLING_TYPE pointColorType = Styling.STYLING_TYPE.CONSTANT;
 	protected Styling.STYLING_TYPE pointSizeType  = Styling.STYLING_TYPE.CONSTANT;
-	protected Styling.STYLING_TYPE shadeType      = Styling.STYLING_TYPE.RANDOM;
+	protected Styling.STYLING_TYPE shadeColorType = Styling.STYLING_TYPE.RANDOM;
 
 	protected float selectionShadeTransLevel = 1.0f;
 	protected float lineTransLevel    = 1.0f;
@@ -91,6 +90,7 @@ public class Styling {
     protected Preferences preferences  = null;
 
 	public Styling() {
+		LOGGER.debug("Styling()");
 		this.setLineSeparator(System.getProperty("line.separator"));
         this.preferences = MainSettings.getInstance().getPreferences();
         //if ( this.preferences.isRandomRendering()) {
@@ -99,11 +99,13 @@ public class Styling {
 	}
 
 	// Copy constructor
-	public Styling(Styling _style) {
+	public Styling(Styling _style) {		
 		this();
+		LOGGER.debug("Styling(Styling _style)");
+
 		if (_style == null )
 			return;
-		
+
 		// Point
 		this.setPointColorColumn(_style.getPointColorColumn());
 		this.setPointColorType(_style.getPointColorType());
@@ -111,7 +113,7 @@ public class Styling {
 		this.setPointSizeType(_style.getPointSizeType());
 		this.setPointColor(_style.getPointColor(null));
 		this.setPointSize(_style.getPointSize(4));
-		this.setPointType(_style.getPointType());
+		this.setPointMarkerType(_style.getPointMarkerType());
 
 		// Line
 		this.setLineWidth(_style.getLineWidth());
@@ -123,7 +125,7 @@ public class Styling {
 		this.setLineTransLevel(_style.getLineTransLevel());
 
 		// Shade
-		this.setShadeType(_style.getShadeType());
+		this.setShadeColorType(_style.getShadeColorType());
 		this.setShadeColor(_style.getShadeColor(null));
 		this.setShadeColumn(_style.getShadeColumn());
 		this.setShadeTransLevel(_style.getShadeTransLevel());
@@ -165,6 +167,7 @@ public class Styling {
 	public Styling(Node _node) 
 	{
 		this();
+		LOGGER.debug("Styling(Node _node)");
 		if (_node == null ) {
             LOGGER.warn("Styling Constructor's Node is null");
 			return; // Could throw error?
@@ -187,7 +190,7 @@ public class Styling {
 			this.setPointSizeColumn( (String)xpath.evaluate("PointSizeTypeColumn/text()",_node,XPathConstants.STRING));
 			this.setPointColor(
                     Colours.fromRGBa((String)xpath.evaluate("PointColor/text()",_node,XPathConstants.STRING)));
-			this.setPointType(       (String)xpath.evaluate("PointType/text()",_node,XPathConstants.STRING));
+			this.setPointMarkerType(       (String)xpath.evaluate("PointType/text()",_node,XPathConstants.STRING));
 			this.setPointColorColumn((String)xpath.evaluate("PointColorColumn/text()",_node,XPathConstants.STRING));
 			this.setPointColorType(  (String)xpath.evaluate("PointColorType/text()",_node,XPathConstants.STRING));
 			
@@ -211,7 +214,7 @@ public class Styling {
 
 			// Shade
 			this.setShadeColumn(      (String)xpath.evaluate("ShadeColumn/text()",_node,XPathConstants.STRING));
-			this.setShadeType(        (String)xpath.evaluate("ShadeType/text()",_node,XPathConstants.STRING));
+			this.setShadeColorType(        (String)xpath.evaluate("ShadeType/text()",_node,XPathConstants.STRING));
 			this.setShadeColor(
 					Colours.fromRGBa( (String)xpath.evaluate("ShadeColor/text()",_node,XPathConstants.STRING))); 
 			this.setShadeTransLevel(
@@ -300,7 +303,7 @@ public class Styling {
 					this.getPointSizeType().toString(), 
 					this.getPointSizeColumn(),					
 					this.getPointColor(null).getRGB(),
-					this.getPointType().toString(), 
+					this.getPointMarkerType().toString(), 
 					this.getPointColorColumn(), 
 					this.getPointColorType().toString() );
 			
@@ -317,7 +320,7 @@ public class Styling {
 			xml += String.format(
 					"<ShadeColumn>%s</ShadeColumn><ShadeType>%s</ShadeType><ShadeColor>%d</ShadeColor><ShadeTransLevel>%s</ShadeTransLevel>",
 					this.getShadeColumn(), 
-					this.getShadeType().toString(),
+					this.getShadeColorType().toString(),
 					this.getShadeColor(null).getRGB(), 
 					this.getShadeTransLevel() );
 
@@ -348,6 +351,7 @@ public class Styling {
 			return xml;
 		} catch (Exception e) {
 			LOGGER.error("Error converting styling to text " + e.toString());
+			e.printStackTrace();
 			return "";
 		}
 	}
@@ -376,6 +380,7 @@ public class Styling {
 		try {
 			this.textLoScale = Integer.valueOf(_loScale);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return;
 		}
 	}
@@ -394,6 +399,7 @@ public class Styling {
 		try {
 			this.textHiScale = Integer.valueOf(_hiScale);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return;
 		}
 	}
@@ -638,12 +644,15 @@ public class Styling {
 
 	public void setPointColorType(Styling.STYLING_TYPE _colorType) {
 		this.pointColorType = _colorType;
+		LOGGER.debug("setPointColorType(" + this.pointColorType.toString() + ")");
 	}
 
 	public void setPointColorType(String _colorType) {
-		this.pointColorType = Strings.isEmpty(_colorType) || _colorType.equalsIgnoreCase("null")
-				? Styling.STYLING_TYPE.CONSTANT
-				: Styling.STYLING_TYPE.valueOf(_colorType);
+		this.setPointColorType(
+				Strings.isEmpty(_colorType) || _colorType.equalsIgnoreCase("null")
+					? Styling.STYLING_TYPE.CONSTANT
+					: Styling.STYLING_TYPE.valueOf(_colorType)
+		);
 	}
 
 	public Styling.STYLING_TYPE getPointColorType() {
@@ -652,6 +661,7 @@ public class Styling {
 
 	public void setPointColor(Color _pointColor) {
 		this.pointColor = Colours.fromRGBa(Colours.toRGBa(_pointColor));
+		LOGGER.debug("setPointColor(" + this.pointColor.toString() +")");
 	}
 
 	public boolean isSelectionActive() {
@@ -663,22 +673,51 @@ public class Styling {
 	}
 
 	public void setAllRandom() {
-		Random sizeGen = new Random(System.currentTimeMillis());
-		int pointSize = sizeGen.nextInt(16);
-		while (pointSize < 4) {
-			pointSize = sizeGen.nextInt(16);
-		}
-		this.setPointSize(pointSize);
-		this.setPointType(PointMarker.getRandomMarker());
-		this.setPointColor(Colours.getRandomColor());
-		this.setLineColor(Colours.getRandomColor());
-		this.setShadeColor(Colours.getRandomColor());
-		this.setShadeType("RANDOM");
+		LOGGER.debug("setAllRandom: BEFORE(Marker,Point,Line,Shade) (" +
+					this.getPointMarkerType().toString() + "," +
+					this.getPointColorType().toString() + "," +
+					this.getLineColorType().toString() + "," +
+					this.getShadeColorType().toString() + ")");
+
+		this.setPointMarkerType(PointMarker.getRandomMarker());
+		this.setPointSizeType(Styling.STYLING_TYPE.RANDOM);
+		this.setPointColorType(Styling.STYLING_TYPE.RANDOM);
+		this.setLineColorType(Styling.STYLING_TYPE.RANDOM);
+		this.setShadeColorType(Styling.STYLING_TYPE.RANDOM);
+		//Review the following
 		this.setSelectionActive(false);
-		// Set all trans levels to SOLID
+		// Set all transparency levels to SOLID
 		this.setLineTransLevel(1.0f);
 		this.setShadeTransLevel(1.0f);
 		this.setSelectionShadeTransLevel(1.0f);
+		
+		LOGGER.debug("setAllRandom AFTER(Marker,Point,Line,Shade) (" + 
+					this.getPointMarkerType().toString() + "," +
+		             this.getPointColorType().toString() + "," + 
+		             this.getLineColorType().toString() + "," + 
+		             this.getShadeColorType().toString() + ")");
+	}
+
+	public Color getPointColor() 
+	{
+		if ( this.getPointColorType() == Styling.STYLING_TYPE.RANDOM )
+			return Colours.getRandomColor();
+		return this.pointColor;
+	}
+
+	public Color getLineColor() 
+	{
+		if ( this.getLineColorType() == Styling.STYLING_TYPE.RANDOM )
+			return Colours.getRandomColor();
+		return this.lineColor;
+	}
+
+	public Color getShadeColor() 
+	{
+		LOGGER.debug("getShadeColour - " + this.getShadeColorType().toString());
+		if ( this.getShadeColorType() == Styling.STYLING_TYPE.RANDOM )
+			return Colours.getRandomColor();
+		return this.shadeColor;
 	}
 
 	/**
@@ -687,7 +726,7 @@ public class Styling {
 	 * @return Color
 	 * @history Simon Greener, 8th January 2011, Fixed bug with COLUMN based
 	 *          rendering
-	 */
+	 */	
 	public Color getPointColor(String _columnValue)
 	{
 		if (this.isSelectionActive()) 
@@ -715,6 +754,7 @@ public class Styling {
 		else {
 			this.pointSizeColumn = _sizeColumn;
 		}
+		LOGGER.debug("setPointSizeColumn(" + this.pointSizeColumn + ")");
 	}
 
 	public String getPointSizeColumn() {
@@ -727,14 +767,24 @@ public class Styling {
 
 	public void setPointSizeType(Styling.STYLING_TYPE _sizeType) {
 		this.pointSizeType = _sizeType;
+		if ( this.pointSizeType == Styling.STYLING_TYPE.RANDOM ) {
+			Random sizeGen = new Random(System.currentTimeMillis());
+			int pointSize = sizeGen.nextInt(16);
+			while (pointSize < 4) {
+				pointSize = sizeGen.nextInt(16);
+			}
+			this.setPointSize(pointSize);
+		}
 	}
 
 	public void setPointSizeType(String _sizeType) {
 		try {
-			this.pointSizeType = Strings.isEmpty(_sizeType) ? Styling.STYLING_TYPE.CONSTANT
-					: Styling.STYLING_TYPE.valueOf(_sizeType.toUpperCase());
+			this.setPointSizeType(
+					Strings.isEmpty(_sizeType) 
+					? Styling.STYLING_TYPE.CONSTANT
+					: Styling.STYLING_TYPE.valueOf(_sizeType.toUpperCase()) );
 		} catch (Exception e) {
-			this.pointSizeType = Styling.STYLING_TYPE.CONSTANT;
+			this.setPointSizeType(Styling.STYLING_TYPE.CONSTANT);
 		}
 	}
 
@@ -752,32 +802,35 @@ public class Styling {
 
 	public void setPointSize(int _pointSize) {
 		this.pointSize = _pointSize;
+		LOGGER.debug("setPointSize(" + this.pointSize + ")");
 	}
 
 	public void setPointSize(String _pointSize) {
-		this.pointSize = Strings.isEmpty(_pointSize)?4:Integer.valueOf(_pointSize);
+		this.setPointSize(Strings.isEmpty(_pointSize)?4:Integer.valueOf(_pointSize));
 	}
 
 	public boolean isPointMarked() {
-		return this.pointType != PointMarker.MARKER_TYPES.NONE;
+		return this.pointMarkerType != PointMarker.MARKER_TYPES.NONE;
 	}
 
-	public PointMarker.MARKER_TYPES getPointType() {
-		return this.pointType;
+	public PointMarker.MARKER_TYPES getPointMarkerType() {
+		return this.pointMarkerType;
 	}
 
-	public void setPointType(String _pointType) {
+	public void setPointMarkerType(String _pointType) {
+		PointMarker.MARKER_TYPES markerType = PointMarker.MARKER_TYPES.CIRCLE;
 		try {
-			this.pointType = Strings.isEmpty(_pointType) 
+			markerType = Strings.isEmpty(_pointType) 
 					? PointMarker.MARKER_TYPES.CIRCLE
 					: PointMarker.MARKER_TYPES.valueOf(_pointType.toUpperCase());
 		} catch (Exception e) {
-			this.pointType = PointMarker.MARKER_TYPES.CIRCLE;
 		}
+		this.setPointMarkerType(markerType);
 	}
 
-	public void setPointType(PointMarker.MARKER_TYPES _pointType) {
-		this.pointType = _pointType;
+	public void setPointMarkerType(PointMarker.MARKER_TYPES _pointType) {
+		this.pointMarkerType = _pointType;
+		LOGGER.debug("setPointMarkerType(" + this.pointMarkerType.toString() +")");
 	}
 
 	/**
@@ -795,20 +848,24 @@ public class Styling {
 
 	public void setLineColor(Color _lineColor) {
 		this.lineColor = Colours.fromRGBa(Colours.toRGBa(_lineColor));
+		LOGGER.debug("setLineColor(" + this.lineColor.toString() +")");
 	}
 
 	public void setLineColorType(Styling.STYLING_TYPE _colorType) {
 		this.lineColorType = _colorType;
+		LOGGER.debug("setLineColorType(" + this.lineColorType.toString() +")");
+	}
+
+	public void setLineColorType(String _colorType) {
+		this.setLineColorType(
+				Strings.isEmpty(_colorType) || _colorType.equalsIgnoreCase("null")
+				? Styling.STYLING_TYPE.CONSTANT
+				: Styling.STYLING_TYPE.valueOf(_colorType)
+		);
 	}
 
 	public void setLineTransLevel(float _lineTransLevel) {
 		this.lineTransLevel = _lineTransLevel;
-	}
-
-	public void setLineColorType(String _colorType) {
-		this.lineColorType = Strings.isEmpty(_colorType) || _colorType.equalsIgnoreCase("null")
-				? Styling.STYLING_TYPE.CONSTANT
-				: Styling.STYLING_TYPE.valueOf(_colorType);
 	}
 
 	public Styling.STYLING_TYPE getLineColorType() {
@@ -829,6 +886,7 @@ public class Styling {
 		} else {
 			this.lineColorColumn = _columnName;
 		}
+		LOGGER.debug("setLineColorColumn(" + this.lineColorColumn +")");
 	}
 
 	public String getLineColorColumn() {
@@ -867,18 +925,21 @@ public class Styling {
 		}
 	}
 
-	public void setLineStrokeType(String _strokeType) {
-		try {
-			this.setLineStrokeType(Strings.isEmpty(_strokeType) ? LineStyle.LINE_STROKES.LINE_SOLID
-					: LineStyle.LINE_STROKES.valueOf(_strokeType.toUpperCase()));
-		} catch (Exception e) {
-			this.setLineStrokeType(LineStyle.LINE_STROKES.LINE_SOLID);
-		}
-	}
-
 	public void setLineStrokeType(LineStyle.LINE_STROKES _strokeType) {
 		this.lineStrokeType = _strokeType;
 		this.lineStroke = LineStyle.getStroke(_strokeType, this.getLineWidth());
+	}
+
+	public void setLineStrokeType(String _strokeType) {
+		try {
+			this.setLineStrokeType(
+					Strings.isEmpty(_strokeType) 
+						? LineStyle.LINE_STROKES.LINE_SOLID
+						: LineStyle.LINE_STROKES.valueOf(_strokeType.toUpperCase())
+			);
+		} catch (Exception e) {
+			this.setLineStrokeType(LineStyle.LINE_STROKES.LINE_SOLID);
+		}
 	}
 
 	public LineStyle.LINE_STROKES getLineStrokeType() {
@@ -953,7 +1014,8 @@ public class Styling {
 
 	public void setMarkVertex(String _mark) {
 		try {
-			this.setMarkVertex(Strings.isEmpty(_mark) ? Constants.VERTEX_LABEL_TYPE.NONE
+			this.setMarkVertex(Strings.isEmpty(_mark) 
+					? Constants.VERTEX_LABEL_TYPE.NONE
 					: Constants.VERTEX_LABEL_TYPE.valueOf(_mark));
 		} catch (Exception e) {
 			this.setMarkVertex(Constants.VERTEX_LABEL_TYPE.NONE);
@@ -966,7 +1028,8 @@ public class Styling {
 
 	public void setMarkSegment(String _mark) {
 		try {
-			this.setMarkSegment(Strings.isEmpty(_mark) ? Constants.SEGMENT_LABEL_TYPE.NONE
+			this.setMarkSegment(Strings.isEmpty(_mark) 
+					? Constants.SEGMENT_LABEL_TYPE.NONE
 					: Constants.SEGMENT_LABEL_TYPE.valueOf(_mark));
 		} catch (Exception e) {
 			this.setMarkSegment(Constants.SEGMENT_LABEL_TYPE.NONE);
@@ -1003,7 +1066,8 @@ public class Styling {
 
 	public void setSegmentArrow(String _segmentArrow) {
 		try {
-			String directionType = Strings.isEmpty(_segmentArrow) ? Constants.SEGMENT_ARROWS_TYPE.NONE.toString()
+			String directionType = Strings.isEmpty(_segmentArrow) 
+					? Constants.SEGMENT_ARROWS_TYPE.NONE.toString()
 					: _segmentArrow.replace(" ", "_").toUpperCase();
 			this.setSegmentArrow(Constants.SEGMENT_ARROWS_TYPE.valueOf(directionType));
 		} catch (Exception e) {
@@ -1036,17 +1100,20 @@ public class Styling {
 		return this.shadeColumn;
 	}
 
-	public void setShadeType(Styling.STYLING_TYPE _shadeType) {
-		this.shadeType = _shadeType;
+	public void setShadeColorType(Styling.STYLING_TYPE _shadeType) {
+		this.shadeColorType = _shadeType;
 	}
 
-	public void setShadeType(String _shadeType) {
-		this.shadeType = Strings.isEmpty(_shadeType) || _shadeType.equalsIgnoreCase("null") ? Styling.STYLING_TYPE.NONE
-				: Styling.STYLING_TYPE.valueOf(_shadeType);
+	public void setShadeColorType(String _shadeType) {
+		this.setShadeColorType(
+				Strings.isEmpty(_shadeType) || _shadeType.equalsIgnoreCase("null") 
+				? Styling.STYLING_TYPE.NONE
+				: Styling.STYLING_TYPE.valueOf(_shadeType)
+		);
 	}
 
-	public Styling.STYLING_TYPE getShadeType() {
-		return this.shadeType;
+	public Styling.STYLING_TYPE getShadeColorType() {
+		return this.shadeColorType;
 	}
 
 	public void setShadeColor(Color _shadeColor) {
@@ -1064,14 +1131,14 @@ public class Styling {
 		if (this.isSelectionActive()) 
 			return this.getSelectionColor();
 		
-		if (this.getShadeType() == Styling.STYLING_TYPE.RANDOM) 
+		if (this.getShadeColorType() == Styling.STYLING_TYPE.RANDOM) 
 				// To try and be a little faster we don't use Tools.getRandomColor()
 				return new Color(this.randomColorGenerator.nextInt(256), 
 				                 this.randomColorGenerator.nextInt(256),
 						         this.randomColorGenerator.nextInt(256) );
 
 		Color retColor = Color.LIGHT_GRAY;
-		if (this.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
+		if (this.getShadeColorType() == Styling.STYLING_TYPE.COLUMN) 
 		{
 			try {
 				if (Strings.isEmpty(_columnValue)) {
@@ -1113,7 +1180,7 @@ public class Styling {
 	 * Do we perform shade operation
 	 */
 	public boolean isPerformShade() {
-		return this.shadeType != Styling.STYLING_TYPE.NONE;
+		return this.shadeColorType != Styling.STYLING_TYPE.NONE;
 	}
 
 	/**
@@ -1127,13 +1194,15 @@ public class Styling {
 	 * Do we perform shade transparency operations
 	 */
 	public boolean isPerformShadeTrans() {
-		return this.shadeType != Styling.STYLING_TYPE.NONE && this.shadeTransLevel != 1.0f;
+		return this.shadeColorType != Styling.STYLING_TYPE.NONE && this.shadeTransLevel != 1.0f;
 	}
 
 	public boolean isPerformLineTrans() {
 		return this.lineColorType != Styling.STYLING_TYPE.NONE && this.shadeTransLevel != 1.0f;
 	}
 
+	/* ======================= Selection ================= */
+	
 	public void setSelectionLineWidth(int _selectLineWidth) {
 		if (this.selectLineWidth != _selectLineWidth) {
 			this.selectLineWidth = _selectLineWidth;
@@ -1154,13 +1223,17 @@ public class Styling {
 	}
 
 	public void setSelectionLineStrokeType(String _strokeType) {
-		this.setSelectionLineStrokeType(Strings.isEmpty(_strokeType) ? LineStyle.LINE_STROKES.LINE_DASH
-				: LineStyle.LINE_STROKES.valueOf(_strokeType));
+		this.setSelectionLineStrokeType(
+				Strings.isEmpty(_strokeType) 
+					? LineStyle.LINE_STROKES.LINE_DASH
+					: LineStyle.LINE_STROKES.valueOf(_strokeType)
+		);
 	}
 
 	public void setSelectionLineStrokeType(LineStyle.LINE_STROKES _strokeType) {
 		this.selectLineStrokeType = _strokeType;
 		this.selectLineStroke = LineStyle.getStroke(_strokeType, this.getLineWidth());
+		LOGGER.debug("setSelectionLineStrokeType(" + this.selectLineStroke.toString() + ")");
 	}
 
 	public LineStyle.LINE_STROKES getSelectionLineStrokeType() {
@@ -1175,8 +1248,11 @@ public class Styling {
 
 	public void setSelectionLineStroke(String _strokeType) {
 		try {
-			this.setSelectionLineStroke(Strings.isEmpty(_strokeType) ? LineStyle.LINE_STROKES.LINE_SOLID
-					: LineStyle.LINE_STROKES.valueOf(_strokeType.toUpperCase()));
+			this.setSelectionLineStroke(
+					Strings.isEmpty(_strokeType) 
+						? LineStyle.LINE_STROKES.LINE_SOLID
+						: LineStyle.LINE_STROKES.valueOf(_strokeType.toUpperCase())
+			);
 		} catch (Exception e) {
 			this.setSelectionLineStroke(LineStyle.LINE_STROKES.LINE_SOLID);
 		}
@@ -1185,6 +1261,7 @@ public class Styling {
 	public void setSelectionLineStroke(LineStyle.LINE_STROKES _strokeType) {
 		this.selectLineStrokeType = _strokeType;
 		this.selectLineStroke = LineStyle.getStroke(_strokeType, this.getLineWidth());
+		LOGGER.debug("SpatialView.layers.StylingsetSelectionLineStroke(" + this.selectLineStrokeType.toString() + ")");
 	}
 
 	public void setSelectionColor(Color _selectionColor) {
@@ -1193,6 +1270,7 @@ public class Styling {
                               : new Color(_selectionColor.getRGB());
 		this.selectionColor = Colours.setAlpha(this.selectionColor,
 				                               this.selectionShadeTransLevel);
+		LOGGER.debug("setSelectionColor(" + this.selectionColor.toString() + ")");
 	}
 
 	public int getSelectionShadeTransLevelAs255() {

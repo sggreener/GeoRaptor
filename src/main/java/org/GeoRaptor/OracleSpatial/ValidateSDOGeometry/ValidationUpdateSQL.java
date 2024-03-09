@@ -54,8 +54,8 @@ import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry.Valid
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;

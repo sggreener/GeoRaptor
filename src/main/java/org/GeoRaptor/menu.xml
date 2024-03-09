@@ -235,7 +235,7 @@ end;
            <prompt required="true">
               <label>Directed</label>
 		      <value>STATIC:TRUE:FALSE</value>
-           </prompt> 		
+           </prompt> 
            <prompt required="true">
               <label>Cost on Nodes</label>
 		      <value>STATIC:TRUE:FALSE</value>

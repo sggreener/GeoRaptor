@@ -41,7 +41,7 @@ import org.GeoRaptor.tools.COGO;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -52,7 +52,7 @@ implements ComponentListener
 {
 	private static final long serialVersionUID = 5989780313861347975L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SupportClasses.Thumbnail");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SupportClasses.Thumbnail");
 
     /**
      * For access to preferences

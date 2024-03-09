@@ -19,7 +19,7 @@ import javax.swing.event.HyperlinkListener;
 
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 
 /**
@@ -35,7 +35,7 @@ public class AboutDialog extends javax.swing.JDialog {
 	 */
 	private static final long serialVersionUID = 1L;
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.AboutDialog");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.AboutDialog");
 
     private ClassLoader cl = this.getClass().getClassLoader();
 
@@ -69,13 +69,14 @@ public class AboutDialog extends javax.swing.JDialog {
         this.GeoRaptorLogo = new ImageIcon(this.cl.getResource("org/GeoRaptor/images/GeoRaptorLogo.jpg"));
         this.lblLogo.setIcon(this.GeoRaptorLogo);
 
-        String version = Tools.getVersion();
+        String version = MainSettings.EXTENSION_VERSION; 
+        
         String dialog_title = Resources.getString("ABOUT_BOX_TITLE") + " - " + version;
         
         setTitle(dialog_title);
 		
         this.taGeoRaptorAboutText.setContentType("text/html");
-        String html_doc = this.propertyManager.getMsg("ABOUT_HTML", version);
+        String html_doc = this.propertyManager.getMsg("ABOUT_HTML", version, Tools.getVersion());
         
         this.taGeoRaptorAboutText.setText(html_doc);
         this.taGeoRaptorAboutText.setBackground(this.getBackground());
@@ -109,8 +110,8 @@ public class AboutDialog extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setForeground(java.awt.Color.white);
-        setMinimumSize(new java.awt.Dimension(875, 350));
-
+        setMinimumSize(new java.awt.Dimension(875, 600));
+        
         btnClose.setText("Close");
         btnClose.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

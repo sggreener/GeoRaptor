@@ -28,7 +28,7 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -42,7 +42,7 @@ public class SpatialQueryReview extends JDialog {
 	private static final long serialVersionUID = 6239461401678158741L;
 
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SpatialQueryReview");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SpatialQueryReview");
 
     /**
      * Properties File Manager

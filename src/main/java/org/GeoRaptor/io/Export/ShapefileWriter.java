@@ -17,7 +17,7 @@ import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.data.shapefile.shp.ShapefileException;
 import org.geotools.data.shapefile.shp.ShapefileHeader;
 import org.geotools.resources.NIOUtilities;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 /*
  *    GeoTools - OpenSource mapping toolkit
  *    http://geotools.org
@@ -68,8 +68,7 @@ import org.locationtech.jts.geom.GeometryCollection;
  */
 public class ShapefileWriter 
 {
-    @SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ShapefileWriter");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ShapefileWriter");
 
     private FileChannel      shpChannel;  // FileChannels are public because ShapefileReader.java requires it!
     private FileChannel      shxChannel;
@@ -102,6 +101,7 @@ public class ShapefileWriter
            IOException,
            Exception
     {
+    	LOGGER.debug("ShapefileWriter()");
         try {
             this.shapeType = _shpType;
             this.handler = _shpType.getShapeHandler();

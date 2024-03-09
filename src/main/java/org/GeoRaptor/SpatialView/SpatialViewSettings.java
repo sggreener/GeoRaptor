@@ -21,8 +21,8 @@ import org.GeoRaptor.SpatialView.layers.SVTableLayer;
 import org.GeoRaptor.SpatialView.layers.SVWorksheetLayer;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,11 +60,11 @@ final public class SpatialViewSettings {
             
             // What was the activeView when last saved?
             activeViewName = (String)xpath.evaluate("ActiveView/text()",_node,XPathConstants.STRING);
-//LOGGER.debug("activeViewName is " + activeViewName);
+            LOGGER.debug("activeViewName is " + activeViewName);
             // Process all saved views
             //
             NodeList vList = (NodeList) xpath.evaluate("Views/View",_node,XPathConstants.NODESET);
-//LOGGER.debug("vList is null? " + vList==null?"true":"false");            
+            LOGGER.debug("vList is null? " + vList==null?"true":"false");            
             for (int i = 0 ; i < vList.getLength(); i++) 
             { 
                 // Now have a <View>....</View> node 

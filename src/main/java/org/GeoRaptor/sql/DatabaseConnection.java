@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.javatools.db.DBException;
@@ -16,7 +16,7 @@ import oracle.jdbc.OracleConnection;
 public class DatabaseConnection {
 
     private static final Logger LOGGER = 
-    		org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnection");
+    		org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnection");
     
     public String       connectionName;
     public String          displayName;

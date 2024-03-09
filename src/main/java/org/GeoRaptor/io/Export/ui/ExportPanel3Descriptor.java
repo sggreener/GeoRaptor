@@ -29,7 +29,7 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.wizard.WizardPanelDescriptor;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 
 public class ExportPanel3Descriptor 
@@ -37,7 +37,7 @@ public class ExportPanel3Descriptor
   implements ActionListener, FocusListener, ChangeListener {
 
     @SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ui.ExportPanel3Descriptor");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ui.ExportPanel3Descriptor");
     
     public static final String IDENTIFIER = "Export Options";
     private String          SRID_NOT_NULL = "To proceed SRID must not be NULL";
@@ -74,7 +74,7 @@ public class ExportPanel3Descriptor
     public ExportPanel3Descriptor() {
         this.ePanel3 = new ExportPanel3();
         setPanelDescriptorIdentifier(IDENTIFIER);
-        setPanelComponent(ePanel3);
+        setPanelComponent(this.ePanel3);
         this.ePanel3.addActionListeners(this);
         this.ePanel3.addFocusListeners(this);
         this.ePanel3.addChangeListeners(this);

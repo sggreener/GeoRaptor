@@ -30,8 +30,8 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.ErrorDialogHandler;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 import oracle.ide.dialogs.ProgressBar;
 

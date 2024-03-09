@@ -37,7 +37,7 @@ import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
@@ -53,7 +53,7 @@ implements iLayer
     
 	public PropertiesManager propertyManager = null; // Properties File Manager
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVGraphicLayer");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVGraphicLayer");
     
     protected List<QueryRow>     cache = new ArrayList<QueryRow>();
 
@@ -153,7 +153,7 @@ implements iLayer
         	this.setGeometryType(_sLayer.getGeometryType());
         	this.setPrecision(_sLayer.getPrecision(false));
         	this.setIndex(_sLayer.hasIndex());
-            this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+            this.styling.setShadeColorType(Styling.STYLING_TYPE.NONE);
             this.setSdoOperator(((SVGraphicLayer)_sLayer).getSdoOperator());
             this.add(((SVGraphicLayer)_sLayer).cache);
         }
@@ -635,12 +635,13 @@ implements iLayer
      * Execute SQL and draw data on given graphical device
      * @param _mbr MBR coordinates
      * @param _g2 graphical device
-     * @return if return false, something was wrong (for example, Connection with DB faild)
+     * @return if return false, something was wrong (for example, Connection with DB failed)
      */
     @Override
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
-        LOGGER.debug("drawing graphic layer " + this.getLayerName());
+    	LOGGER.debug("***********************************************************");
+        LOGGER.debug("drawLayer(" + this.getLayerName() + " with MBR (" + _mbr.toString()+")");
         Connection conn = null;
         try {
             // Make sure layer's connection has not been lost
@@ -657,7 +658,7 @@ implements iLayer
             // Nothing to do if cache is empty
             //
             if (this.cache==null || this.cache.size() == 0) {
-                LOGGER.warn(this.getVisibleName() + " contains no geometries to draw.");
+                LOGGER.warn("SpatialView.layers.SVGraphicLayer.drawLayer: " + this.getVisibleName() + " contains no geometries to draw.");
                 return false;
             }
 
@@ -667,7 +668,8 @@ implements iLayer
             // Check if labeling is to occur
             String label = Strings.isEmpty(this.getStyling().getLabelColumn()) 
                            ? null 
-                           : this.getStyling().getLabelColumn();            
+                           : this.getStyling().getLabelColumn();    
+            
             boolean bLabel = false;
             if (this.cache.get(0).getColumnCount() == 0 ||
                 attData == null || Strings.isEmpty(label)) {
@@ -681,6 +683,7 @@ implements iLayer
             String pointColorCol = Strings.isEmpty(this.getStyling().getPointColorColumn())?"":this.getStyling().getPointColorColumn();
             String  lineColorCol = Strings.isEmpty(this.getStyling().getLineColorColumn()) ?"":this.getStyling().getLineColorColumn();
             String  pointSizeCol = Strings.isEmpty(this.getStyling().getPointSizeColumn()) ?"":this.getStyling().getPointSizeColumn();
+            String   rotationCol = Strings.isEmpty(this.getStyling().getRotationColumn())  ?"":this.getStyling().getRotationColumn();
             
             boolean bShade      = false,
                     bPointColor = false,
@@ -688,7 +691,7 @@ implements iLayer
                     bPointSize  = false;
             
             if ( attData != null ) {
-                bShade      = (this.getStyling().getShadeType()      == Styling.STYLING_TYPE.COLUMN && attData.containsKey(shadeCol));
+                bShade      = (this.getStyling().getShadeColorType() == Styling.STYLING_TYPE.COLUMN && attData.containsKey(shadeCol));
                 bPointColor = (this.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointColorCol));
                 bLineColor  = (this.getStyling().getLineColorType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(lineColorCol));
                 bPointSize  = (this.getStyling().getPointSizeType()  == Styling.STYLING_TYPE.COLUMN && attData.containsKey(pointSizeCol));                
@@ -697,6 +700,12 @@ implements iLayer
 
             // Set graphics2D once for all features
             drawTools.setGraphics2D(_g2);
+
+            Color cShadeValue     = this.getStyling().getShadeColor(); 
+            Color cPointValue     = this.getStyling().getPointColor();
+            Color cLineValue      = this.getStyling().getLineColor();
+            int   iPointSizeValue = this.getStyling().getPointSize(4); // should be preferences.getDefaultPointSize()
+            double dRotateAngle   = 0.0f;
 
             // Now process and draw all JGeometry objects in the cache.
             //
@@ -711,22 +720,21 @@ implements iLayer
                 }
                 geo = qrow.getJGeom();
                 if (geo == null) {
-                    LOGGER.warn("Null Graphic layer JGeometry found when drawing and will be skipped.");
+                    LOGGER.warn("SpatialView.layers.SVGraphicLayer.drawLayer: Null Graphic layer JGeometry found when drawing and will be skipped.");
                     continue;
                 }
                 // Display geometry only if overlaps display MBR
                 if ((_mbr.isSet() && _mbr.overlaps(JGeom.getGeoMBR(geo))) || _mbr.isNull()) 
                 {
                     // Draw the geometry using current display settings
-                    String   sLabelText = (bLabel      ? SQLConversionTools.convertToString(conn,label,         qrow.getAttData().get(label)) : "");
-                    Color   cShadeValue = Colours.fromRGBa((bShade      ? SQLConversionTools.convertToString(conn,shadeCol,      qrow.getAttData().get(shadeCol))      : Colours.transparentBlackRGBa)); 
-                    Color   cPointValue = Colours.fromRGBa((bPointColor ? SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol)) : Colours.transparentBlackRGBa)); 
-                    Color    cLineValue = Colours.fromRGBa((bLineColor  ? SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol))  : Colours.transparentBlackRGBa));
-                    int iPointSizeValue = (bPointSize  ? MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),4) : 4 );
-                    double dRotateAngle = (bRotate     ? (this.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
-                                                          ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(this.getStyling().getRotationColumn())).doubleValue() - 90.0f)) 
-                                                          : ((NUMBER)qrow.getAttData().get(this.getStyling().getRotationColumn())).doubleValue()) 
-                                                       : 0.0f);
+                    String                  sLabelText = (bLabel ? SQLConversionTools.convertToString(conn,label,qrow.getAttData().get(label)) : "");
+                    if ( bPointColor )     cPointValue = (this.getStyling().getPointColorType() == Styling.STYLING_TYPE.COLUMN) ? Colours.fromRGBa(SQLConversionTools.convertToString(conn,pointColorCol, qrow.getAttData().get(pointColorCol))) : this.getStyling().getPointColor(); 
+                    if ( bLineColor)        cLineValue = (this.getStyling().getLineColorType()  == Styling.STYLING_TYPE.COLUMN) ? Colours.fromRGBa(SQLConversionTools.convertToString(conn,lineColorCol,  qrow.getAttData().get(lineColorCol)))  : this.getStyling().getLineColor();
+                    if ( bShade )          cShadeValue = (this.getStyling().getShadeColorType() == Styling.STYLING_TYPE.COLUMN) ? Colours.fromRGBa(SQLConversionTools.convertToString(conn,shadeCol,qrow.getAttData().get(shadeCol)))            : this.getStyling().getShadeColor();
+                    if ( bPointSize )  iPointSizeValue = MathUtils.numberToInt(qrow.getAttData().get(pointSizeCol),iPointSizeValue);
+                    if ( bRotate )        dRotateAngle = (this.getStyling().getRotationValue() == Constants.ROTATION_VALUES.DEGREES 
+                                                          ? COGO.radians(COGO.normalizeDegrees(((NUMBER)qrow.getAttData().get(rotationCol)).doubleValue() - 90.0f)) 
+                                                          :                                    ((NUMBER)qrow.getAttData().get(rotationCol)).doubleValue());
                     this.drawTools.callDrawFunction(
                             (JGeometry)geo,
                             (Styling)  this.styling,
@@ -744,7 +752,7 @@ implements iLayer
                 this.setLayerMBR();
             }
             this.setNumberOfFeatures();
-            LOGGER.debug("GraphicLayer.drawLayer end");
+            LOGGER.debug("drawLayer end");
         } catch (Exception e) {
             LOGGER.warn(this.getClass().getName()+".drawLayer: error - " + e.toString());
             e.printStackTrace();

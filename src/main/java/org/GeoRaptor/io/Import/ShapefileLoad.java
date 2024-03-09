@@ -54,7 +54,7 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.xBaseJ.DBF;
 import org.xBaseJ.fields.Field;
 
@@ -87,7 +87,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	private final String iconDirectory = "org/GeoRaptor/images/";
 	private ClassLoader cl = this.getClass().getClassLoader();
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Import.import");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Import.import");
 
 	/**
 	 * Connection properties

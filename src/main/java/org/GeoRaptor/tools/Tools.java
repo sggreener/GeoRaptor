@@ -38,7 +38,7 @@ import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SupportClasses.ViewOperationListener;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.geom.PrecisionModel;
 
 import oracle.dbtools.raptor.config.DBConfig;
@@ -53,8 +53,10 @@ import oracle.sql.NUMBER;
 
 public class Tools {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.Tools");    
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.tools.Tools");
+    
     private static final String propertiesFile = "org.GeoRaptor.tools.Tools";
+    
     protected static PropertiesManager propertyManager = new PropertiesManager(propertiesFile);
 
     /**

@@ -14,7 +14,7 @@ import javax.xml.xpath.XPathFactory;
 import org.GeoRaptor.SpatialView.SpatialViewSettings;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -30,7 +30,7 @@ import org.xml.sax.SAXException;
  */
 public class MainSettings 
 {
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.MainSettings");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.MainSettings");
 
 	/**
 	 * Properties File Manager
@@ -49,7 +49,7 @@ public class MainSettings
 	// Some public constants from resources file
 	//
 	public static String MENU_ITEM = Constants.GEORAPTOR;
-	public static String VERSION = "";
+	public static String EXTENSION_VERSION = "";
 	public static String EXTENSION_NAME = MENU_ITEM;
 	public static String XML_VERSION_MESSAGE = "";
 
@@ -64,10 +64,12 @@ public class MainSettings
 		// Get localisation file
 		//
 		this.propertyManager = new PropertiesManager(MainSettings.propertiesFile);
-		MainSettings.MENU_ITEM = this.propertyManager.getMsg("MENU_ITEM");
-		MainSettings.EXTENSION_NAME = this.propertyManager.getMsg("EXTENSION_NAME");
+		MainSettings.MENU_ITEM           = this.propertyManager.getMsg("MENU_ITEM");
+		MainSettings.EXTENSION_NAME      = this.propertyManager.getMsg("EXTENSION_NAME");
 		MainSettings.XML_VERSION_MESSAGE = this.propertyManager.getMsg("XML_VERSION_MESSAGE");
-		MainSettings.VERSION = "20.0.0"; //Tools.getVersion();
+		MainSettings.EXTENSION_VERSION   = this.propertyManager.getMsg("EXTENSION_VERSION"); //Tools.getVersion();
+		System.out.println(MainSettings.EXTENSION_NAME + "(" + MainSettings.EXTENSION_VERSION + ")");
+		//LOGGER.debug(MainSettings.EXTENSION_NAME + "(" + MainSettings.EXTENSION_VERSION + ")");
 	}
 
 	/**
@@ -103,7 +105,7 @@ public class MainSettings
 	 * automatically
 	 */
 	public void save() {
-		String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><GeoRaptor><Version>" + MainSettings.VERSION
+		String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><GeoRaptor><Version>" + MainSettings.EXTENSION_VERSION
 				+ "</Version>" + MainSettings.getSpatialViewSettingsInstance().toXML() + "</GeoRaptor>";
 		MainSettings.mainPrefs.setSpatialLayerXML(xmlString);
 	}
@@ -137,9 +139,9 @@ public class MainSettings
 			if (Strings.isEmpty(version)) {
 				System.err.println("GeoRaptor Version not found: continuing.");
 			} else {
-				if (!version.equalsIgnoreCase(MainSettings.VERSION)) {
+				if (!version.equalsIgnoreCase(MainSettings.EXTENSION_VERSION)) {
 					System.err.println(this.propertyManager
-                                           .getMsg("XML_VERSION_MESSAGE", version, MainSettings.VERSION));
+                                           .getMsg("XML_VERSION_MESSAGE", version, MainSettings.EXTENSION_VERSION));
 				}
 			}
 			Node panelNode = (Node) xpath.evaluate("/GeoRaptor/SpatialPanel", doc, XPathConstants.NODE);
@@ -186,6 +188,7 @@ public class MainSettings
 		pp.setImageRefreshMS(MainSettings.mainPrefs.getImageRefreshMS());
 		pp.setLayerMBRSource(MainSettings.mainPrefs.getLayerMBRSource());
 		pp.setLogSearchStats(MainSettings.mainPrefs.isLogSearchStats());
+		pp.setDebugMode(MainSettings.mainPrefs.isDebugMode());
 		pp.setMBRSaveSize(MainSettings.mainPrefs.getMBRSaveSize());
 		pp.setMapBackground(MainSettings.mainPrefs.getMapBackground());
 		pp.setMapScaleVisible(MainSettings.mainPrefs.isMapScaleVisible());

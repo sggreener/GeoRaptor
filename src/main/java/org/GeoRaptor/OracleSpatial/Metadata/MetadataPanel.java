@@ -69,7 +69,8 @@ import oracle.ide.dialogs.ProgressBar;
  * @author  MaticP, original coding
  * @author Simon Greener April 2010 - June 2012
  **/
-public class MetadataPanel extends javax.swing.JDialog {
+public class MetadataPanel extends javax.swing.JDialog
+{
 
 	private static final long serialVersionUID = -3294320762367337970L;
 

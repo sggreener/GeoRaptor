@@ -24,7 +24,7 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.dbtools.raptor.datatypes.oracle.plsql.BOOLEAN;
 import oracle.jdbc.OracleResultSetMetaData;
@@ -44,7 +44,7 @@ import oracle.sql.TIMESTAMPTZ;
 
 public class SQLConversionTools {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.SQLConversionTools");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.sql.SQLConversionTools");
     
     public SQLConversionTools() {
         super();

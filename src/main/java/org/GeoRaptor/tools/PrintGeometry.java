@@ -1,6 +1,8 @@
 package org.GeoRaptor.tools;
 
 import org.GeoRaptor.Constants;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -8,6 +10,27 @@ public class PrintGeometry {
 
     // ********************************************************************
 
+    public static void printJTSGeometry(Geometry _geom) 
+    {
+    	System.out.println("  GeometryType: " + _geom.getGeometryType());
+    	System.out.println("    Dimensions:" + _geom.getDimension());
+    	System.out.println("          SRID: " + _geom.getSRID());
+    	System.out.println("      Envelope:" + _geom.getEnvelope().toString());
+    	System.out.println(" NumGeometries: "+ _geom.getNumGeometries());
+    	System.out.println("     NumPoints: "+ _geom.getNumPoints());
+    	System.out.println("      Envelope:" + _geom.getEnvelope().toString());
+    	for (int i=1; i<=_geom.getNumGeometries();i++)
+    	{
+    		Geometry geom = _geom.getGeometryN(i);
+    		System.out.println("Geometry(" + i + ")");
+    		Coordinate[] coord = geom.getCoordinates();
+    		for (int c=0;c<coord.length;c++) 
+    		{
+    			System.out.println("Coordinate(" + (c+1) + ") = " + coord[c].toString());
+    		}
+    	}	
+    }
+    
     /**
      * @function printGeometryType
      * @param _gtype

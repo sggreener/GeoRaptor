@@ -39,7 +39,7 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Node;
 
 import oracle.jdbc.OraclePreparedStatement;
@@ -54,12 +54,12 @@ extends SVTableLayer
 {
     public static final String CLASS_NAME = Constants.KEY_SVWorksheetLayer;
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVWorksheetLayer");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVWorksheetLayer");
     
     private String sql = "";
     
     public SVWorksheetLayer(SpatialView   _sView, 
-                            String        _name, 
+                            String        _layerName, 
                             String        _screenName,
                             String        _desc, 
                             MetadataEntry _me, 
@@ -68,7 +68,7 @@ extends SVTableLayer
                             boolean       _computeMBR) 
     {
         super(_sView, 
-              _name, 
+        	  _layerName, 
               _screenName, 
               _desc, 
               _me, 
@@ -135,7 +135,7 @@ extends SVTableLayer
     
     @Override
     public String getInitSQL(String _geoColumn) {
-        LOGGER.debug("SVWorksheetLayer: getInitSQL");
+        LOGGER.debug("getInitSQL(" + _geoColumn + ")");
         return this.sql;
     }
 
@@ -150,7 +150,7 @@ extends SVTableLayer
                              Graphics2D _g2) 
     {
         Envelope layerMBR = super.getMBR();
-        LOGGER.debug("WorksheetLayer.drawLayer(" + _mbr.toString());
+        LOGGER.debug("drawLayer(" + _mbr.toString() + ")");
         if ( super.getMBRRecalculation() ) {
             LOGGER.info("Layer MBR will be recalculated.");
         } else if ( ! layerMBR.intersects(_mbr) ) {
@@ -239,9 +239,11 @@ extends SVTableLayer
                         jgeom = JGeometry.loadJS(stGeom);
                     }
                 }
+                
                 if (jgeom == null) {
                     continue;
                 }
+                
                 geoMBR.setMBR(JGeom.getGeoMBR(jgeom));
                 if ( ! _mbr.intersects(geoMBR) ) {
                     continue;
@@ -287,7 +289,7 @@ extends SVTableLayer
                     }
                 }  
 
-                if (this.styling.getShadeColumn() != null && this.styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                if (this.styling.getShadeColumn() != null && this.styling.getShadeColorType() == Styling.STYLING_TYPE.COLUMN) {
                     try {
                         // regardless as to whether RGB or Integer, get colour as a string.
                     	shadeColorValue = rSet.getString(this.styling.getShadeColumn().replace("\"",""));

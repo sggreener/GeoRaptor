@@ -23,7 +23,7 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
 
@@ -37,7 +37,7 @@ import oracle.spatial.geometry.JGeometry;
 
 public class Queries {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.MetadataTool");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.MetadataTool");
 
     /**
      * Reference to resource manager for accessing messages in properties file

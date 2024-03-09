@@ -15,14 +15,14 @@ import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.util.KML2;
 
 public class KMLExporter implements IExporter 
 {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.KMLExporter");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.KMLExporter");
 
     private final static String             KmlNameSpace = "\"http://www.opengis.net/kml/2.2\"";
     private String                               newLine = System.getProperty("line.separator");

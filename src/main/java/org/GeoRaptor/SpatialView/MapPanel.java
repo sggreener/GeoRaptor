@@ -79,7 +79,7 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
 import oracle.spatial.util.WKT;
@@ -113,7 +113,7 @@ public class MapPanel
     private static final String propertiesFile = "org.GeoRaptor.SpatialView.MapPanel";
     protected PropertiesManager propertyManager = null;
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.MapPanel");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.MapPanel");
 
     /**
      * Graphics 
@@ -1822,7 +1822,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                 return;
             }
         }
-        //LOGGER.debug("refreshALL: Check View Operation: " + this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr().toString());
+        LOGGER.debug("refreshALL: Check View Operation: " + this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr().toString());
         repaint();
     } // public RefreshAll
 
@@ -1836,7 +1836,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
 
     public void setRenderHint(RENDER_HINTS _hint) {
         // Set global rendering hints
-        // Default rendering is done with antialiasing.
+        // Default rendering is done with anti-aliasing.
         //
         this.qualityHints = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
                                                RenderingHints.VALUE_ANTIALIAS_ON);
@@ -1847,7 +1847,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             // VALUE_STROKE_PURE no normalization is performed. Use this hint when you prefer that the rendering of your geometry is accurate rather than visually consistent. 
             qualityHints.put(RenderingHints.KEY_STROKE_CONTROL,
                              RenderingHints.VALUE_STROKE_PURE);
-            // Text rendering to be done with some form of antialiasing.
+            // Text rendering to be done with some form of anti-aliasing.
             qualityHints.put(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             // Alpha blending algorithms are chosen with a preference for calculation speed. 
@@ -1857,13 +1857,13 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
           case SPEED : 
             qualityHints.put(RenderingHints.KEY_RENDERING,
                              RenderingHints.VALUE_RENDER_SPEED);
-            // VALUE_STROKE_NORMALIZE improves the consistency of the appearance of a stroke whether or not antialiasing is applied to it and wherever the stoke is rendered on the pixel grid. 
+            // VALUE_STROKE_NORMALIZE improves the consistency of the appearance of a stroke whether or not anti-aliasing is applied to it and wherever the stroke is rendered on the pixel grid. 
             qualityHints.put(RenderingHints.KEY_STROKE_CONTROL,
                              RenderingHints.VALUE_STROKE_NORMALIZE);
-            // text rendering to be done without any form of antialiasing.
+            // text rendering to be done without any form of anti-aliasing.
             qualityHints.put(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-            // rendering is done without antialiasing for speed
+            // rendering is done without anti-aliasing for speed
             qualityHints.put(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_OFF);
             // Alpha blending algorithms are chosen with a preference for precision and visual quality. 
@@ -1880,7 +1880,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             // text rendering to be done according to the KEY_ANTIALIASING hint or a default chosen by the implementation.
             qualityHints.put(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
-            // Rendering is done with a default antialiasing mode chosen by the implementation.
+            // Rendering is done with a default anti-aliasing mode chosen by the implementation.
             qualityHints.put(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_DEFAULT);
             // Alpha blending algorithms are chosen by the implementation for a good tradeoff of performance vs. quality.
@@ -2123,25 +2123,25 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
              _mbr.isNull() || 
              _mbr.isInvalid() ||
              _mbr.isEmpty() ) {
-            LOGGER.debug("MapPanel.setWindow: Nothing to do");
+            LOGGER.debug("setWindow: Nothing to do");
             return;
         }
         // Create modifiable local window
         Envelope mbr = new Envelope(_mbr);
         
-        LOGGER.debug("MapPanel.setWindow: Current window mbr = " + this.window.toString());
-        LOGGER.debug("MapPanel.setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
-        LOGGER.debug("MapPanel.setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
+        LOGGER.debug("setWindow: Current window mbr = " + this.window.toString());
+        LOGGER.debug("setWindow: Supplied mbr.equals(this.window)=" + (mbr.equals(this.window)));
+        LOGGER.debug("setWindow: this.isWorldToScreenSet()=" + this.isWorldToScreenSet());
 
         if ( mbr.equals(this.window) ) {
-            LOGGER.debug("MapPanel.setWindows: mbr equals this.window.");
+            LOGGER.debug("setWindows: mbr equals this.window.");
             if (this.isWorldToScreenSet())  {
-                LOGGER.debug("MapPanel.setWindow: Transform set. Nothing to do.");
+                LOGGER.debug("setWindow: Transform set. Nothing to do.");
                 return;
             }
         } else {
-            LOGGER.debug("MapPanel.setWindow: mbr does not equal this.window.... ");
-            LOGGER.debug("MapPanel.setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
+            LOGGER.debug("setWindow: mbr does not equal this.window.... ");
+            LOGGER.debug("setWindow: window.getWidth="+this.window.getWidth()+" window.getHeight="+this.window.getHeight());
             // Ensure new MBR does not have one side == 0
             //
             if ( _mbr.getWidth()==0 || 
@@ -2153,7 +2153,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                 mbr = new Envelope(_mbr.centre(),halfSide,halfSide);
             }
         }
-        LOGGER.debug("MapPanel.setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
+        LOGGER.debug("setWindow: Set window to current mbr and recalculate WorldToScreen Transformation");
         this.window.Normalize(this.clientView);
         this.window.setMBR(new Envelope(mbr));
         this.setWorldToScreenTransform(this.window.minX, 
@@ -2254,9 +2254,9 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
     public void Initialise() 
     {
         // Is map panel visible?
-        // LOGGER.debug("MapPanel.initialize(): width/height: " + this.getBounds().width + " && " + this.getBounds().height );
+        // LOGGER.debug("initialize(): width/height: " + this.getBounds().width + " && " + this.getBounds().height );
         if ( this.getBounds().isEmpty() ) {
-            // LOGGER.debug("MapPanel.initialize(): View " + this.spatialView.getViewName() + " height/width = 0");
+            // LOGGER.debug("initialize(): View " + this.spatialView.getViewName() + " height/width = 0");
             return;
         }
         // remember client view
@@ -2266,7 +2266,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
         // or no world to screen transform is set
         //
         boolean viewChanged = this.window.Normalize(this.clientView);
-        // LOGGER.debug("MapPanel.initialize(): After normalise, viewChanged is: " + viewChanged + " isWorldToScreenSet()==" + this.isWorldToScreenSet());
+        // LOGGER.debug("initialize(): After normalise, viewChanged is: " + viewChanged + " isWorldToScreenSet()==" + this.isWorldToScreenSet());
         if ( viewChanged || this.isWorldToScreenSet()==false ) 
         {
             setWorldToScreenTransform( this.window.minX, 
@@ -2538,6 +2538,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
                     if ( layer.hasIndex()==false ) {
                         this.svp.setMessage("No Index: " + layer.getVisibleName(), false);
                     }
+LOGGER.debug("DrawTask.run drawLayer " + layer.getLayerName() + " " + layer.getClassName());
                     boolean status = layer.drawLayer(this.mapPanel.getWindow(), getBiG2D());
                     if (status == false) {
                         LOGGER.warn(layer.getVisibleName() + " failed to draw correctly");

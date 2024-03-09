@@ -16,10 +16,10 @@
 package org.geotools.data.shapefile;
 
 //import java.util.logging.Logger;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 public class StreamLogging {
-    private static final Logger LOGGER=org.geotools.util.logging.Logging.getLogger("org.geotools.data.shapefile");
+    private static final Logger LOGGER=org.GeoRaptor.util.logging.Logging.getLogger("org.geotools.data.shapefile");
 
 	private String name;
 	private int open=0;

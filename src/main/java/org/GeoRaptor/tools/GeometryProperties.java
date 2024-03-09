@@ -6,8 +6,8 @@ import java.util.List;
 import org.GeoRaptor.Constants;
 
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 
 public class GeometryProperties {
@@ -76,11 +76,12 @@ public class GeometryProperties {
     }
 
     public void setShapefileType(ShapeType _shapeType) {
-LOGGER.warn("(GeometryProperties.setShapefileType) " + _shapeType==null?"null":_shapeType.toString());
+    	LOGGER.debug("setShapefileType " + _shapeType==null?"null":_shapeType.toString());
         this.shapefileType = _shapeType;
     }
 
     public Object getShapefileType(boolean _asShapeType) {
+    	LOGGER.debug("getShapefileType= " + this.shapefileType.toString());
           return _asShapeType 
                  ? this.shapefileType 
                  : Constants.SHAPE_TYPE.getShapeType(this.shapefileType.id);

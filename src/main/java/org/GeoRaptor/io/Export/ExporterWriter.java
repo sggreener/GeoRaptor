@@ -47,7 +47,7 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 
 public class ExporterWriter 
@@ -56,7 +56,7 @@ public class ExporterWriter
 {
 	private static final long serialVersionUID = -8552639848052825310L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ExportWriter");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.ExportWriter");
 
       /**
        * For access to preferences
@@ -105,6 +105,7 @@ public class ExporterWriter
 
       public ExporterWriter() {
           super();
+          LOGGER.debug("ExporterWriter()");
           this.geoRaptorPreferences = MainSettings.getInstance().getPreferences();
           this.propertyManager = new PropertiesManager(ExporterWriter.propertiesFile);
       }
@@ -114,6 +115,7 @@ public class ExporterWriter
                             String     _objectName,
                             String     _columnName) {
           this();
+          LOGGER.debug("ExporterWriter(_conn," + Strings.objectString(_schemaName, _objectName, _columnName) + ")");
           this.setConn(_conn);
           this.setSchemaName(_schemaName);
           this.setObjectName(_objectName);
@@ -125,6 +127,8 @@ public class ExporterWriter
 
       private void writeXSD(OracleResultSet _rSet) 
       {
+    	  LOGGER.debug("writeXSD()");
+
           if (Strings.isEmpty(this.getExportFileName()) || Strings.isEmpty(this.getExportBaseName()) )
               return;
           try {
@@ -440,6 +444,8 @@ public class ExporterWriter
 
       public void Export ()
       {
+    	  LOGGER.debug("Export()");
+
           this.getContentPane().setLayout(flowLayout1);
           this.setLocationRelativeTo(null);
           this.setSize(new Dimension(600, 159));
@@ -462,7 +468,7 @@ public class ExporterWriter
           pnlStatus.add(lblStatus, new XYConstraints(5, 65, 580, 20));
           pnlStatus.add(cancelButton, new XYConstraints(505, 90, 80, 25));
           this.getContentPane().add(pnlStatus);
-      
+
           //Display the window.
           pack();
           setVisible(true);
@@ -488,6 +494,7 @@ public class ExporterWriter
 
             private LinkedHashMap<Integer,RowSetMetaData> getExportMetadata() 
             {
+            	LOGGER.debug("ExportTask.getExportMetadata()");
                 if ( this.meta ==null  )
                     return null;              
                 try {
@@ -552,6 +559,8 @@ public class ExporterWriter
                 String sql = "SELECT " + getColumnName() + (Strings.isEmpty(getColumns()) ? "" : "," + getColumns()) + "\n" +
                              "  FROM " + Strings.append(getSchemaName(), getObjectName(), ".");
                 
+                LOGGER.logSQL(sql);
+                
                 IExporter geoExporter = null;
                 try 
                 {
@@ -572,6 +581,9 @@ public class ExporterWriter
                     this.resultMeta = getExportMetadata();
                   
                     this.sdf = new SimpleDateFormat(DATETIMEFORMAT);
+                    
+                    LOGGER.debug("Export Type: " + getExportType().toString());
+                    
                     switch ( getExportType() ) {
                       case GEOJSON : geoExporter = new GeoJSONExporter(getConn(),getExportFileName(),getTotalRows()); break;
                       case GML     : geoExporter = new GMLExporter(getConn(),getExportFileName(),getTotalRows());
@@ -604,6 +616,7 @@ public class ExporterWriter
                     GeometryProperties geomMetadata = new GeometryProperties();
                     geomMetadata.setShapefileType(getShapefileType());
                     geomMetadata.setSRID(getSRID());
+                    
                     // We don't care what sort of geometry type is written to a GML or KML files but we do for a shapefile/tabfile
                     //
                     if (getExportType().compareTo(Constants.EXPORT_TYPE.SHP)==0 || 
@@ -628,20 +641,28 @@ public class ExporterWriter
                     geoExporter.setGeometryProperties(geomMetadata);
 
                     lblStatus.setText(propertyManager.getMsg("PROCESSING_TABLE_DATA",
-                                                         Strings.append(getSchemaName(), getObjectName(), "."),
+                                                         	 Strings.append(getSchemaName(), getObjectName(), "."),
                                                              getExportFileName()));
                     errorMessage = null;
                     
                     int percentageProcessed = -1;
+
                     OraRowSetMetaDataImpl rsMD = new OraRowSetMetaDataImpl();
 
+LOGGER.debug("Starting");
+
                     geoExporter.start(getCharacterSet());
+                    
+LOGGER.debug("ExportTask.export: rSet.next(): isBeforeFirst=" + rSet.isBeforeFirst());
                     while (rSet.next()) 
                     {
+                    	LOGGER.debug("Exporting row " + (rowsExported+1) + " of " + geoExporter.getTotalRows());
+
                         // Process geometry first to see if we can skip the whole row.
                         //
                         geoStruct = (java.sql.Struct)rSet.getObject(getColumnName());
                         if ( rSet.wasNull() || geoStruct == null ) {
+
                             if ( isSkipNullGeometry() ) {
                                 setSkipStatistics(ShapeType.NULL,false);
                                 continue;
@@ -650,9 +671,10 @@ public class ExporterWriter
                             // Certain geometry types cannot be written to a shapefile/tab file as are unsupported
                             // Measured geometries cannot be written to KML/GML
                             //
-                            ShapeType shpType =
-                            SDO_GEOMETRY.getShapeType(SDO_GEOMETRY.getFullGType(geoStruct,2000),
-                                                                          getShapefileType().hasMeasure());
+
+                            ShapeType shpType = SDO_GEOMETRY.getShapeType(SDO_GEOMETRY.getFullGType(geoStruct,2000),
+                            											  getShapefileType().hasMeasure());
+                            LOGGER.debug("ExportTask.export: shapeType of Geometry being exported is " + shpType.toString());
                             if ( (getExportType()==Constants.EXPORT_TYPE.SHP || 
                                   getExportType()==Constants.EXPORT_TYPE.TAB) &&
                                   (getShapefileType().equals(shpType)==false || SDO_GEOMETRY.hasArc(geoStruct)) 
@@ -665,10 +687,14 @@ public class ExporterWriter
                                 continue;
                             }
                         } 
+                        
                         String columnValue = "";
+                        
                         geoExporter.startRow();
+                        
                         for (int col = 1; col <= this.meta.getColumnCount(); col++) 
-                        {                     
+                        {                   
+                        	LOGGER.debug("ExportTask.export: Writing Column " + col + " of " + this.meta.getColumnCount());
                             // Now iterate over columns and export values
                             //
                             try 
@@ -686,6 +712,7 @@ public class ExporterWriter
                                             }
                                         }
                                         try {
+                                        	LOGGER.debug("ExportTask.export: Writing Geometry Column ...");
                                             geoExporter.printColumn(geoStruct,rsMD);
                                         } catch (SQLException sqle) {
                                             // Failed to convert geometry to JTS Geometry
@@ -712,6 +739,7 @@ public class ExporterWriter
                                     	} else {
                                     		sDate = Preferences.getInstance().getNullDate();
                                     	}
+                                    	LOGGER.debug("ExportTask.export: writing date column value");
                                         geoExporter.printColumn(sDate,rsMD);
                                     } else {
                                         //columnValue = SQLConversionTools.convertToString(conn,rSet.getObject(col),rsMD);
@@ -728,6 +756,7 @@ public class ExporterWriter
                                                 columnValue = Preferences.getInstance().getNullValue(rsMD.getColumnType(1));
                                             }
                                         }
+                                        LOGGER.debug("ExportTask.export: Writing DBF Column Value");
                                         geoExporter.printColumn(columnValue,rsMD);
                                     }
                                 } else {
@@ -739,18 +768,23 @@ public class ExporterWriter
                               LOGGER.error("ExporterWriter.run(): Error converting column/type " + rsMD.getColumnName(1) + "/" + rsMD.getColumnType(1));                      
                             }
                         }
+                        
                         geoExporter.endRow();
+                        
                         rowsExported = geoExporter.getRowCount();
+LOGGER.debug("Rows exported = " + rowsExported);
                         if ( (rowsExported % geoExporter.getCommit()) == 0 ) {
                             if ( totalRowCount == -1 ) {
                                 percentageProcessed = totalRowCount;
                             } else {
                                 percentageProcessed = (int)(((double)rowsExported/(double)totalRowCount) * 100.0);
                                 // Update progress
+                            	LOGGER.debug("Exported " + percentageProcessed + "%" );
                                 publish(new Integer(percentageProcessed));
                             }
                         }
-                    }
+                        LOGGER.debug("Getting next row...");
+                    } // while (rSet.next())
                     errorMessage = null;
                 } catch (IOException ioe) {
                   ioe.printStackTrace();
@@ -772,6 +806,7 @@ public class ExporterWriter
                 } finally {
                     try { if (rSet!=null ) rSet.close(); } catch (Exception _e) { }
                     try { if (st!=null)      st.close(); } catch (Exception _e) { }
+LOGGER.debug("Finally....");
                     rowsExported = geoExporter.getRowCount();
                     try {
                         geoExporter.end();

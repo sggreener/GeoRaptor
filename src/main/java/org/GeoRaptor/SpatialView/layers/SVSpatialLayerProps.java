@@ -44,14 +44,14 @@ import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 
 public class SVSpatialLayerProps extends JDialog {
 
 	private static final long serialVersionUID = 8121341328541147361L;
 
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SVSpatialLayerProps");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.SVSpatialLayerProps");
     
     /**
      * Properties File Manager
@@ -724,7 +724,7 @@ public class SVSpatialLayerProps extends JDialog {
                     
                     cmbPointTypes.setModel(PointMarker.getComboBoxModel());
                     cmbPointTypes.setRenderer(PointMarker.getPointTypeRenderer());
-                    String displayPointType = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_iLayer.getStyling().getPointType()));
+                    String displayPointType = Strings.TitleCase(PointMarker.getMarkerTypeAsString(_iLayer.getStyling().getPointMarkerType()));
                     for (int i = 0; i < cmbPointTypes.getItemCount(); i++) {
                         if (cmbPointTypes.getItemAt(i).toString().equals(displayPointType)) {
                             cmbPointTypes.setSelectedIndex(i);
@@ -825,17 +825,17 @@ public class SVSpatialLayerProps extends JDialog {
                     cmbShadeColumns.setEnabled(false);
                     fixShadeColorB.setEnabled(false);
                     fixShadeColorB.setBackground(null);
-                    if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.NONE) {
+                    if (_iLayer.getStyling().getShadeColorType() == Styling.STYLING_TYPE.NONE) {
                         noShadeRB.setSelected(true);
-                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.CONSTANT) {
+                    } else if (_iLayer.getStyling().getShadeColorType() == Styling.STYLING_TYPE.CONSTANT) {
                         fixShadeColorRB.setSelected(true);
                         shadeColor = _iLayer.getStyling().getShadeColor(Colours.getRGBa(Color.BLACK));
                         fixShadeColorB.setBackground(shadeColor);
                         fixShadeColorB.setForeground(Colours.highContrast(shadeColor));
                         fixShadeColorB.setEnabled(true);
-                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.RANDOM) {
+                    } else if (_iLayer.getStyling().getShadeColorType() == Styling.STYLING_TYPE.RANDOM) {
                         randomShadeRB.setSelected(true);
-                    } else if (_iLayer.getStyling().getShadeType() == Styling.STYLING_TYPE.COLUMN) {
+                    } else if (_iLayer.getStyling().getShadeColorType() == Styling.STYLING_TYPE.COLUMN) {
                         columnShadeColorRB.setSelected(true);
                         cmbShadeColumns.setEnabled(true);
                     }
@@ -3475,6 +3475,8 @@ public class SVSpatialLayerProps extends JDialog {
 
     private void queryApply(boolean _reload) 
     {
+        LOGGER.debug("queryApply(reload: " + _reload + ")");
+
     	if ( this.layer instanceof SVQueryLayer ) {
             SVQueryLayer qLayer = (SVQueryLayer)this.layer;
             this.layer.setBufferDistance(Double.valueOf(this.tfQueryBufferDistance.getText()).doubleValue());
@@ -3500,6 +3502,9 @@ public class SVSpatialLayerProps extends JDialog {
     }
 
     private void SQLApply(boolean _reload) {
+
+        LOGGER.debug("SQLApply(reload: " + _reload + ")");
+
         this.layer.setSQL(this.sqlTA.getText());
         if ( _reload && ! (this.layer instanceof SVQueryLayer || 
         		           this.layer instanceof SVGraphicLayer ) ) {
@@ -3508,10 +3513,13 @@ public class SVSpatialLayerProps extends JDialog {
     }
 
     private void pointApply(boolean _reload) {
+    	
+        LOGGER.debug("pointApply(reload: " + _reload + ")");
+
         // Get reference to layer's styling property
         Styling styling = this.layer.getStyling();
         styling.setPointColor(this.pointColorButton.getBackground());
-        styling.setPointType(cmbPointTypes.getSelectedItem().toString().replace(" ","_").toUpperCase());
+        styling.setPointMarkerType(cmbPointTypes.getSelectedItem().toString().replace(" ","_").toUpperCase());
 
         if (this.rbPointColorSolid.isSelected()) {
             styling.setPointColor(this.pointColor);
@@ -3549,6 +3557,8 @@ public class SVSpatialLayerProps extends JDialog {
 
     private void selectionApply(boolean _reload) {
         
+        LOGGER.debug("selectionApply(reload: " + _reload + ")");
+
         float f = (float)MathUtils.roundToDecimals(1.0f - (((float)this.sldrSelectionTransLevel.getValue()) / 100.0f), 2);
         this.layer.getStyling().setSelectionShadeTransLevel(f);
         
@@ -3590,6 +3600,8 @@ public class SVSpatialLayerProps extends JDialog {
     
     private void strokeApply(boolean _reload) {
         
+        LOGGER.debug("strokeApply(reload: " + _reload + ")");
+
         float f = (float)MathUtils.roundToDecimals(1.0f - (((float)this.sldrStrokeTransLevel.getValue()) / 100.0f), 2);
         this.layer.getStyling().setLineTransLevel(f);
 
@@ -3631,32 +3643,43 @@ public class SVSpatialLayerProps extends JDialog {
     }
 
     private void fillApply(boolean _reload) {
+    	
+      LOGGER.debug("fillApply(reload: " + _reload + ")");
       
       float f = (float)MathUtils.roundToDecimals(1.0f - (((float)this.sldrShadeTransLevel.getValue()) / 100.0f), 2);
       this.layer.getStyling().setShadeTransLevel(f);
 
+      Styling.STYLING_TYPE shadeColorType = Styling.STYLING_TYPE.NONE;
+      
       if (this.noShadeRB.isSelected()) {
-          this.layer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE);
+          shadeColorType = Styling.STYLING_TYPE.NONE;
       } else if (this.fixShadeColorRB.isSelected()) {
-          this.layer.getStyling().setShadeType(Styling.STYLING_TYPE.CONSTANT);
+    	  shadeColorType = Styling.STYLING_TYPE.CONSTANT;
           this.layer.getStyling().setShadeColor(this.shadeColor);
       } else if (this.columnShadeColorRB.isSelected() &&
                  !this.cmbShadeColumns.getSelectedItem().toString().equals(LABEL_NONE)) {
-          this.layer.getStyling().setShadeType(Styling.STYLING_TYPE.COLUMN);
+    	  shadeColorType = Styling.STYLING_TYPE.COLUMN;
       } else if (this.randomShadeRB.isSelected()) {
-          this.layer.getStyling().setShadeType(Styling.STYLING_TYPE.RANDOM);
-      } else
-          this.layer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE);
-       this.layer.getStyling().setShadeColumn(this.cmbShadeColumns.getSelectedItem().toString().equals(LABEL_NONE) 
+    	  shadeColorType = Styling.STYLING_TYPE.RANDOM;
+      };
+      
+      LOGGER.debug("shadeColorType = " + shadeColorType.toString() + ")");
+      this.layer.getStyling().setShadeColorType(shadeColorType);
+      
+      this.layer.getStyling().setShadeColumn(this.cmbShadeColumns.getSelectedItem().toString().equals(LABEL_NONE) 
                               ? null 
                               : this.cmbShadeColumns.getSelectedItem().toString());
        
        if ( _reload ) {
+    	   LOGGER.debug("SpatialView.layers.shadeColorType redrawing... )");   
            this.layer.getSpatialView().getSVPanel().redraw();
        }
     }
 
     private void labelApply(boolean _reload) {
+    	
+        LOGGER.debug("labelApply(reload: " + _reload + ")");
+
         this.layer.getStyling().setLabelPosition(this.labelPosition);
         this.layer.getStyling().setLabelOffset(this.labelOffsetDistance);
         this.layer.getStyling().setLabelAttributes(new SimpleAttributeSet(this.labelAttributes));
@@ -3680,6 +3703,9 @@ public class SVSpatialLayerProps extends JDialog {
     }
 
     private void rotationApply(boolean _reload) {
+    	
+        LOGGER.debug("rotationApply(reload: " + _reload + ")");
+
         this.layer.getStyling().setRotationColumn(this.cmbRotationColumns.getSelectedItem().toString().equals(LABEL_NONE) 
                                      ? null 
                                      : this.cmbRotationColumns.getSelectedItem().toString());
@@ -3919,6 +3945,7 @@ public class SVSpatialLayerProps extends JDialog {
 }//GEN-LAST:event_noShadeRBActionPerformed
 
     private void btnFillApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFillApplyActionPerformed
+        LOGGER.debug("btnFillApplyActionPerformed calling fillApply(true).");
         fillApply(true);
 }//GEN-LAST:event_btnFillApplyActionPerformed
 

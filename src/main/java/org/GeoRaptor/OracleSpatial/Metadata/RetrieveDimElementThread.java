@@ -8,7 +8,7 @@ import java.sql.Statement;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.ide.dialogs.ProgressBar;
 
@@ -17,7 +17,7 @@ import oracle.ide.dialogs.ProgressBar;
  */
 public class RetrieveDimElementThread implements Runnable {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.RetrieveDimElementThread");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Metadata.RetrieveDimElementThread");
 
     protected ProgressBar progressBar;
     protected Connection dbConn;

@@ -16,13 +16,13 @@ import java.awt.geom.Rectangle2D;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
 
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 public class TextStroke 
   implements Stroke 
 {
     @SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.TextStroke");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.TextStroke");
     private static final float FLATNESS = 1;
 
     private String             text = null;

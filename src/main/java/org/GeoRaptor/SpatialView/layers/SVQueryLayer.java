@@ -45,7 +45,7 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.apache.commons.codec.binary.Base64;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Node;
 
 import oracle.jdbc.OracleResultSetMetaData;
@@ -58,7 +58,7 @@ implements iLayer
 {
     public  static final String CLASS_NAME = Constants.KEY_SVQueryLayer;
 
-    private static final Logger     LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
+    private static final Logger     LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVQueryLayer");
 
     protected Preferences      preferences = null;
 
@@ -108,6 +108,7 @@ implements iLayer
                         boolean       _draw) 
     {
         super(_sView, _me);
+        LOGGER.debug("SVQueryLayer()");
         this.layerName   = Strings.isEmpty(_layerName)? UUID.randomUUID().toString() : _layerName;
         this.visibleName = _visibleName;
         this.desc        = _desc;
@@ -116,7 +117,14 @@ implements iLayer
         this.drawGeometry = this.preferences.isDrawQueryGeometry();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
-    	this.styling = new Styling();
+        if (Strings.isEmpty(_layerName) ) {
+            LOGGER.debug("SVQueryLayer(): Styling set to default.");
+        	this.styling = new Styling();
+        } else {
+            LOGGER.debug("SVQueryLayer(): Styling set to passed in layer's.");
+        	iLayer layer = _sView.getLayer(_layerName);
+        	this.setStyling(layer.getStyling());
+        }
     }
     
     public SVQueryLayer(SpatialView _sView, Node _node) {
@@ -169,7 +177,7 @@ implements iLayer
         this.setSQL(_sLayer.getSQL());
         
         this.setStyling(_sLayer.getStyling());
-        this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+        this.styling.setShadeColorType(Styling.STYLING_TYPE.NONE);
         this.styling.setTextHiScale(null); // Set to max scale
         // This is an informational query of actual data: filtering would make the result invalid
         this.setMinResolution(false);
@@ -652,7 +660,7 @@ implements iLayer
 	@Override
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
-        LOGGER.debug("QueryLayer.drawLayer(" + _mbr.toString());
+        LOGGER.debug("SVQueryLayerLayer.drawLayer: " + _mbr.toString());
         Connection conn = null;
         try {
             // Also make sure layer's connection has not been lost
@@ -681,12 +689,12 @@ implements iLayer
                     // Save settings
                     LineStyle.LINE_STROKES ls = this.styling.getLineStrokeType();
                     int lw = this.styling.getLineWidth();
-                    Styling.STYLING_TYPE st = this.styling.getShadeType();
+                    Styling.STYLING_TYPE st = this.styling.getShadeColorType();
                     float stl = this.styling.getShadeTransLevel();
                     
                     this.styling.setLineWidth(2);
                     this.styling.setLineStrokeType(LineStyle.LINE_STROKES.LINE_DASH);
-                    this.styling.setShadeType(Styling.STYLING_TYPE.NONE);
+                    this.styling.setShadeColorType(Styling.STYLING_TYPE.NONE);
                     // Draw original geometry before buffering
                     //
                     this.drawTools.callDrawFunction(
@@ -698,7 +706,7 @@ implements iLayer
                     );
                     if ( this.isBuffered()) {
                         this.styling.setLineWidth(lw); // set back
-                        this.styling.setShadeType(this.getPreferences().isRandomRendering()
+                        this.styling.setShadeColorType(this.getPreferences().isRandomRendering()
                         		                  ? Styling.STYLING_TYPE.RANDOM
                                                   : Styling.STYLING_TYPE.CONSTANT);
                         this.styling.setShadeTransLevel(0.5f);
@@ -734,7 +742,7 @@ implements iLayer
                     }
                     this.styling.setShadeTransLevel(stl);
                     this.styling.setLineStrokeType(ls);
-                    this.styling.setShadeType(st);
+                    this.styling.setShadeColorType(st);
                 }
             } catch (IOException e) {
                 LOGGER.error(super.propertyManager.getMsg("ERROR_DISPLAY_QUERY_GEOM",e.getMessage()));
@@ -1219,23 +1227,21 @@ implements iLayer
         try {
             conn = super.getConnection();
         } catch (IllegalStateException ise) {
-            LOGGER.warn("No connection available for (" + 
+            LOGGER.warn("SpatialView.layers.SVQueryLayer.setIndex: No connection available for (" + 
                         this.getLayerNameAndConnectionName() + 
                         ") to check spatial index (" + ise.toString() + ")");
             this.indexExists = false;
         }
         try {
-            LOGGER.debug("SVSpatialLayer(" + 
-                         this.getLayerNameAndConnectionName() + 
-                         ").setIndex.isSpatiallyIndexed()");
+            LOGGER.debug("SVQueryLayer(" +  this.getLayerNameAndConnectionName() + ").setIndex.isSpatiallyIndexed()");
             this.indexExists = Queries.isSpatiallyIndexed(conn,
                                                           super.getSchemaName(),
                                                           super.getObjectName(),
                                                           super.getGeoColumn(),
                                                           super.getSRID());
-            LOGGER.debug("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
+            LOGGER.debug("SVQueryLayer(" +  this.getLayerNameAndConnectionName() + ").setIndex: " + indexExists);
         } catch (IllegalArgumentException iae) {
-            LOGGER.warn("SVSpatialLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
+            LOGGER.warn("SpatialView.layers.SVQueryLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed: Exception: " + iae.toString());
             this.indexExists = false;
         }
     }
@@ -1284,13 +1290,13 @@ implements iLayer
                                                        this.getGeoColumn(),
                                                        this.getSRID(),
                                                        String.valueOf(_targetSRID))); 
-                LOGGER.debug("SVQueryLayer.setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
+                LOGGER.debug("setLayerMBR() setMBR(getRTreeExtent)=" + lMBR.toString());
                 if ( lMBR.isSet() ) {
                     super.setMBR(lMBR);
                     return true;
                 } 
             } catch (SQLException e) {
-                LOGGER.warn("Could not extract extent from RTree index so will now try and extract from metadata.");
+                LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Could not extract extent from RTree index so will now try and extract from metadata.");
                 multiTry = true;
             }
         }
@@ -1315,17 +1321,17 @@ implements iLayer
                     if ( lMBR.isSet() ) {
                         super.setMBR(lMBR);
                         if (multiTry) {
-                            LOGGER.warn("Extracting extent from metadata successful.");
+                            LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Extracting extent from metadata successful.");
                         }
                         return true;
                     } 
                 } catch (Exception e) {
-                    LOGGER.warn("Could not extract extent from metadata, so will now extract from a sample of records.");
+                    LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Could not extract extent from metadata, so will now extract from a sample of records.");
                     multiTry = true;
                 }
             }  
         } catch (SQLException e) {
-            LOGGER.warn("No User_Sdo_Geom_Metadata, so will now extract extent from a sample of records.");
+            LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: No User_Sdo_Geom_Metadata, so will now extract extent from a sample of records.");
             multiTry = true;
         }
         
@@ -1341,18 +1347,18 @@ implements iLayer
             if ( lMBR.isSet() ) {
                 super.setMBR(lMBR);
                 if (multiTry) {
-                    LOGGER.warn("Extracting extent from sample successful.");
+                    LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Extracting extent from sample successful.");
                 }
                 return true;
             } 
         } catch (SQLException e) {
-            LOGGER.warn("Failed to get extent through sampling (" + e.getMessage() + ").");
+            LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Failed to get extent through sampling (" + e.getMessage() + ").");
         }
         
         if ( _defaultMBR!=null && 
              _defaultMBR.isSet() ) {
             super.setMBR(_defaultMBR);
-            LOGGER.warn("Default extent applied to layer.");
+            LOGGER.warn("SpatialView.layers.SVQueryLayer.setLayerMBR: Default extent applied to layer.");
             return true;
         }
         return false;
@@ -1406,7 +1412,7 @@ implements iLayer
 	@Override
 	public void setNumberOfFeatures(long _number) 
     {
-        LOGGER.debug("setNumberOfFeatures()="+_number);
+        LOGGER.debug("setNumberOfFeatures("+_number+")");
         this.numberOfFeatures = _number;
         if (this.getPreferences().isNumberOfFeaturesVisible() ) {
             this.getSpatialView().getSVPanel().getViewLayerTree().refreshLayerCount(this,_number);
@@ -1440,7 +1446,7 @@ implements iLayer
 	                                                  _fullDataType);
 			return colsAndTypes;
 		} catch (SQLException e) {
-			LOGGER.debug("Problem retrieving attributes and types - " + e.toString());
+			LOGGER.debug("getColumnsAndTypes: Problem retrieving attributes and types - " + e.toString());
 	    }
 		return null;
 	}

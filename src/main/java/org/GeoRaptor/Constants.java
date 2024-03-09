@@ -18,9 +18,6 @@ import org.geotools.data.shapefile.shp.ShapeType;
  */
 public class Constants {
 
-	public static boolean DEBUG = false;
-	public static String DEBUG_PASSWORD = ".G305apt05!";
-
 	public static final String GEORAPTOR = "GeoRaptor";
 	public static final String MENU_ITEM_SPATIAL_VIEWER = "Open Map";
 	public static final String MENU_ITEM_SHAPEFILE_LOADER = "Load Shapefile";
@@ -475,6 +472,7 @@ public class Constants {
 	public static final String KEY_ASSOCIATION_XML = "associationXML";
 	public static final String KEY_TABLE_COUNT_LIMIT = "tableCountLimit";
 	public static final String KEY_LOG_SEARCH_STATISTICS = "logSearchStats";
+	public static final String KEY_DEBUG_MODE = "debugMode";
 
 	public static final String KEY_ROOT_SPATIAL_INDEX = "SpatialIndex";
 	public static final String KEY_INDEX_SUFFIX_FLAG = "suffix";
@@ -575,6 +573,7 @@ public class Constants {
 	public static final int VAL_TABLE_COUNT_LIMIT = 1000;
 	public static final boolean VAL_NUMBER_FEATURES_VISIBLE = true;
 	public static final boolean VAL_LOG_SEARCH_STATISTICS = false;
+	public static final boolean VAL_DEBUG_MODE = false;
 	public static final boolean VAL_SDO_NN = true;
 	public static final boolean VAL_DBASE_NULL_FIELD = true;
 	public static final boolean VAL_DBASE_COLUMN_SHORTEN_BEGIN = false;

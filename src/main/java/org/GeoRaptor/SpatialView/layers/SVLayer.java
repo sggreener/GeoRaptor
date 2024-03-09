@@ -23,8 +23,8 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -211,7 +211,7 @@ public class SVLayer {
 	}
 
 	public void setConnection(String _connName) throws IllegalStateException {
-		LOGGER.debug("SVLayer setConnection(" + _connName + ")");
+		LOGGER.debug("setConnection(" + _connName + ")");
 		if (Strings.isEmpty(_connName)) {
 			return;
 		}
@@ -397,13 +397,13 @@ public class SVLayer {
 
 	public void setMBR(double _mbrMinX, double _mbrMinY, double _mbrMaxX, double _mbrMaxY) {
 		this.mbr.setMBR(_mbrMinX, _mbrMinY, _mbrMaxX, _mbrMaxY);
-		LOGGER.debug("SLayer.setMBR(x,y,x,y)=" + this.mbr.toString());
+		LOGGER.debug("setMBR(x,y,x,y)=" + this.mbr.toString());
 	}
 
 	public void setMBR(Envelope _mbr) {
 		if (_mbr != null && _mbr.isSet()) {
 			this.mbr.setMBR(_mbr);
-			LOGGER.debug("SLayer.setMBR(RectangleDouble)=" + this.mbr.toString());
+			LOGGER.debug("setMBR(RectangleDouble)=" + this.mbr.toString());
 		}
 	}
 

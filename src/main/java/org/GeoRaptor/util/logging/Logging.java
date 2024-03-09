@@ -1,4 +1,4 @@
-package org.geotools.util.logging;
+package org.GeoRaptor.util.logging;
 
 public class Logging {
 
@@ -6,11 +6,11 @@ public class Logging {
     }
 
     public static Logger getLogger(String _name) {
-        return new Logger();
+        return new Logger(_name);
     }
     
     public static Logger getLogger(Class<?> _class) {
-        return new Logger();
+        return new Logger(_class.getName());
     }
     
     public static void unexpectedException(Class<?> _class,  String _type, Exception _exception) {

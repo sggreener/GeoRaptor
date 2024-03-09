@@ -93,8 +93,7 @@ public class Preferences extends HashStructureAdapter {
         return _hash.getBoolean(Constants.KEY_DRAW_QUERY_GEOMETRY, 
                                 Constants.VAL_DRAW_QUERY_GEOMETRY);
     }
-
-        
+  
     public void setNumberOfFeaturesVisible(boolean _value) {
         synchronized (_hash) {
             _hash.putBoolean(Constants.KEY_NUMBER_FEATURES_VISIBLE, _value);
@@ -358,6 +357,16 @@ public class Preferences extends HashStructureAdapter {
         return _hash.getBoolean(Constants.KEY_LOG_SEARCH_STATISTICS, Constants.VAL_LOG_SEARCH_STATISTICS);
     }
 
+    public void setDebugMode(boolean _debugMode) {
+        synchronized (_hash) {
+            _hash.putBoolean(Constants.KEY_DEBUG_MODE, _debugMode);
+        }
+    }
+    
+    public boolean isDebugMode() {
+        return _hash.getBoolean(Constants.KEY_DEBUG_MODE, Constants.VAL_DEBUG_MODE);
+    }
+    
     public void setTableCountLimit(int _limit) {
         synchronized (_hash) {
             _hash.putInt(Constants.KEY_TABLE_COUNT_LIMIT, _limit);

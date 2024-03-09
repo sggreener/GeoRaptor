@@ -28,7 +28,7 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.SpatialView.SupportClasses.PointMarker;
 import org.GeoRaptor.sql.DatabaseConnections;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.dbtools.raptor.controls.cellrenderers.ICellRenderer;
@@ -39,7 +39,7 @@ public class SpatialRenderer
   implements ICellRenderer 
 {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.JDevInt.SpatialRenderer");
 
     protected static SpatialRenderer classInstance;
     

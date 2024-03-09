@@ -51,7 +51,7 @@ import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -77,7 +77,7 @@ public class SVTableLayer
 
     public final String CLASS_NAME = Constants.KEY_SVTableLayer;
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVTableLayer");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVTableLayer");
 
     protected Preferences           preferences = null;
     protected Styling                   styling = new Styling();
@@ -120,11 +120,13 @@ public class SVTableLayer
                           boolean       _draw) 
     {
         super(_sView, _me);
+        LOGGER.debug("SVTableLayer()");
         this.layerName = Strings.isEmpty(_layerName)? UUID.randomUUID().toString() : _layerName;
         this.visibleName = _visibleName;
         this.desc = _desc;
         this.draw = _draw;
-        this.styling = new Styling();
+        LOGGER.debug("SVTableLayer(): Styling set to default.");
+        this.setStyling(new Styling());
         this.preferences = MainSettings.getInstance().getPreferences();
         this.setResultFetchSize(preferences.getFetchSize());
         this.setPrecision(-1); // force calculation from mbr
@@ -461,17 +463,15 @@ public class SVTableLayer
             this.indexExists = false;
         }
         try {
-            LOGGER.debug("SVTableLayer(" + 
-                         this.getLayerNameAndConnectionName() + 
-                         ").setIndex.isSpatiallyIndexed()");
+            LOGGER.debug("setIndex.isSpatiallyIndexed(" + this.getLayerNameAndConnectionName() + ")");
             this.indexExists = Queries.isSpatiallyIndexed(conn,
                                                           super.getSchemaName(),
                                                           super.getObjectName(),
                                                           super.getGeoColumn(),
                                                           super.getSRID());                
-            LOGGER.debug("SVTableLayer(" + this.getLayerNameAndConnectionName() + ").setIndex() = " + indexExists);
+            LOGGER.debug("setIndex() Index Exists = " + indexExists);
         } catch (IllegalArgumentException iae) {
-            LOGGER.warn("SVTableLayer(" + this.getLayerNameAndConnectionName() + ").isSpatiallyIndexed Exception: " + iae.toString());
+            LOGGER.warn("isSpatiallyIndexed Exception: " + iae.toString());
             this.indexExists = false;
         }
     }
@@ -1196,6 +1196,7 @@ public class SVTableLayer
      */
     public boolean drawLayer(Envelope _mbr, Graphics2D _g2) 
     {
+    	LOGGER.debug("drawLayer(" + (_mbr == null ? "" : _mbr.toString()) + ")");
         Connection conn = null;
         try {
             // Make sure layer's connection has not been lost

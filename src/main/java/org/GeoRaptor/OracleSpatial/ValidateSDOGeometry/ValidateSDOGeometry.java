@@ -103,8 +103,8 @@ import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.TableSortIndicator;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.jdbc.OracleResultSet;
@@ -826,7 +826,7 @@ implements Observer
                                                       true);
             this.validationLayer.setConnection(this.connectionName);
             this.validationLayer.getStyling().setPointSize(8);
-            this.validationLayer.getStyling().setPointType(PointMarker.MARKER_TYPES.STAR);
+            this.validationLayer.getStyling().setPointMarkerType(PointMarker.MARKER_TYPES.STAR);
             this.validationLayer.getStyling().setPointColor(Colours.getRandomColor());
             this.validationLayer.getStyling().setLineColor(Colours.getRandomColor());
             this.validationLayer.getStyling().setMarkGeoPoints(PointMarker.MARKER_TYPES.CIRCLE);
@@ -836,7 +836,7 @@ implements Observer
             this.validationLayer.getStyling().setMarkOriented(true);
             this.validationLayer.getStyling().setShadeColor(Colours.getRandomColor());
             this.validationLayer.getStyling().setShadeTransLevel(0.5f);
-            this.validationLayer.getStyling().setShadeType(Styling.STYLING_TYPE.CONSTANT);
+            this.validationLayer.getStyling().setShadeColorType(Styling.STYLING_TYPE.CONSTANT);
             this.validationLayer.getStyling().setSelectionPointSize(12);
             this.validationLayer.getStyling().setSelectionLineWidth(2);
             this.validationLayer.getStyling().setSelectionLineStroke(LineStyle.LINE_STROKES.LINE_DASHDOT);
@@ -1893,14 +1893,14 @@ implements Observer
                     key += " " + String.valueOf(elementOffset);
                     try {
                         element = _geom.getElementAt(elementOffset);
-                        // DEBUG LOGGER.info("Got Element " + elementOffset);
+                        LOGGER.debug("Got Element " + elementOffset);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         // Problem possibly with SDO_GTYPE and Element_Info
                         this.lblMessages.setText(this.propertyManager.getMsg("ERROR_ELEMENT_PROBLEM",elementOffset));
                         return (LinkedHashMap<String,JGeometry>)null;
                     }
                     if ( element != null ) {
-                        // DEBUG LOGGER.info("element is " + element.getType());
+                        LOGGER.debug("element is " + element.getType());
                         if ( element.isRectangle() ) {
                             element = JGeom.fromEnvelope(element);
                         }
@@ -1914,7 +1914,7 @@ implements Observer
                     String ringString = context.nextToken().trim();
                     ringOffset = Integer.valueOf(ringString);
                     key += " " + ringString;
-                    // DEBUG LOGGER.info(key);
+                    LOGGER.debug(key);
                     if ( element != null ) {
                         ring = getRingAt(element,ringOffset);
                         if ( ring != null && _saveExplodedParts )

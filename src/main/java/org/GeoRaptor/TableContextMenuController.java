@@ -13,6 +13,7 @@ import org.GeoRaptor.io.Import.ShapefileLoad;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.dbtools.raptor.utils.Connections;
 import oracle.dbtools.raptor.utils.DBObject;
@@ -23,6 +24,8 @@ import oracle.ide.controller.IdeAction;
 
 public class TableContextMenuController implements Controller
 {
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.TableContextMenuController");
+
     private static final String GENERAL_ERROR     = MainSettings.EXTENSION_NAME + " Error";
 	
 	private static final int ZOOM_TO_MAP          = Ide.findOrCreateCmdID("ZOOM_TO_MAP");
@@ -42,7 +45,8 @@ public class TableContextMenuController implements Controller
 	@Override
 	public boolean handleEvent(IdeAction action, Context context) 
 	{
-        
+		LOGGER.debug("handleEvent()");
+
     	DBObject                dbo = new DBObject(context.getNode());
 
         // Get Connection information 
@@ -51,95 +55,88 @@ public class TableContextMenuController implements Controller
 
         String activeConnectionName = dbo.getConnectionName();
         String       connectionType = dbo.getConnectionType();
+        String   connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
+        
         boolean             isMySQL = "MySQL".equals(connectionType);
-
-        // Get connection information
-        // Get object that has been selected in this connection
+        if ( isMySQL ) {
+    		Tools.displayMessage(
+    				"MySQL support not yet Implemented",
+    			    JOptionPane.WARNING_MESSAGE,
+    				true);
+    		return false;
+        }
+        
+        // Get selected object 
         //
         String selectedSchemaName = dbo.getSchemaName();
         String selectedObjectName = dbo.getObjectName();
         String selectedColumnName = dbo.getChildName(); // Column name if column node selected, null if table node selected.
-        String connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
-
         String selectedObjectType = dbo.getObjectFolderType(); // SGG
         
+    	if ( ! hasGeometryColumn(
+    			conn, 
+                selectedSchemaName,
+                selectedObjectName, 
+                selectedColumnName) )
+    	{
+    		Tools.displayMessage(
+    				"No geometry column exists in " + selectedObjectName,
+    			    JOptionPane.WARNING_MESSAGE,
+    				true);
+    		return true;
+    	}
+    	
 		int cmdId = action.getCommandId();
+		LOGGER.debug("action is " + cmdId);
 		
 		if (cmdId == ZOOM_TO_MAP || cmdId == ADD_TO_MAP) 
         {
-            if ( isMySQL ) {
-        		Tools.displayMessage(
-        				"MySQL support not yet Implemented",
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-            } else {
-
-            	if ( ! hasGeometryColumn(
-            			conn, 
-                        selectedSchemaName,
-                        selectedObjectName, 
-                        selectedColumnName) )
-            	{
-            		Tools.displayMessage(
-            				"No geometry column exists in " + selectedObjectName,
-            			    JOptionPane.WARNING_MESSAGE,
-            				true);
-            		return true;
-            	}
-
-              // Add Object to spatial view
-			  SpatialViewPanel svp = SpatialViewPanel.getInstance();
-              SpatialViewPanel.LayerReturnCode lrc;
-              lrc = svp.addNewSpatialLayer(selectedSchemaName,
-                                           selectedObjectName,
-                                           selectedColumnName,
-                                           selectedObjectType,
-                                           activeConnectionName,
-                                           conn,
-                                           (cmdId == ADD_TO_MAP)?false:true);
-              if ( lrc == SpatialViewPanel.LayerReturnCode.MBR ) {
-                  Messages.log("Menu: No MBR could be computed for " +
-                               Strings.append(Strings.append(selectedSchemaName,selectedObjectName,"."),selectedColumnName, "."));
-              } else if ( lrc == SpatialViewPanel.LayerReturnCode.Metadata ) {
-                  Messages.log("Menu: No spatial metadata for " +
-                               Strings.append(Strings.append(selectedSchemaName,selectedObjectName,"."),selectedColumnName, "."));
-      			MetadataPanel mp = MetadataPanel.getInstance();
-    			boolean status = false;
-				try {
-					status = mp.initialise(conn, 
+			String selectedObjectFullName = Strings.append(Strings.append(selectedSchemaName,selectedObjectName,"."),selectedColumnName, ".");
+			
+			// Add Object to spatial view
+			SpatialViewPanel svp = SpatialViewPanel.getInstance();
+	        SpatialViewPanel.LayerReturnCode lrc;
+	        
+	        lrc = svp.addNewSpatialLayer(selectedSchemaName,
+	                                     selectedObjectName,
+	                                     selectedColumnName,
+	                                     selectedObjectType,
+	                                     activeConnectionName,
+	                                     conn,
+	                                     (cmdId == ADD_TO_MAP)?false:true);
+	        
+	        if ( lrc == SpatialViewPanel.LayerReturnCode.MBR ) 
+	        {
+	              Messages.log("Menu: No MBR could be computed for " + selectedObjectFullName);
+	        } else if ( lrc == SpatialViewPanel.LayerReturnCode.Metadata ) 
+	        {
+	              Messages.log("Menu: No spatial metadata for " + selectedObjectFullName );
+	              MetadataPanel mp = MetadataPanel.getInstance();
+	              boolean status = false;
+	              try {
+	            	  status = mp.initialise(conn, 
 					                       selectedSchemaName,
 					                       selectedObjectName,
 					                       selectedColumnName,
 					                       connectionUserName);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-    			if (status == true) {
-    				mp.setVisible(true);
-    			}
-
-              } else if ( lrc == SpatialViewPanel.LayerReturnCode.Success ) {
-                // show Spatial View (maybe window is not open)
-                svp.show();
-              } else if ( lrc == SpatialViewPanel.LayerReturnCode.Fail ) {           	  
-                Messages.log("Spatial View Panel failed to load");
-              }
-            }
+	              } catch (Exception e) {
+	            	  e.printStackTrace();
+	              }
+	              
+	              if (status == true) {
+	            	  mp.setVisible(true);
+	              }
+	
+	        } else if ( lrc == SpatialViewPanel.LayerReturnCode.Success ) 
+	        {
+	            // show Spatial View (maybe window is not open)
+	            svp.show();
+	        } else if ( lrc == SpatialViewPanel.LayerReturnCode.Fail ) 
+	        {           	  
+	            Messages.log("Spatial View Panel failed to load");
+	        }
             
         } else if (cmdId == CREATE_SPATIAL_INDEX) {
-        	
-        	if ( ! hasGeometryColumn(
-        			  conn,
-        			  selectedSchemaName,
-                      selectedObjectName, 
-                      selectedColumnName) ) 
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
         	
             ManageSpatialIndex msi = ManageSpatialIndex.getInstance(); 
             boolean status = msi.setInit(activeConnectionName, 
@@ -147,49 +144,24 @@ public class TableContextMenuController implements Controller
                                          selectedObjectName, 
                                          selectedColumnName,
                                          connectionUserName);
-            if (status == true) {
+            if (status == true) 
+            {
                 ManageSpatialIndex.getInstance().setVisible(true);
             }
 			
 		} else if (cmdId == DROP_SPATIAL_INDEX) {
 
-        	if ( ! hasGeometryColumn(
-                    conn,
-      			    selectedSchemaName,
-                    selectedObjectName, 
-                    selectedColumnName) ) 
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
-
 			// ManageSpatialIndex.getInstance().dropIndex(null, "", "", "", "", true);
-            ManageSpatialIndex.getInstance().dropIndex(
-            		conn, 
-                    selectedSchemaName, 
-                    selectedObjectName, 
-                    selectedColumnName,
-                    connectionUserName,
-                    true
+            ManageSpatialIndex.getInstance()
+            				  .dropIndex(conn,
+            						     selectedSchemaName,
+            						     selectedObjectName,
+            						     selectedColumnName,
+            						     connectionUserName,
+            						     true
             );
             
 		} else if (cmdId == MANAGE_METADATA) {
-
-        	if ( ! hasGeometryColumn(
-        			conn, 
-                    selectedSchemaName,
-                    selectedObjectName, 
-                    selectedColumnName) )
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
 			
 			MetadataPanel mp = MetadataPanel.getInstance();
 			boolean status = false;
@@ -208,19 +180,6 @@ public class TableContextMenuController implements Controller
 			}
             
 		} else if (cmdId == DROP_METADATA) {
-
-        	if ( ! hasGeometryColumn(
-        			conn, 
-                    selectedSchemaName,
-                    selectedObjectName, 
-                    selectedColumnName) )
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
         	
 			MetadataPanel mp = MetadataPanel.getInstance();
 			mp.deleteMetadata(conn, 
@@ -229,20 +188,8 @@ public class TableContextMenuController implements Controller
                               selectedColumnName);
 
 		} else if (cmdId == EXPORT || cmdId == EXPORT_COLUMN ) {
-			
-        	if ( ! hasGeometryColumn(
-        			conn, 
-                    selectedSchemaName,
-                    selectedObjectName, 
-                    selectedColumnName) )
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
-        	
+
+			LOGGER.debug("Export");
             try 
             {
                 ExporterWizard ew = new ExporterWizard("Export to ...",
@@ -251,6 +198,7 @@ public class TableContextMenuController implements Controller
                                                        selectedObjectName,
                                                        selectedColumnName);
                 boolean status = ew.initialise();
+                LOGGER.debug("ExporterWizard Status " + status);
                 if (status == true) {
                     ew.show();
                 }
@@ -260,24 +208,8 @@ public class TableContextMenuController implements Controller
             }
 
 		} else if (cmdId == VALIDATE_GEOMETRY || cmdId == VALIDATE_COLUMN) {
-			
-        	if ( ! hasGeometryColumn(
-        			conn, 
-                    selectedSchemaName,
-                    selectedObjectName, 
-                    selectedColumnName) )
-        	{
-        		Tools.displayMessage(
-        				"No geometry column exists in " + selectedObjectName,
-        			    JOptionPane.WARNING_MESSAGE,
-        				true);
-        		return true;
-        	}
         	
-			//ValidateSDOGeometry vs = new ValidateSDOGeometry();
-			//vs.setVisible(true);
-
-            if (this.validateSDOGeom == null) {
+			if (this.validateSDOGeom == null) {
                 this.validateSDOGeom = new ValidateSDOGeometry();
             }
 
@@ -299,7 +231,8 @@ public class TableContextMenuController implements Controller
 	}
 
 	@Override
-	public boolean update(IdeAction action, Context context) {
+	public boolean update(IdeAction action, Context context) 
+	{
 		action.setEnabled(true);
 		return action.isEnabled();
 	}

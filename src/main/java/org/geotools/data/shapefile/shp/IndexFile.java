@@ -24,7 +24,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 //import java.util.logging.Logger;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import org.geotools.data.shapefile.StreamLogging;
 import org.geotools.resources.NIOUtilities;
@@ -42,7 +42,7 @@ import org.geotools.resources.NIOUtilities;
  */
 public class IndexFile {
 	private static final Logger LOGGER = 
-	      org.geotools.util.logging.Logging.getLogger("org.geotools.data.shapefile");
+	      org.GeoRaptor.util.logging.Logging.getLogger("org.geotools.data.shapefile");
 	  
 	  private static final int RECS_IN_BUFFER = 2000;
 	  

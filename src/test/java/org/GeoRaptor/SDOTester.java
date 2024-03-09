@@ -31,11 +31,13 @@ import org.GeoRaptor.OracleSpatial.Metadata.MetadataEntry;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.JGeom;
+import org.GeoRaptor.tools.JTSGeometry;
 import org.GeoRaptor.tools.PrintGeometry;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Tools;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.WKTWriter;
 import org.locationtech.jts.io.oracle.OraReader;
@@ -50,9 +52,12 @@ public class SDOTester
 
 	public static void main(String[] args) 
     {
+        System.out.println("Start");
+        boolean tests = false;
+        Geometry2Polygon();
+        if ( tests ) 
         try
         {
-            System.out.println("Start");
             int nTests = 10;
             for (int i = 0; i<=nTests; i++) 
               switch (i) {
@@ -255,10 +260,11 @@ public class SDOTester
             while (results.next()) {
                 try {
                     gid  = OraUtil.toInteger(results.getObject("GID"),0);
+                    System.out.println("GID is " + gid);
                     SdoGeom = (Struct)results.getObject("GEOM");
                     int[] eia = SDO_GEOMETRY.getSdoElemInfo(SdoGeom);
-                    System.out.println(" Circular Arcs?= " + 
-                    (SDO_GEOMETRY.hasArc(SdoGeom) ?"EXIST":"DO NOT EXIST"));
+                    System.out.println("Length of Element Infor Array is " + eia.length);
+                    System.out.println(" Circular Arcs?= " +  (SDO_GEOMETRY.hasArc(SdoGeom) ?"EXIST":"DO NOT EXIST"));
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.out.println("    HasArc Error" + e.toString());
@@ -1051,7 +1057,12 @@ public class SDOTester
 	     }
 
 	}
+	
+    private static void Geometry2Polygon( ) 
+    {
+        Geometry jtsGeom = null;
+        jtsGeom = JTSGeometry.fromWKT("POLYGON((0 0,10 0,10 10, 0 10, 0 0))");
+       	Polygon poly = (Polygon) jtsGeom;
+       	PrintGeometry.printJTSGeometry(poly);
+    }
 }
-
-
-

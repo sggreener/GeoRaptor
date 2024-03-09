@@ -26,13 +26,13 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.geometry.JGeometry;
 
 public class SVDrawQueries {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVDrawQueries");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVDrawQueries");
 
     public static LinkedHashMap<String,String> 
                   getAttributesFromMetadata (
@@ -134,6 +134,7 @@ public class SVDrawQueries {
                                  SVSpatialLayerDraw _drawTools
                           )
     {
+    	LOGGER.debug("SexecuteQuery");
         if ( _g2 == null ) {
             return false;
         }
@@ -239,7 +240,7 @@ public class SVDrawQueries {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         pointColorValue = ors.getString(styling.getPointColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        pointColorValue = Colours.transparentBlackRGBa;
+                        pointColorValue = Colours.transparentWhiteRGBa;
                     }
                     pointColor = Colours.fromRGBa(pointColorValue);
                 }
@@ -251,21 +252,21 @@ public class SVDrawQueries {
                         // regardless as to whether RGB or Integer, get colour as a string.
                         lineColorValue = ors.getString(styling.getLineColorColumn().replace("\"",""));
                     } catch (Exception e) {
-                        lineColorValue = Colours.transparentBlackRGBa;
+                        lineColorValue = Colours.transparentWhiteRGBa;
                     }
                     lineColor = Colours.fromRGBa(lineColorValue);
                 }
 
                 if (styling.getShadeColumn() != null 
                  && labelColumns.indexOf(styling.getShadeColumn()) != -1 
-                 && styling.getShadeType() == Styling.STYLING_TYPE.COLUMN) 
+                 && styling.getShadeColorType() == Styling.STYLING_TYPE.COLUMN) 
                 {
                 	try 
                 	{
                 		// regardless as to whether RGB or Integer, get colour as a string.
                         shadeValue = ors.getString(styling.getShadeColumn().replace("\"",""));
                     } catch (Exception e) {
-                        shadeValue = Colours.transparentBlackRGBa;
+                        shadeValue = Colours.transparentWhiteRGBa;
                     }
                     shadeColor = Colours.fromRGBa(shadeValue);
                 }

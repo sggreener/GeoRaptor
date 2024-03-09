@@ -5,7 +5,7 @@
 	<!-- The Basics -->
 	<groupId>org.GeoRaptor</groupId>
 	<artifactId>GeoRaptor</artifactId>
-	<version>20.1.01</version>
+	<version>20.1.21</version>
 	<packaging>bundle</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -50,6 +50,7 @@
 	</profiles>
 
 	<dependencies>
+    
 		<!-- SQL Developer dependencies not available in public Maven repositories -->
 		<dependency>
 			<groupId>oracle</groupId>
@@ -74,6 +75,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/extensions/oracle.ide.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>oracle.sqldeveloper</artifactId>
@@ -81,6 +83,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>oracle.sqldeveloper.jdbcproxy</artifactId>
@@ -88,6 +91,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.jdbcproxy.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>dbapi</artifactId>
@@ -95,6 +99,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/lib/dbapi.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>javatools</artifactId>
@@ -102,6 +107,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/lib/javatools.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>javatools-nodeps</artifactId>
@@ -109,6 +115,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/modules/oracle.javatools/javatools-nodeps.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>idert</artifactId>
@@ -116,6 +123,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/lib/idert.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>uic</artifactId>
@@ -132,20 +140,23 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/jdev/lib/jdev-rt.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>ojdbc8</artifactId>
 			<version>12.2.0</version>
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/jdbc/lib/ojdbc8.jar</systemPath>
-		</dependency>	
+		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>javax-ide</artifactId>
 			<version>12.2.0</version>
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/lib/javax-ide.jar</systemPath>
-		</dependency>	
+		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>sdoapi</artifactId>
@@ -153,6 +164,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/lib/sdoapi.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>sdoutl</artifactId>
@@ -160,6 +172,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/lib/sdoutl.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>sqldeveloper.utils</artifactId>
@@ -167,6 +180,7 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/sqldeveloper/extensions/oracle.sqldeveloper.utils.jar</systemPath>
 		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>ide.navigator</artifactId>
@@ -174,6 +188,15 @@
 			<scope>system</scope>
 			<systemPath>${sqldev.basedir}/ide/extensions/oracle.ide.navigator.jar</systemPath>
 		</dependency>
+
+		<dependency>
+			<groupId>oracle</groupId>
+			<artifactId>ide.gallery</artifactId>
+			<version>12.2.0</version>
+			<scope>system</scope>
+			<systemPath>${sqldev.basedir}/ide/extensions/oracle.ide.gallery.jar</systemPath>
+		</dependency>
+		
 		<dependency>
 			<groupId>oracle</groupId>
 			<artifactId>sqldeveloper.snippet</artifactId>
@@ -195,6 +218,7 @@
 		    <groupId>org.locationtech.jts</groupId>
 		    <artifactId>jts-core</artifactId>
 		    <version>1.19.0</version>
+		    <!--version>1.16.0</version-->
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.locationtech.jts/jts-io 
@@ -234,6 +258,7 @@
 
 		<sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
 		<plugins>
+		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<version>3.8.0</version>
@@ -246,6 +271,7 @@
 					</includes>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>buildnumber-maven-plugin</artifactId>
@@ -265,6 +291,7 @@
 					</items>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
@@ -275,8 +302,8 @@
 						<configuration>
 							<target>
 								<copy failonerror="true" file="sqldeveloper.xml" tofile="target/sqldeveloper.xml" />
-								<copy failonerror="true" file="bundle.xml" tofile="target/bundle.xml" />
-								<copy failonerror="true" file="extension.xml" tofile="target/classes/META-INF/extension.xml" />
+								<copy failonerror="true" file="bundle.xml"       tofile="target/bundle.xml" />
+								<copy failonerror="true" file="extension.xml"    tofile="target/classes/META-INF/extension.xml" />
 							</target>
 						</configuration>
 						<goals>
@@ -285,6 +312,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>properties-maven-plugin</artifactId>
@@ -305,6 +333,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -342,6 +371,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			
 			<plugin>
 				<groupId>com.google.code.maven-replacer-plugin</groupId>
 				<artifactId>replacer</artifactId>
@@ -363,7 +393,7 @@
 					<replacements>
 						<replacement>
 							<token>#EXTENSION_VERSION#</token>
-							<value>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}${buildNumber}</value>
+							<value>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${buildNumber}</value>
 						</replacement>
 						<replacement>
 							<token>#EXTENSION_SHORT_VERSION#</token>
@@ -392,6 +422,7 @@
 					</replacements>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
@@ -438,6 +469,7 @@
 							oracle.javaxide,
 							oracle.db-api,
 							oracle.ide,
+							oracle.ide.gallery,
 							oracle.ide.navigator,
 							oracle.layout-managers,
 							oracle.sqldeveloper,
@@ -458,6 +490,7 @@
 					</instructions>
 				</configuration>
 			</plugin>
+			
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.1.1</version>
@@ -479,7 +512,21 @@
 					</execution>
 				</executions>
 			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+				  <archive>
+				    <manifest>
+					<mainClass>org.GeoRaptor</mainClass>
+				    </manifest>
+				  </archive>
+				</configuration>
+			</plugin>
 		</plugins>
+		
 		<pluginManagement>
 			<plugins>
 				<plugin>

@@ -25,7 +25,6 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.JSplitPane;
@@ -55,7 +54,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 	 */
 	private static final long serialVersionUID = -552446836266587072L;
 
-	// private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.PreferencesPanel");
+	// private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.PreferencesPanel");
 
 	private static PreferencePanel classInstance = null;
 	
@@ -323,29 +322,6 @@ public class PreferencePanel extends DefaultTraversablePanel {
 					setHighlightColour(selectionColor);
 				}
 			});
-		}
-	}
-
-	private void cbDebug_actionPerformed(ActionEvent e) {
-		if (cbDebug.isSelected()) {
-			JPanel panel = new JPanel();
-			JLabel label = new JLabel("Password:");
-			JPasswordField pass = new JPasswordField(10);
-			panel.add(label);
-			panel.add(pass);
-			String[] options = new String[] { "OK", "Cancel" };
-			int option = JOptionPane.showOptionDialog(null, panel, "GeoRaptor Debug Password", JOptionPane.NO_OPTION,
-					JOptionPane.PLAIN_MESSAGE, null, options, options[1]);
-			if (option == 0) // pressing OK button
-			{
-				char[] passwd = pass.getPassword();
-				String password = new String(passwd);
-				if (password.equals(Constants.DEBUG_PASSWORD)) {
-					Constants.DEBUG = true;
-				}
-			}
-		} else {
-			Constants.DEBUG = false;
 		}
 	}
 
@@ -956,11 +932,6 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		cbDebug.setText("Debug mode:");
 		cbDebug.setHorizontalTextPosition(SwingConstants.LEADING);
 		cbDebug.setHorizontalAlignment(SwingConstants.RIGHT);
-		cbDebug.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				cbDebug_actionPerformed(e);
-			}
-		});
 
 		cbDrawQueryGeometry.setText("Draw Query Geometry?");
 		cbDrawQueryGeometry.setHorizontalTextPosition(SwingConstants.LEADING);
@@ -1479,6 +1450,14 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		return this.cbLogSearchStats.isSelected();
 	}
 
+	public void setDebugMode(boolean _stats) {
+		this.cbDebug.setSelected(_stats);
+	}
+
+	public boolean getDebugMode() {
+		return this.cbDebug.isSelected();
+	}
+
 	public void setPanZoomPercentage(int _percentage) {
 		this.sldrPanZoomChange.setValue(_percentage);
 	}
@@ -1893,7 +1872,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		this.setNumberOfFeaturesVisible(preferences.isNumberOfFeaturesVisible());
 		this.setDrawQueryGeometry(preferences.isDrawQueryGeometry());
 		this.setDBFColumnShorten(preferences.isDBFShortenBegin10());
-		this.cbDebug.setSelected(Constants.DEBUG);
+		this.setDebugMode(preferences.isDebugMode());
 		this.setSQLSchemaPrefix(preferences.getSQLSchemaPrefix());
 		this.setQueryLimit(preferences.getQueryLimit());
 		this.setDefGeomColName(preferences.getDefGeomColName());
@@ -1941,6 +1920,7 @@ public class PreferencePanel extends DefaultTraversablePanel {
 		prefs.setPanZoomPercentage(this.getPanZoomPercentage());
 		prefs.setTableCountLimit(this.getTableCountLimit());
 		prefs.setLogSearchStats(this.getLogSearchStats());
+		prefs.setDebugMode(this.getDebugMode());
 		prefs.setNN(this.isNN());
 		// Import / Export NULLs
 		prefs.setNullString(this.getNullString());

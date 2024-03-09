@@ -11,7 +11,7 @@ import org.GeoRaptor.SpatialView.SpatialView;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.dbtools.raptor.connections.ConnectionEvent;
 import oracle.dbtools.raptor.connections.ConnectionListener;
@@ -20,7 +20,7 @@ import oracle.javatools.db.DBException;
 
 public class DatabaseConnections {
 
-    private static final Logger                      LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnections");
+    private static final Logger                      LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.sql.DatabaseConnections");
     private static DatabaseConnections            _instance = null;
     private int                             initialCapacity = 255;
     private LinkedHashMap<String, DatabaseConnection> cache = null;
@@ -115,10 +115,10 @@ public class DatabaseConnections {
 
      public Connection getConnection(String  _connName)
      {
-         LOGGER.debug("DatabaseConnections.getConnection("+_connName+")");
+         LOGGER.debug("getConnection("+_connName+")");
          DatabaseConnection dbConn = this.findConnectionByName(_connName);
          if ( dbConn == null ) {
-             LOGGER.debug("DatabaseConnections.getConnection - findConnectionByName returned null");
+             LOGGER.debug("getConnection - findConnectionByName returned null");
              return null;
          }
          Connection conn = dbConn.getConnection();       
@@ -231,7 +231,7 @@ public class DatabaseConnections {
     }
 
     public void removeAll() {
-        //LOGGER.debug("DatabaseConnections.removeAll()");
+        //LOGGER.debug("removeAll()");
         if ( this.cache == null || this.cache.size()==0 ) {
             return;
         }
@@ -240,7 +240,7 @@ public class DatabaseConnections {
 
     public boolean connectionExists(String  _connName) 
     {
-        //LOGGER.debug("DatabaseConnections.connectionExists("+_connName+")");
+        //LOGGER.debug("connectionExists("+_connName+")");
         if ( this.cache == null || this.cache.size()==0 || Strings.isEmpty(_connName)) {
             return false;
         }
@@ -282,7 +282,7 @@ public class DatabaseConnections {
         if (Strings.isEmpty(_connName) || this.cache == null || this.cache.size()==0 ) {
             return null;
         }
-        //LOGGER.debug("DatabaseConnections.findConnectionName(" + _connName + ")");
+        //LOGGER.debug("findConnectionName(" + _connName + ")");
         DatabaseConnection dbConn = this.cache.get(_connName);
         if ( dbConn==null ) {
             // Not in GeoRaptor's cached set of connections
@@ -305,13 +305,13 @@ public class DatabaseConnections {
         if (Strings.isEmpty(_connName) ) {
             return "";
         }
-        //LOGGER.debug("DatabaseConnections.getConnectionDisplayName("+_connName+")");
+        //LOGGER.debug("getConnectionDisplayName("+_connName+")");
         DatabaseConnection dbConn = this.findConnectionName(_connName);
         if ( dbConn == null ) {
-           //LOGGER.debug("DatabaseConnections.getConnectionDisplayName().findConnectionName() returned null");
+           //LOGGER.debug("getConnectionDisplayName().findConnectionName() returned null");
            return _connName;
         }
-        //LOGGER.debug("DatabaseConnections.getConnectionDisplayName().findConnectionName() returned " + dbConn.getDisplayName());
+        //LOGGER.debug("getConnectionDisplayName().findConnectionName() returned " + dbConn.getDisplayName());
         return dbConn.getDisplayName();
     }
 
@@ -333,7 +333,7 @@ public class DatabaseConnections {
 
     public DatabaseConnection findConnectionByName(String  _connName) 
     {
-        //LOGGER.debug("DatabaseConnections.findConnectionByName("+_connName+")");
+        //LOGGER.debug("findConnectionByName("+_connName+")");
         DatabaseConnection dbConn = DatabaseConnections.getInstance().findConnectionName(_connName);
         if ( dbConn == null ) {
             // Try other way around
@@ -372,7 +372,7 @@ public class DatabaseConnections {
     }
 
     public void addConnection(String _connName) {
-        //LOGGER.debug("DatabaseConnections.addConnection");
+        //LOGGER.debug("addConnection");
         if (Strings.isEmpty(_connName) ) {
             return;
         }
@@ -404,7 +404,7 @@ public class DatabaseConnections {
     // Refreshes connections to contain only those that are open
     //
     public void setConnections(boolean _openOnly) {
-        //LOGGER.debug("DatabaseConnections.setConnections("+_openOnly+")");
+        //LOGGER.debug("setConnections("+_openOnly+")");
         
         // Clear current cache
         this.removeAll();
@@ -422,7 +422,7 @@ public class DatabaseConnections {
                     if (( ! _openOnly ) ||
                           ( _openOnly && Connections.getInstance().isConnectionOpen(connName) )) {
                         this.cache.put(connName,new DatabaseConnection(connName));                    
-                        //LOGGER.debug("DatabaseConnections.setConnections " + connName + " loaded.");
+                        //LOGGER.debug("setConnections " + connName + " loaded.");
                     }
                 } catch (Exception _e) {
                     int l = "java.sql.SQLException:".length();

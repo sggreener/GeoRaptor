@@ -4,8 +4,8 @@ import java.sql.Connection;
 
 import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.sql.Queries;
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 /*
  * DiscoverGeometryType.java

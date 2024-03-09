@@ -95,7 +95,7 @@ import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.dbtools.raptor.controls.RaptorDnD;
 import oracle.dbtools.raptor.navigator.db.DatabaseConnection;
@@ -123,7 +123,7 @@ public class ViewLayerTree
     
     private ClassLoader cl = this.getClass().getClassLoader();
     
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.ViewLayerTree");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.ViewLayerTree");
 
     private Preferences mainPreferences = null;
     
@@ -528,6 +528,10 @@ public class ViewLayerTree
                             // Only a single node requires refreshing...
                             //
                             model.nodeChanged(checkedNode);
+                            
+                            LOGGER.debug("AddMouseAdapter.processLeftMouseEvent: Redrawing map");
+                            svp.redraw();
+
                         } else if (nodeObject instanceof JRadioButton  ) {
                             // Only a single node requires refreshing...
                             //
@@ -3173,7 +3177,7 @@ public class ViewLayerTree
           switch (this.sLayer.getGeometryType()) {
           case POINT        : return Tools.createIcon(LineStyle.getStroke(LineStyle.LINE_STROKES.LINE_SOLID,1),
                                                       18,18,
-                                                      PointMarker.getPointShape(this.sLayer.getStyling().getPointType(),
+                                                      PointMarker.getPointShape(this.sLayer.getStyling().getPointMarkerType(),
                                                                                 new Point2D.Double(9,9),
                                                                                 18,  /* PointSize */ 
                                                                                 0),

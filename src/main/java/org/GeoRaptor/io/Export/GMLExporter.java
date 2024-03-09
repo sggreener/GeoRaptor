@@ -16,13 +16,13 @@ import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 import oracle.spatial.util.GML3;
 
 public class GMLExporter implements IExporter 
 {
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GMLExporter");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GMLExporter");
 
     private final static String GmlNameSpace = "xmlns:gml=\"http://www.opengis.net/gml\"";
     private String                   newLine = System.getProperty("line.separator");
@@ -125,7 +125,12 @@ public class GMLExporter implements IExporter
         return this.geoColumnName;
     }
 
-    public void start(String _encoding) throws Exception {
+    public void start(String _encoding) 
+    	 throws Exception 
+    {
+    	LOGGER.debug("start()");
+    	LOGGER.debug("start(): Total Rows to Export = " + this.getTotalRows());
+
         this.rowBuffer = new StringBuffer(10000);
         if (Strings.isEmpty(gmlFilename) ) {
             throw new IOException("Filename not set");
@@ -160,7 +165,10 @@ public class GMLExporter implements IExporter
         }
     }
 
-    public void startRow() throws IOException {
+    public void startRow() 
+    		throws IOException 
+    {
+    	LOGGER.debug("startRow()");
         this.rowBuffer.append("  <gml:featureMember>" + newLine);
         if ( this.attributeFlavour == Constants.XMLAttributeFlavour.OGR ) 
             this.rowBuffer.append("    <ogr:" + this.baseName + /* " ogr:fid=\"F" + String.valueOf(row) + "\""*/ ">" + newLine);
@@ -171,6 +179,7 @@ public class GMLExporter implements IExporter
     public void printColumn(Object                _object, 
                             OraRowSetMetaDataImpl _columnMetaData) 
     {
+    	LOGGER.debug("printColumn()");
         String gmlText = "";
         Struct stValue = null; 
         try {
@@ -245,7 +254,10 @@ public class GMLExporter implements IExporter
         }
     }
 
-    public void endRow() throws IOException {        
+    public void endRow() 
+    		throws IOException 
+    {
+    	LOGGER.debug("endRow()");
         this.row++;
         this.rowBuffer.append("    </" + this.getXMLFlavourPrefix(this.attributeFlavour) + ":" + this.baseName + ">" + newLine);
         this.rowBuffer.append("  </gml:featureMember>" + newLine);
@@ -255,7 +267,11 @@ public class GMLExporter implements IExporter
         }
     }
 
-    public void end() throws IOException {
+    public void end() 
+    		throws IOException 
+    {
+    	LOGGER.debug("end()");
+
         if ( this.rowBuffer.length() > 0 ) {
             this.gmlFile.write(this.rowBuffer.toString());
         } 

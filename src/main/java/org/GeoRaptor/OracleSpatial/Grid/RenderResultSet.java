@@ -63,7 +63,7 @@ import org.GeoRaptor.tools.SpatialRenderer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.io.oracle.OraUtil;
 
 import oracle.dbtools.raptor.controls.grid.ResultSetTable;
@@ -85,7 +85,7 @@ public class RenderResultSet
      extends GridContextMenuItem 
 {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Grid.RenderResultSet");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.OracleSpatial.Grid.RenderResultSet");
 
     private static final String cNoLabel = "No Label";
     /** Class instance
@@ -545,6 +545,7 @@ public class RenderResultSet
     
     protected boolean canShow(ContextMenu _contextMenu) 
     {
+    	LOGGER.debug("canShow()");
         // Test connection type
         // Functionality only for Oracle at the moment.
         try {
@@ -598,6 +599,7 @@ public class RenderResultSet
                         // 2. The clicked geometry column is also selected 
                         //
                         if ( _table.getSelectedColumnCount()==0 ) {
+                        	LOGGER.debug("\tFound geometry column at position " + clickColumn);
                             return clickColumn!=-1;
                         } else {
                             // we always return the click column and not the model
@@ -618,10 +620,12 @@ public class RenderResultSet
                         // 2. The clicked geometry column is also selected 
                         //
                         if ( _table.getSelectedColumnCount()==0 ) {
+                        	LOGGER.debug("\tFound geometry column at position " + clickColumn);
                             return clickColumn!=-1;
                         } else {
                             // we always return the click column and not the model
                             //
+                        	//TODO: Check that this return is correct as it should be returning the position of a column not a boolean
                             return _table.isColumnSelected(clickColumn);
                         }
                     }
@@ -656,6 +660,7 @@ public class RenderResultSet
     
     private int findDimArrayColumn() 
     {
+    	LOGGER.debug("findDimArrayColumn: is mappable row a DIMINFO structure?");
         if ( this.rst == null || this.meta==null  )
             return -1;
         
@@ -690,29 +695,31 @@ public class RenderResultSet
                         if ( this.meta.getColumnLabel(rCol).equalsIgnoreCase(columnName) ) {
                             // Is it an SDO_GEOMETRY?
                             //
-                            //LOGGER.debug(this.meta.getColumnLabel(rCol) + " of "+this.meta.getColumnType(rCol) + " at " + viewCol);
+                            LOGGER.debug("\tChecking " + this.meta.getColumnLabel(rCol) + " of "+ this.meta.getColumnType(rCol) + " at " + viewCol);
                             if (this.meta.getColumnType(rCol) == OracleTypes.ARRAY ) {
                                 dimArray = this.findDimInfoValue(viewCol);
                                 if (dimArray == null ) {
-                                    break;
+                                    break; 	
                                 }
                                 if ( dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_DIMARRAY) 
                                      ||
                                      dimArray.getBaseTypeName().equals(Constants.TAG_MDSYS_SDO_ELEMENT) )
                                 {
+                                	LOGGER.debug("\tYes, found column is " + viewCol);
                                     return viewCol;
                                 }
                             }
                             break;
                         }
                     } catch (Exception e) {
-                        LOGGER.warn("RenderResultSet.findAnyGeometryColumn(): Exception - " + e.getMessage());
+                        LOGGER.warn("Error Finding DimArray Column: Exception - " + e.getMessage());
                     }
                 }
             }
         } catch (SQLException sqle) {
-            LOGGER.warn("RenderResultSet.findAnyGeometryColumn(): SQLException - " + sqle.getMessage());
+            LOGGER.warn("Error Finding DimArray Column: SQLException - " + sqle.getMessage());
         }
+    	LOGGER.debug("\tNo");
         return dimColumn;
     }
     
@@ -750,6 +757,8 @@ public class RenderResultSet
 
     private int findAnyGeometryColumn() 
     {
+    	LOGGER.debug("findAnyGeometryColumn()");
+
         if ( this.rst == null || this.meta==null  )
             return -1;
         
@@ -793,18 +802,19 @@ public class RenderResultSet
                                      geo.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_GEOMETRY) ||
                                      geo.getSQLTypeName().equals(Constants.TAG_MDSYS_SDO_POINT_TYPE) ||
                                      geo.getSQLTypeName().equals(Constants.TAG_MDSYS_VERTEX_TYPE) ) {
+                                	LOGGER.debug("\tFound mappable column " + viewCol);
                                     return viewCol;
                                 }
                             }
                             break;
                         }
                     } catch (Exception e) {
-                        LOGGER.warn("RenderResultSet.findAnyGeometryColumn(): Exception - " + e.getMessage());
+                        LOGGER.warn("findAnyGeometryColumn(): Exception - " + e.getMessage());
                     }
                 }
             }
       } catch (SQLException sqle) {
-            LOGGER.warn("RenderResultSet.findAnyGeometryColumn(): SQLException - " + sqle.getMessage());
+            LOGGER.warn("findAnyGeometryColumn(): SQLException - " + sqle.getMessage());
       }
       return mappableColumn;
     }
@@ -1011,6 +1021,7 @@ public class RenderResultSet
                             } else {
                                 geomMetadata.addShapeType(SDO_GEOMETRY.getShapeType(FULL_GTYPE,false));
                             }
+LOGGER.debug("getGeometryProperties: Shape Type = " + geomMetadata.getShapeType().toString());
                             geomMetadata.setSRID(SDO_GEOMETRY.getSRID(stGeom, geomMetadata.getSRID()));
                             geomMetadata.setGeometryType(SDO_GEOMETRY.discoverGeometryType(SDO_GEOMETRY.getFullGType(stGeom,FULL_GTYPE),
                                                                                            geomMetadata.getGeometryType()));
@@ -1025,7 +1036,7 @@ public class RenderResultSet
             geomMetadata.setFullGType(FULL_GTYPE);
             geomMetadata.setDimension(DIMENSION);
         } catch (SQLException sqle) {
-            LOGGER.warn("RenderResultSet.getGeometryProperties(): Exception caught when examining geometries " + sqle.getMessage());
+            LOGGER.warn("getGeometryProperties(): Exception caught when examining geometries " + sqle.getMessage());
         }
         return geomMetadata;        
     }
@@ -1102,9 +1113,11 @@ public class RenderResultSet
     
     private void exportResultSet(Constants.EXPORT_TYPE _exportType) 
     {
-      try 
-      { 
-          if ( this.rst == null ) {
+    	LOGGER.debug("exportResultSet(" + _exportType.toString()+")");
+
+    	try 
+     	{ 
+    		if ( this.rst == null ) {
               throw new IllegalArgumentException("No ResultSet Table to process.");
           }
           
@@ -1184,21 +1197,25 @@ public class RenderResultSet
           
           if (_exportType == Constants.EXPORT_TYPE.SHP || 
               _exportType == Constants.EXPORT_TYPE.TAB ) {
+        	  LOGGER.debug("\tShape Type=" + this.geometryMetadata.getShapeType().toString());
               if ( this.geometryMetadata.getShapeTypes() != null && this.geometryMetadata.getShapeTypes().size()>0 ) {
                   options.setShapeTypes(this.geometryMetadata.getShapeTypes());
                   options.setShapefileType(Constants.SHAPE_TYPE.valueOf(this.geometryMetadata.getShapeTypes().get(0)));
               }
           }
           this.geometryMetadata.setShapefileType((ShapeType)options.getShapefileType(true));
+LOGGER.debug("\tShapefile Type=" + this.geometryMetadata.getShapefileType(true));
 
-          // Display
-          //
+		  LOGGER.debug("\tDisplaying Export Dialog...");
+			
           options.setAlwaysOnTop(true);
           options.setVisible(true);
           if ( options.wasCancelled() ) {
               return;
           }
-            
+
+          LOGGER.debug("\tExporting ...");
+
           characterSet = options.getCharset();
           
           if ( ( _exportType==Constants.EXPORT_TYPE.GML || 
@@ -1452,6 +1469,8 @@ public class RenderResultSet
     
     private boolean copySdoMetadataSQLClipboard(sqlType _sqlType) 
     {
+        LOGGER.error("RenderResultSet.copySdoMetadataSQLClipboard()");
+
         // This function can only be called if table_name,column_name,diminfo and srid columns exist in resultset....
         // 
         Connection conn = this.getConnection();
@@ -1735,6 +1754,7 @@ public class RenderResultSet
     private boolean createWorksheetSQLLayer() {
         try
         {
+        	LOGGER.debug("createWorksheetSQLLayer()");
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("No ResultSet Table to process.");
             }
@@ -1804,8 +1824,7 @@ public class RenderResultSet
                 }
             }
             schemaName = Strings.isEmpty(schemaName)?this.getUserName():schemaName;
-            LOGGER.debug("schemaName(" + schemaName+") tableName("+tableName + ")");
-            
+            LOGGER.debug("createWorksheetSQLLayer: schemaName(" + schemaName+") tableName("+tableName + ")");
             // MAKE SURE THE MAP VIEW IS OPEN ...
             //
             SpatialViewPanel.getInstance().show();
@@ -1825,7 +1844,7 @@ public class RenderResultSet
 
             int[] rows = this.rst.getSelectedRows();
             int viewRow = -1;
-            LOGGER.info("Calculation of SQL's layer extent based on " + rowsToProcess + " rows.");
+        	LOGGER.debug("createWorksheetSQLLayer: Calculation of SQL's layer extent based on " + rowsToProcess + " rows.");
             for (int row=0; row < rowsToProcess; row++) 
             {
                 viewRow = row;
@@ -1845,7 +1864,7 @@ public class RenderResultSet
                         me.setSRID((SRID==Constants.SRID_NULL || SRID==0) ? "NULL"  : String.valueOf(SRID));
                     } 
                 } catch (Exception e) {
-                    LOGGER.error("RenderResultSet.processResultSet(): Error converting " + mappableColumnName + " (" + e.getMessage() +")");
+                    LOGGER.error("createWorksheetSQLLayer: Error converting " + mappableColumnName + " (" + e.getMessage() +")");
                 }
             }
             me.add(layerMBR);
@@ -1853,7 +1872,7 @@ public class RenderResultSet
                 // Need to compute mbr
                 throw new IllegalArgumentException("Cannot create starting MBR from result set, so is not mappable.");
             }
-            LOGGER.debug("RenderResultSet MetadataEntry=" + me.toString());
+        	LOGGER.debug("createWorksheetSQLLayer: MetadataEntry=" + me.toString());
             // Create WorksheetLayer from known information
             SpatialView sView = svp.getMostSuitableView(SRID);
             sWorksheetLayer = new SVWorksheetLayer(sView,
@@ -1870,7 +1889,14 @@ public class RenderResultSet
             if ( this.mainPrefs.isRandomRendering()) {
                 sWorksheetLayer.getStyling().setAllRandom();
             }
-            // Finally add to view
+        	LOGGER.debug("createWorksheetSQLLayer: Colours (Point-Type,Line-Type,Shade-Type) (" +
+        				sWorksheetLayer.getStyling().getPointColor().toString() + "-" +
+        				sWorksheetLayer.getStyling().getPointColorType().toString() + "," +
+        				sWorksheetLayer.getStyling().getLineColor().toString() + "-" +
+        				sWorksheetLayer.getStyling().getLineColorType().toString() + "," +
+        				sWorksheetLayer.getStyling().getShadeColor().toString() + "-" +
+        				sWorksheetLayer.getStyling().getShadeColorType().toString() + ")");
+        	// Finally add to view
             if ( svp.addLayerToView(sWorksheetLayer,false/*zoom*/) ) {
                svp.redraw();
             }
@@ -1884,6 +1910,7 @@ public class RenderResultSet
     private boolean mapSelectedGeometries(   int _commandId,
                                           String _labelMenuValue) 
     {
+    	LOGGER.debug("mapSelectedGeometries(" + _commandId + "," + _labelMenuValue +")");
     	// Get rid of Z: or A: or Q: prefix
     	String labelName = _labelMenuValue.substring(2); 
         try
@@ -2062,8 +2089,15 @@ public class RenderResultSet
                                       if ( this.mainPrefs.isRandomRendering()) {
                                           sGraphicLayer.getStyling().setAllRandom();
                                       }
+                                      LOGGER.debug("mapSelectedGeometries: Colours(Point-Type,Line-Type,Shade-Type) (" +
+                                      			sGraphicLayer.getStyling().getPointColor().toString() + "-" +
+                                      			sGraphicLayer.getStyling().getPointColorType().toString() + "," +
+                                      			sGraphicLayer.getStyling().getLineColor().toString() + "-" +
+                                      			sGraphicLayer.getStyling().getLineColorType().toString() + "," +
+                                      			sGraphicLayer.getStyling().getShadeColor().toString() + "-" +
+                                      			sGraphicLayer.getStyling().getShadeColorType().toString() + ")");
                                   } catch (Exception e) {
-                                      LOGGER.error("Error creating Graphic Theme to hold selection." + e.getMessage());
+                                	  LOGGER.error("mapSelectedGeometries: Error creating Graphic Theme to hold selection." + e.getMessage());
                                       return false;
                                   }
                               }
@@ -2093,7 +2127,7 @@ public class RenderResultSet
                           }
                       }
                   } catch (Exception e) {
-                    LOGGER.error("RenderResultSet.processResultSet(): Error converting column/type " + columnName + "/" + classname);                      
+                    LOGGER.error("OracleSpatial.Grid.RenderResultSet.mapSelectedGeometries: Error converting column/type " + columnName + "/" + classname);                      
                   }
                 }
                 // rowid is always column 0 in the underlying tableModel
@@ -2106,7 +2140,7 @@ public class RenderResultSet
                                              conn)
                         );
                     } catch (Exception e) {
-                        LOGGER.warn("RenderResultSet.mapSelectedGeometries: QueryRow create error = " + e.getMessage());
+                        LOGGER.warn("OracleSpatial.Grid.RenderResultSet.mapSelectedGeometries: QueryRow create error = " + e.getMessage());
                     }
             }
             
@@ -2146,6 +2180,7 @@ public class RenderResultSet
     {
         try
         {
+        	LOGGER.debug("mapSelectedDimInfos()");
             if ( this.rst == null ) {
                 throw new IllegalArgumentException("No ResultSet Table to process.");
             }
@@ -2319,7 +2354,7 @@ public class RenderResultSet
 	                                      true);
 						sGraphicLayer.setConnection(this.getConnectionName());
 						//sGraphicLayer.setSQL(sqlCmd);
-						sGraphicLayer.getStyling().setShadeType(Styling.STYLING_TYPE.NONE); // Boundary only
+						sGraphicLayer.getStyling().setShadeColorType(Styling.STYLING_TYPE.NONE); // Boundary only
 						sGraphicLayer.getStyling().setShadeColor(Colours.getRandomColor());
 						sGraphicLayer.getStyling().setLineColor (Colours.getRandomColor());
 						sGraphicLayer.setGeometryType(Constants.GEOMETRY_TYPES.POLYGON);
@@ -2500,6 +2535,7 @@ public class RenderResultSet
                        GeometryProperties                    _geometryMetadata) 
       {
           this.conn = _conn;
+          LOGGER.debug("runExport()");
           if ( this.conn==null ) {
               this.conn = getConnection();
               if ( this.conn==null ) {
@@ -2536,11 +2572,14 @@ public class RenderResultSet
       }
   
       private void setSkipStatistics(ShapeType _sType,
-                                     boolean   _hasArc) {
+                                     boolean   _hasArc) 
+      {
           if ( _sType == null ) {
               return;
           }
           
+    	  LOGGER.debug("setSkipStatistics(" + _sType.toString() + "," + _hasArc + ")");
+    	  
           if ( skippedRecords == null ) {
               this.skippedRecords = new LinkedHashMap<Integer,Integer>(Constants.SHAPE_TYPE.values().length);
           }
@@ -2571,6 +2610,7 @@ public class RenderResultSet
 
       public void run () 
       {
+    	  LOGGER.debug("run()");
           int colsToProcess = this.rst.getSelectedColumnCount()==0?_table.getColumnCount():this.rst.getSelectedColumnCount();
           // For rows, we have to include what rows are actually loaded into the JTable as we can only
           // convert those that are visible to a GraphicTheme otherwise conversion of the ones not in 
@@ -2614,7 +2654,11 @@ public class RenderResultSet
               geoExporter.setGeometryProperties(this.geometryMetadata);
               geoExporter.setExportMetadata(this.exportMetadata);
         
+              LOGGER.debug("\tgeoExporter.start()");
+              LOGGER.debug("\tRows to process = " + rowsToProcess + " Columns to process = " + colsToProcess );
+              
               geoExporter.start(this.characterSet);
+              
               Struct stGeom = null;
               for (int row=0; row < rowsToProcess; row++)
               {
@@ -2652,9 +2696,13 @@ public class RenderResultSet
                       setSkipStatistics(shpType, SDO_GEOMETRY.hasArc(stGeom));
                       continue;
                   }
+                  
                   // Now process whole row
                   //
+                  LOGGER.debug("\tgeoExporter.startRow()");
+                  
                   geoExporter.startRow();
+                  
                   for (int col = 0; col < colsToProcess; col++) 
                   {
                       viewCol = col;
@@ -2718,18 +2766,26 @@ public class RenderResultSet
                                          : new JGeometry(ords[0],ords[1],ords[2],this.options.getSRID());
                                   stGeom = JGeom.toStruct(jGeo,conn);
                               }
+                              
+                              LOGGER.debug("\tgeoExporter.printColumn: Geometry");
+                              
                               geoExporter.printColumn(stGeom, columnMetadata);
+LOGGER.debug(1);                              
                               // May have been changed so swap it back for processing of next row
                               //
                               columnMetadata.setColumnTypeName(1,saveStructTypeName);
+LOGGER.debug(2);                              
+
                               continue;
                           } 
-                          
+LOGGER.debug(3);                              
+
                           // TOBEDONE For shapefiles must export at least a row id
                           //
                           if ( ! this.options.hasAttributes() ) {
                               continue;
                           }
+LOGGER.debug(4);                              
 
                           if ( Tools.isSupportedType(columnMetadata.getColumnType(1),
                         		                     columnMetadata.getColumnTypeName(1)) ) 
@@ -2737,22 +2793,36 @@ public class RenderResultSet
                         	  String value = SQLConversionTools.convertToString(this.conn,
                                                                                 _table.getValueAt(viewRow,viewCol),
                                                                                 columnMetadata);
+                              LOGGER.debug("geoExporter.printColumn: Attribute ("+value+")");
+
+LOGGER.debug(5);                              
+
                               geoExporter.printColumn(value,columnMetadata);
+LOGGER.debug(6);
                           } else {
                               if ( row == 1 ) {
-                                  LOGGER.warn("runExport.run: Output of column " + columnMetadata.getColumnName(1) + " of type " + columnMetadata.getColumnTypeName(1) + " is not supported");
+                                  LOGGER.warn("\tOutput of column " + columnMetadata.getColumnName(1) + " of type " + columnMetadata.getColumnTypeName(1) + " is not supported");
                               }
                           }
+LOGGER.debug(7);
                       } catch (Exception e) {
-                          LOGGER.warn("runExport.run: Error converting column/type " + columnName + "/" + columnMetadata.getColumnType(1));                      
+                          LOGGER.warn("\tError converting column/type " + columnName + "/" + columnMetadata.getColumnType(1));
                       }
                   }
-                  // Flush converted data to disk
+                  
+                  LOGGER.debug("\tFlush converted data to disk");
+                  
                   geoExporter.endRow();
+                  
+                  LOGGER.debug("\tRow count is " + geoExporter.getRowCount()); 
+                  
+                  LOGGER.debug("\toptions.getCommit() = " + options.getCommit());
+                  
                   if ( (options.getCommit()==1) ||
                         geoExporter.getRowCount() % options.getCommit() == 0 ) {
                       this.progressBar.sleepForUIToRepaint();
                       if ( this.progressBar.hasUserCancelled() ) {
+                    	  LOGGER.debug("User Cancelled, closing Exporter");
                           geoExporter.end();
                           geoExporter.close();
                           geoExporter = null;
@@ -2767,16 +2837,20 @@ public class RenderResultSet
                                                       "Generating " + exportType.toString() + " " + this.options.getFilename(),
                                                       stepText);
                   }
+                  LOGGER.debug("\tGetting next row");
               }  // for
           } catch (Exception e) {
               this.errorMessage = "Exception caught when exporting " + this.exportType.toString() + "\n" + e.getMessage();
+              LOGGER.error(this.errorMessage);
           } finally {
               try {
+            	  LOGGER.debug("Finished writing " + geoExporter.getRowCount() + " records, closing Exporter");
                   this.rowsExported = geoExporter.getRowCount();
                   geoExporter.end();
                   geoExporter.close();
                   geoExporter = null;
               } catch (IOException e) {
+            	  LOGGER.error(e.getMessage());
               }
               this.progressBar.setDoneStatus();
           }
@@ -2784,7 +2858,7 @@ public class RenderResultSet
       
       public void showExportStats(String _processingTime)
       {
-          // Show Export Statistics
+          LOGGER.debug("Show Export Statistics(" + _processingTime + ")");
           //
           int exportedRecordCount = getRowCount();
           LinkedHashMap<Integer,Integer> skipStats = getSkipStatistics();

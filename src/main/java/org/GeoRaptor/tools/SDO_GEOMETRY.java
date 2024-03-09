@@ -15,7 +15,7 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
@@ -42,7 +42,7 @@ public class SDO_GEOMETRY
      * For access to logger subsystem
      */
     private static final Logger LOGGER = 
-      org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.tools.SDO_Geometry");
+      org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.tools.SDO_Geometry");
 
     public static double[] reverseOrdinates(int      _dim,
                                             double[] _ordinates) 

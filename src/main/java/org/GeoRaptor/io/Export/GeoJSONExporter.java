@@ -19,12 +19,12 @@ import org.GeoRaptor.tools.GeometryProperties;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 
 public class GeoJSONExporter 
 implements IExporter 
 {
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GeoJSONExporter");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.GeoJSONExporter");
 
 	private BufferedWriter GeoJsonFile = null;
     private StringBuffer     rowBuffer = null;

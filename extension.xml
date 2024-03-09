@@ -1,14 +1,14 @@
 <extension id="org.GeoRaptor" version="#EXTENSION_VERSION#"
 	esdk-version="2.0" xmlns="http://jcp.org/jsr/198/extension-manifest"
 	rsbundle-class="org.GeoRaptor.Project">
-	<name rskey="EXTENSION_NAME" />
+
+	<name rskey="GeoRaptor" />
 
 <!-- features may be used to enable/disable extensions without uninstalling them -->
-	<feature id="org.GeoRaptor"
-		xmlns="http://xmlns.oracle.com/ide/extension">
+	<feature id="org.GeoRaptor" xmlns="http://xmlns.oracle.com/ide/extension">
 		<category-id>db-category</category-id>
-		<name>#EXTENSION_NAME#</name>
-		<description><![CDATA[#EXTENSION_DESCRIPTION#]]></description>
+		<name>GeoRaptor</name>
+		<description><![CDATA[GeoRaptor Spatial Extension for Oracle SQL Developer.]]></description>
 		<type>
 			<service can-user-disable="true" reload-if-used="true" />
 		</type>
@@ -16,6 +16,7 @@
 
 	<!-- register rules, actions, controllers and context menu items -->
 	<trigger-hooks xmlns="http://xmlns.oracle.com/ide/extension">
+
 		<rules>
             <rule id="table-show-menu" type="context-has-element">
 				<parameters>
@@ -31,8 +32,6 @@
 			</rule>
 			<composite-rule id="table-show-menu-comp">
 				<and>
-		<!-- Don't really need this, just showing composite and how to specify 
-						multiple/single selection constraints -->
 					<or>
 						<rule-reference id="on-multiple-selection" />
 						<rule-reference id="on-single-selection" />
@@ -50,7 +49,9 @@
 				</and>
 			</composite-rule>
 		</rules>
+		
 		<triggers xmlns:c="http://xmlns.oracle.com/ide/customization">
+		
 		    <sqldev-snippet-hook xmlns="http://xmlns.oracle.com/sqldeveloper/sqldev-snippet">
                <snippet file="/org/GeoRaptor/snippets.xml" />
             </sqldev-snippet-hook>
@@ -145,6 +146,16 @@
 			<!-- controller -->
 			<controllers xmlns="http://xmlns.oracle.com/ide/extension">
 
+			<controller class="org.GeoRaptor.MenuBarController">
+					<update-rules>
+						<update-rule rule="always-enabled">
+							<action id="OPEN_MAP" />
+							<action id="MANAGE_ALL_METADATA" />
+							<action id="ABOUT_GEORAPTOR" />
+						</update-rule>
+					</update-rules>
+				</controller>
+				
                 <!-- Table/View/MVIew node controller-->
 				<controller
 					class="org.GeoRaptor.TableContextMenuController">
@@ -156,22 +167,19 @@
 							<action id="DROP_SPATIAL_INDEX" />
 							<action id="MANAGE_METADATA" />
 							<action id="DROP_METADATA" />
-							<action id="EXPORT" />
 							<action id="VALIDATE_GEOMETRY" />
-							<action id="IMPORT_SHAPEFILE" />
+							<action id="EXPORT" />
 						</update-rule>
 					</update-rules>
 				</controller>
-                <!-- Controller for Table/View/MV columns???-->
-                
-                <!-- View Controller -->
+				
+                <!-- Controller for View/MV columns???-->
 				<controller class="org.GeoRaptor.ViewController">
 					<update-rules>
 						<update-rule rule="always-enabled">
 							<action id="OPEN_MAP" />
 							<action id="MANAGE_ALL_METADATA" />
-							<action id="LOAD_SHAPEFILE" />
-							<action id="ABOUT_GEORAPTOR" />
+							<item action-ref="EXPORT" />
 						</update-rule>
 					</update-rules>
 				</controller>
@@ -191,18 +199,19 @@
 								<item action-ref="DROP_SPATIAL_INDEX" />
 								<item action-ref="MANAGE_METADATA" />
 								<item action-ref="DROP_METADATA" />
-								<item action-ref="EXPORT" />
 								<item action-ref="VALIDATE_GEOMETRY" />
+								<item action-ref="EXPORT" />
 							</section>
 						</menu>
 					</section>
 				</menu>
 			</context-menu-hook>
+			
 			<context-menu-hook rule="table-menu">
 				<site idref="db_nav" />
 				<menu>
 					<section xmlns="http://jcp.org/jsr/198/extension-manifest"
-						id="CONTEXT_TABLLEMENU_SECTION_ID" weight="0.1">
+						id="CONTEXT_TABLE_MENU_SECTION_ID" weight="0.1">
 						<menu id="CONTEXT_TABLLESUBMENU_ID" weight="2.0f">
 							<label>GeoRaptor</label>
 							<section id="CONTEXT_TABLLESUBMENU_SECTION_ID"
@@ -214,19 +223,17 @@
 				</menu>
 			</context-menu-hook>
 
-			<menu-hook
-				xmlns="http://jcp.org/jsr/198/extension-manifest">
+			<menu-hook xmlns="http://jcp.org/jsr/198/extension-manifest">
 				<menus>
 					<menubar id="javax.ide.view.MAIN_WINDOW_MENUBAR_ID">
 						<menu id="javax.ide.VIEW_MENU_ID">
 							<section id="VIEW_MENU_SECTION_ID" weight="0.3f">
 								<menu id="VIEW_SUBMENU_ID" weight="2.0f">
 									<label>GeoRaptor</label>
-									<iconpath>org/GeoRaptor/images/two.png</iconpath>
+									<iconpath>/org/GeoRaptor/images/two.png</iconpath>
 									<section id="VIEW_SUBMENU_SECTION_ID" weight="10.0f">
 										<item action-ref="OPEN_MAP" />
 										<item action-ref="MANAGE_ALL_METADATA" />
-										<item action-ref="LOAD_SHAPEFILE" />
 										<item action-ref="ABOUT_GEORAPTOR" />
 									</section>
 								</menu>
@@ -236,6 +243,12 @@
 				</menus>
 			</menu-hook>
 
+             <sqldev-action-hook xmlns="http://xmlns.oracle.com/sqldeveloper/sqldev-actions">
+                <actionDescriptor file="/org/GeoRaptor/TableColumnMenu.xml"/>
+                <actionDescriptor file="/org/GeoRaptor/MaterializedViewColumnMenu.xml"/>
+                <actionDescriptor file="/org/GeoRaptor/ViewColumnMenu.xml"/>
+            </sqldev-action-hook>
+            
 			<settings-ui-hook>
 				<page id="PREFERENCES_PAGE_ID" parent-idref="/preferences">
 					<label>${PREFERENCES_TITLE}</label>
@@ -247,8 +260,7 @@
 	</trigger-hooks>
 
 	<hooks>
-		<jdeveloper-hook
-			xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
+		<jdeveloper-hook xmlns="http://xmlns.oracle.com/jdeveloper/1013/extension">
 			<addins>
 				<addin>org.GeoRaptor.PreferenceAddin</addin>
 				<addin>org.GeoRaptor.Menu</addin>
@@ -258,7 +270,7 @@
 				<item rule="always-enabled">
 					<name>org.GeoRaptor.MenuViewController</name>
 					<description>GeoRaptor is an Oracle Spatial extension for Oracle SQL Developer</description>
-					<help>Oracle Spatial extension for Oracle SQL Developer</help>
+					<help>GeoRaptor Spatial extension for Oracle SQL Developer</help>
 					<category>General</category>
 					<folder>GeoRaptor</folder>
 					<parameter>java.lang.String</parameter>

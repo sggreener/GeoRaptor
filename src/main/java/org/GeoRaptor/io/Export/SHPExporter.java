@@ -25,16 +25,16 @@ import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.sql.OraRowSetMetaDataImpl;
 import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.GeometryProperties;
+import org.GeoRaptor.tools.JTSGeometry;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.data.shapefile.shp.ShapeType;
 import org.geotools.data.shapefile.shp.ShapefileException;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.LinearRing;
-import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.oracle.OraReader;
 import org.xBaseJ.xBaseJException;
@@ -49,7 +49,7 @@ import org.xBaseJ.fields.PictureField;
 
 public class SHPExporter implements IExporter {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.SHPExporter");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.SHPExporter");
 
     private Preferences                     geoRaptorPreferences = null;
 
@@ -154,87 +154,41 @@ public class SHPExporter implements IExporter {
     public int getRowCount() {
         return this.row;
     }
-
-    private Geometry Struct2Geometry( Struct _shape ) {
+    
+    private Geometry Struct2Geometry( Struct _shape ) 
+    {
+    	LOGGER.debug("Struct2Geometry");
         // Convert Struct to Geometry object
         // PrecisionModel is assigned during conversion
         //
-        Geometry jGeom = null;
+        Geometry jtsGeom = null;
         if ( _shape != null ) {
+        	
             try {
-                jGeom = this.geomConverter.read(_shape);
+                jtsGeom = this.geomConverter.read(_shape);
             } catch (SQLException e) {
-                jGeom = null;
+                jtsGeom = null;
             }
-            if ( jGeom != null) 
-            {
-                if (jGeom instanceof LineString) {
-                    jGeom = this.geomFactory.createMultiLineString(new LineString[] { (LineString) jGeom });
-                } else if (geoRaptorPreferences.getShapePolygonOrientation() != Constants.SHAPE_POLYGON_ORIENTATION.ORACLE) {
-                    // LOGGER.info("Shape2Geometry: " + geoRaptorPreferences.getShapePolygonOrientation() + " Geometry is " + jGeom.getGeometryType() );
-                    LinearRing    eRing = null;
-                    LinearRing[] iRings = null;
-                    Polygon        poly = null;
-                    if (jGeom instanceof Polygon) {
-                        poly = (Polygon) jGeom;
-                        switch (geoRaptorPreferences.getShapePolygonOrientation()) {
-                          case INVERSE      : 
-                          case CLOCKWISE    : eRing = (LinearRing)poly.getExteriorRing().reverse(); 
-                                              break;
-                          case ANTICLOCKWISE: eRing = (LinearRing)poly.getExteriorRing(); 
-                                              break;
-						  case ORACLE       :
-                              default       : break;
-                        }
-                        iRings = new LinearRing[poly.getNumInteriorRing()];
-                        for (int i=0; i < poly.getNumInteriorRing();  i++) {
-                            // Oracle polygons inner rings have clockwise rotation
-                            switch (geoRaptorPreferences.getShapePolygonOrientation()) {
-                              case INVERSE       : 
-                              case ANTICLOCKWISE : iRings[i] = (LinearRing)poly.getInteriorRingN(i).reverse(); 
-                                                   break;
-                              case CLOCKWISE     : iRings[i] = (LinearRing)poly.getInteriorRingN(i); 
-                                                   break;
-    						  case ORACLE       :
-                              default       : break;
-                            }
-                        }
-                        jGeom = this.geomFactory.createPolygon(eRing, iRings);
-                    } else if (jGeom instanceof MultiPolygon ) {
-                        MultiPolygon mPoly = (MultiPolygon) jGeom;
-                        Polygon[]    polys = new Polygon[mPoly.getNumGeometries()];
-                        for (int p=0; p < mPoly.getNumGeometries(); p++ ) {
-                            poly   = (Polygon)mPoly.getGeometryN(p);
-                            switch (geoRaptorPreferences.getShapePolygonOrientation()) {
-                              case INVERSE      : 
-                              case CLOCKWISE    : eRing = (LinearRing)poly.getExteriorRing().reverse(); 
-                                                  break;
-                              case ANTICLOCKWISE: eRing = (LinearRing)poly.getExteriorRing(); 
-                                                  break;
-    						  case ORACLE       :
-                              default       : break;
-                            }
-                            iRings = new LinearRing[poly.getNumInteriorRing()];
-                            for (int i=0; i < poly.getNumInteriorRing();  i++) {
-                                // Oracle polygons inner rings have clockwise rotation
-                                switch (geoRaptorPreferences.getShapePolygonOrientation()) {
-                                  case INVERSE       : 
-                                  case ANTICLOCKWISE : iRings[i] = (LinearRing)poly.getInteriorRingN(i).reverse(); 
-                                                       break;
-                                  case CLOCKWISE     : iRings[i] = (LinearRing)poly.getInteriorRingN(i); 
-                                                       break;
-        						  case ORACLE       :
-                                  default       : break;
-                                }
-                            }
-                            polys[p] = this.geomFactory.createPolygon(eRing, iRings);
-                        }
-                        jGeom = this.geomFactory.createMultiPolygon(polys);
-                    } 
+            
+            if ( jtsGeom == null)
+            	return jtsGeom;
+           
+            try {
+            	LOGGER.debug("\tjtsGeom.getGeometryType()=" + jtsGeom.getGeometryType().toString());
+                if (jtsGeom instanceof LineString) {
+                    jtsGeom = this.geomFactory.createMultiLineString(new LineString[] { (LineString) jtsGeom });
+                } else if (jtsGeom instanceof Polygon ||
+                		   jtsGeom instanceof MultiPolygon) {
+                	LOGGER.debug("\tOrienting Rings...");
+                    JTSGeometry.orientRings(jtsGeom,this.geomFactory);
                 }
-            }   
+            } catch (Exception e) {
+            	LOGGER.error("SHPExporter.structToGeometry" + e.getMessage());
+            	e.printStackTrace();
+            }
         }
-        return jGeom;
+        LOGGER.debug("End StructToGeometry");
+        return jtsGeom;
     }
         
     @SuppressWarnings("unused")
@@ -242,10 +196,12 @@ public class SHPExporter implements IExporter {
     {
         this.setGeom(Struct2Geometry(_shape));
     }
-  
+ 
     private void addToGeomSet(Struct _shape) 
     {
+    	LOGGER.debug("addToGeomSet: Before Struct2Geometry");
         Geometry jGeom = Struct2Geometry(_shape);
+    	LOGGER.debug("addToGeomSet: After Struct2Geometry");
         if ( jGeom == null ) {
           this.geomSet.put(this.row,(Geometry)null);
         } else {
@@ -265,7 +221,8 @@ public class SHPExporter implements IExporter {
     public void start(String _encoding) 
          throws Exception
     {
-        this.row = 0;        
+    	LOGGER.debug("start()");
+        this.row = 0;
         try {
             if ( this.geomSet == null ) {
                 this.geomSet = new LinkedHashMap<Integer,Geometry>(this.getCommit());
@@ -283,11 +240,13 @@ public class SHPExporter implements IExporter {
             String dirName    = FileUtils.getDirectory(this.SHPFilename);
             String fNameNoExt = FileUtils.getFileNameFromPath(this.SHPFilename,true);
             this.shpType = (ShapeType)this.geometryProperties.getShapefileType(true);
+LOGGER.debug("\t*******");
+LOGGER.debug("\tshpfileType="+this.shpType + " -- shapeType " + this.geometryProperties.getShapeType().toString());
             // Temporarily force measured shape output ordinate to the z ordinate
             if ( this.shpType.hasMeasure() ) {
                 // A z always has an id value 10 less than m
                 this.shpType = ShapeType.forID(this.shpType.id-10);
-                //LOGGER.info("Writing " + ShapeType.forID(this.shpType.id+10).toString() + " shapes as " + this.shpType.toString());
+                LOGGER.debug("start: Writing " + ShapeType.forID(this.shpType.id+10).toString() + " shapes as " + this.shpType.toString());
             } else if ( this.shpType.id == ShapeType.UNDEFINED.id ) {
                 throw new Exception("ShapefileWriter: Unknown or unsupported shapeType (" + this.shpType.toString() + ") provided.");
             }
@@ -312,6 +271,7 @@ public class SHPExporter implements IExporter {
     public void startRow() 
     throws IOException 
     {
+    	LOGGER.debug("startRow()");
         if ( this.dbaseWriter.needsRecordIdentifier() ) {
             Field field;
             try {
@@ -330,91 +290,94 @@ public class SHPExporter implements IExporter {
                             OraRowSetMetaDataImpl _columnMetaData) 
     throws SQLException
     {
+    	LOGGER.debug("printColumn()");
         String columnTypeName = "";
         try {
             columnTypeName = _columnMetaData.getColumnTypeName(1); // For use in catch()
-            
+            LOGGER.debug("printColumn: Column being written is " + _columnMetaData.getColumnName(1) + " of Type " + columnTypeName);
             // Check if Mappable column
             //
             if (!Strings.isEmpty(_columnMetaData.getCatalogName(1)) )   // Catalog name holds name of actual Geometry column 
             { 
                 if ( _columnMetaData.getColumnTypeName(1).equalsIgnoreCase(Constants.TAG_MDSYS_SDO_GEOMETRY) )
                 {
-                    this.addToGeomSet((Struct)_object);
+                	LOGGER.debug("Before addToGeomSet");
+               		this.addToGeomSet((Struct)_object);
+               		LOGGER.debug("After addToGeomSet - size is " + this.getRowCount());
                     return;
                 }
-            } 
-            else 
-            {   // Is not mappable column, so process attribute column
-                // 
-                char fieldType = ' ';
-                try {
-                    String objectString = (String)_object;
-/** DEBUG 
-LOGGER.info(_columnMetaData.getColumnName(1) +"," + 
-             _columnMetaData.getColumnDisplaySize(1) + "," +
-             _columnMetaData.getColumnType(1) + "/" + 
-             _columnMetaData.getColumnTypeName(1) +",("+
-             _columnMetaData.getPrecision(1)+ "," +
-             _columnMetaData.getScale(1) + ") => " + 
-             objectString);
-DEBUG **/
-                    if ( ! DBaseWriter.isSupportedType(_columnMetaData.getColumnType(1),
-                                                       _columnMetaData.getColumnTypeName(1)) ) {
-                        LOGGER.warn(_columnMetaData.getColumnName(1) + "'s data type (" + _columnMetaData.getColumnTypeName(1) + ") not supported for dBase field (value is " + objectString + ")");
-                        return;
-                    }
-                    
-                    // String has been converted by calling program into a string.
-                    // Regardless as to xBase field data type all field data are put as strings
-                    //
-                    Field field = this.dbaseWriter.getField(_columnMetaData.getColumnName(1));                    
-                    if ( field == null ) {
-                        LOGGER.warn("Cannot find field in dBase file for column " + _columnMetaData.getColumnName(1));
-                        return;
-                    }
-                    fieldType = field.getType();
-                    switch (field.getType())
-                    {
-                      case 'C': ((CharField)field).put(objectString.substring(0,Math.min(field.getLength(),objectString.length()))); break;
-                      case 'F': ((NumField)field).put(objectString);        break;
-                      case 'L': ((LogicalField)field).put(Strings.isEmpty(objectString)?false:Boolean.valueOf(objectString)); break;
-                      case 'M': ((MemoField)field).put(objectString);       break;
-                      case 'P': ((PictureField)field).put((byte[])_object); break;
-                      case 'N': if (_columnMetaData.getPrecision(1)!=0 && _columnMetaData.getScale(1)==0) {
-                                  ((NumField)field).put(objectString); 
-                                } else {
-                                  ((NumField)field).put(objectString);   
-                                }
-                                break;
-                      case 'D': String dateString = (objectString.indexOf(' ')!=-1 ? objectString.substring(0, objectString.indexOf(' ')) : objectString); 
-                                // Date.valueOf() expects "yyyy-mm-dd"
-                                ((DateField)field).put(this.dbaseWriter.getDateFormat().format(Date.valueOf(dateString)));  
-                                break;
-                    }
-                    this.dbaseWriter.setField(field);
-                } catch (Exception e) {
-                    Messages.log("Conversion of DBase Attribute " + 
-                                 _columnMetaData.getColumnName(1) + "/" + _columnMetaData.getColumnTypeName(1) + "(" +_columnMetaData.getScale(1)+ ")/" + fieldType + 
-                                 " failed at row " + (row+1) + ": " + 
-                                 e.getMessage());
-                }
             }
-          } catch (SQLException sqle) {
-            Messages.log("SHPExporter.printColumn(" + columnTypeName + "), Row(" + (row+1) + ") SQLException = " + sqle.getMessage());
-          } catch (Exception e) {
-            Messages.log("SHPExporter.printColumn(" + columnTypeName + "), Row(" + (row+1) + ") = " + e.getMessage());
-          }
+        }
+        catch (Exception e) {
+    		LOGGER.debug("printColumn(" + columnTypeName + "), Row(" + (row+1) + ") = " + e.getMessage());
+    		LOGGER.error("Failed to add geometry to GeomSet");
+      	  e.printStackTrace();
+      	  return;
+        }
+        
+        // Is not mappable column, so process attribute column
+        // 
+        char fieldType = ' ';
+        try {
+            String objectString = (String)_object;
+			LOGGER.debug(_columnMetaData.getColumnName(1) +"," + 
+			             _columnMetaData.getColumnDisplaySize(1) + "," +
+			             _columnMetaData.getColumnType(1) + "/" + 
+			             _columnMetaData.getColumnTypeName(1) +",("+
+			             _columnMetaData.getPrecision(1)+ "," +
+			             _columnMetaData.getScale(1) + ") => " + 
+			             objectString);
+            if ( ! DBaseWriter.isSupportedType(_columnMetaData.getColumnType(1),
+                                               _columnMetaData.getColumnTypeName(1)) ) {
+                LOGGER.warn(_columnMetaData.getColumnName(1) + "'s data type (" + _columnMetaData.getColumnTypeName(1) + ") not supported for dBase field (value is " + objectString + ")");
+                return;
+            }
+            
+            // String has been converted by calling program into a string.
+            // Regardless as to xBase field data type all field data are put as strings
+            //
+            Field field = this.dbaseWriter.getField(_columnMetaData.getColumnName(1));                    
+            if ( field == null ) {
+                LOGGER.warn("Cannot find field in dBase file for column " + _columnMetaData.getColumnName(1));
+                return;
+            }
+            fieldType = field.getType();
+            switch (field.getType())
+            {
+              case 'C': ((CharField)field).put(objectString.substring(0,Math.min(field.getLength(),objectString.length()))); break;
+              case 'F': ((NumField)field).put(objectString);        break;
+              case 'L': ((LogicalField)field).put(Strings.isEmpty(objectString)?false:Boolean.valueOf(objectString)); break;
+              case 'M': ((MemoField)field).put(objectString);       break;
+              case 'P': ((PictureField)field).put((byte[])_object); break;
+              case 'N': if (_columnMetaData.getPrecision(1)!=0 && _columnMetaData.getScale(1)==0) {
+                          ((NumField)field).put(objectString); 
+                        } else {
+                          ((NumField)field).put(objectString);   
+                        }
+                        break;
+              case 'D': String dateString = (objectString.indexOf(' ')!=-1 ? objectString.substring(0, objectString.indexOf(' ')) : objectString); 
+                        // Date.valueOf() expects "yyyy-mm-dd"
+                        ((DateField)field).put(this.dbaseWriter.getDateFormat().format(Date.valueOf(dateString)));  
+                        break;
+            }
+            this.dbaseWriter.setField(field);
+        } catch (Exception e) {
+            Messages.log("Conversion of DBase Attribute " + 
+                         _columnMetaData.getColumnName(1) + "/" + _columnMetaData.getColumnTypeName(1) + "(" +_columnMetaData.getScale(1)+ ")/" + fieldType + 
+                         " failed at row " + (row+1) + ": " + 
+                         e.getMessage());
+        }
     }
 
     public void endRow() 
     throws IOException 
     {
+    	LOGGER.debug("endRow()");
         this.row++;
         
         // Write geometry objects only if we have hit the commit point
         //
-        //LOGGER.info("endRow: this.row="+this.row+" geomSet.size= " + this.geomSet.size() + "  " + getCommit());
+        LOGGER.debug("endRow: this.row="+this.row+" geomSet.size= " + this.geomSet.size() + "  " + getCommit());
         if ( this.geomSet.size() == getCommit() ) {
             this.writeGeomSet();
         }
@@ -430,54 +393,61 @@ DEBUG **/
     public void end() 
     throws IOException 
     {
-      // make sure to write the last Geometry set feature...
-      //
-      if ( this.geomSet.size() > 0 ) {
-          this.writeGeomSet();
-      }
-      /**
-       * Get reference to single instance of GeoRaptor's Preferences
-       */
-      if ( !Strings.isEmpty(geoRaptorPreferences.getPrj()) ) {
-          String dirName    = FileUtils.getDirectory(this.SHPFilename);
-          String fNameNoExt = FileUtils.getFileNameFromPath(this.SHPFilename,true);
-          // Only write Prj is SRID is value
-          // Should be in ExporterDialog
-          if ( getGeometryProperties().getSRID() != Constants.SRID_NULL ) {
-              writePrjFile(FileUtils.FileNameBuilder(dirName,fNameNoExt,"prj"),
-                           geoRaptorPreferences.getPrj());
-          }
-      }
-    }
-    
-    /**
-     * @param fullyQualifiedFileName - filename including directory path and extension. 
-     * @param prjString - Actual string containing PRJ file's contents.
-     * @throws FileNotFoundException - if there is an error creating the file.
-     * @throws IOException - if there is an error writing to the file.
-     * @name writePrjFile() 
-     * @description Writes actual PRJ file 
-    */
-    protected static void writePrjFile(String   fullyQualifiedFileName,
-                                       String   prjString ) 
-    throws IOException {        
-        File prjFile;
-        prjFile = new File(fullyQualifiedFileName);
-        Writer prjOutput = new BufferedWriter(new FileWriter(prjFile));
-        try {
-             //FileWriter always assumes default encoding is OK!
-             prjOutput.write( prjString );
-        }
-        catch (IOException ioe) {
-            throw new IOException("Error writing PRJ file.", ioe);
-        }
-        finally {
-             prjOutput.close();
-         }
-        prjOutput.close();
+    	LOGGER.debug("end()");
+    	
+    	// make sure to write the last Geometry set feature...
+		//
+		if ( this.geomSet.size() > 0 ) {
+		      this.writeGeomSet();
+		}
+		/**
+		* Get reference to single instance of GeoRaptor's Preferences
+		*/
+		if ( !Strings.isEmpty(geoRaptorPreferences.getPrj()) ) {
+		      String dirName    = FileUtils.getDirectory(this.SHPFilename);
+		      String fNameNoExt = FileUtils.getFileNameFromPath(this.SHPFilename,true);
+		      // Only write Prj is SRID is value
+		      // Should be in ExporterDialog
+		      if ( getGeometryProperties().getSRID() != Constants.SRID_NULL ) {
+		          writePrjFile(FileUtils.FileNameBuilder(dirName,fNameNoExt,"prj"),
+		                       geoRaptorPreferences.getPrj());
+		      }
+		}
+	}
+	
+	/**
+	 * @param fullyQualifiedFileName - filename including directory path and extension. 
+	 * @param prjString - Actual string containing PRJ file's contents.
+	 * @throws FileNotFoundException - if there is an error creating the file.
+	 * @throws IOException - if there is an error writing to the file.
+	 * @name writePrjFile() 
+	 * @description Writes actual PRJ file 
+	*/
+	protected static void writePrjFile(String   fullyQualifiedFileName,
+	                                   String   prjString ) 
+	throws IOException 
+	{
+    	LOGGER.debug("writePrjFile()");
+
+	    File prjFile;
+	    prjFile = new File(fullyQualifiedFileName);
+	    Writer prjOutput = new BufferedWriter(new FileWriter(prjFile));
+	    try {
+	         //FileWriter always assumes default encoding is OK!
+	         prjOutput.write( prjString );
+	    }
+	    catch (IOException ioe) {
+	        throw new IOException("Error writing PRJ file.", ioe);
+	    }
+	    finally {
+	         prjOutput.close();
+	     }
+	    prjOutput.close();
     }
 
-    public void close() {
+    public void close() 
+    {
+    	LOGGER.debug("close()");
         try {
             // Close shapefile (writes header)
             //
@@ -490,7 +460,12 @@ DEBUG **/
                 this.dbaseWriter = null;
             }
         } catch ( IOException ioe ) {
-          LOGGER.error("Failed to close shpWriter or dbaseWriter: " + ioe.getMessage());
+        	if (this.shpWriter != null)
+        		LOGGER.error("Failed to close SHP file: " + ioe.getMessage());
+        	else if ( this.dbaseWriter!=null)
+        		LOGGER.error("Failed to close DBF file: " + ioe.getMessage());
+        	else
+        		LOGGER.error("Failed to close SHP or DBF file: " + ioe.getMessage());
         }
     }
 

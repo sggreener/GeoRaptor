@@ -15,7 +15,7 @@ import org.GeoRaptor.Preferences;
 import org.GeoRaptor.tools.FileUtils;
 import org.GeoRaptor.tools.Strings;
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.xBaseJ.fields.Field;
 
 import org.locationtech.jts.geom.Envelope;
@@ -25,7 +25,7 @@ public class TABExporter
     implements IExporter
 {
     @SuppressWarnings("unused")
-	private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.TABExporter");
+	private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.io.Export.TABExporter");
 
     public TABExporter(Connection connection, String string, int totalRows) {
         super(connection, string, totalRows);

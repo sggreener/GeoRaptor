@@ -8,8 +8,8 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
 
-import org.geotools.util.logging.Logger;
-import org.geotools.util.logging.Logging;
+import org.GeoRaptor.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logging;
 
 
 public class WindowNavigator {

@@ -41,7 +41,7 @@ import org.GeoRaptor.tools.RenderTool;
 import org.GeoRaptor.tools.SDO_GEOMETRY;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-import org.geotools.util.logging.Logger;
+import org.GeoRaptor.util.logging.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -53,7 +53,7 @@ import oracle.spatial.geometry.JGeometry;
 
 public class SVSpatialLayerDraw {
 
-    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayerDraw");
+    private static final Logger LOGGER = org.GeoRaptor.util.logging.Logging.getLogger("org.GeoRaptor.SpatialView.layers.SVSpatialLayerDraw");
 
     /**
      * Reference to main class
@@ -201,14 +201,24 @@ public class SVSpatialLayerDraw {
     		shadeColor = styling.getShadeColor(null);  
 
         if ( this.graphics2D==null ) {
-            throw new IOException("SVSpatialLayerDraw: No Graphics Context for drawing");
+            throw new IOException("drawGeometry: No Graphics Context for drawing");
         }
         
         if (this.getWorldToScreenTransform()==null) {
-            throw new IOException("SVSpatialLayerDraw: WorldToScreenTransform is null.");
+            throw new IOException("drawGeometry: WorldToScreenTransform is null.");
         }
         
-        // DEBUG LOGGER.debug(String.format("labelValue=%s shadeValue=%s pointColorValue=%s lineColorValue=%s pointSizeValue=%d rotate=%s angle=%f labelPosition=%s labelOffset=%d", _label,_shadeValue,_pointColorValue,_lineColorValue,_pointSizeValue, _rotate.toString(), _angle, _labelPosition.toString(), _labelOffset));
+        LOGGER.debug(String.format("drawGeometry: labelValue=%s shadeValue=%s pointColorValue=%s lineColorValue=%s pointSizeValue=%d rotate=%s angle=%f labelPosition=%s labelOffset=%d",
+        			_label,
+        			shadeColor.toString(),
+        			pointColor.toString(),
+        			lineColor.toString(),
+        			_pointSizeValue, 
+        			_rotate.toString(), 
+        			_angle, 
+        			_labelPosition.toString(), 
+        			_labelOffset));
+        
         Shape shp = null;        
         this.setLabelPosition(_labelPosition);
         int gtype = _geo.getType();
@@ -247,7 +257,7 @@ public class SVSpatialLayerDraw {
                 		  _attributes, 
                 		  _labelOffset);
             } catch (Exception e) {
-                LOGGER.warn("SVSpatialLayerDraw drawPoint() failed: " + e.toString() );
+                LOGGER.warn("drawPoint() failed: " + e.toString() );
             }
             if (styling.isMarkVertex() )
             {
@@ -255,7 +265,7 @@ public class SVSpatialLayerDraw {
             }
             break;
         case JGeometry.GTYPE_MULTIPOINT:
-            // Render the points of the multipoint
+            // Render the points of the multi-point
             drawMultiPoint(_geo, 
             		       _label, 
             		       pointColor, 
@@ -278,7 +288,7 @@ public class SVSpatialLayerDraw {
             // Convert JGeometry to Java2D Shape.
             // Also, translate to viewport
             // This also converts 3D/4D down to 2D and
-            // converts circular arcs to stroked linestrings.
+            // converts circular arcs to stroked line-strings.
             //
             // Separate try..catch to trap sdoapi.jar file errors
 
@@ -318,7 +328,7 @@ public class SVSpatialLayerDraw {
                         labelAlongLine(shp,_geo.getNumPoints(),_label,_attributes,/*_repeattrue*/   false);
                         //textAlongLine(shp,_label,_attributes);
                     } else {
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments being called");
+                        LOGGER.debug("labelLineAndPolygonSegments being called");
                         labelLineAndPolygonSegments(_geo,
                         		                    _label,
                         		                    pointColor, 
@@ -449,31 +459,30 @@ public class SVSpatialLayerDraw {
             // Process all parts of geometry ie linestring from multilinestring, polygon from multipolygon
             JGeometry element = null;
             int elementCount = _jGeom.getElements().length;
-            // DEBUG LOGGER.info("labelLineAndPolygonSegments: Number of parts: " + elementCount + ". GeometryType: " + _jGeom.getType());
+            LOGGER.debug("labelLineAndPolygonSegments: Number of parts: " + elementCount + ". GeometryType: " + _jGeom.getType());
             for (int i=1; i<=elementCount; i++) {
                 element = _jGeom.getElementAt(i);
-                @SuppressWarnings("unused")
 				boolean hasCircularArcs = element.hasCircularArcs();
-                // DEBUG LOGGER.info("labelLineAndPolygonSegments: hasCircularArcs(): " + hasCircularArcs);
-                // DEBUG LOGGER.info("labelLineAndPolygonSegments: element type is: " + element.getType());
+                LOGGER.debug("labelLineAndPolygonSegments: hasCircularArcs(): " + hasCircularArcs);
+                LOGGER.debug("labelLineAndPolygonSegments: element type is: " + element.getType());
                 switch (this.layer.getStyling().getGeometryLabelPoint()) {
                     case SDO_POINT:
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: SDO_POINT");
+                        LOGGER.debug("labelLineAndPolygonSegments: SDO_POINT");
                         cPoint = element.getLabelPoint()==null
                                  ?null
                                  :new Point.Double(element.getLabelPoint().getX(),
                                                    element.getLabelPoint().getY());
                         break;
                     case FIRST_VERTEX: 
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: FIRST_VERTEX");
+                        LOGGER.debug("labelLineAndPolygonSegments: FIRST_VERTEX");
                         point = element.getFirstPoint();
                         cPoint = new Point.Double(point[firstLabelOrd],point[firstLabelOrd+1]);
                         break;
                     case MIDDLE_VERTEX: 
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: MIDDLE_VERTEX");
+                        LOGGER.debug("labelLineAndPolygonSegments: MIDDLE_VERTEX");
                         point = element.getOrdinatesArray();
                         numCoords = point.length / element.getDimensions();
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: MIDDLE_VERTEX numCoords=" + numCoords);
+                        LOGGER.debug("labelLineAndPolygonSegments: MIDDLE_VERTEX numCoords=" + numCoords);
                         if ( numCoords == 2 ) {
                             cPoint = new Point.Double(point[0]+((point[element.getDimensions()]-point[0])/2.0),
                                                       point[1]+((point[1+element.getDimensions()]-point[1])/2.0));
@@ -483,31 +492,31 @@ public class SVSpatialLayerDraw {
                         }
                         break;
                     case END_VERTEX:
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: END_VERTEX");
+                        LOGGER.debug("labelLineAndPolygonSegments: END_VERTEX");
                         point = element.getOrdinatesArray();
                         firstLabelOrd = point.length - element.getDimensions();
                         cPoint = new Point.Double(point[firstLabelOrd],point[firstLabelOrd+1]);
                         break;
                     case JTS_CENTROID:
-                        // DEBUG LOGGER.info("labelLineAndPolygonSegments: JTS_CENTROID");
+                        LOGGER.debug("labelLineAndPolygonSegments: JTS_CENTROID");
                         cPoint = ST_Centroid(element);
                         break;
                 }
-                // DEBUG LOGGER.info("labelLineAndPolygonSegments: cPoint=" + cPoint==null?"NULL":(cPoint.getX() + "," + cPoint.getY()));
-                if (cPoint == null) { continue; }
+                LOGGER.debug("labelLineAndPolygonSegments: cPoint=" + cPoint==null?"NULL":(cPoint.getX() + "," + cPoint.getY()));
+                //if (cPoint == null) { continue; }
                 labelPoint = this.getWorldToScreenTransform().transform(cPoint,null);
-                // DEBUG LOGGER.info("labelLineAndPolygonSegments: labelPoint=" + labelPoint==null?"NULL":(labelPoint.getX() + "," + labelPoint.getY()));
-                if ( labelPoint == null ) { continue; }
+                LOGGER.debug("labelLineAndPolygonSegments: labelPoint=" + labelPoint==null?"NULL":(labelPoint.getX() + "," + labelPoint.getY()));
+                //if ( labelPoint == null ) { continue; }
                 // Draw marker for label?
-                // DEBUG LOGGER.info( this.layer.getStyling().getPointType().toString());
-                if ( this.layer.getStyling().getPointType()!=PointMarker.MARKER_TYPES.NONE ) {
+                LOGGER.debug(this.layer.getStyling().getPointColorType().toString());
+                if ( this.layer.getStyling().getPointMarkerType()!=PointMarker.MARKER_TYPES.NONE ) {
                     // Don't draw selected colour if polygon
                     this.graphics2D.setStroke(this.layer.getStyling().getLineStroke());
                     // Check Scale
                     //
                     if ( this.isWithinScale() ) {
                         drawPoint(labelPoint, 
-                                  this.layer.getStyling().getPointType(), 
+                                  this.layer.getStyling().getPointMarkerType(), 
                                   _pointColorValue, 
                                   _pointSizeValue, 
                                   _rotate, 
@@ -779,7 +788,7 @@ public class SVSpatialLayerDraw {
                              .transform(new Point.Double(point[0],point[1]),null);
             
             drawPoint(labelPoint, 
-            		  this.layer.getStyling().getPointType(), 
+            		  this.layer.getStyling().getPointMarkerType(), 
             		  _pointColorValue, 
             		  _pointSizeValue, 
             		  _rotate, 
@@ -849,7 +858,7 @@ public class SVSpatialLayerDraw {
                                    double _rotation)
     {
         drawPoint(_point, 
-        		  this.layer.getStyling().getPointType(), 
+        		  this.layer.getStyling().getPointMarkerType(), 
         		  _pointColorValue, 
         		  _pointSizeValue, 
         		  _rotate, 
@@ -912,7 +921,7 @@ public class SVSpatialLayerDraw {
         // Set color once
         //
         this.graphics2D.setColor(_pointColorValue);
-        PointMarker.MARKER_TYPES pointType = styling.getPointType();
+        PointMarker.MARKER_TYPES pointType = styling.getPointMarkerType();
         int pointSize = this.layer.getStyling().getPointSize(_pointSizeValue);
         double angle  = (_rotate == Constants.ROTATE.MARKER || _rotate == Constants.ROTATE.BOTH) ? _angle : 0.0f;
 
@@ -1034,18 +1043,18 @@ public class SVSpatialLayerDraw {
             int elementCount = _geo.getElements().length,
                        gType = 0;
             
-            // DEBUG LOGGER.info("markGeometry: elementCount=" + elementCount);
+            LOGGER.debug("markGeometry: elementCount=" + elementCount);
             int[] elem_info = null;
             for (int i=1; i<=elementCount; i++) {
                 element = _geo.getElementAt(i);
-                // DEBUG LOGGER.info("markGeometry: element=" + element==null?"NULL":String.valueOf(element.getNumPoints()));
+                LOGGER.debug("markGeometry: element=" + element==null?"NULL":String.valueOf(element.getNumPoints()));
                 if ( element != null )
                 {
                     gType = (element.getDimensions() * 1000) + (element.getLRMDimension() * 100) + element.getType();
-                    // DEBUG LOGGER.info("markGeometry: gType=" + gType);
+                    LOGGER.debug("markGeometry: gType=" + gType);
                     if ( element.getType() == JGeometry.GTYPE_CURVE ) {
                         if ( element.hasCircularArcs() ) {
-                            // DEBUG LOGGER.info("markGeometry: Handle circular arc elements");
+                            LOGGER.debug("markGeometry: Handle circular arc elements");
                             elem_info = strokeCompoundElements(element.getElemInfo());
                             double[] sdoPoint = element.getLabelPointXYZ();
                             if ( Double.isNaN(sdoPoint[0]) ) {
@@ -1058,7 +1067,7 @@ public class SVSpatialLayerDraw {
                         }
                         
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON && element.getElemInfo().length == 3) {
-                        // DEBUG LOGGER.info("markGeometry: GTYPE_POLYGON");
+                        LOGGER.debug("markGeometry: GTYPE_POLYGON");
                         JGeometry jgeom = null;
                         jgeom = new JGeometry(gType,element.getSRID(),element.getElemInfo(),element.getOrdinatesArray());
                         if ( jgeom.isRectangle() ) {
@@ -1069,7 +1078,7 @@ public class SVSpatialLayerDraw {
                     } else if (element.getType() == JGeometry.GTYPE_POLYGON ||
                                element.getType() == JGeometry.GTYPE_MULTIPOLYGON )
                     {
-                        // DEBUG LOGGER.info("markGeometry: GTYPE_POLYGON || GTYPE_MULTIPOLYGON");
+                        LOGGER.debug("markGeometry: GTYPE_POLYGON || GTYPE_MULTIPOLYGON");
                         // Element can be a polygon with rings
                         //
                         ElementExtractor ee;
@@ -1123,7 +1132,7 @@ public class SVSpatialLayerDraw {
     }
 
     private int[] strokeCompoundElements(int[] _elem_info) {
-        // DEBUG LOGGER.info("strokeCompoundElements: Re-write the elemInfoArray to remove 4,1005, and 2005 elements to make element pretend to be a series of vertex connected linestrings");
+        LOGGER.debug("strokeCompoundElements: Re-write the elemInfoArray to remove 4,1005, and 2005 elements to make element pretend to be a series of vertex connected linestrings");
         LinkedHashMap<Integer,Integer> elemInfo = new LinkedHashMap<Integer,Integer>(_elem_info.length/3);
         int elements = 0;
         for (int e=0;e<_elem_info.length;e=e+3) {                                
@@ -2145,11 +2154,11 @@ LOGGER.debug(String.format("Point=% 3d -> (bearNext=%6.1f,bearPrev=%6.1f,revBear
         // Rotate and Translate in one action.
         //
         if (_rotate) {
-            // DEBUG LOGGER.info("drawTransformedString: rotate(" + _angle + " (rX,rY)("+_rPointX+","+_rPointY+"))");
+            LOGGER.debug("drawTransformedString: rotate(" + _angle + " (rX,rY)("+_rPointX+","+_rPointY+"))");
             _g2d.rotate(_angle, _rPointX, _rPointY);
         }
         if (!(_deltaX == 0 && _deltaY == 0)) {
-            // DEBUG LOGGER.info("drawTransformedString: translate(dX,dY)("+_deltaX+","+_deltaY+"))");
+            LOGGER.debug("drawTransformedString: translate(dX,dY)("+_deltaX+","+_deltaY+"))");
             _g2d.translate(_deltaX, _deltaY);
         }
         _g2d.drawString(_label.getIterator(), _rPointX, _rPointY);
