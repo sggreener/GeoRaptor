@@ -2,7 +2,7 @@
 	esdk-version="2.0" xmlns="http://jcp.org/jsr/198/extension-manifest"
 	rsbundle-class="org.GeoRaptor.Project">
 
-	<name rskey="GeoRaptor" />
+	<name rskey="GeoRaptor">GeoRaptor</name>
 
 <!-- features may be used to enable/disable extensions without uninstalling them -->
 	<feature id="org.GeoRaptor" xmlns="http://xmlns.oracle.com/ide/extension">
@@ -157,8 +157,7 @@
 				</controller>
 				
                 <!-- Table/View/MVIew node controller-->
-				<controller
-					class="org.GeoRaptor.TableContextMenuController">
+				<controller class="org.GeoRaptor.TableContextMenuController">
 					<update-rules>
 						<update-rule rule="always-enabled">
 							<action id="ZOOM_TO_MAP" />
@@ -169,6 +168,7 @@
 							<action id="DROP_METADATA" />
 							<action id="VALIDATE_GEOMETRY" />
 							<action id="EXPORT" />
+							<action id="IMPORT_SHAPEFILE" />
 						</update-rule>
 					</update-rules>
 				</controller>

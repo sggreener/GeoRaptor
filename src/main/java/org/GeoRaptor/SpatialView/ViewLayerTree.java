@@ -157,7 +157,8 @@ public class ViewLayerTree
     //
     protected LinkedHashMap<String,DefaultMutableTreeNode> selectedNodes = new LinkedHashMap<String,DefaultMutableTreeNode>();
 
-    private final static int CTRL_LEFT_MOUSE = InputEvent.CTRL_MASK + InputEvent.BUTTON1_MASK;  
+    //private final static int CTRL_LEFT_MOUSE = InputEvent.CTRL_MASK + InputEvent.BUTTON1_MASK;  
+    private final static int CTRL_LEFT_MOUSE = InputEvent.CTRL_DOWN_MASK + InputEvent.BUTTON1_DOWN_MASK;  
 
     Color selectionBorderColor;
     Color selectionForeground;
@@ -579,9 +580,10 @@ public class ViewLayerTree
             */
            public void mouseReleased(MouseEvent e) 
            {
-                if ((e.getModifiers() & CTRL_LEFT_MOUSE) == CTRL_LEFT_MOUSE) {
+                if ((e.getModifiersEx() & CTRL_LEFT_MOUSE) == CTRL_LEFT_MOUSE) {
                       processMultiSelection(e);
-                } else if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
+                } else //if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
+                       if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) { 
                       processLeftMouseEvent(e);
                 } else
                       maybeShowPopup(e);
@@ -589,7 +591,8 @@ public class ViewLayerTree
 
            private void maybeShowPopup(MouseEvent e) {
                if (e.isPopupTrigger()) {
-                 if ((e.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
+                 // if ((e.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)
+                 if ((e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) != 0) 
                      processPopupEvent(e);
                }
            }

@@ -23,7 +23,7 @@ implements Controller {
 
 	private static final int            OPEN_MAP = Ide.findOrCreateCmdID("OPEN_MAP");
 	private static final int MANAGE_ALL_METADATA = Ide.findOrCreateCmdID("MANAGE_ALL_METADATA");
-	private static final int     ABOUT_GEORAPTOR =  Ide.findOrCreateCmdID("ABOUT_GEORAPTOR");
+	private static final int     ABOUT_GEORAPTOR = Ide.findOrCreateCmdID("ABOUT_GEORAPTOR");
 
 	public MenuBarController() {
 		super();

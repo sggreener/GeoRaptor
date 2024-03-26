@@ -2,6 +2,7 @@ package org.GeoRaptor;
 
 import java.sql.Connection;
 
+import javax.swing.Action;
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
@@ -57,14 +58,25 @@ public class TableContextMenuController implements Controller
         String       connectionType = dbo.getConnectionType();
         String   connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
         
-        boolean             isMySQL = "MySQL".equals(connectionType);
-        if ( isMySQL ) {
+        LOGGER.debug("Connection type is " + connectionType);
+        
+        if (! "Oracle".equals(connectionType) ) {
     		Tools.displayMessage(
-    				"MySQL support not yet Implemented",
+    				connectionType + " support not yet Implemented",
     			    JOptionPane.WARNING_MESSAGE,
     				true);
     		return false;
         }
+        
+		int cmdId = action.getCommandId();
+		
+		LOGGER.debug("action is " + cmdId + " Name is " + action.toString());
+		
+		if (cmdId == IMPORT_SHAPEFILE) {
+ 			LOGGER.debug("Executing ShapefileLoad.getInstance()");
+			ShapefileLoad.getInstance().initialise();
+			return true;
+		}
         
         // Get selected object 
         //
@@ -85,9 +97,6 @@ public class TableContextMenuController implements Controller
     				true);
     		return true;
     	}
-    	
-		int cmdId = action.getCommandId();
-		LOGGER.debug("action is " + cmdId);
 		
 		if (cmdId == ZOOM_TO_MAP || cmdId == ADD_TO_MAP) 
         {
@@ -224,9 +233,7 @@ public class TableContextMenuController implements Controller
                                               GENERAL_ERROR,
                                               JOptionPane.ERROR_MESSAGE);
             }
- 		} else if (cmdId == IMPORT_SHAPEFILE) {
-			ShapefileLoad.getInstance().initialise();
-		}
+ 		} 
 		return true;
 	}
 

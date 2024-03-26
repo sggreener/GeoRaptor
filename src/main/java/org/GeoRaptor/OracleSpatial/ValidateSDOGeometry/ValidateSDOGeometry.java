@@ -36,8 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.regex.PatternSyntaxException;
@@ -137,7 +135,7 @@ import oracle.spatial.geometry.JGeometry;
  */
 public class ValidateSDOGeometry 
 extends JDialog 
-implements Observer 
+//implements Observer 
 {
 	private static final long serialVersionUID = -8079134652561357147L;
 
@@ -182,7 +180,8 @@ implements Observer
     private JButton         btnLayerProperties = new JButton();
     
     // Sort icons indicators for header
-    private TableSortIndicator  fSortIndicator = null;
+    @SuppressWarnings("unused")
+	private TableSortIndicator fSortIndicator = null;
     private Icon ascIcon = UIManager.getIcon("Table.ascendingSortIcon"),
                 descIcon = UIManager.getIcon("Table.descendingSortIcon");
     // Sorter objects
@@ -275,7 +274,7 @@ implements Observer
             public void keyReleased(KeyEvent e) { }
         });
         this.fSortIndicator = new TableSortIndicator(this.resultTable, ascIcon, descIcon);
-        this.fSortIndicator.addObserver(this);
+        //this.fSortIndicator.addObserver(this);
         
         // Create actual sorter to hold sortKeys and filters
         //
@@ -320,7 +319,7 @@ implements Observer
     // registered observers, who will call getSortBy to fetch the new sort.
     // But we don't really use this in GeoRaptor.
     //  
-    public void update(Observable aObservable, Object aData) { }
+    //public void update(Observable aObservable, Object aData) { }
 
     /**
      * @function applyFilter()

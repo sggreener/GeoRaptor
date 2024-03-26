@@ -19,8 +19,6 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Vector;
 
 import javax.swing.Icon;
@@ -50,7 +48,10 @@ import org.GeoRaptor.tools.TableSortIndicator;
  * @author Simon
  * 
  */
-public class SRIDPanel extends javax.swing.JDialog implements Observer {
+public class SRIDPanel 
+extends javax.swing.JDialog 
+//implements Observer 
+{
 
 	private static final long serialVersionUID = 2461910316368426646L;
 
@@ -69,7 +70,8 @@ public class SRIDPanel extends javax.swing.JDialog implements Observer {
      * executed in QueryTableModel class
      */
     private QueryTableModel qtm;
-    private TableSortIndicator fSortIndicator;
+    @SuppressWarnings("unused")
+	private TableSortIndicator fSortIndicator;
     private TableRowSorter<QueryTableModel> sorter;
     private List<RowSorter.SortKey> sortKeys;
     private List<RowFilter<Object, Object>> rowFilters;
@@ -248,7 +250,7 @@ public class SRIDPanel extends javax.swing.JDialog implements Observer {
             //tblSRIDS.setDefaultRenderer(Color.class, qtcr);
             
             fSortIndicator = new TableSortIndicator(tblSRIDS, ascIcon, descIcon);
-            fSortIndicator.addObserver(this);
+            //fSortIndicator.addObserver(this);
 
             // Now data loaded, position view over passed in SRID 
             //
@@ -265,10 +267,10 @@ public class SRIDPanel extends javax.swing.JDialog implements Observer {
     // registered observers, who will call getSortBy to fetch the new sort.
     // But we don't really use this in GeoRaptor.
     //  
-    public void update(Observable aObservable, Object aData) {
-        //extract column and (asc|desc) from fSortIndicator
-        fSortIndicator.getSortBy();
-    }
+    //public void update(Observable aObservable, Object aData) {
+    //    //extract column and (asc|desc) from fSortIndicator
+    //    fSortIndicator.getSortBy();
+    //}
 
     /**
      * @method isGeodetic

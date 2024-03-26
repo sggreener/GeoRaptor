@@ -120,12 +120,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	 */
 	public ShapefileLoad() {
 		this(null, false);
+		LOGGER.debug("ShapefileLoad()");
 	}
 
 	/** Creates new form ShapefileLoad */
 	public ShapefileLoad(java.awt.Frame parent, boolean modal) {
 		super(parent, modal);
-
+		LOGGER.debug("ShapefielLoad(parent,modal)");
 		initComponents();
 
 		this.prefs = MainSettings.getInstance().getPreferences();
@@ -175,6 +176,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		if (ShapefileLoad.classInstance == null) {
 			ShapefileLoad.classInstance = new ShapefileLoad();
 		}
+		LOGGER.debug("getInstance()");
 		return ShapefileLoad.classInstance;
 	}
 
@@ -185,7 +187,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	 */
 	// <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents() 
+    {
+    	LOGGER.debug("InitComponents()");
 
         fcShapefile = new javax.swing.JFileChooser();
         btnCancel = new javax.swing.JButton();

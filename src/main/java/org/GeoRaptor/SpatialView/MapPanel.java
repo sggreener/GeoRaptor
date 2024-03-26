@@ -17,7 +17,6 @@ import java.awt.Stroke;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -821,7 +820,8 @@ public class MapPanel
         ViewOperationListener.VIEW_OPERATION svo = this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr();
         //LOGGER.debug("mousePressed: " + svo.toString());
         try {
-            if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
+            //if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK)
+            if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) 
             {
                 //LOGGER.debug("mousePressed: BUTTON1_MASK is LEFT MOUSE BUTTON");
                 Stroke oldStroke = this.getBiG2D().getStroke();
@@ -1027,7 +1027,7 @@ public class MapPanel
                 // LOGGER.info("spatialViewMBR("+this.spatialView.getMBR().toString());
                 this.spatialView.getSVPanel().updateMouseMove(currentWorld,this.spatialView.getPrecision(false));
             } catch (NoninvertibleTransformException nte) {
-LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvalid()=" + this.spatialView.getMBR().isInvalid());
+            	LOGGER.debug("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvalid()=" + this.spatialView.getMBR().isInvalid());
                 if ( this.spatialView.getLayerCount()!=0 && 
                      this.spatialView.getMBR().isInvalid()==false) {
                     LOGGER.warn("(MapPanel.mouseMoved)" +this.ERROR_SCREEN2WORLD_TRANSFORM + " = " + nte.getLocalizedMessage());
@@ -1146,7 +1146,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             return;
         }
         
-        if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
+        //if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
+        if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) { 
             //LOGGER.debug("mouseDragged: LEFT MOUSE BUTTON; svo="+svo.toString() );
             switch (svo)
             {
@@ -1269,7 +1270,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             }
         }
         try {
-            if ((_mouseEvent.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
+            //if ((_mouseEvent.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK)
+            if ((_mouseEvent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) 
             {
                 //LOGGER.debug("mouseReleased: LEFT MOUSE BUTTON: "+ svo.toString());
                 switch (svo)
@@ -1439,7 +1441,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
 				case ZOOM_OUT:          break;
 				default:                break;
                 }
-            } else if ((_mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
+            } else //if ((_mouseEvent.getModifiers()   & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)
+                   if ((_mouseEvent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) != 0)  
             {
                 //LOGGER.debug("mouseReleased: RIGHT MOUSE BUTTON: "+ svo.toString());
                 Stroke oldStroke = this.getBiG2D().getStroke();
