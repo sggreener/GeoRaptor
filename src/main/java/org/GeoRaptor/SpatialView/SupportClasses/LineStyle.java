@@ -1,7 +1,6 @@
 package org.GeoRaptor.SpatialView.SupportClasses;
 
 import java.awt.BasicStroke;
-
 import java.awt.Component;
 
 import javax.swing.ComboBoxModel;

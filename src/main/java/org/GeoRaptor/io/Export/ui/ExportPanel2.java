@@ -21,11 +21,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-import org.GeoRaptor.layout.XYConstraints;
-import org.GeoRaptor.layout.XYLayout;
-
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.io.Export.DBaseWriter;
+import org.GeoRaptor.layout.XYConstraints;
+import org.GeoRaptor.layout.XYLayout;
 import org.GeoRaptor.tools.Strings;
 
 

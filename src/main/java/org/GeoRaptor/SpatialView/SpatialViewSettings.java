@@ -1,6 +1,7 @@
 package org.GeoRaptor.SpatialView;
 
 import java.io.StringWriter;
+
 import java.util.Iterator;
 
 import javax.xml.transform.OutputKeys;
@@ -23,6 +24,7 @@ import org.GeoRaptor.SpatialView.layers.iLayer;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.util.logging.Logger;
 import org.GeoRaptor.util.logging.Logging;
+
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;

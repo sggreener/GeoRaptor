@@ -1,5 +1,6 @@
 package org.GeoRaptor.util.logging;
 
+
 public class Logging {
 
     public Logging() {

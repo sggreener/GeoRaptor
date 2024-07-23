@@ -5,11 +5,12 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
+
 import java.io.Serializable;
 
 /**
- * 
- * @author Bessie Gong 
+ *
+ * @author Bessie Gong
  * @version 10 Oct 2019
  *Temporary Layout file for preference
  */

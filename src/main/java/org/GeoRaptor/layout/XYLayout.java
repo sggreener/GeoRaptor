@@ -6,12 +6,14 @@ import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.LayoutManager2;
 import java.awt.Rectangle;
+
 import java.io.Serializable;
+
 import java.util.Hashtable;
 
 /**
  * Temporary Layout file for preference
- * @author Bessie Gong 
+ * @author Bessie Gong
  * @version 10 Oct 2019
  *
  */

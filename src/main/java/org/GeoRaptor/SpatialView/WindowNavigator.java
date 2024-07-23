@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;
-
 import org.GeoRaptor.util.logging.Logger;
 import org.GeoRaptor.util.logging.Logging;
 

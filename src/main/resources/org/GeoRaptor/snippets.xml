@@ -1,6 +1,6 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version = '1.0' encoding = 'UTF-8'?>
 <snippets>
-  <group category="GeoRaptor - Sample Spatial Tables" language="PLSQL">
+  <group category="GeoRaptor - Spatial Tables" language="PLSQL">
     <snippet name="ORACLE_TEST_GEOMETRIES Table and Data" description="Test geometries From Oracle documentation">
 	    <code><![CDATA[
 DROP TABLE ORACLE_TEST_GEOMETRIES;
@@ -246,6 +246,24 @@ SELECT c.name
   FROM COLA_MARKETS c 
  WHERE SDO_FILTER(c.shape,SDO_GEOMETRY(2003,8307,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(6,5, 10,10))) = 'TRUE';]]></code>
     </snippet> 
+  	<snippet name="Geometry_Columns Table" description="OGC Geometry_Columns table with qGIS extensions">
+		<code><![CDATA[CREATE TABLE CODESYS.GEOMETRY_COLUMNS  (
+  F_TABLE_CATALOG VARCHAR2(128) NOT NULL ENABLE, 
+  F_TABLE_SCHEMA VARCHAR2(128) NOT NULL ENABLE, 
+  F_TABLE_NAME VARCHAR2(256) NOT NULL ENABLE, 
+  F_GEOMETRY_COLUMN VARCHAR2(256) NOT NULL ENABLE, 
+  COORD_DIMENSION NUMBER(2) NOT NULL ENABLE, 
+  SRID NUMBER(10) NOT NULL ENABLE, 
+  GEOMETRY_TYPE VARCHAR2(30) NOT NULL ENABLE, 
+  QGIS_XMIN NUMBER, 
+  QGIS_YMIN NUMBER, 
+  QGIS_XMAX NUMBER, 
+  QGIS_YMAX NUMBER, 
+  QGIS_PKEY VARCHAR2(128), 
+  CONSTRAINT GEOMETRY_COLUMNS_PK PRIMARY KEY (F_TABLE_CATALOG,F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, GEOMETRY_TYPE)
+);]]>
+        </code>  	
+  	</snippet>
   </group>
   <group category="GeoRaptor - Individual Geometry Type Examples" language="PLSQL">
     <snippet name="Point (sdo_ordinate encoding)" description="Point with coordinate stored in SDO_ORDINATE_ARRAY"> <code><![CDATA[SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1),SDO_ORDINATE_ARRAY(10,5))]]></code></snippet>

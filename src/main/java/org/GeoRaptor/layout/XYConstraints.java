@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * Temporary Layout file for preference
- * @author Bessie Gong 
+ * @author Bessie Gong
  * @version 10 Oct 2019
  *
  */

@@ -1,6 +1,8 @@
 package org.GeoRaptor;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import javax.swing.Action;
 import javax.swing.JOptionPane;
@@ -11,6 +13,7 @@ import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
+import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -29,19 +32,62 @@ public class TableContextMenuController implements Controller
 
     private static final String GENERAL_ERROR     = MainSettings.EXTENSION_NAME + " Error";
 	
-	private static final int ZOOM_TO_MAP          = Ide.findOrCreateCmdID("ZOOM_TO_MAP");
-	private static final int ADD_TO_MAP           = Ide.findOrCreateCmdID("ADD_TO_MAP");
-	private static final int CREATE_SPATIAL_INDEX = Ide.findOrCreateCmdID("CREATE_SPATIAL_INDEX");
-	private static final int DROP_SPATIAL_INDEX   = Ide.findOrCreateCmdID("DROP_SPATIAL_INDEX");
-	private static final int MANAGE_METADATA      = Ide.findOrCreateCmdID("MANAGE_METADATA");
-	private static final int DROP_METADATA        = Ide.findOrCreateCmdID("DROP_METADATA");
-	private static final int EXPORT               = Ide.findOrCreateCmdID("EXPORT");
-	private static final int EXPORT_COLUMN        = Ide.findOrCreateCmdID("EXPORT_COLUMN");
-	private static final int VALIDATE_GEOMETRY    = Ide.findOrCreateCmdID("VALIDATE_GEOMETRY");
-	private static final int VALIDATE_COLUMN      = Ide.findOrCreateCmdID("VALIDATE_COLUMN");
-	private static final int IMPORT_SHAPEFILE     = Ide.findOrCreateCmdID("IMPORT_SHAPEFILE");
+	private static final int ZOOM_TO_MAP             = Ide.findOrCreateCmdID("ZOOM_TO_MAP");
+	private static final int ADD_TO_MAP              = Ide.findOrCreateCmdID("ADD_TO_MAP");
+	private static final int CREATE_SPATIAL_INDEX    = Ide.findOrCreateCmdID("CREATE_SPATIAL_INDEX");
+	private static final int DROP_SPATIAL_INDEX      = Ide.findOrCreateCmdID("DROP_SPATIAL_INDEX");
+	private static final int MANAGE_METADATA         = Ide.findOrCreateCmdID("MANAGE_METADATA");
+	private static final int DROP_METADATA           = Ide.findOrCreateCmdID("DROP_METADATA");
+	private static final int EXPORT                  = Ide.findOrCreateCmdID("EXPORT");
+	private static final int EXPORT_COLUMN           = Ide.findOrCreateCmdID("EXPORT_COLUMN");
+	private static final int VALIDATE_GEOMETRY       = Ide.findOrCreateCmdID("VALIDATE_GEOMETRY");
+	private static final int VALIDATE_COLUMN         = Ide.findOrCreateCmdID("VALIDATE_COLUMN");
+	private static final int IMPORT_SHAPEFILE        = Ide.findOrCreateCmdID("IMPORT_SHAPEFILE");
+	private static final int CREATE_GEOMETRY_COLUMNS = Ide.findOrCreateCmdID("CREATE_GEOMETRY_COLUMNS");
 
     protected ValidateSDOGeometry validateSDOGeom;
+
+	public void executeSQL(Connection _conn, String _sql) throws SQLException 
+	{
+		LOGGER.debug("Executing SQL: " + _sql);
+		Statement stmt;
+		try {
+			stmt = _conn.createStatement();
+			stmt.executeUpdate(_sql);
+			_conn.commit();
+			stmt.close();
+		} catch (SQLException sqle) {
+			if ((sqle.getErrorCode() != 955) && /* ORA-00955: name is already used by an existing object */
+					(sqle.getErrorCode() != 942)) // SQL Error: ORA-00942: table or view does not exist
+				throw new SQLException(sqle);
+		}
+	}
+	
+	private void createGeometryColumnsTable(Connection _conn) 
+	{
+		LOGGER.debug("Creating GEOMETRY_COLUMNS table database");
+		String sql = "CREATE TABLE CODESYS.GEOMETRY_COLUMNS  ("
+				+ "  F_TABLE_CATALOG   VARCHAR2(128) NOT NULL ENABLE,"
+				+ "  F_TABLE_SCHEMA    VARCHAR2(128) NOT NULL ENABLE, "
+				+ "  F_TABLE_NAME      VARCHAR2(256) NOT NULL ENABLE, "
+				+ "  F_GEOMETRY_COLUMN VARCHAR2(256) NOT NULL ENABLE, "
+				+ "  COORD_DIMENSION   NUMBER(2) NOT NULL ENABLE, "
+				+ "  SRID              NUMBER(10) NOT NULL ENABLE, "
+				+ "  GEOMETRY_TYPE     VARCHAR2(30) NOT NULL ENABLE, "
+				+ "  QGIS_XMIN NUMBER, "
+				+ "  QGIS_YMIN NUMBER, "
+				+ "  QGIS_XMAX NUMBER, "
+				+ "  QGIS_YMAX NUMBER, "
+				+ "  QGIS_PKEY VARCHAR2(128), "
+				+ "  CONSTRAINT GEOMETRY_COLUMNS_PK PRIMARY KEY (F_TABLE_CATALOG,F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, GEOMETRY_TYPE)"
+				+ ")";
+		try {
+			LOGGER.logSQL(sql);
+			this.executeSQL(_conn,sql);
+		} catch (SQLException sqle) {
+			JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Creating Geometry_Columns Table Failed",JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
 
 	@Override
 	public boolean handleEvent(IdeAction action, Context context) 
@@ -76,6 +122,11 @@ public class TableContextMenuController implements Controller
  			LOGGER.debug("Executing ShapefileLoad.getInstance()");
 			ShapefileLoad.getInstance().initialise();
 			return true;
+		}
+		
+		if (cmdId == CREATE_GEOMETRY_COLUMNS) {
+ 			LOGGER.debug("Executing ShapefileLoad.getInstance()");
+			this.createGeometryColumnsTable(conn);
 		}
         
         // Get selected object 

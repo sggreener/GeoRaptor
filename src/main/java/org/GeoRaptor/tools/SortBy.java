@@ -2,15 +2,15 @@ package org.GeoRaptor.tools;
 
 import javax.swing.SortOrder;
 
-/** 
+/**
  * @class SortBy
- * 
- * Data-centric, immutable value class representing both the direction 
+ *
+ * Data-centric, immutable value class representing both the direction
  * of a sort and the index of its column.
  *
- * <P><tt>SortBy</tt> does not have any knowledge of table contents, so it may be 
+ * <P><tt>SortBy</tt> does not have any knowledge of table contents, so it may be
  * used with any sorted table.
- * 
+ *
  * Idea and code originally sourced from: http://www.javapractices.com/topic/TopicAction.do?Id=161
  **/
 public class SortBy {

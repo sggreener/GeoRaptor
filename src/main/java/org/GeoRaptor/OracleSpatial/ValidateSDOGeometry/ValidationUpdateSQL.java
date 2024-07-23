@@ -47,13 +47,11 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry.ValidationTableModel;
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
-
-import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry.ValidationTableModel;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.GeoRaptor.util.logging.Logger;
 import org.GeoRaptor.util.logging.Logging;
 

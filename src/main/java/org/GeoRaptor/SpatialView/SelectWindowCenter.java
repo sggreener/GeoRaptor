@@ -10,13 +10,11 @@ import java.awt.Point;
 import java.awt.geom.Point2D;
 
 import java.text.DecimalFormat;
-
 import java.text.ParsePosition;
 
 import java.util.StringTokenizer;
 
 import javax.swing.JDialog;
-
 import javax.swing.SwingUtilities;
 
 import org.GeoRaptor.SpatialView.SupportClasses.Envelope;

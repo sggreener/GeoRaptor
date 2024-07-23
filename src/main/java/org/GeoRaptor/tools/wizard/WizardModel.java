@@ -1,14 +1,16 @@
 package org.GeoRaptor.tools.wizard;
 
-import java.beans.*;
-import java.util.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
-import javax.swing.*;
+import java.util.HashMap;
+
+import javax.swing.Icon;
 
 /**
  * The model for the Wizard component, which tracks the text, icons, and enabled state
- * of each of the buttons, as well as the current panel that is displayed. Note that 
- * the model, in its current form, is not intended to be subclassed. 
+ * of each of the buttons, as well as the current panel that is displayed. Note that
+ * the model, in its current form, is not intended to be subclassed.
  */
 
 

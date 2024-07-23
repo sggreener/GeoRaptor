@@ -15,7 +15,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
-/** 
+/**
  * @class TableSortIndicator
  * Implements Up and Down arrow in Header for when user clicks in header indicating a sort
  * Idea and code originally sourced from: http://www.javapractices.com/topic/TopicAction.do?Id=161

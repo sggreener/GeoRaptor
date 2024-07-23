@@ -14,7 +14,7 @@ package org.locationtech.jts.io.geojson;
 
 /**
  * Constants for GeoJSON objects
- * 
+ *
  * @author Martin Davis
  */
 public class GeoJsonConstants {

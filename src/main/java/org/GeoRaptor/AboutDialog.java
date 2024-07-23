@@ -25,7 +25,7 @@ import org.GeoRaptor.util.logging.Logger;
 /**
  *
  * @author oracle
- * 
+ *
  * Use Resources class to replace propertiesFile
  */
 public class AboutDialog extends javax.swing.JDialog {

@@ -116,6 +116,14 @@
 					</properties>
 				</action>
 
+				<!-- table context menu -->
+				<action id="CREATE_GEOMETRY_COLUMNS">
+					<properties>
+						<property name="Name">${CREATE_GEOMETRY_COLUMNS_SUBMENU_LABEL}</property>
+						<property name="SmallIcon">res:${CREATE_GEOMETRY_COLUMNS_SUBMENU_ICON}</property>
+					</properties>
+				</action>
+
 				<!-- view menu -->
 				<action id="OPEN_MAP">
 					<properties>
@@ -145,8 +153,7 @@
 
 			<!-- controller -->
 			<controllers xmlns="http://xmlns.oracle.com/ide/extension">
-
-			<controller class="org.GeoRaptor.MenuBarController">
+				<controller class="org.GeoRaptor.MenuBarController">
 					<update-rules>
 						<update-rule rule="always-enabled">
 							<action id="OPEN_MAP" />
@@ -169,6 +176,7 @@
 							<action id="VALIDATE_GEOMETRY" />
 							<action id="EXPORT" />
 							<action id="IMPORT_SHAPEFILE" />
+							<action id="CREATE_GEOMETRY_COLUMNS" />
 						</update-rule>
 					</update-rules>
 				</controller>
@@ -214,9 +222,9 @@
 						id="CONTEXT_TABLE_MENU_SECTION_ID" weight="0.1">
 						<menu id="CONTEXT_TABLLESUBMENU_ID" weight="2.0f">
 							<label>GeoRaptor</label>
-							<section id="CONTEXT_TABLLESUBMENU_SECTION_ID"
-								weight="10.0f">
+							<section id="CONTEXT_TABLLESUBMENU_SECTION_ID" weight="10.0f">
 								<item action-ref="IMPORT_SHAPEFILE" />
+								<item action-ref="CREATE_GEOMETRY_COLUMNS" />
 							</section>
 						</menu>
 					</section>

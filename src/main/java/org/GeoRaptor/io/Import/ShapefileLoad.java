@@ -67,9 +67,7 @@ import oracle.spatial.util.ShapefileReaderJGeom;
 
 /**
  * @author Simon Greener, May 2010
- * @tobedone 1. True, array loading to increase performance. 2. Any action in
- *           attribute table (eg tick box in column lisEist - Load?), keep FID
- *           selection if exists.
+ * @tobedone True array loading to increase performance. 
  */
 public class ShapefileLoad extends javax.swing.JDialog {
 
@@ -187,19 +185,17 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	 */
 	// <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() 
-    {
-    	LOGGER.debug("InitComponents()");
+    private void initComponents() {
 
         fcShapefile = new javax.swing.JFileChooser();
         btnCancel = new javax.swing.JButton();
         btnLoad = new javax.swing.JButton();
         pnlShapefileSet = new javax.swing.JPanel();
         scrlShapefiles = new javax.swing.JScrollPane();
-        lstShapefiles = new javax.swing.JList<String>();
+        lstShapefiles = new javax.swing.JList();
         btnAddShp = new javax.swing.JButton();
         btnRemoveShp = new javax.swing.JButton();
-        lblTotalRecords = new javax.swing.JLabel();
+        lblTotalShapesToLoad = new javax.swing.JLabel();
         pnlSQL = new javax.swing.JPanel();
         cbSQL = new javax.swing.JCheckBox();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -214,10 +210,10 @@ public class ShapefileLoad extends javax.swing.JDialog {
         lblDecimalPlaces = new javax.swing.JLabel();
         sldrCommitInterval = new javax.swing.JSlider();
         lblCommitInterval = new javax.swing.JLabel();
-        cmbDecimalPlaces = new javax.swing.JComboBox<String>();
+        cmbDecimalPlaces = new javax.swing.JComboBox();
         cbSpatialIndex = new javax.swing.JCheckBox();
         cbMetadata = new javax.swing.JCheckBox();
-        lblTotalShapesToLoad = new javax.swing.JLabel();
+        cbMigrateGeometry = new javax.swing.JCheckBox();
         pnlMisc = new javax.swing.JPanel();
         lblFID = new javax.swing.JLabel();
         lblGeomColumn = new javax.swing.JLabel();
@@ -225,9 +221,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
         tfGeometryColumn = new javax.swing.JTextField();
         btnSRID = new javax.swing.JButton();
         lblConnections = new javax.swing.JLabel();
-        cmbConnections = new javax.swing.JComboBox<String>();
+        cmbConnections = new javax.swing.JComboBox();
         lblSRID = new javax.swing.JLabel();
-        cmbFID = new javax.swing.JComboBox<String>();
+        cmbFID = new javax.swing.JComboBox();
         btnHelp = new javax.swing.JButton();
 
         fcShapefile.setCurrentDirectory(new java.io.File("C:\\"));
@@ -267,6 +263,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             scrlShapefiles.setViewportView(lstShapefiles);
 
             btnAddShp.setText("Add");
+            btnAddShp.setToolTipText("Add a single shapefile to the set to be loaded");
             btnAddShp.setName("btnAddShp"); // NOI18N
             btnAddShp.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -275,6 +272,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             });
 
             btnRemoveShp.setText("Remove");
+            btnRemoveShp.setToolTipText("Remove the selected shapefiles from the set to be loaded");
             btnRemoveShp.setName("btnRemoveShp"); // NOI18N
             btnRemoveShp.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -282,8 +280,10 @@ public class ShapefileLoad extends javax.swing.JDialog {
                 }
             });
 
-            lblTotalRecords.setText("# 10000");
-            lblTotalRecords.setName("lblTotalRecords"); // NOI18N
+            lblTotalShapesToLoad.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+            lblTotalShapesToLoad.setText("Total Shapes To Load = 0");
+            lblTotalShapesToLoad.setToolTipText("Shows total number of shapes in all shapfiles that will be loaded");
+            lblTotalShapesToLoad.setName("lblTotalShapesToLoad"); // NOI18N
 
             javax.swing.GroupLayout pnlShapefileSetLayout = new javax.swing.GroupLayout(pnlShapefileSet);
             pnlShapefileSet.setLayout(pnlShapefileSetLayout);
@@ -291,15 +291,16 @@ public class ShapefileLoad extends javax.swing.JDialog {
                 pnlShapefileSetLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlShapefileSetLayout.createSequentialGroup()
                     .addContainerGap()
-                    .addGroup(pnlShapefileSetLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(lblTotalRecords)
-                        .addGroup(pnlShapefileSetLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addGroup(pnlShapefileSetLayout.createSequentialGroup()
-                                .addComponent(btnAddShp)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(btnRemoveShp))
-                            .addComponent(scrlShapefiles, javax.swing.GroupLayout.PREFERRED_SIZE, 317, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addContainerGap())
+                    .addGroup(pnlShapefileSetLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addGroup(pnlShapefileSetLayout.createSequentialGroup()
+                            .addGap(47, 47, 47)
+                            .addComponent(lblTotalShapesToLoad, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlShapefileSetLayout.createSequentialGroup()
+                            .addComponent(btnAddShp)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnRemoveShp))
+                        .addComponent(scrlShapefiles, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 317, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             );
             pnlShapefileSetLayout.setVerticalGroup(
                 pnlShapefileSetLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -310,7 +311,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(scrlShapefiles, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(lblTotalRecords))
+                    .addComponent(lblTotalShapesToLoad))
             );
 
             pnlSQL.setBorder(javax.swing.BorderFactory.createTitledBorder("SQL"));
@@ -319,6 +320,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             pnlSQL.setName("pnlSQL"); // NOI18N
 
             cbSQL.setText("Edit");
+            cbSQL.setToolTipText("Tick to allow manual editing of generated create table statement");
             cbSQL.setName("cbSQL"); // NOI18N
             cbSQL.addChangeListener(new javax.swing.event.ChangeListener() {
                 public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -336,6 +338,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             taSQL.setColumns(20);
             taSQL.setFont(new java.awt.Font("Courier New", 1, 12)); // NOI18N
             taSQL.setRows(5);
+            taSQL.setToolTipText("Create Table statement generated by form as you make changes.");
             taSQL.setMaximumSize(new java.awt.Dimension(144, 74));
             taSQL.setMinimumSize(new java.awt.Dimension(144, 74));
             taSQL.setName("taSQL"); // NOI18N
@@ -367,6 +370,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             pnlTableProperties.setName("pnlTableProperties"); // NOI18N
 
             cbNoLogging.setText("No Logging");
+            cbNoLogging.setToolTipText("Tell Oracle not to log the table to speed up insertion.");
             cbNoLogging.setName("cbNoLogging"); // NOI18N
             cbNoLogging.addChangeListener(new javax.swing.event.ChangeListener() {
                 public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -387,19 +391,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     "DBF Column", "Oracle Column", "Data Type", "Not Null"
                 }
             ) {
-                /**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
-				@SuppressWarnings("rawtypes")
-				Class[] types = new Class [] {
+                Class[] types = new Class [] {
                     java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
                 };
                 boolean[] canEdit = new boolean [] {
                     false, true, true, true
                 };
 
-                public Class<?> getColumnClass(int columnIndex) {
+                public Class getColumnClass(int columnIndex) {
                     return types [columnIndex];
                 }
 
@@ -407,11 +406,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     return canEdit [columnIndex];
                 }
             });
+            tblAttributeColumns.setToolTipText("If change any parameter, create table SQL statement is regenerated.");
             tblAttributeColumns.setMaximumSize(new java.awt.Dimension(300, 64));
             tblAttributeColumns.setMinimumSize(new java.awt.Dimension(300, 64));
             tblAttributeColumns.setName("tblAttributeColumns"); // NOI18N
             scrlColumns.setViewportView(tblAttributeColumns);
 
+            tfTablename.setToolTipText("Name of database table");
             tfTablename.setMaximumSize(new java.awt.Dimension(253, 20));
             tfTablename.setMinimumSize(new java.awt.Dimension(253, 20));
             tfTablename.setName("tfTablename"); // NOI18N
@@ -464,6 +465,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             pnlProcessingOptions.setName("pnlProcessingOptions"); // NOI18N
 
             lblDecimalPlaces.setText("Ordinate Rounding:");
+            lblDecimalPlaces.setToolTipText("Rounds X and Y ordinates to number of selected decimal places");
             lblDecimalPlaces.setName("lblDecimalPlaces"); // NOI18N
 
             sldrCommitInterval.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
@@ -473,6 +475,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             sldrCommitInterval.setPaintLabels(true);
             sldrCommitInterval.setPaintTicks(true);
             sldrCommitInterval.setSnapToTicks(true);
+            sldrCommitInterval.setToolTipText("Set transaction commit interval");
             sldrCommitInterval.setValue(100);
             sldrCommitInterval.setMaximumSize(new java.awt.Dimension(291, 44));
             sldrCommitInterval.setMinimumSize(new java.awt.Dimension(291, 44));
@@ -492,11 +495,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblCommitInterval.setName("lblCommitInterval"); // NOI18N
             lblCommitInterval.setPreferredSize(new java.awt.Dimension(104, 14));
 
-            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }));
+            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }));
             cmbDecimalPlaces.setMaximumSize(new java.awt.Dimension(86, 20));
             cmbDecimalPlaces.setName("cmbDecimalPlaces"); // NOI18N
 
             cbSpatialIndex.setText("Create Spatial Index?");
+            cbSpatialIndex.setToolTipText("Create spatial index");
             cbSpatialIndex.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
             cbSpatialIndex.setName("cbSpatialIndex"); // NOI18N
             cbSpatialIndex.addActionListener(new java.awt.event.ActionListener() {
@@ -506,6 +510,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             });
 
             cbMetadata.setText("Create Metadata?");
+            cbMetadata.setToolTipText("Create user_sdo_geom_metadata");
             cbMetadata.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
             cbMetadata.setName("cbMetadata"); // NOI18N
             cbMetadata.addActionListener(new java.awt.event.ActionListener() {
@@ -514,9 +519,11 @@ public class ShapefileLoad extends javax.swing.JDialog {
                 }
             });
 
-            lblTotalShapesToLoad.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-            lblTotalShapesToLoad.setText("Total Shapes To Load = 100000");
-            lblTotalShapesToLoad.setName("lblTotalShapesToLoad"); // NOI18N
+            cbMigrateGeometry.setText("Migrate Polygon Geometries?");
+            cbMigrateGeometry.setToolTipText("Converts polygon geometry ring rotation");
+            cbMigrateGeometry.setActionCommand("Migrate Geometry?");
+            cbMigrateGeometry.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+            cbMigrateGeometry.setName("cbMigrateGeometry"); // NOI18N
 
             javax.swing.GroupLayout pnlProcessingOptionsLayout = new javax.swing.GroupLayout(pnlProcessingOptions);
             pnlProcessingOptions.setLayout(pnlProcessingOptionsLayout);
@@ -533,14 +540,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
                             .addGroup(pnlProcessingOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                 .addComponent(cbSpatialIndex)
                                 .addComponent(cbMetadata))
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 81, Short.MAX_VALUE)
                             .addGroup(pnlProcessingOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(lblTotalShapesToLoad, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(pnlProcessingOptionsLayout.createSequentialGroup()
-                                    .addGap(0, 81, Short.MAX_VALUE)
+                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlProcessingOptionsLayout.createSequentialGroup()
                                     .addComponent(lblDecimalPlaces)
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(cmbDecimalPlaces, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addComponent(cmbDecimalPlaces, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(cbMigrateGeometry, javax.swing.GroupLayout.Alignment.TRAILING))
                             .addGap(9, 9, 9)))
                     .addContainerGap(15, Short.MAX_VALUE))
             );
@@ -559,9 +565,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
                                 .addGroup(pnlProcessingOptionsLayout.createSequentialGroup()
                                     .addContainerGap()
                                     .addComponent(lblCommitInterval, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addGap(6, 6, 6)
-                            .addComponent(lblTotalShapesToLoad)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(cbMigrateGeometry)
+                            .addGap(1, 1, 1)
                             .addGroup(pnlProcessingOptionsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(lblDecimalPlaces)
                                 .addComponent(cmbDecimalPlaces, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
@@ -579,12 +585,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblGeomColumn.setText("Geometry Column:");
             lblGeomColumn.setName("lblGeomColumn"); // NOI18N
 
+            tfSRID.setToolTipText("Type in SRID number or select from list (button)");
             tfSRID.setMaximumSize(new java.awt.Dimension(140, 20));
             tfSRID.setMinimumSize(new java.awt.Dimension(140, 20));
             tfSRID.setName("tfSRID"); // NOI18N
             tfSRID.setPreferredSize(new java.awt.Dimension(140, 20));
 
             tfGeometryColumn.setText("GEOM");
+            tfGeometryColumn.setToolTipText("The name of the geometry column to create");
             tfGeometryColumn.setMaximumSize(new java.awt.Dimension(140, 20));
             tfGeometryColumn.setMinimumSize(new java.awt.Dimension(140, 20));
             tfGeometryColumn.setName("tfGeometryColumn"); // NOI18N
@@ -606,6 +614,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblConnections.setText("Connection:");
             lblConnections.setName("lblConnections"); // NOI18N
 
+            cmbConnections.setToolTipText("Switch connection");
             cmbConnections.setLightWeightPopupEnabled(false);
             cmbConnections.setMaximumSize(new java.awt.Dimension(235, 20));
             cmbConnections.setMinimumSize(new java.awt.Dimension(235, 20));
@@ -623,7 +632,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblSRID.setName("lblSRID"); // NOI18N
             lblSRID.setPreferredSize(new java.awt.Dimension(28, 18));
 
-            cmbFID.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<NONE>>" }));
+            cmbFID.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>" }));
             cmbFID.setToolTipText("Select an existing field or enter new one.");
             cmbFID.setMaximumSize(new java.awt.Dimension(143, 20));
             cmbFID.setMinimumSize(new java.awt.Dimension(143, 20));
@@ -701,26 +710,26 @@ public class ShapefileLoad extends javax.swing.JDialog {
             layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
-                    .addContainerGap()
+                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                             .addComponent(pnlSQL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addGroup(layout.createSequentialGroup()
                                     .addComponent(btnHelp)
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                     .addComponent(btnLoad)
                                     .addGap(166, 166, 166)
                                     .addComponent(btnCancel))
-                                .addComponent(pnlShapefileSet, javax.swing.GroupLayout.PREFERRED_SIZE, 349, Short.MAX_VALUE)))
+                                .addComponent(pnlShapefileSet, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(pnlTableProperties, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 746, Short.MAX_VALUE)
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                 .addComponent(pnlMisc, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(pnlProcessingOptions, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addContainerGap())
+                    .addGap(19, 19, 19))
             );
             layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -917,12 +926,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JButton btnRemoveShp;
     private javax.swing.JButton btnSRID;
     private javax.swing.JCheckBox cbMetadata;
+    private javax.swing.JCheckBox cbMigrateGeometry;
     private javax.swing.JCheckBox cbNoLogging;
     private javax.swing.JCheckBox cbSQL;
     private javax.swing.JCheckBox cbSpatialIndex;
-    private javax.swing.JComboBox<String> cmbConnections;
-    private javax.swing.JComboBox<String> cmbDecimalPlaces;
-    private javax.swing.JComboBox<String> cmbFID;
+    private javax.swing.JComboBox cmbConnections;
+    private javax.swing.JComboBox cmbDecimalPlaces;
+    private javax.swing.JComboBox cmbFID;
     private javax.swing.JFileChooser fcShapefile;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblCommitInterval;
@@ -932,9 +942,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JLabel lblGeomColumn;
     private javax.swing.JLabel lblSRID;
     private javax.swing.JLabel lblTableName;
-    private javax.swing.JLabel lblTotalRecords;
     private javax.swing.JLabel lblTotalShapesToLoad;
-    private javax.swing.JList<String> lstShapefiles;
+    private javax.swing.JList lstShapefiles;
     private javax.swing.JPanel pnlMisc;
     private javax.swing.JPanel pnlProcessingOptions;
     private javax.swing.JPanel pnlSQL;
@@ -966,7 +975,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.cmbConnections.setSelectedIndex(0); // This fires setting of userName() via cmbConnectionsActionPerformed
 		DatabaseConnection dbConn = DatabaseConnections
 				                        .getInstance()
-                                        .findDisplayName(this.cmbConnections.getItemAt(0));
+                                        .findDisplayName((String) this.cmbConnections.getItemAt(0));
 		if (dbConn == null || dbConn.isOpen() == false) {
 			this.setAlwaysOnTop(false);
 			JOptionPane.showMessageDialog(this, propertyManager.getMsg("SHPFILE_IMPORTER_NO_OPEN_CONN_ERROR"));
@@ -1005,8 +1014,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.cmbFID.removeAllItems();
 		this.cmbFID.addItem(this.sNone);
 
-		this.lblTotalRecords.setText("");
-		this.lblTotalShapesToLoad.setText(String.format(this.totalShapesToLoad, 0));
 		this.totalRecords = 0;
 
 		this.tfTablename.setText("");
@@ -1140,8 +1147,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.cmbFID.removeAllItems();
 		this.cmbFID.addItem(this.sNone);
 
-		this.lblTotalRecords.setText("");
-		this.lblTotalShapesToLoad.setText(String.format(this.totalShapesToLoad, 0));
 		this.totalRecords = 0;
 
 		this.tfTablename.setText(mEntry.getObjectName());
@@ -1306,7 +1311,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				ShapefileReaderJGeom sfh = new ShapefileReaderJGeom(fileName);
 				this.totalRecords += sfh.numRecords();
 				sfh.closeShapefile();
-				this.lblTotalRecords.setText("# " + this.totalRecords);
 				this.lblTotalShapesToLoad.setText(String.format(this.totalShapesToLoad, this.totalRecords));
 				this.ShapefileListModel.addElement(fileName);
 				this.btnLoad.setEnabled(true);
@@ -1364,7 +1368,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			ShapefileReaderJGeom sfh = new ShapefileReaderJGeom(fileName);
 			this.totalRecords -= sfh.numRecords();
 			sfh.closeShapefile();
-			this.lblTotalRecords.setText("# " + this.totalRecords);
 			this.lblTotalShapesToLoad.setText(String.format(this.totalShapesToLoad, this.totalRecords));
 			// Now remove selected item
 			//
@@ -1530,7 +1533,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	 * @throws SQLException
 	 * @author Simon Greener 21st May, 2010 - Original coding
 	 */
-	public void executeSQL(String _sql) throws SQLException {
+	public void executeSQL(String _sql) throws SQLException 
+	{
+		LOGGER.debug("Executing SQL: " + _sql);
 		Statement stmt;
 		try {
 			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
@@ -1548,7 +1553,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	// Functions for loading...
 	//
 
-	private void loadAllShapefiles() {
+	private void loadAllShapefiles() 
+	{
 		int shpCount = this.ShapefileListModel.getSize();
 		if (shpCount > 0) {
 			int roundNumber = this.cmbDecimalPlaces.getSelectedItem().toString().equals(this.sNone) ? -1
@@ -1571,6 +1577,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
                                    this.totalRecords,
                                    this.sldrCommitInterval.getValue(), 
                                    roundNumber, 
+                                   this.cbMigrateGeometry.isSelected(),
                                    this.cbMetadata.isSelected(),
                                    this.cbSpatialIndex.isSelected());
 			ProgressBar progress = new ProgressBar(this, this.TITLE, work, false);
@@ -1578,7 +1585,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			this.setAlwaysOnTop(false);
 			work.setProgressBar(progress);
 			progress.start("Loading " + shpCount + " shapefile" + ((shpCount == 1) ? "" : "s") + ", please wait...",
-					this.ShapefileListModel.getElementAt(0).toString(), 1, this.totalRecords);
+					       this.ShapefileListModel.getElementAt(0).toString(), 
+					       1, 
+					       this.totalRecords);
 			/*
 			 * progress.start("Loading " + shpCount + " shapefile" + ((shpCount == 1) ? "" :
 			 * "s") + ", please wait...",
@@ -1631,6 +1640,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		private int shapeFileCount;
 		private int roundNumber;
 		private double migrateTolerance;
+		private boolean migrateGeometry;
 		private boolean createMetadata;
 		private boolean createSpatialIndex;
 		private String layerGType = null;
@@ -1647,6 +1657,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				int _totalRecords, 
 				int _commitInterval, 
 				int _roundNumber,
+				boolean _migrateGeometry,
 				boolean _createMetadata, 
 				boolean _createSpatialIndex) 
 		{
@@ -1668,6 +1679,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			this.roundNumber = _roundNumber;
 			this.migrateTolerance = (this.roundNumber == -1) ? 0.005 : 1 / Math.pow(1, this.roundNumber);
 			this.createMetadata = _createMetadata;
+			this.migrateGeometry = _migrateGeometry;
 			this.createSpatialIndex = _createSpatialIndex;
 		}
 
@@ -1683,7 +1695,16 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			// Create master metadata entry for the whole set
 			//
 			if (this.createMetadata) {
-				me = new MetadataEntry(this.userName, this.tableName, this.geometryColumn, this.srid);
+				String schemaName;
+				try {
+					Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+					schemaName = conn.getSchema().equalsIgnoreCase(this.userName)?null:this.userName;
+					LOGGER.debug("Connection schema name is " + conn.getSchema() + " selected userName is " + this.userName);
+				} catch (SQLException e) {
+					LOGGER.debug("Failed to get connection schema name");
+					schemaName = null;
+				}
+				me = new MetadataEntry(schemaName, this.tableName, this.geometryColumn, this.srid);
 			}
 
 			String shapeFileName = "";
@@ -1694,7 +1715,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				}
 			}
 
-			// Create spatial index?
+			// Create spatial metadata?
 			//
 			if (this.createMetadata) {
 				createMetadata();
@@ -1702,7 +1723,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 			// Create spatial index?
 			//
-			if (this.createSpatialIndex) {
+			if (this.createMetadata && this.createSpatialIndex) {
 				createIndex();
 			}
 
@@ -1743,8 +1764,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			 * stepText - The text to display just below the progress indicator. If a null
 			 * string or zero-length string is passed in the text will not be updated.
 			 */
-			String progressText = "Loading " + this.shapeFileCount + " shapefile"
-					+ ((this.shapeFileCount == 1) ? "" : "s") + ", please wait...";
+			String progressText = "Loading " + this.shapeFileCount + " shapefile" + ((this.shapeFileCount == 1) ? "" : "s") + ", please wait...";
 			String stepText = null;
 
 			long processedRecords = this.errorCount + this.successCount;
@@ -1818,7 +1838,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		 * @return String
 		 * @author Simon Greener May 25th 2010 - Original Coding
 		 */
-		private String fixNumber(String _oracleDataType, String _number, boolean roundLeft) {
+		private String fixNumber(String _oracleDataType, String _number, boolean roundLeft) 
+		{
+			LOGGER.debug("Fixing number " + _number + " of type " + _oracleDataType);
 			String result = null;
 			Integer intVal = null;
 			Double dblVal = null;
@@ -1872,10 +1894,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				LOGGER.warning(
 						"Problem fixing number " + _number + " for " + _oracleDataType + " ==> " + e.getMessage());
 			}
+			LOGGER.debug("__ "+ _number);
 			return _number;
 		}
 
-		private String getLayerGType(int _shpFileType, String _existingLayerGType) {
+		private String getLayerGType(int _shpFileType, String _existingLayerGType) 
+		{
 			if (!Strings.isEmpty(_existingLayerGType)) {
 				if (_existingLayerGType.equals("COLLECTION"))
 					return _existingLayerGType;
@@ -1911,103 +1935,121 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				break;
 			}
 			}
-
-			return Strings.isEmpty(_existingLayerGType) ? layerGType
-					: (_existingLayerGType.equals(layerGType) ? layerGType : "COLLECTION");
+			layerGType = Strings.isEmpty(_existingLayerGType) 
+					            ? layerGType 
+					            : (_existingLayerGType.equals(layerGType) ? layerGType : "COLLECTION");
+			return layerGType;
 		}
 
 		/**
 		 * Can shapefile have Z and M?
 		 */
-		private boolean hasM(int _shpFileType) {
+		private boolean hasM(int _shpFileType) 
+		{
 			boolean has = false;
 			switch (_shpFileType) {
-			case ShapefileReaderJGeom.AV_MULTIPOINTM:
-			case ShapefileReaderJGeom.AV_POINTM:
-			case ShapefileReaderJGeom.AV_POLYGONM:
-			case ShapefileReaderJGeom.AV_POLYLINEM: {
-				has = true;
-				break;
+				case ShapefileReaderJGeom.AV_MULTIPOINTM:
+				case ShapefileReaderJGeom.AV_POINTM:
+				case ShapefileReaderJGeom.AV_POLYGONM:
+				case ShapefileReaderJGeom.AV_POLYLINEM: {
+					has = true;
+					break;
+				}
+				case ShapefileReaderJGeom.AV_NULL:
+				case ShapefileReaderJGeom.AV_MULTIPOINT:
+				case ShapefileReaderJGeom.AV_POINT:
+				case ShapefileReaderJGeom.AV_POLYGON:
+				case ShapefileReaderJGeom.AV_POLYLINE:
+				case ShapefileReaderJGeom.AV_MULTIPOINTZ:
+				case ShapefileReaderJGeom.AV_POINTZ:
+				case ShapefileReaderJGeom.AV_POLYGONZ:
+				case ShapefileReaderJGeom.AV_POLYLINEZ: {
+					has = false;
+					break;
+				}
 			}
-			case ShapefileReaderJGeom.AV_NULL:
-			case ShapefileReaderJGeom.AV_MULTIPOINT:
-			case ShapefileReaderJGeom.AV_POINT:
-			case ShapefileReaderJGeom.AV_POLYGON:
-			case ShapefileReaderJGeom.AV_POLYLINE:
-			case ShapefileReaderJGeom.AV_MULTIPOINTZ:
-			case ShapefileReaderJGeom.AV_POINTZ:
-			case ShapefileReaderJGeom.AV_POLYGONZ:
-			case ShapefileReaderJGeom.AV_POLYLINEZ: {
-				has = false;
-				break;
-			}
-			}
+			LOGGER.debug( (has?"Has":"Does not have ") + " M Ordinates");
 			return has;
 		}
 
-		private boolean hasZ(int _shapeFileType) {
+		private boolean hasZ(int _shapeFileType) 
+		{
 			boolean has = false;
 			switch (_shapeFileType) {
-			case ShapefileReaderJGeom.AV_MULTIPOINTZ:
-			case ShapefileReaderJGeom.AV_POINTZ:
-			case ShapefileReaderJGeom.AV_POLYGONZ:
-			case ShapefileReaderJGeom.AV_POLYLINEZ: {
-				has = true;
-				break;
+				case ShapefileReaderJGeom.AV_MULTIPOINTZ:
+				case ShapefileReaderJGeom.AV_POINTZ:
+				case ShapefileReaderJGeom.AV_POLYGONZ:
+				case ShapefileReaderJGeom.AV_POLYLINEZ: {
+					has = true;
+					break;
+				}
+				case ShapefileReaderJGeom.AV_NULL:
+				case ShapefileReaderJGeom.AV_MULTIPOINT:
+				case ShapefileReaderJGeom.AV_POINT:
+				case ShapefileReaderJGeom.AV_POLYGON:
+				case ShapefileReaderJGeom.AV_POLYLINE:
+				case ShapefileReaderJGeom.AV_MULTIPOINTM:
+				case ShapefileReaderJGeom.AV_POINTM:
+				case ShapefileReaderJGeom.AV_POLYGONM:
+				case ShapefileReaderJGeom.AV_POLYLINEM: {
+					has = false;
+					break;
+				}
 			}
-			case ShapefileReaderJGeom.AV_NULL:
-			case ShapefileReaderJGeom.AV_MULTIPOINT:
-			case ShapefileReaderJGeom.AV_POINT:
-			case ShapefileReaderJGeom.AV_POLYGON:
-			case ShapefileReaderJGeom.AV_POLYLINE:
-			case ShapefileReaderJGeom.AV_MULTIPOINTM:
-			case ShapefileReaderJGeom.AV_POINTM:
-			case ShapefileReaderJGeom.AV_POLYGONM:
-			case ShapefileReaderJGeom.AV_POLYLINEM: {
-				has = false;
-				break;
-			}
-			}
+			LOGGER.debug( (has?"Has":"Does not have ") + " Z Ordinates");
 			return has;
 		}
 
-		private void updateMetadata(ShapefileReaderJGeom _sfh, boolean _z, boolean _m) {
+		private void updateMetadata(ShapefileReaderJGeom _sfh, boolean _z, boolean _m) 
+		{
+			LOGGER.debug("Updating Metadata...");
+
 			double maxMeasure = _sfh.getMaxMeasure();
 			if (maxMeasure <= -10E38)
 				maxMeasure = Double.NaN;
 
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			// This should never happen as you can't execute a shapefile load without an active connection
+			if ( conn == null ) 
+			  conn = DatabaseConnections.getInstance().getActiveConnection();
+
 			// Make sure a master record exists for this shapefile set (based on target
 			// table/column)
 			//
-			if (this.me == null)
-				me = new MetadataEntry(this.userName, this.tableName, this.geometryColumn, this.srid);
-
+			if ( me==null ) {
+				String schemaName;
+				try {
+					schemaName = conn.getSchema().equalsIgnoreCase(this.userName)?null:this.userName;
+					LOGGER.debug("Connection schema name is " + conn.getSchema() + " selected userName is " + this.userName);
+				} catch (SQLException e) {
+					LOGGER.debug("Failed to get connection schema name");
+					schemaName = null;
+				}
+				me = new MetadataEntry(schemaName, this.tableName, this.geometryColumn, this.srid);
+			}
+			
 			// We need to know if the SRID of this table is geodetic
 			//
-			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 			Constants.SRID_TYPE sridType = null;
-			if (conn == null) {
-				sridType = Tools.discoverSRIDType(this.srid);
-			} else {
-				sridType = Tools.discoverSRIDType(conn, this.srid);
-			}
+			sridType = Tools.discoverSRIDType(conn, this.srid);
+			
 			boolean isLatLong = sridType.toString().toUpperCase().startsWith("GEO") ? true : false;
-			me.set(isLatLong ? "Longitude" : "X", _sfh.getMinX(), _sfh.getMaxX(),
-					isLatLong ? 0.05 : this.migrateTolerance);
-			me.set(isLatLong ? "Latitude" : "Y", _sfh.getMinY(), _sfh.getMaxY(),
-					isLatLong ? 0.05 : this.migrateTolerance);
-			if (_z)
-				me.set("Z", _sfh.getMinZ(), _sfh.getMaxZ(), this.migrateTolerance);
-			if (_m && !Double.isNaN(maxMeasure))
-				me.set("M", _sfh.getMinMeasure(), maxMeasure, this.migrateTolerance);
+			me.set(isLatLong ? "Longitude" : "X", _sfh.getMinX(), _sfh.getMaxX(),isLatLong ? 0.05 : this.migrateTolerance);
+			me.set(isLatLong ? "Latitude"  : "Y", _sfh.getMinY(), _sfh.getMaxY(),isLatLong ? 0.05 : this.migrateTolerance);
+			if (_z) me.set("Z", _sfh.getMinZ(), _sfh.getMaxZ(), this.migrateTolerance);
+			if (_m && !Double.isNaN(maxMeasure)) me.set("M", _sfh.getMinMeasure(), maxMeasure, this.migrateTolerance);
+			LOGGER.debug(".... " + me.toString());
 		}
 
-		private void createMetadata() {
+		private void createMetadata() 
+		{
+			LOGGER.debug("Creating SDO_GEOM_METADATA entry in database");
 			String sql = "";
 			try {
 				// Delete any existing record
 				//
 				sql = me.deleteSQL();
+				LOGGER.logSQL(sql);
 				this.sfl.executeSQL(sql);
 				Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 				conn.commit();
@@ -2015,12 +2057,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				// Insert new Metadata Entry
 				//
 				sql = me.insertSQL(false);
+				LOGGER.logSQL(sql);
 				this.sfl.executeSQL(sql);
 				conn.commit();
+				
 			} catch (SQLException sqle) {
 				this.sfl.setAlwaysOnTop(false);
-				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(), "Metadata Creation",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Metadata Creation",JOptionPane.INFORMATION_MESSAGE);
 				this.sfl.setAlwaysOnTop(true);
 			}
 		}
@@ -2037,6 +2080,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 		private JGeometry roundOrdinates(JGeometry _geom, int _round) 
 		{
+			//LOGGER.debug("Rounding Ordinates to " + _round + " decimal places");
 			int gType = getGType(_geom);
 			int dimension = _geom.getDimensions();
 			Double x = null, y = null, z = null;
@@ -2087,6 +2131,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				String _idName, 
 				boolean _fidProcessing) 
 		{
+			LOGGER.debug("Loading Shapefile " + _shapefileName);
 			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
 
 			DBFReaderJGeom dbfr = null;
@@ -2113,8 +2158,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			int shpFileType = sfh.getShpFileType();
 			int shpRecords = sfh.numRecords();
 			if (shpRecords != numRecords) {
-				LOGGER.warning("WARNING: DBF (" + numRecords + ") and SHP (" + shpRecords
-						+ ") files have different record counts");
+				LOGGER.warning("WARNING: DBF (" + numRecords + ") and SHP (" + shpRecords + ") files have different record counts");
 			}
 
 			// Append metadata for this shapefile to the set
@@ -2127,7 +2171,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			// variable
 			//
 			this.layerGType = getLayerGType(shpFileType, this.layerGType);
-
+			
 			// Get DBF data for conversion
 			// 1. Get actual DBF names and data types irrespective as to what user wants to
 			// load
@@ -2139,11 +2183,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			for (int field = 0; field < dbfr.numFields(); field++) {
 				dbfColNames[field] = dbfr.getFieldName(field).toLowerCase(Locale.getDefault());
 				fieldTypes[field] = dbfr.getFieldType(field);
+				LOGGER.debug("Adding Column to DBF " + dbfColNames[field] + " of type " + fieldTypes[field]);
 			}
 
 			// ====================================================
 			// Create prepared statement
-			// 1. Check if user fid has been requested and place at front of column and
+			
+			//LOGGER.debug("1. Check if user fid has been requested and place at front of column and");
+			
 			// parameter (values) lists
 			//
 			int colsToStore = 0;
@@ -2151,6 +2198,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			String params = "(";
 			boolean userFID = false;
 			if (isUserEnteredFID(_idName) && _fidProcessing) {
+				LOGGER.debug("Adding primary key "+_idName);
 				userFID = true;
 				// Add extra primary key value parameter
 				//
@@ -2159,9 +2207,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				params += "?,";
 			}
 
-			// 2. Get Oracle Columns names for those rows in shptm that are related to this
-			// shapefile and are to be loaded
-			//
+			//LOGGER.debug("2. Get Oracle Columns names for those rows in shptm that are related to this shapefile and are to be loaded");
+
 			Vector<Object[]> columnData = this.sfl.shptm.getLoadColumnData(dbfColNames);
 			ListIterator<Object[]> dataIter = columnData.listIterator();
 			while (dataIter.hasNext()) {
@@ -2171,14 +2218,16 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				params += "?, ";
 			}
 			insertCols += this.geometryColumn + ")";
-
-			// 3. Add parameter for sdo_geometry but....
+			LOGGER.debug("Columns to insert: " + insertCols);
+			
+			//LOGGER.debug("3. Add parameter for sdo_geometry ....");
+			
 			// Migrate (ie fix rotation etc) geometry if polygon, polygonz, or polygonm
 			// rather than just write converted JGeometry
 			// Remove last ? and replace with TO_CURRENT(?
 			//
 			colsToStore++;
-			if (shpFileType == 5 || shpFileType == 15 || shpFileType == 25) {
+			if (this.migrateGeometry && (shpFileType == 5 || shpFileType == 15 || shpFileType == 25)) {
 				params += "MDSYS.SDO_MIGRATE.TO_CURRENT(?," + Constants.TAG_MDSYS_SDO_DIMARRAY + "("
 						+ Queries.createDimElement("X", "0", "1", String.valueOf(this.migrateTolerance)) + ","
 						+ Queries.createDimElement("Y", "0", "1", String.valueOf(this.migrateTolerance))
@@ -2195,14 +2244,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			}
 			params += ")";
 
-			// 4. Create INSERT Statement
-			//
+			//LOGGER.debug("4. Create INSERT Statement");
 			String targetObjectName = Strings.append(this.userName, this.tableName, ".");
 			String insertSQL = "INSERT INTO " + targetObjectName + insertCols + " VALUES " + params;
 			LOGGER.logSQL(insertSQL);
 
-			// 5. Create statement for execution
-			//
+			//LOGGER.debug("5. Create statement for execution");
 			PreparedStatement ps;
 			try {
 				ps = conn.prepareStatement(insertSQL);
@@ -2221,11 +2268,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			@SuppressWarnings("unused")
 			String dbfType = null;
 			
-			// Now process all records in shapefile DBF
-			//
+			//LOGGER.debug("6. Convert all records in shapefile");
+			
 			for (int rec = 1; rec <= numRecords; rec++) {
 				try {
-					// Use Oracle conversion utility to get feature Get record (i)
+					
+					//LOGGER.debug("6.1. Use Oracle conversion utility to get feature");
 					// NOTE: this approach by the Oracle Utility does not handle DATES!
 					//
 					ht = ShapefileFeatureJGeom.fromRecordToFeature(
@@ -2237,11 +2285,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 							                       getSRIDAsInteger());
 				} catch (IOException ioe) {
 					this.errorMessage = ioe.getMessage();
-					// printHashtable(ht);
+					LOGGER.debug(this.errorMessage);
+					printHashtable(ht);
 					return;
 				}
 
-				// 1. Create primary key id value if needed
+				//LOGGER.debug("6.2. Create primary key id value if needed");
 				//
 				parameterIndex = 1;
 				if (_fidProcessing) {
@@ -2249,6 +2298,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					if (userFID) {
 						// User entered FID is always first in parameters
 						try {
+							LOGGER.debug("Setting FID to " + this.fid);
 							ps.setLong(parameterIndex++, this.fid);
 						} catch (SQLException sqle) {
 							LOGGER.warning(
@@ -2258,16 +2308,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					}
 				}
 
-				// 2. Convert all the non-geometry column data for this record
-				//
+				//LOGGER.debug("6.2. Convert all the non-geometry column data for this record");
+				
 				ListIterator<Object[]> setIter = columnData.listIterator();
 				while (setIter.hasNext()) {
 					try {
 						Object[] obj = setIter.next();
-						oracleColumnName = ((String) obj[shptm.getColumnPosition(columns.DBF_COLUMN_NAME)])
-								.toLowerCase(Locale.getDefault());
-						oracleDataType = ((String) obj[shptm.getColumnPosition(columns.ORACLE_DATA_TYPE)])
-								.toUpperCase(Locale.getDefault());
+						oracleColumnName = ((String) obj[shptm.getColumnPosition(columns.DBF_COLUMN_NAME)]).toLowerCase(Locale.getDefault());
+						oracleDataType = ((String) obj[shptm.getColumnPosition(columns.ORACLE_DATA_TYPE)]).toUpperCase(Locale.getDefault());
 						dbfType = (String) obj[shptm.getColumnPosition(columns.DBF_DATA_TYPE)];
 						// columnBeingProcessed only includes columns in the target table that are in
 						// this shapefile
@@ -2276,7 +2324,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						if (ht.get(oracleColumnName) == null) {
 							continue;
 						}
-						if (_fidProcessing && (!userFID) && oracleColumnName.equalsIgnoreCase(_idName)) {
+												 
+						if (_fidProcessing && (!userFID) && oracleColumnName.equalsIgnoreCase(_idName)) 
+						{
 							if ((ht.get(oracleColumnName) instanceof Integer)) {
 								ps.setLong(parameterIndex++, this.fid);
 							} else if ((ht.get(oracleColumnName) instanceof Double)) {
@@ -2284,16 +2334,15 @@ public class ShapefileLoad extends javax.swing.JDialog {
 							} else {
 								ps.setLong(parameterIndex++, this.fid);
 							}
-						} else if ((ht.get(oracleColumnName) instanceof String)) {
-							// Is it being converted to an Oracle number?
-							//
+							
+						} else if ((ht.get(oracleColumnName) instanceof String)) 
+						{
 							if (isOracleInteger(oracleDataType)) {
-								ps.setInt(parameterIndex++,
-										Integer.valueOf(ht.get(oracleColumnName).toString()).intValue());
+								ps.setInt(parameterIndex++,Integer.valueOf(ht.get(oracleColumnName).toString()).intValue());
 							} else if (isOracleNumber(oracleDataType)) {
 								// need precision and scale
 								String number = ht.get(oracleColumnName).toString();
-								if (Strings.isEmpty(number)) {
+								if (Strings.isEmpty(number) || number.equals("NaN") ) {
 									ps.setNull(parameterIndex++, Types.DOUBLE);
 								} else {
 									number = fixNumber(oracleDataType, number, false);
@@ -2306,27 +2355,28 @@ public class ShapefileLoad extends javax.swing.JDialog {
 							} else {
 								ps.setString(parameterIndex++, ht.get(oracleColumnName).toString());
 							}
+							
 						} else if (isOracleDate(oracleDataType)) {
 							String d = ht.get(oracleColumnName).toString().trim();
 							if (d.length() == 8)
-								d = /* Year */d.substring(0, 4) + "-" + /* Month */d.substring(4, 6) + "-"
-										+ /* Day */d.substring(6, 8);
+								d = /* Year */d.substring(0, 4) + "-" + /* Month */d.substring(4, 6) + "-" + /* Day */d.substring(6, 8);
 							ps.setDate(parameterIndex++, (d.length() < 8 ? (Date) null : Date.valueOf(d)));
-						} else if ((ht.get(oracleColumnName) instanceof Integer))
-							ps.setInt(parameterIndex++,
-									Integer.valueOf(ht.get(oracleColumnName).toString()).intValue());
-						else if ((ht.get(oracleColumnName) instanceof Double))
-							ps.setDouble(parameterIndex++,
-									Double.valueOf(ht.get(oracleColumnName).toString()).doubleValue());
-						else // Unsupported Column Type ? Try String
+						} else if ((ht.get(oracleColumnName) instanceof Integer)) {
+							ps.setInt(parameterIndex++,Integer.valueOf(ht.get(oracleColumnName).toString()).intValue());
+						} else if ((ht.get(oracleColumnName) instanceof Double)) {
+							Double d = Double.valueOf(ht.get(oracleColumnName).toString()).doubleValue();
+							if (Double.isNaN(d))
+								ps.setNull(parameterIndex++, Types.DOUBLE);
+							else
+								ps.setDouble(parameterIndex++,d);
+						} else // Unsupported Column Type ? Try String
 							ps.setString(parameterIndex++, ht.get(oracleColumnName).toString());
-					} catch (SQLException sqle) {
-						LOGGER.warning("Record# " + rec + " ERROR converting " + oracleColumnName + "(" + oracleDataType
-								+ ") = " + ht.get(oracleColumnName).toString() + sqle.getMessage());
+					} catch (Exception e) {
+						LOGGER.warning("Record# " + rec + " ERROR converting " + oracleColumnName + "(" + oracleDataType + ") = " + ht.get(oracleColumnName).toString() + e.getMessage());
 					}
 				} // end for loop for dbfColNames
 
-				// 3.1 Convert geometry of shapefile
+				//LOGGER.debug("6.3. Convert geometry of shapefile");
 				//
 				try {
 					jGeom = (JGeometry) ht.get("geometry");
@@ -2335,12 +2385,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					}
 					gStruct = JGeom.toStruct(jGeom,conn);
 				} catch (Exception e) {
-					LOGGER.warn("Converting geometry of Record #" + rec + " failed - writing NULL value");
+					LOGGER.warning("Converting geometry of Record #" + rec + " failed - writing NULL value");
 					gStruct = null; // Inserting of null geometries allowed
 					e.printStackTrace();
 				}
 
-				// 3.2 Set geometry value into prepared statement
+				//LOGGER.debug("6.4. Set geometry value into prepared statement");
 				//
 				try {
 					if (gStruct == null) {
@@ -2353,19 +2403,19 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					LOGGER.warning("Record# " + rec + " ERROR converting geometry column " + sqle.getMessage());
 				}
 
-				// 4. Send record to Oracle
+				//LOGGER.debug("6.5. Send record to Oracle");
+				
 				// This should be done via more efficient "array" processing
 				//
 				try {
 					ps.executeUpdate();
 					this.successCount++;
-				} catch (SQLException sqle) {
+				} catch (Exception e) {
 					this.errorCount++;
-					LOGGER.warning("SQL ERROR: " + sqle.getMessage() + "\nRecord #" + rec + " not converted.");
+					LOGGER.warning("ERROR: " + e.getMessage() + "\nRecord #" + rec + " not converted.");
 				}
 
-				// Commit and at the same time, display progress and check for termination
-				//
+				//LOGGER.debug("6.6. Commit and at the same time, display progress and check for termination");
 				if ((rec % this.commitInterval) == 0) {
 					try {
 						conn.commit();
@@ -2389,8 +2439,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					//
 					if (this.errorCount == this.successCount) {
 						setAlwaysOnTop(false);
-						int result = JOptionPane.showConfirmDialog(null, "Errors () equals Rows Processed ().\nQuit?",
-								TITLE, JOptionPane.YES_NO_CANCEL_OPTION);
+						int result = JOptionPane.showConfirmDialog(null, "Errors () equals Rows Processed ().\nQuit?",TITLE, JOptionPane.YES_NO_CANCEL_OPTION);
 						setAlwaysOnTop(true);
 						if (result == JOptionPane.YES_OPTION) {
 							try {

@@ -33,7 +33,7 @@ public class Logger {
     public void severe   (String _message) {error(_message);}
     public void error    (String _message) {if (_message!=null) try {Messages.log("error: " + _message,true); System.err.println("error:" + _message);} catch (Exception e) { e.printStackTrace(); } }
     public void warning  (String _message) {warn(_message); }
-    public void warn     (String _message) {Messages.log("warn: " + _message,false); }
+    public void warn     (String _message) {Messages.log("warning: " + _message,false); }
     
     public void debug    (String _message) { 
 		if ( _message.equals(this.lastMessage) )

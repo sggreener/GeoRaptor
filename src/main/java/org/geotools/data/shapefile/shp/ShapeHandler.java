@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
  * @author aaime
  * @author Ian Schneider
  * @source $URL: http://svn.geotools.org/tags/2.4.5/modules/plugin/shapefile/src/main/java/org/geotools/data/shapefile/shp/ShapeHandler.java $
- * 
+ *
  */
 public interface ShapeHandler {
   /** Get the ShapeType of this handler.

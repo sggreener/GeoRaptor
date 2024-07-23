@@ -3,10 +3,13 @@ package org.GeoRaptor.io.Export;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Struct;
+
 import java.text.DecimalFormat;
+
 import java.util.LinkedHashMap;
 
 import javax.sql.RowSetMetaData;

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.Iterator;
@@ -23,10 +24,8 @@ import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.PropertiesManager;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
-
 import org.GeoRaptor.util.logging.Logger;
 import org.GeoRaptor.util.logging.Logging;
-import java.sql.Connection;
 
 
 /*

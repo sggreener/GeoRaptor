@@ -14,9 +14,11 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -46,7 +48,7 @@ import org.GeoRaptor.tools.TableSortIndicator;
 /**
  *
  * @author Simon
- * 
+ *
  */
 public class SRIDPanel 
 extends javax.swing.JDialog 

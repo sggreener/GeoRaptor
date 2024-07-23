@@ -5,7 +5,7 @@
 	<!-- The Basics -->
 	<groupId>org.GeoRaptor</groupId>
 	<artifactId>GeoRaptor</artifactId>
-	<version>20.1.22</version>
+	<version>20.1.23</version>
 	<packaging>bundle</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

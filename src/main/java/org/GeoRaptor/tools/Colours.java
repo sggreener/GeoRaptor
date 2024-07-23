@@ -1,6 +1,7 @@
 package org.GeoRaptor.tools;
 
 import java.awt.Color;
+
 import java.util.Random;
 
 public class Colours {

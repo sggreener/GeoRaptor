@@ -17,17 +17,19 @@
 package org.geotools.data.shapefile.shp;
 
 import java.io.IOException;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-//import java.util.logging.Logger;
+
 import org.GeoRaptor.util.logging.Logger;
 
 import org.geotools.data.shapefile.StreamLogging;
 import org.geotools.resources.NIOUtilities;
+//import java.util.logging.Logger;
 
 
 /** IndexFile parser for .shx files.<br>

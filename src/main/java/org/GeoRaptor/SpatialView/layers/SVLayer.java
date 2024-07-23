@@ -2,6 +2,7 @@ package org.GeoRaptor.SpatialView.layers;
 
 import java.io.IOException;
 import java.io.StringReader;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -25,8 +26,10 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.GeoRaptor.util.logging.Logger;
 import org.GeoRaptor.util.logging.Logging;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 

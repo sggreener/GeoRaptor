@@ -2,8 +2,10 @@ package org.GeoRaptor.OracleSpatial.Metadata;
 
 import java.io.IOException;
 import java.io.StringReader;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+
 import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -18,8 +20,10 @@ import org.GeoRaptor.Constants;
 import org.GeoRaptor.MainSettings;
 import org.GeoRaptor.Preferences;
 import org.GeoRaptor.tools.Strings;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 

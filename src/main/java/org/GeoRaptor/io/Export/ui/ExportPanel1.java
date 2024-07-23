@@ -19,13 +19,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
-
 import javax.swing.event.ListSelectionListener;
 
+import org.GeoRaptor.Constants;
 import org.GeoRaptor.layout.XYConstraints;
 import org.GeoRaptor.layout.XYLayout;
-
-import org.GeoRaptor.Constants;
 
 
 public class ExportPanel1 extends JPanel {
