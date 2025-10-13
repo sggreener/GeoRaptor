@@ -1,0 +1,12 @@
+﻿<update-bundle version="1.0" xmlns="http://xmlns.oracle.com/jdeveloper/updatebundle" xmlns:u="http://xmlns.oracle.com/jdeveloper/update">
+	<u:update id="org.GeoRaptor">
+		<u:name>GeoRaptor</u:name>
+		<u:version>20.1.22</u:version>
+		<u:author>GeoRaptor Development Team at GitHub</u:author>
+		<u:author-url>http://github.com/sggreener/GeoRaptor</u:author-url>
+		<u:description><![CDATA[GeoRaptor is a spatial extension for Oracle SQL Developer.]]></u:description>
+		<u:requirements>
+			<u:requires-extension id="oracle.sqldeveloper" minVersion="20.0.01"/>
+		</u:requirements>		
+	</u:update>
+</update-bundle>

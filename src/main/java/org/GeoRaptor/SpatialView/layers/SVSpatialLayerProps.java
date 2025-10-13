@@ -4550,6 +4550,7 @@ public class SVSpatialLayerProps extends JDialog {
         // Don't use NLS settings as this may use comma as decimal separator which is not supported due to SDO_ORDINATE_ARRAY using comma as separator
         // dFormat = Tools.getNLSDecimalFormat(_precision, SVSpatialLayerPreferences.getGroupingSeparator());
         dFormat = Tools.getDecimalFormatter(_precision); 
+        // LOGGER.debug("SVSpatialLayerProps.formatOrd(value: " + String.valueOf(_value) + "," + String.valueOf(_precision) + ") --> " + dFormat.format(_value).toString());
         return dFormat.format(_value).toString();
     }
 

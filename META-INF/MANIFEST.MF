@@ -1,0 +1,113 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1699411433161
+Build-Jdk: 16.0.2
+Built-By: Simon
+Bundle-Build: 20231108.134327
+Bundle-ClassPath: .,lib/sdoapi-12.2.0.jar,lib/sdoutl-12.2.0.jar,lib/jt
+ s-core-1.19.0.jar,lib/json-simple-1.1.1.jar,lib/junit-4.10.jar,lib/ha
+ mcrest-core-1.1.jar,lib/commons-codec-1.13.jar,lib/xbasej-20091203.ja
+ r,lib/commons-logging-1.1.1.jar,lib/xercesImpl-2.9.1.jar,lib/xml-apis
+ -1.3.04.jar
+Bundle-Description: Oracle Spatial extension for Oracle SQL Developer.
+Bundle-DocURL: >https://github.com/sggreener/GeoRaptor
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: org.GeoRaptor
+Bundle-SymbolicName: org.GeoRaptor
+Bundle-Vendor: GeoRaptor Development Team
+Bundle-Version: 20.1.1
+Created-By: Apache Maven Bundle Plugin
+Embed-Dependency: sdoapi|sdoutl;scope=system,*;scope=compile|runtime
+Embed-Directory: lib
+Embed-Transitive: true
+Embedded-Artifacts: lib/sdoapi-12.2.0.jar;g="oracle";a="sdoapi";v="12.
+ 2.0",lib/sdoutl-12.2.0.jar;g="oracle";a="sdoutl";v="12.2.0",lib/jts-c
+ ore-1.19.0.jar;g="org.locationtech.jts";a="jts-core";v="1.19.0",lib/j
+ son-simple-1.1.1.jar;g="com.googlecode.json-simple";a="json-simple";v
+ ="1.1.1",lib/junit-4.10.jar;g="junit";a="junit";v="4.10",lib/hamcrest
+ -core-1.1.jar;g="org.hamcrest";a="hamcrest-core";v="1.1",lib/commons-
+ codec-1.13.jar;g="commons-codec";a="commons-codec";v="1.13",lib/xbase
+ j-20091203.jar;g="org.xBaseJ";a="xbasej";v="20091203",lib/commons-log
+ ging-1.1.1.jar;g="commons-logging";a="commons-logging";v="1.1.1",lib/
+ xercesImpl-2.9.1.jar;g="xerces";a="xercesImpl";v="2.9.1",lib/xml-apis
+ -1.3.04.jar;g="xml-apis";a="xml-apis";v="1.3.04"
+Export-Package: org.GeoRaptor;uses:="org.GeoRaptor.OracleSpatial.Valid
+ ateSDOGeometry,org.GeoRaptor.SpatialView,org.GeoRaptor.tools,org.w3c.
+ dom";version="20.1.1",oracle.spatial.geometry;uses:="oracle.spatial.u
+ til";version="20.1.1",oracle.spatial.util;uses:="oracle.spatial.geome
+ try,org.w3c.dom";version="20.1.1",org.geotools.data;version="20.1.1",
+ org.geotools.data.shapefile;version="20.1.1",org.geotools.data.shapef
+ ile.shp;uses:="org.geotools.data,org.geotools.data.shapefile,org.loca
+ tiontech.jts.geom";version="20.1.1",org.GeoRaptor.sql;uses:="oracle.s
+ patial.geometry,org.GeoRaptor.OracleSpatial.Metadata,org.GeoRaptor.Sp
+ atialView.SupportClasses,org.GeoRaptor.tools";version="20.1.1",org.Ge
+ oRaptor.tools;uses:="oracle.spatial.geometry,org.GeoRaptor,org.GeoRap
+ tor.SpatialView,org.GeoRaptor.SpatialView.SupportClasses,org.geotools
+ .data.shapefile.shp,org.locationtech.jts.geom,org.w3c.dom";version="2
+ 0.1.1",org.GeoRaptor.OracleSpatial.Metadata;uses:="oracle.spatial.geo
+ metry,org.GeoRaptor,org.GeoRaptor.SpatialView.SupportClasses,org.GeoR
+ aptor.sql,org.GeoRaptor.tools,org.w3c.dom";version="20.1.1",org.GeoRa
+ ptor.OracleSpatial.ValidateSDOGeometry;uses:="oracle.spatial.geometry
+ ,org.GeoRaptor,org.GeoRaptor.OracleSpatial.Metadata,org.GeoRaptor.Spa
+ tialView,org.GeoRaptor.SpatialView.layers,org.GeoRaptor.tools";versio
+ n="20.1.1",org.GeoRaptor.SpatialView;uses:="oracle.spatial.geometry,o
+ rg.GeoRaptor,org.GeoRaptor.SpatialView.SupportClasses,org.GeoRaptor.S
+ patialView.layers,org.GeoRaptor.tools,org.w3c.dom";version="20.1.1",o
+ rg.GeoRaptor.SpatialView.SupportClasses;uses:="oracle.spatial.geometr
+ y,org.GeoRaptor,org.GeoRaptor.SpatialView,org.GeoRaptor.SpatialView.l
+ ayers,org.GeoRaptor.tools,org.w3c.dom";version="20.1.1",org.GeoRaptor
+ .SpatialView.layers;uses:="oracle.spatial.geometry,org.GeoRaptor,org.
+ GeoRaptor.OracleSpatial.Metadata,org.GeoRaptor.SpatialView,org.GeoRap
+ tor.SpatialView.SupportClasses,org.GeoRaptor.tools,org.w3c.dom";versi
+ on="20.1.1",org.locationtech.jts.algorithm;version="1.19.0";uses:="or
+ g.locationtech.jts.geom,org.locationtech.jts.math",org.locationtech.j
+ ts.geom;version="1.19.0";uses:="org.locationtech.jts.algorithm",org.l
+ ocationtech.jts.math;version="1.19.0";uses:="org.locationtech.jts.geo
+ m",org.w3c.dom;version="20.1.1",org.GeoRaptor.SpatialView.JDevInt;ver
+ sion="20.1.1"
+EXPORT_GEOMETRY_SUBMENU_ICON: /org/GeoRaptor/images/export_geometry.pn
+ g
+EXPORT_GEOMETRY_SUBMENU_LABEL: Export
+EXTENSION_DESCRIPTION: Oracle Spatial extension for Oracle SQL Develop
+ er.
+EXTENSION_NAME: GeoRaptor
+EXTENSION_OWNER: GeoRaptor Development Team at GitHub
+GEORAPTOR_VERSION: 20.1.1
+ICON: res:/org/GeoRaptor/images/GeoRaptorLogoIcon.jpg
+IMPORT_SHAPEFILE_SUBMENU_ICON: /org/GeoRaptor/images/import_shapefile.
+ png
+IMPORT_SHAPEFILE_SUBMENU_LABEL: Import Shapefile
+MAP_ADD_SUBMENU_ICON: /org/GeoRaptor/images/map_add.png
+MAP_ADD_SUBMENU_LABEL: Add to Map
+MAP_ZOOM_SUBMENU_ICON: /org/GeoRaptor/images/map_zoom.png
+MAP_ZOOM_SUBMENU_LABEL: Zoom to Map
+METADATA_DROP_SUBMENU_ICON: /org/GeoRaptor/images/metadata_drop.png
+METADATA_DROP_SUBMENU_LABEL: Drop Metadata
+METADATA_MANAGE_SUBMENU_ICON: /org/GeoRaptor/images/metadata_manage.pn
+ g
+METADATA_MANAGE_SUBMENU_LABEL: Manage Metadata
+PREFERENCES_TITLE: GeoRaptor
+Require-Bundle: oracle.external.jdbc,oracle.javaxide,oracle.db-api,ora
+ cle.ide,oracle.ide.navigator,oracle.layout-managers,oracle.sqldevelop
+ er,oracle.sqldeveloper.jdbcproxy,oracle.sqldeveloper.snippet,oracle.s
+ qldeveloper.utils,oracle.javatools-nodeps,oracle.uic,oracle.idert
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+SPINDEX_CREATE_SUBMENU_ICON: /org/GeoRaptor/images/spatial_index_creat
+ e.png
+SPINDEX_CREATE_SUBMENU_LABEL: Create Spatial Index
+SPINDEX_DROP_SUBMENU_ICON: /org/GeoRaptor/images/spatial_index_drop.pn
+ g
+SPINDEX_DROP_SUBMENU_LABEL: Drop Spatial Index
+Tool: Bnd-3.5.0.201709291849
+VALIDATE_SUBMENU_ICON: /org/GeoRaptor/images/validate_geometry.png
+VALIDATE_SUBMENU_LABEL: Validate Geometry
+VIEW_SUBMENU_ABOUT_ICON: /org/GeoRaptor/images/GeoRaptorLogoIcon18x18.
+ png
+VIEW_SUBMENU_ABOUT_LABEL: About GeoRaptor
+VIEW_SUBMENU_MAP_ICON: /org/GeoRaptor/images/main_icon_3.png
+VIEW_SUBMENU_MAP_LABEL: Open Map
+VIEW_SUBMENU_METADATA_ICON: /org/GeoRaptor/images/layer_show_attribute
+ s.png
+VIEW_SUBMENU_METADATA_LABEL: Manage All Metadata
+VIEW_SUBMENU_SHP_ICON: /org/GeoRaptor/images/import_shapefile.png
+VIEW_SUBMENU_SHP_LABEL: Load Shapefile

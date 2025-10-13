@@ -136,6 +136,38 @@ public class Queries {
         return keyColumns;
     }
     
+	public static boolean doesObjectExist(Connection _conn, String _schemaName, String _objectName) 
+	{
+		boolean exists = false;		
+		if (Strings.isEmpty(_schemaName) || Strings.isEmpty(_objectName) ) 
+			return false;
+         String sql = "select count(*) from all_objects where object_type in ('TABLE','VIEW') and owner = ? and object_name = ? and secondary = 'N'";
+	     try {
+            PreparedStatement ps = _conn.prepareStatement(sql);
+            ps.setString(1,_schemaName.toUpperCase());
+            ps.setString(2,_objectName.toUpperCase());
+            LOGGER.logSQL(sql + 
+                    "\n? = " + _schemaName.toUpperCase() +
+                    "\n? = " + _objectName.toUpperCase());
+            ps.setFetchSize(1);
+            ps.setFetchDirection(ResultSet.FETCH_FORWARD);
+	        ResultSet rSet = ps.executeQuery();
+            int sqlCount = 0;
+            if (!rSet.isBeforeFirst() ) {    
+            	exists = false;
+            } else if (rSet.next()) {
+                sqlCount = rSet.getInt(1);
+	            exists = sqlCount==0?false:true;
+            }
+            rSet.close(); rSet = null;
+            ps.close(); ps = null;
+        } catch (Exception ex) {
+            LOGGER.error("doesObjectExist: " + ex.toString());
+            return false;
+        }
+		return exists;
+	}
+
     /** 
      * @function validateColumnName
      * @precis   Checks that _columnName exists in {_schemaName}.{_objectName} and 
@@ -531,7 +563,7 @@ public class Queries {
 
         return tableSpaces;
     }
-        
+
     public static List<String> getGeoColumns(Connection _conn,
                                              String     _schemaName, 
                                              String     _objectName)

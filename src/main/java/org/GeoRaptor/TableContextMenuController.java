@@ -66,24 +66,26 @@ public class TableContextMenuController implements Controller
 	private void createGeometryColumnsTable(Connection _conn) 
 	{
 		LOGGER.debug("Creating GEOMETRY_COLUMNS table database");
-		String sql = "CREATE TABLE CODESYS.GEOMETRY_COLUMNS  ("
-				+ "  F_TABLE_CATALOG   VARCHAR2(128) NOT NULL ENABLE,"
-				+ "  F_TABLE_SCHEMA    VARCHAR2(128) NOT NULL ENABLE, "
-				+ "  F_TABLE_NAME      VARCHAR2(256) NOT NULL ENABLE, "
-				+ "  F_GEOMETRY_COLUMN VARCHAR2(256) NOT NULL ENABLE, "
-				+ "  COORD_DIMENSION   NUMBER(2) NOT NULL ENABLE, "
-				+ "  SRID              NUMBER(10) NOT NULL ENABLE, "
-				+ "  GEOMETRY_TYPE     VARCHAR2(30) NOT NULL ENABLE, "
-				+ "  QGIS_XMIN NUMBER, "
-				+ "  QGIS_YMIN NUMBER, "
-				+ "  QGIS_XMAX NUMBER, "
-				+ "  QGIS_YMAX NUMBER, "
-				+ "  QGIS_PKEY VARCHAR2(128), "
-				+ "  CONSTRAINT GEOMETRY_COLUMNS_PK PRIMARY KEY (F_TABLE_CATALOG,F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, GEOMETRY_TYPE)"
-				+ ")";
+		String sql = "";
 		try {
+			sql = "CREATE TABLE " + _conn.getSchema() + "GEOMETRY_COLUMNS  ("
+					+ "  F_TABLE_CATALOG   VARCHAR2(128),"
+					+ "  F_TABLE_SCHEMA    VARCHAR2(128) NOT NULL ENABLE, "
+					+ "  F_TABLE_NAME      VARCHAR2(256) NOT NULL ENABLE, "
+					+ "  F_GEOMETRY_COLUMN VARCHAR2(256) NOT NULL ENABLE, "
+					+ "  COORD_DIMENSION   NUMBER(2) NOT NULL ENABLE, "
+					+ "  SRID              NUMBER(10) NOT NULL ENABLE, "
+					+ "  GEOMETRY_TYPE     VARCHAR2(30) NOT NULL ENABLE, "
+					+ "  QGIS_XMIN NUMBER, "
+					+ "  QGIS_YMIN NUMBER, "
+					+ "  QGIS_XMAX NUMBER, "
+					+ "  QGIS_YMAX NUMBER, "
+					+ "  QGIS_PKEY VARCHAR2(128), "
+					+ "  CONSTRAINT GEOMETRY_COLUMNS_PK PRIMARY KEY (F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, GEOMETRY_TYPE)"
+					+ ")";
 			LOGGER.logSQL(sql);
 			this.executeSQL(_conn,sql);
+			sql = "GRANT INSERT,UPDATE,DELETE ON " + _conn.getSchema() + ".GEOMETRY_COLUMNS TO PUBLIC";
 		} catch (SQLException sqle) {
 			JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Creating Geometry_Columns Table Failed",JOptionPane.INFORMATION_MESSAGE);
 		}

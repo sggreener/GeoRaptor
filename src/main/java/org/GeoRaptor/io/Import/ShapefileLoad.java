@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Struct;
@@ -192,7 +193,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         btnLoad = new javax.swing.JButton();
         pnlShapefileSet = new javax.swing.JPanel();
         scrlShapefiles = new javax.swing.JScrollPane();
-        lstShapefiles = new javax.swing.JList();
+        lstShapefiles = new javax.swing.JList<String>();
         btnAddShp = new javax.swing.JButton();
         btnRemoveShp = new javax.swing.JButton();
         lblTotalShapesToLoad = new javax.swing.JLabel();
@@ -210,7 +211,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         lblDecimalPlaces = new javax.swing.JLabel();
         sldrCommitInterval = new javax.swing.JSlider();
         lblCommitInterval = new javax.swing.JLabel();
-        cmbDecimalPlaces = new javax.swing.JComboBox();
+        cmbDecimalPlaces = new javax.swing.JComboBox<Object>();
         cbSpatialIndex = new javax.swing.JCheckBox();
         cbMetadata = new javax.swing.JCheckBox();
         cbMigrateGeometry = new javax.swing.JCheckBox();
@@ -221,9 +222,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
         tfGeometryColumn = new javax.swing.JTextField();
         btnSRID = new javax.swing.JButton();
         lblConnections = new javax.swing.JLabel();
-        cmbConnections = new javax.swing.JComboBox();
+        cmbConnections = new javax.swing.JComboBox<String>();
         lblSRID = new javax.swing.JLabel();
-        cmbFID = new javax.swing.JComboBox();
+        cmbFID = new javax.swing.JComboBox<String>();
         btnHelp = new javax.swing.JButton();
 
         fcShapefile.setCurrentDirectory(new java.io.File("C:\\"));
@@ -398,7 +399,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     false, true, true, true
                 };
 
-                public Class getColumnClass(int columnIndex) {
+                public Class<?> getColumnClass(int columnIndex) {
                     return types [columnIndex];
                 }
 
@@ -486,7 +487,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
                     sldrCommitIntervalStateChanged(evt);
                 }
             });
-
             lblCommitInterval.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
             lblCommitInterval.setText("Commit (1000):");
             lblCommitInterval.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
@@ -632,7 +632,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblSRID.setName("lblSRID"); // NOI18N
             lblSRID.setPreferredSize(new java.awt.Dimension(28, 18));
 
-            cmbFID.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>" }));
+            cmbFID.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "<<NONE>>" }));
             cmbFID.setToolTipText("Select an existing field or enter new one.");
             cmbFID.setMaximumSize(new java.awt.Dimension(143, 20));
             cmbFID.setMinimumSize(new java.awt.Dimension(143, 20));
@@ -930,9 +930,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JCheckBox cbNoLogging;
     private javax.swing.JCheckBox cbSQL;
     private javax.swing.JCheckBox cbSpatialIndex;
-    private javax.swing.JComboBox cmbConnections;
-    private javax.swing.JComboBox cmbDecimalPlaces;
-    private javax.swing.JComboBox cmbFID;
+    private javax.swing.JComboBox<String> cmbConnections;
+    private javax.swing.JComboBox<?> cmbDecimalPlaces;
+    private javax.swing.JComboBox<String> cmbFID;
     private javax.swing.JFileChooser fcShapefile;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblCommitInterval;
@@ -943,7 +943,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JLabel lblSRID;
     private javax.swing.JLabel lblTableName;
     private javax.swing.JLabel lblTotalShapesToLoad;
-    private javax.swing.JList lstShapefiles;
+    private javax.swing.JList<String> lstShapefiles;
     private javax.swing.JPanel pnlMisc;
     private javax.swing.JPanel pnlProcessingOptions;
     private javax.swing.JPanel pnlSQL;
@@ -975,7 +975,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.cmbConnections.setSelectedIndex(0); // This fires setting of userName() via cmbConnectionsActionPerformed
 		DatabaseConnection dbConn = DatabaseConnections
 				                        .getInstance()
-                                        .findDisplayName((String) this.cmbConnections.getItemAt(0));
+                                        .findDisplayName(this.cmbConnections.getItemAt(0));
 		if (dbConn == null || dbConn.isOpen() == false) {
 			this.setAlwaysOnTop(false);
 			JOptionPane.showMessageDialog(this, propertyManager.getMsg("SHPFILE_IMPORTER_NO_OPEN_CONN_ERROR"));
@@ -2066,6 +2066,51 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Metadata Creation",JOptionPane.INFORMATION_MESSAGE);
 				this.sfl.setAlwaysOnTop(true);
 			}
+			
+			try 
+			{
+				Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+				if ( Queries.doesObjectExist(conn, conn.getSchema(), "GEOMETRY_COLUMNS") )
+				{
+					LOGGER.debug("GEOMETRY_COLUMNS table exists: Inserting record for " + conn.getCatalog() + "." + conn.getSchema() + "." + me.getObjectName() + "." + me.getColumnName());
+					sql = "INSERT INTO " + conn.getSchema() + ".GEOMETRY_COLUMNS (F_TABLE_CATALOG,F_TABLE_SCHEMA,F_TABLE_NAME,F_GEOMETRY_COLUMN,COORD_DIMENSION,SRID,GEOMETRY_TYPE,QGIS_XMIN,QGIS_YMIN,QGIS_XMAX,QGIS_YMAX,QGIS_PKEY) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";  
+					LOGGER.logSQL(sql);
+		            PreparedStatement ps = conn.prepareStatement(sql);
+		            ps.setString(1,conn.getCatalog());
+		            ps.setString(2,conn.getSchema().toUpperCase());
+		            ps.setString(3,me.getObjectName().toUpperCase());
+		            ps.setString(4,me.getColumnName().toUpperCase());
+		            ps.setInt(5,me.getEntries().size());
+		            ps.setInt(6,me.getSRIDAsInteger());
+		            ps.setString(7,this.layerGType.toUpperCase());
+		            ps.setDouble(8, me.getMBR().minX);
+		            ps.setDouble(9, me.getMBR().minY);
+		            ps.setDouble(10, me.getMBR().maxX);
+		            ps.setDouble(11, me.getMBR().maxY);
+		            ps.setString(12,this.fidName.toUpperCase());
+		            LOGGER.logSQL(sql + 
+		                    "\n? = " + conn.getCatalog() +
+		                    "\n? = " + conn.getSchema().toUpperCase() +
+		                    "\n? = " + me.getObjectName().toUpperCase() +
+				            "\n? = " + me.getColumnName().toUpperCase() +
+				            "\n? = " + me.getEntries().size() +
+				            "\n? = " + me.getSRIDAsInteger() +
+				            "\n? = " + this.layerGType.toUpperCase() +
+				            "\n? = " + me.getMBR().minX +
+				            "\n? = " + me.getMBR().minY +
+				            "\n? = " + me.getMBR().maxX +
+				            "\n? = " + me.getMBR().maxY +
+				            "\n? = " + this.fidName.toUpperCase()
+		            );
+			        ResultSet rSet = ps.executeQuery();
+		            rSet.close(); rSet = null;
+		            ps.close(); ps = null;
+					conn.commit();
+				}
+			} catch (SQLException sqle) {
+				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Geometry_Columns Metadata Entry Creation",JOptionPane.INFORMATION_MESSAGE);
+			}
+
 		}
 
 		public double roundToDecimals(double d, int c) {
