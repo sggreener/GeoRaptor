@@ -5,7 +5,7 @@
 	<!-- The Basics -->
 	<groupId>org.GeoRaptor</groupId>
 	<artifactId>GeoRaptor</artifactId>
-	<version>20.1.23</version>
+	<version>22.0.00</version>
 	<packaging>bundle</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,7 +22,7 @@
 				</os>
 			</activation>
 			<properties>
-				<sqldev.basedir>E:\github\sqldeveloper</sqldev.basedir>
+				<sqldev.basedir>C:\sqldeveloper</sqldev.basedir>
 			</properties>
 		</profile>
 		<profile>

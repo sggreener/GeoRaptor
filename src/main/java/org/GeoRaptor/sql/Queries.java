@@ -136,38 +136,43 @@ public class Queries {
         return keyColumns;
     }
     
-	public static boolean doesObjectExist(Connection _conn, String _schemaName, String _objectName) 
-	{
-		boolean exists = false;		
-		if (Strings.isEmpty(_schemaName) || Strings.isEmpty(_objectName) ) 
-			return false;
-         String sql = "select count(*) from all_objects where object_type in ('TABLE','VIEW') and owner = ? and object_name = ? and secondary = 'N'";
-	     try {
-            PreparedStatement ps = _conn.prepareStatement(sql);
-            ps.setString(1,_schemaName.toUpperCase());
-            ps.setString(2,_objectName.toUpperCase());
-            LOGGER.logSQL(sql + 
-                    "\n? = " + _schemaName.toUpperCase() +
-                    "\n? = " + _objectName.toUpperCase());
-            ps.setFetchSize(1);
-            ps.setFetchDirection(ResultSet.FETCH_FORWARD);
-	        ResultSet rSet = ps.executeQuery();
-            int sqlCount = 0;
-            if (!rSet.isBeforeFirst() ) {    
-            	exists = false;
-            } else if (rSet.next()) {
-                sqlCount = rSet.getInt(1);
-	            exists = sqlCount==0?false:true;
-            }
-            rSet.close(); rSet = null;
-            ps.close(); ps = null;
-        } catch (Exception ex) {
-            LOGGER.error("doesObjectExist: " + ex.toString());
+    public static boolean doesObjectExist(Connection _conn, String _schemaName, String _objectName) 
+            throws IllegalArgumentException
+    {
+    	LOGGER.debug("In doesObjectExist");
+        if (Strings.isEmpty(_schemaName) || Strings.isEmpty(_objectName)) {
             return false;
         }
-		return exists;
-	}
 
+        if (_conn == null) {
+            throw new IllegalArgumentException(propertyManager.getMsg("MD_NO_CONNECTION_FOR", "doesObjectExist"));
+        }
+
+        String sql = "SELECT COUNT(*) " +
+               		 "FROM all_objects " +
+                     "WHERE object_type IN ('TABLE','VIEW') " +
+                     "AND owner = ? AND object_name = ? AND secondary = 'N'";
+
+        LOGGER.logSQL(sql +
+            "\n? = " + _schemaName.toUpperCase() +
+            "\n? = " + _objectName.toUpperCase());
+
+        try (PreparedStatement ps = _conn.prepareStatement(sql)) {
+            ps.setString(1, _schemaName.toUpperCase());
+            ps.setString(2, _objectName.toUpperCase());
+
+            try (ResultSet rSet = ps.executeQuery()) {
+                if (rSet.next()) {
+                    int sqlCount = rSet.getInt(1);
+                    return sqlCount > 0;
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.error("doesObjectExist: " + ex.toString());
+        }
+        return false;
+    }
+    
     /** 
      * @function validateColumnName
      * @precis   Checks that _columnName exists in {_schemaName}.{_objectName} and 
@@ -466,6 +471,7 @@ public class Queries {
         }
         return isSTGeometry(_conn,_mEntry.getSchemaName(),_mEntry.getObjectName(),_mEntry.getColumnName());
     }
+    
     /**
      * @function isSTGeometry
      * @param _schemaName
@@ -2338,6 +2344,39 @@ public class Queries {
    	    return majorVersion;
 
     }
+
+    /**
+     * @method getCatalog
+     * @param _conn
+     * @return
+     * @author Simon Greener, October 2025.
+     */
+    public static String getCatalog(Connection _conn) 
+    throws SQLException
+    {
+        if ( propertyManager == null ) 
+            propertyManager = new PropertiesManager(propertiesFile);
+        
+        if (_conn == null)
+            throw new IllegalArgumentException(propertyManager.getMsg(propertyManager.getMsg("MD_NO_CONNECTION_FOR","getCatalog")));
+
+        Statement st = _conn.createStatement();
+        String sql = "SELECT SYS_CONTEXT('USERENV', 'DB_NAME') AS db_name FROM dual";
+        ResultSet rSet = st.executeQuery(sql);
+        String catalog = ""; 
+        if (!rSet.isBeforeFirst() ) {
+        	catalog = "";;
+        } else if (rSet.next()) {
+        	catalog = rSet.getString(1);
+            if ( rSet.wasNull() )
+            	catalog = "";
+        } 
+        rSet.close(); rSet = null;
+        st.close();     st = null;
+   	    return catalog;
+
+    }
+    
     /**
      * @method getSdoVersion
      * @param _conn

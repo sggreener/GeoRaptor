@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import javax.swing.Action;
 import javax.swing.JOptionPane;
 
 import org.GeoRaptor.OracleSpatial.CreateSpatialIndex.ManageSpatialIndex;
@@ -13,7 +12,6 @@ import org.GeoRaptor.OracleSpatial.ValidateSDOGeometry.ValidateSDOGeometry;
 import org.GeoRaptor.SpatialView.SpatialViewPanel;
 import org.GeoRaptor.io.Export.ui.ExporterWizard;
 import org.GeoRaptor.io.Import.ShapefileLoad;
-import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
 import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
@@ -25,6 +23,7 @@ import oracle.ide.Context;
 import oracle.ide.Ide;
 import oracle.ide.controller.Controller;
 import oracle.ide.controller.IdeAction;
+import oracle.ide.model.Node;
 
 public class TableContextMenuController implements Controller
 {
@@ -68,7 +67,7 @@ public class TableContextMenuController implements Controller
 		LOGGER.debug("Creating GEOMETRY_COLUMNS table database");
 		String sql = "";
 		try {
-			sql = "CREATE TABLE " + _conn.getSchema() + "GEOMETRY_COLUMNS  ("
+			sql = "CREATE TABLE " + _conn.getSchema().toUpperCase() + ".GEOMETRY_COLUMNS  ("
 					+ "  F_TABLE_CATALOG   VARCHAR2(128),"
 					+ "  F_TABLE_SCHEMA    VARCHAR2(128) NOT NULL ENABLE, "
 					+ "  F_TABLE_NAME      VARCHAR2(256) NOT NULL ENABLE, "
@@ -85,7 +84,7 @@ public class TableContextMenuController implements Controller
 					+ ")";
 			LOGGER.logSQL(sql);
 			this.executeSQL(_conn,sql);
-			sql = "GRANT INSERT,UPDATE,DELETE ON " + _conn.getSchema() + ".GEOMETRY_COLUMNS TO PUBLIC";
+			sql = "GRANT INSERT,UPDATE,DELETE ON " +  _conn.getSchema().toUpperCase() + ".GEOMETRY_COLUMNS TO PUBLIC";
 		} catch (SQLException sqle) {
 			JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Creating Geometry_Columns Table Failed",JOptionPane.INFORMATION_MESSAGE);
 		}
@@ -94,7 +93,7 @@ public class TableContextMenuController implements Controller
 	@Override
 	public boolean handleEvent(IdeAction action, Context context) 
 	{
-		LOGGER.debug("handleEvent()");
+		//LOGGER.debug("handleEvent()");
 
     	DBObject                dbo = new DBObject(context.getNode());
 
@@ -106,7 +105,7 @@ public class TableContextMenuController implements Controller
         String       connectionType = dbo.getConnectionType();
         String   connectionUserName = Connections.getInstance().getConnectionInfo(activeConnectionName).getProperty("user");
         
-        LOGGER.debug("Connection type is " + connectionType);
+        //LOGGER.debug("Connection type is " + connectionType);
         
         if (! "Oracle".equals(connectionType) ) {
     		Tools.displayMessage(
@@ -118,17 +117,27 @@ public class TableContextMenuController implements Controller
         
 		int cmdId = action.getCommandId();
 		
-		LOGGER.debug("action is " + cmdId + " Name is " + action.toString());
-		
+		//LOGGER.debug("action is " + cmdId + " Name is " + action.toString());
+
+		Node node = context.getNode();
+
 		if (cmdId == IMPORT_SHAPEFILE) {
  			LOGGER.debug("Executing ShapefileLoad.getInstance()");
 			ShapefileLoad.getInstance().initialise();
+			if (node != null) {
+			    node.markDirty(true); // Marks it for refresh	
+			    node.notify();
+			}
 			return true;
 		}
 		
 		if (cmdId == CREATE_GEOMETRY_COLUMNS) {
  			LOGGER.debug("Executing ShapefileLoad.getInstance()");
 			this.createGeometryColumnsTable(conn);
+			if (node != null) {
+			    node.markDirty(true); // Marks it for refresh			    
+			}
+			return true;
 		}
         
         // Get selected object 

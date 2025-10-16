@@ -1,9 +1,3 @@
-/**
- * ShapefileLoad.java
- *
- * Created on 08/05/2010, 6:26:43 PM
-**/
-
 package org.GeoRaptor.io.Import;
 
 import java.awt.Color;
@@ -34,6 +28,7 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.ListModel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -60,7 +55,6 @@ import org.xBaseJ.DBF;
 import org.xBaseJ.fields.Field;
 
 import oracle.ide.dialogs.ProgressBar;
-import oracle.jdbc.OracleTypes;
 import oracle.spatial.geometry.JGeometry;
 import oracle.spatial.util.DBFReaderJGeom;
 import oracle.spatial.util.ShapefileFeatureJGeom;
@@ -74,6 +68,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 	private static final long serialVersionUID = -1491318497084715236L;
 
+	java.awt.Frame parent;
+	
 	/**
 	 * We have only one instance of this class
 	 */
@@ -125,6 +121,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	/** Creates new form ShapefileLoad */
 	public ShapefileLoad(java.awt.Frame parent, boolean modal) {
 		super(parent, modal);
+		this.parent = parent;
 		LOGGER.debug("ShapefielLoad(parent,modal)");
 		initComponents();
 
@@ -152,8 +149,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.btnRemoveShp.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_REMOVE_SHP"));
 		this.btnSRID.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_SRID_BTN"));
 		this.cbSQL.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_EDIT_SQL"));
-		this.pnlTableProperties.setBorder(javax.swing.BorderFactory
-				.createTitledBorder(this.propertyManager.getMsg("SHPFILE_IMPORTER_TABLE_BORDER")));
+		this.pnlTableProperties.setBorder(javax.swing.BorderFactory.createTitledBorder(this.propertyManager.getMsg("SHPFILE_IMPORTER_TABLE_BORDER")));
 		this.lblTableName.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_TABLE_NAME"));
 		this.lblGeomColumn.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_GEOM_NAME"));
 		this.lblCommitInterval.setText(this.propertyManager.getMsg("SHPFILE_IMPORTER_COMMIT_INTERVAL"));
@@ -519,7 +515,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
                 }
             });
 
-            cbMigrateGeometry.setText("Migrate Polygon Geometries?");
+            cbMigrateGeometry.setText("Run MDSYS.SDO_MIGRATE.TO_CURRENT?");
             cbMigrateGeometry.setToolTipText("Converts polygon geometry ring rotation");
             cbMigrateGeometry.setActionCommand("Migrate Geometry?");
             cbMigrateGeometry.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
@@ -780,7 +776,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         this.btnLoad.setEnabled(false);
         this.btnLoad.setBackground(this.btnColor);
         this.btnLoad.setFont(this.btnLoad.getFont().deriveFont(Font.PLAIN, 11f));
-        // TODO Should we not remove all shapfiles in list?
+        // TODO Should we not remove all shapefiles in list?
 		this.setVisible(false);
 	}// GEN-LAST:event_btnCancelActionPerformed
 
@@ -820,10 +816,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				loadAllShapefiles();
 				// @todo: If flag set to open MetadataManager then do it
 				// @todo: And also spatial index
-			} catch (SQLException sqle) {
+			} catch (RuntimeException re) {
 				this.setAlwaysOnTop(false);
-				JOptionPane.showMessageDialog(null, action + " TABLE failed:\n" + sqle.getLocalizedMessage(),
-						this.TITLE, JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(this, action + " TABLE failed:\n" + re.getLocalizedMessage(),this.TITLE, JOptionPane.INFORMATION_MESSAGE);
 				this.setAlwaysOnTop(true);
 			}
 		}
@@ -837,7 +832,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		if (Strings.isEmpty(this.tfTablename.getText())) {
 			Toolkit.getDefaultToolkit().beep();
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null, "Table name may not be empty", TITLE, JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Table name may not be empty", TITLE, JOptionPane.INFORMATION_MESSAGE);
 			this.setAlwaysOnTop(true);
 			return;
 		}
@@ -857,7 +852,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		if (Strings.isEmpty(this.tfGeometryColumn.getText())) {
 			Toolkit.getDefaultToolkit().beep();
 			this.setAlwaysOnTop(false);
-			JOptionPane.showConfirmDialog(null, "Geometry column name may not be empty");
+			JOptionPane.showConfirmDialog(this, "Geometry column name may not be empty");
 			this.setAlwaysOnTop(true);
 			return;
 		}
@@ -891,7 +886,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				|| !this.tfTablename.getText().matches("^[A-Za-z][A-Za-z0-9_]*$")) {
 			Toolkit.getDefaultToolkit().beep();
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(this,
 					"Table names must start with an alphabetic character. Can then have alphabetic, digit or underscore characters.",
 					TITLE, JOptionPane.INFORMATION_MESSAGE);
 			this.setAlwaysOnTop(true);
@@ -1025,7 +1020,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.lblCommitInterval.setText("Commit (" + String.valueOf(this.sldrCommitInterval.getValue()) + "):");
 		this.btnLoad.setEnabled(false);
 
-		this.setLocationRelativeTo(super.getComponent(0));
+		this.setLocationRelativeTo(this.parent);
 		this.setVisible(true);
 	}
 
@@ -1036,12 +1031,11 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		this.load_operation = LOAD_TYPE.INSERT;
 		Connection conn = this.getConnection(this.connName, false);
 
-		// Check existance of object to be loaded
+		// Check existence of object to be loaded
 		// by getting SDO_GEOM_METADATA for the supplied parameters.
 		//
 		try {
-			LinkedHashMap<String, MetadataEntry> metaEntries = Queries.getMetadata(conn, _schemaName, _objectName,
-					_columnName, false);
+			LinkedHashMap<String, MetadataEntry> metaEntries = Queries.getMetadata(conn, _schemaName, _objectName,_columnName, false);
 			if (metaEntries.size() == 0) {
 				throw new Exception("No metadata for " + Strings.objectString(_schemaName, _objectName, _columnName));
 			}
@@ -1056,7 +1050,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				while (iter.hasNext()) {
 					entryList[i++] = iter.next().getColumnName();
 				}
-				String value = (String) JOptionPane.showInputDialog(null,
+				String value = (String) JOptionPane.showInputDialog(this,
 						propertyManager.getMsg("ADD_LAYER_SELECT_COLUMN"), MainSettings.EXTENSION_NAME,
 						JOptionPane.QUESTION_MESSAGE, null,
 						// Use default icon
@@ -1077,7 +1071,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			LOGGER.debug("Found metadatEntry of " + mEntry.toString());
 		} catch (Exception e) {
 			LOGGER.debug("Exception thrown is " + e.toString());
-			int n = JOptionPane.showConfirmDialog(null,
+			int n = JOptionPane.showConfirmDialog(this,
 					propertyManager.getMsg("SHPFILE_COLUMN_MISSING_MD",
 							Strings.objectString(_schemaName, _objectName, _columnName)),
 					MainSettings.EXTENSION_NAME, JOptionPane.YES_NO_OPTION);
@@ -1169,7 +1163,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				: DatabaseConnections.getInstance().findConnectionName(_connName);
 		if (dbConn == null) {
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null, "Could not get Connection for " + _connName,
+			JOptionPane.showMessageDialog(this, "Could not get Connection for " + _connName,
 					Constants.GEORAPTOR + " - " + this.getClass().getName(), JOptionPane.ERROR_MESSAGE);
 			this.setAlwaysOnTop(true);
 		}
@@ -1273,7 +1267,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			return this.tfSRID.getText();
 		} catch (Exception e) {
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(this,
 					this.propertyManager.getMsg("SHPFILE_IMPORTER_SRID_ERROR", this.tfSRID.getText()), this.TITLE,
 					JOptionPane.ERROR_MESSAGE);
 			this.setAlwaysOnTop(true);
@@ -1340,7 +1334,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		}
 		if (!Strings.isEmpty(errorMessage)) {
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null, errorMessage + "\n" + fcShapefile.getSelectedFile().getAbsolutePath(),
+			JOptionPane.showMessageDialog(this, errorMessage + "\n" + fcShapefile.getSelectedFile().getAbsolutePath(),
 					this.TITLE, JOptionPane.INFORMATION_MESSAGE);
 			this.setAlwaysOnTop(true);
 		}
@@ -1400,7 +1394,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		} catch (IOException ioe) {
 			// Error message and remove
 			this.setAlwaysOnTop(false);
-			JOptionPane.showMessageDialog(null,
+			JOptionPane.showMessageDialog(this,
 					ioe.getMessage() + "\n" + fcShapefile.getSelectedFile().getAbsolutePath(), this.TITLE,
 					JOptionPane.INFORMATION_MESSAGE);
 			this.setAlwaysOnTop(true);
@@ -1530,10 +1524,11 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	 * @method executeSQL
 	 * @precis Executes common SQL like DROP TABLE and CREATE TABLE...
 	 * @param _sql
-	 * @throws SQLException
+	 * @throws RuntimeException
 	 * @author Simon Greener 21st May, 2010 - Original coding
 	 */
-	public void executeSQL(String _sql) throws SQLException 
+	public void executeSQL(String _sql) 
+			throws RuntimeException 
 	{
 		LOGGER.debug("Executing SQL: " + _sql);
 		Statement stmt;
@@ -1544,9 +1539,14 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			conn.commit();
 			stmt.close();
 		} catch (SQLException sqle) {
-			if ((sqle.getErrorCode() != 955) && /* ORA-00955: name is already used by an existing object */
-					(sqle.getErrorCode() != 942)) // SQL Error: ORA-00942: table or view does not exist
-				throw new SQLException(sqle);
+			String message = " If any column names are reserved words change them by clicking in the relevant Oracle_Column cell to change the name";
+			LOGGER.debug(sqle.getLocalizedMessage());
+			if (sqle.getErrorCode() == 904) // SQL Error: ORA-00904: invalid identifier
+				LOGGER.debug(sqle.getLocalizedMessage() + (sqle.getErrorCode() == 904 ? message :""));
+			if (! ((sqle.getErrorCode() == 955) || // ORA-00955: name is already used by an existing object
+			       (sqle.getErrorCode() == 942))   // ORA-00942: table or view does not exist
+			   )
+			    throw new RuntimeException("Failed to execute create metadata table: " + sqle.getMessage() + (sqle.getErrorCode()==904?message:""), sqle);
 		}
 	}
 
@@ -1567,6 +1567,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				dbConn.reOpen();
 			}
 			batchLoader work = new batchLoader(
+					               this.parent,
                                    dbConn.getConnectionName(), 
                                    dbConn.getUserName(),
                                    this.tfTablename.getText(), 
@@ -1579,7 +1580,8 @@ public class ShapefileLoad extends javax.swing.JDialog {
                                    roundNumber, 
                                    this.cbMigrateGeometry.isSelected(),
                                    this.cbMetadata.isSelected(),
-                                   this.cbSpatialIndex.isSelected());
+                                   this.cbSpatialIndex.isSelected()
+                               );
 			ProgressBar progress = new ProgressBar(this, this.TITLE, work, false);
 			progress.setCancelable(true);
 			this.setAlwaysOnTop(false);
@@ -1596,17 +1598,18 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			progress.waitUntilDone();
 			if (!Strings.isEmpty(work.errorMessage)) {
 				// show error message
-				JOptionPane.showMessageDialog(null, work.errorMessage, this.TITLE, JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, work.errorMessage, this.TITLE, JOptionPane.ERROR_MESSAGE);
 			} else {
 				java.util.Date endTime = new java.util.Date();
 				long timeDiff = (endTime.getTime() - work.startTime.getTime());
-				JOptionPane.showMessageDialog(null,
+				JOptionPane.showMessageDialog(this,
 						(work.errorCount > 0) ? String.valueOf(work.errorCount) + " record(s) not converted.\n"
 								: "" + String.valueOf(work.successCount) + " record(s) converted out of "
 										+ String.valueOf(work.successCount + work.errorCount) + " processed.\n"
 										+ "Processing time: " + Tools.milliseconds2Time(timeDiff),
 						this.TITLE, JOptionPane.INFORMATION_MESSAGE);
 			}
+			progress.setDoneStatus();
 			this.setAlwaysOnTop(true);
 			progress = null;
 			work = null;
@@ -1622,6 +1625,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 		private String connName;
 
+		protected java.awt.Frame dialog;
 		protected int errorCount;
 		protected long successCount;
 		private long totalRecords;
@@ -1647,6 +1651,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		MetadataEntry me = null;
 
 		public batchLoader(
+				java.awt.Frame _dialog,
 				String _connName, 
 				String _user, 
 				String _tableName, 
@@ -1661,6 +1666,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				boolean _createMetadata, 
 				boolean _createSpatialIndex) 
 		{
+			this.dialog = _dialog;
 			this.connName = _connName;
 			this.errorCount = 0;
 			this.successCount = 0;
@@ -1715,20 +1721,18 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				}
 			}
 
-			// Create spatial metadata?
-			//
-			if (this.createMetadata) {
-				createMetadata();
-			}
-
 			// Create spatial index?
 			//
+			if (this.createMetadata) {
+				writeMetadata();
+			}
+
+		    this.progressBar.setDoneStatus();
+
 			if (this.createMetadata && this.createSpatialIndex) {
 				createIndex();
 			}
 
-			// "shut down" progressbar
-			this.progressBar.setDoneStatus();
 		}
 
 		private void createIndex() {
@@ -2041,124 +2045,109 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			LOGGER.debug(".... " + me.toString());
 		}
 
-		private void createMetadata() 
+		// TODO All this metadata stuff should be in the Metadata class?
+		private void writeMetadata() 
 		{
-			LOGGER.debug("Creating SDO_GEOM_METADATA entry in database");
 			String sql = "";
+			Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+			
+			LOGGER.debug("7. Creating SDO_GEOM_METADATA entry in database");
 			try {
 				// Delete any existing record
 				//
 				sql = me.deleteSQL();
 				LOGGER.logSQL(sql);
+				LOGGER.debug("About to delete metadata...");
 				this.sfl.executeSQL(sql);
-				Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
+				LOGGER.debug("Deleted metadata.");
 				conn.commit();
-
+			} catch (SQLException sqle) {
+				LOGGER.debug("Error deleting metadata record: " + sqle.getMessage());
+			}
+			
+			try {
 				// Insert new Metadata Entry
 				//
 				sql = me.insertSQL(false);
 				LOGGER.logSQL(sql);
+				LOGGER.debug("About to insert metadata...");
 				this.sfl.executeSQL(sql);
+				LOGGER.debug("Inserted metadata.");
 				conn.commit();
-				
 			} catch (SQLException sqle) {
-				this.sfl.setAlwaysOnTop(false);
-				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Metadata Creation",JOptionPane.INFORMATION_MESSAGE);
-				this.sfl.setAlwaysOnTop(true);
+				LOGGER.debug("Error inserting new metadata record: " + sqle.getMessage());
 			}
 			
-			try 
+			LOGGER.debug("8. GEOMETRY_COLUMNS Metadata Processing");
+			
+			String schema = "";
+			schema = me.getSchemaName().toUpperCase();
+			String geometry_columns_table_name = "GEOMETRY_COLUMNS";
+			boolean doesMetadataTableExist = false;
+			try {
+				doesMetadataTableExist = Queries.doesObjectExist(conn,schema,geometry_columns_table_name);
+			} catch (Exception e) {
+				LOGGER.debug("doesMetadataTableExist(conn,"+schema+","+geometry_columns_table_name+") returned " + e.getLocalizedMessage());
+				doesMetadataTableExist = false;
+			}
+			
+			if ( ! doesMetadataTableExist )
+				LOGGER.debug("8.1. "+ geometry_columns_table_name + " does not exist - consider creating it if you use qGIS.");
+			else 
 			{
-				Connection conn = DatabaseConnections.getInstance().getConnection(this.connName);
-				if ( Queries.doesObjectExist(conn, conn.getSchema(), "GEOMETRY_COLUMNS") )
+				geometry_columns_table_name = schema+"."+geometry_columns_table_name;
+				LOGGER.debug("8.1 Creating entry in " + geometry_columns_table_name);
+				try 
 				{
-					LOGGER.debug("GEOMETRY_COLUMNS table exists: Inserting record for " + conn.getCatalog() + "." + conn.getSchema() + "." + me.getObjectName() + "." + me.getColumnName());
-					sql = "INSERT INTO " + conn.getSchema() + ".GEOMETRY_COLUMNS (F_TABLE_CATALOG,F_TABLE_SCHEMA,F_TABLE_NAME,F_GEOMETRY_COLUMN,COORD_DIMENSION,SRID,GEOMETRY_TYPE,QGIS_XMIN,QGIS_YMIN,QGIS_XMAX,QGIS_YMAX,QGIS_PKEY) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";  
-					LOGGER.logSQL(sql);
+					LOGGER.debug("8.1.1. Inserting record for (" + 
+				                 Queries.getCatalog(conn).toUpperCase() + "." + 
+							     schema + "." + 
+				                 me.getObjectName().toUpperCase() + "." + 
+							     me.getColumnName().toUpperCase() +")");
+					sql = "INSERT INTO " + geometry_columns_table_name +  
+							"(F_TABLE_CATALOG,F_TABLE_SCHEMA,F_TABLE_NAME,F_GEOMETRY_COLUMN,COORD_DIMENSION,SRID,GEOMETRY_TYPE,QGIS_XMIN,QGIS_YMIN,QGIS_XMAX,QGIS_YMAX,QGIS_PKEY) " +
+							" VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+					String f_table_catalog = "";
+					try { f_table_catalog = Queries.getCatalog(conn).toUpperCase(); } catch (Exception e)  {  f_table_catalog = "";} 
+					String f_table_schema = schema;
+					String f_table_name = me.getObjectName().toUpperCase();
+					String f_geometry_column = me.getColumnName().toUpperCase();
+					int coord_dimension = me.getEntries().size();
+					int srid = me.getSRIDAsInteger(); 
+					String geometry_type = this.layerGType.toUpperCase();
+					double qgis_xmin = me.getMBR().minX;
+					double qgis_ymin = me.getMBR().minY;
+					double qgis_xmax = me.getMBR().maxX;
+					double qgis_ymax = me.getMBR().maxY;
+					String qgis_pkey = this.fidName.toUpperCase();
 		            PreparedStatement ps = conn.prepareStatement(sql);
-		            ps.setString(1,conn.getCatalog());
-		            ps.setString(2,conn.getSchema().toUpperCase());
-		            ps.setString(3,me.getObjectName().toUpperCase());
-		            ps.setString(4,me.getColumnName().toUpperCase());
-		            ps.setInt(5,me.getEntries().size());
-		            ps.setInt(6,me.getSRIDAsInteger());
-		            ps.setString(7,this.layerGType.toUpperCase());
-		            ps.setDouble(8, me.getMBR().minX);
-		            ps.setDouble(9, me.getMBR().minY);
-		            ps.setDouble(10, me.getMBR().maxX);
-		            ps.setDouble(11, me.getMBR().maxY);
-		            ps.setString(12,this.fidName.toUpperCase());
+		            ps.setString( 1,f_table_catalog);
+		            ps.setString( 2,f_table_schema);
+		            ps.setString( 3,f_table_name);
+		            ps.setString( 4,f_geometry_column);
+		            ps.setInt(    5,coord_dimension);
+		            ps.setInt(    6,srid);
+		            ps.setString( 7,geometry_type);
+		            ps.setDouble( 8,qgis_xmin);
+		            ps.setDouble( 9,qgis_ymin);
+		            ps.setDouble(10,qgis_xmax);
+		            ps.setDouble(11,qgis_ymax);
+		            ps.setString(12,qgis_pkey);
 		            LOGGER.logSQL(sql + 
-		                    "\n? = " + conn.getCatalog() +
-		                    "\n? = " + conn.getSchema().toUpperCase() +
-		                    "\n? = " + me.getObjectName().toUpperCase() +
-				            "\n? = " + me.getColumnName().toUpperCase() +
-				            "\n? = " + me.getEntries().size() +
-				            "\n? = " + me.getSRIDAsInteger() +
-				            "\n? = " + this.layerGType.toUpperCase() +
-				            "\n? = " + me.getMBR().minX +
-				            "\n? = " + me.getMBR().minY +
-				            "\n? = " + me.getMBR().maxX +
-				            "\n? = " + me.getMBR().maxY +
-				            "\n? = " + this.fidName.toUpperCase()
+		                    "\n? = " + f_table_catalog + "\n? = " + f_table_schema + "\n? = " + f_table_name + "\n? = " + f_geometry_column +
+				            "\n? = " + coord_dimension + "\n? = " + srid + "\n? = " + geometry_type +
+				            "\n? = " + qgis_xmin + "\n? = " + qgis_ymin + "\n? = " + qgis_xmax + "\n? = " + qgis_ymax +
+				            "\n? = " + qgis_pkey
 		            );
 			        ResultSet rSet = ps.executeQuery();
 		            rSet.close(); rSet = null;
 		            ps.close(); ps = null;
 					conn.commit();
-				}
-			} catch (SQLException sqle) {
-				JOptionPane.showMessageDialog(null, sql + "\n" + sqle.getLocalizedMessage(),"Geometry_Columns Metadata Entry Creation",JOptionPane.INFORMATION_MESSAGE);
-			}
-
-		}
-
-		public double roundToDecimals(double d, int c) {
-			long temp = (long) ((d * Math.pow(10, c)));
-			return (((double) temp) / (double) Math.pow(10, c));
-		}
-
-		private int getGType(JGeometry _geom) {
-			return ((_geom.getDimensions() * 1000) + ((_geom.isLRSGeometry() && _geom.getDimensions() == 3) ? 300
-					: ((_geom.isLRSGeometry() && _geom.getDimensions() == 4) ? 400 : 0)) + _geom.getType());
-		}
-
-		private JGeometry roundOrdinates(JGeometry _geom, int _round) 
-		{
-			//LOGGER.debug("Rounding Ordinates to " + _round + " decimal places");
-			int gType = getGType(_geom);
-			int dimension = _geom.getDimensions();
-			Double x = null, y = null, z = null;
-
-			double[] ords = _geom.getOrdinatesArray();
-			if (ords != null) {
-				int ordLength = ords.length;
-				if (ordLength != 0) {
-					for (int i = 0; i < ordLength; i++) {
-						ords[i] = roundToDecimals(ords[i], _round);
-					}
+				} catch (SQLException sqle) {
+					LOGGER.debug("Error inserting new GEOMETRY_COLUMNS metadata record: " + sqle.getMessage());
 				}
 			}
-			if (_geom.isPoint() && ords == null) {
-				// A point could be stored in the ordinate array
-				// If not, it it in the SDO_POINT_TYPE and needs processing
-				//
-				double[] point = _geom.getFirstPoint();
-				if (point != null && point.length != 0) {
-					x = roundToDecimals(point[0], _round);
-					y = roundToDecimals(point[1], _round);
-					if (dimension > 2) {
-						z = roundToDecimals(point[2], _round);
-						return new JGeometry(x, y, z, _geom.getSRID());
-					} else {
-						return new JGeometry(x, y, _geom.getSRID());
-					}
-				} else {
-					return _geom;
-				}
-			}
-			return new JGeometry(gType, _geom.getSRID(), _geom.getElemInfo(), ords);
-		}
+		} 
 
 		/**
 		 * @method loadShapefile
@@ -2234,7 +2223,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			// ====================================================
 			// Create prepared statement
 			
-			//LOGGER.debug("1. Check if user fid has been requested and place at front of column and");
+			LOGGER.debug("1. Check if user fid has been requested and place at front of column and");
 			
 			// parameter (values) lists
 			//
@@ -2252,7 +2241,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				params += "?,";
 			}
 
-			//LOGGER.debug("2. Get Oracle Columns names for those rows in shptm that are related to this shapefile and are to be loaded");
+			LOGGER.debug("2. Get Oracle Columns names for those rows in shptm that are related to this shapefile and are to be loaded");
 
 			Vector<Object[]> columnData = this.sfl.shptm.getLoadColumnData(dbfColNames);
 			ListIterator<Object[]> dataIter = columnData.listIterator();
@@ -2262,16 +2251,16 @@ public class ShapefileLoad extends javax.swing.JDialog {
 				insertCols += ((String) obj[shptm.getColumnPosition(columns.ORACLE_COLUMN_NAME)]) + ",";
 				params += "?, ";
 			}
+			colsToStore++;
 			insertCols += this.geometryColumn + ")";
-			LOGGER.debug("Columns to insert: " + insertCols);
+			LOGGER.debug("Columns to insert (" + this.geometryColumn + " = " + colsToStore + "): " + insertCols);
 			
-			//LOGGER.debug("3. Add parameter for sdo_geometry ....");
+			LOGGER.debug("3. Add parameter for sdo_geometry ....");
 			
 			// Migrate (ie fix rotation etc) geometry if polygon, polygonz, or polygonm
 			// rather than just write converted JGeometry
 			// Remove last ? and replace with TO_CURRENT(?
 			//
-			colsToStore++;
 			if (this.migrateGeometry && (shpFileType == 5 || shpFileType == 15 || shpFileType == 25)) {
 				params += "MDSYS.SDO_MIGRATE.TO_CURRENT(?," + Constants.TAG_MDSYS_SDO_DIMARRAY + "("
 						+ Queries.createDimElement("X", "0", "1", String.valueOf(this.migrateTolerance)) + ","
@@ -2289,12 +2278,13 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			}
 			params += ")";
 
-			//LOGGER.debug("4. Create INSERT Statement");
+			LOGGER.debug("4. Create INSERT Statement");
 			String targetObjectName = Strings.append(this.userName, this.tableName, ".");
 			String insertSQL = "INSERT INTO " + targetObjectName + insertCols + " VALUES " + params;
+			LOGGER.debug("4.1. INSERT: " + insertSQL);
 			LOGGER.logSQL(insertSQL);
 
-			//LOGGER.debug("5. Create statement for execution");
+			LOGGER.debug("5. Create statement for execution");
 			PreparedStatement ps;
 			try {
 				ps = conn.prepareStatement(insertSQL);
@@ -2313,12 +2303,12 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			@SuppressWarnings("unused")
 			String dbfType = null;
 			
-			//LOGGER.debug("6. Convert all records in shapefile");
+			LOGGER.debug("6. Convert all records in shapefile");
 			
 			for (int rec = 1; rec <= numRecords; rec++) {
 				try {
 					
-					//LOGGER.debug("6.1. Use Oracle conversion utility to get feature");
+					LOGGER.debug("6.1. Use Oracle conversion utility to get feature");
 					// NOTE: this approach by the Oracle Utility does not handle DATES!
 					//
 					ht = ShapefileFeatureJGeom.fromRecordToFeature(
@@ -2335,7 +2325,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					return;
 				}
 
-				//LOGGER.debug("6.2. Create primary key id value if needed");
+				LOGGER.debug("6.2. Create primary key id value if needed");
 				//
 				parameterIndex = 1;
 				if (_fidProcessing) {
@@ -2353,7 +2343,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					}
 				}
 
-				//LOGGER.debug("6.2. Convert all the non-geometry column data for this record");
+				LOGGER.debug("6.2. Convert all the non-geometry column data for this record");
 				
 				ListIterator<Object[]> setIter = columnData.listIterator();
 				while (setIter.hasNext()) {
@@ -2363,7 +2353,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						oracleDataType = ((String) obj[shptm.getColumnPosition(columns.ORACLE_DATA_TYPE)]).toUpperCase(Locale.getDefault());
 						dbfType = (String) obj[shptm.getColumnPosition(columns.DBF_DATA_TYPE)];
 						// columnBeingProcessed only includes columns in the target table that are in
-						// this shapefile
+						// this shape file
 						// The check that the column is in the hash table should not be needed.
 						//
 						if (ht.get(oracleColumnName) == null) {
@@ -2417,60 +2407,79 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						} else // Unsupported Column Type ? Try String
 							ps.setString(parameterIndex++, ht.get(oracleColumnName).toString());
 					} catch (Exception e) {
-						LOGGER.warning("Record# " + rec + " ERROR converting " + oracleColumnName + "(" + oracleDataType + ") = " + ht.get(oracleColumnName).toString() + e.getMessage());
+						LOGGER.error("Record# " + rec + " ERROR converting " + oracleColumnName + "(" + oracleDataType + ") = " + ht.get(oracleColumnName).toString() + e.getMessage());
 					}
 				} // end for loop for dbfColNames
 
-				//LOGGER.debug("6.3. Convert geometry of shapefile");
+				/*
+				Driver driver = null;
+				DatabaseMetaData meta = null;
+				try {
+					driver = DriverManager.getDriver(conn.getMetaData().getURL());
+					System.out.println("JDBC Driver: " + driver.getClass().getName());
+					meta = conn.getMetaData();
+					System.out.println("Driver Name: " + meta.getDriverName());
+					System.out.println("Driver Version: " + meta.getDriverVersion());
+					System.out.println("JDBC Version: " + meta.getJDBCMajorVersion() + "." + meta.getJDBCMinorVersion());
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}*/
+				
+				LOGGER.debug("6.3. Convert geometry of shapefile");
 				//
 				try {
 					jGeom = (JGeometry) ht.get("geometry");
 					if (this.roundNumber != -1) {
-						jGeom = roundOrdinates(jGeom, this.roundNumber);
+						me.setXYTolerances(Math.pow(10, -this.roundNumber));
+						jGeom = JGeom.roundOrdinates(jGeom, this.roundNumber);
 					}
-					gStruct = JGeom.toStruct(jGeom,conn);
+					gStruct = JGeom.fromGeomElements(jGeom,conn);
+					if ( gStruct == null ) { 
+						gStruct = JGeom.toStruct(jGeom,conn);
+					}					
+					//String tGeom = SDO_GEOMETRY.getGeometryAsString(gStruct);
 				} catch (Exception e) {
-					LOGGER.warning("Converting geometry of Record #" + rec + " failed - writing NULL value");
+					LOGGER.error("Converting geometry of Record #" + rec + " failed - writing NULL value");
 					gStruct = null; // Inserting of null geometries allowed
 					e.printStackTrace();
 				}
 
-				//LOGGER.debug("6.4. Set geometry value into prepared statement");
-				//
+				LOGGER.debug("6.4. Set geometry value into prepared statement");
 				try {
-					if (gStruct == null) {
-						ps.setNull(colsToStore, OracleTypes.STRUCT, Constants.TAG_MDSYS_SDO_GEOMETRY);
-					} else {
-						ps.setObject(colsToStore, gStruct);
-					}
+				    if (gStruct == null) {
+				        LOGGER.debug("6.4.1. Setting geometry column to NULL");
+				        ps.setNull(parameterIndex, Types.STRUCT, Constants.TAG_MDSYS_SDO_GEOMETRY);
+				    } else {
+				        LOGGER.debug("6.4.2. Setting actual geometry value to sdo_geoemtry column");
+				        ps.setObject(parameterIndex, gStruct);
+				    }
+				    LOGGER.debug("6.4.2. Geometry value set for record #" + rec);
 				} catch (SQLException sqle) {
-					this.errorCount++;
-					LOGGER.warning("Record# " + rec + " ERROR converting geometry column " + sqle.getMessage());
+				    this.errorCount++;
+				    LOGGER.error("Record #" + rec + " ERROR converting geometry column: " + sqle.getMessage());
 				}
 
-				//LOGGER.debug("6.5. Send record to Oracle");
-				
-				// This should be done via more efficient "array" processing
-				//
+				LOGGER.debug("6.5. Send record to Oracle");
 				try {
 					ps.executeUpdate();
 					this.successCount++;
+					LOGGER.debug("6.5.1. Update Successful");
 				} catch (Exception e) {
 					this.errorCount++;
-					LOGGER.warning("ERROR: " + e.getMessage() + "\nRecord #" + rec + " not converted.");
+					LOGGER.error("ERROR: " + e.getMessage() + "\nRecord #" + rec + " not converted.");
 				}
 
-				//LOGGER.debug("6.6. Commit and at the same time, display progress and check for termination");
+				LOGGER.debug("6.6. Commit and at the same time, display progress and check for termination");
 				if ((rec % this.commitInterval) == 0) {
 					try {
 						conn.commit();
 					} catch (SQLException sqle) {
-						LOGGER.warning("SQL COMMIT ERROR: " + sqle.getMessage() + " at Record #" + rec + ".");
+						LOGGER.error("SQL COMMIT ERROR: " + sqle.getMessage() + " at Record #" + rec + ".");
 					}
 					if (this.progressBar.hasUserCancelled()) {
 						try {
 							dbfr.closeDBF();
-							dbfr = null; // displose of handle
+							dbfr = null; // dispose of handle
 							sfh.closeShapefile();
 							sfh = null;
 							ps.close();
@@ -2479,17 +2488,19 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						}
 						return;
 					}
+					
 					displayProgress();
+					
 					// Check if error count == rows processed
 					//
 					if (this.errorCount == this.successCount) {
 						setAlwaysOnTop(false);
-						int result = JOptionPane.showConfirmDialog(null, "Errors () equals Rows Processed ().\nQuit?",TITLE, JOptionPane.YES_NO_CANCEL_OPTION);
+						int result = JOptionPane.showConfirmDialog(dialog, "Errors () equals Rows Processed ().\nQuit?",TITLE, JOptionPane.YES_NO_CANCEL_OPTION);
 						setAlwaysOnTop(true);
 						if (result == JOptionPane.YES_OPTION) {
 							try {
 								dbfr.closeDBF();
-								dbfr = null; // displose of handle
+								dbfr = null; // dispose of handle
 								sfh.closeShapefile();
 								sfh = null;
 								ps.close();
@@ -2504,12 +2515,15 @@ public class ShapefileLoad extends javax.swing.JDialog {
 
 			try {
 				dbfr.closeDBF();
-				dbfr = null; // displose of handle
+				dbfr = null; // dispose of handle
 				sfh.closeShapefile();
 				sfh = null;
 			} catch (IOException ioe) {
 				this.errorMessage = ioe.getMessage();
 			}
+			
+			this.progressBar.setDoneStatus();
+			
 			try {
 				conn.commit();
 				ps.close();
@@ -2590,7 +2604,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		return _length == 0 && isDBFTypeNumeric(_dbfType);
 	}
 
-	// Don't use hardcoded column integers eg 0-4 throughout code
+	// Don't use hard-coded column integers eg 0-4 throughout code
 	//
 	public static enum columns {
 		DBF_COLUMN_NAME, ORACLE_COLUMN_NAME, ORACLE_DATA_TYPE, IS_LOAD, DBF_DATA_TYPE
