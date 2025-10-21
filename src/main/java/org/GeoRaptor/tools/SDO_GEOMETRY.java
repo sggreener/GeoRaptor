@@ -1003,29 +1003,38 @@ public class SDO_GEOMETRY
 		}
     	return null;
     }
+    
+	public static Struct toSdoGeometry(Connection _conn, 
+                            			int _SDO_GTYPE, 
+                            			int _SDO_SRID, 
+                            			double[] _SDO_POINT, // length 2 or 3
+                            			int[] _SDO_ELEM_INFO_ARRAY, 
+                            			double[] _SDO_ORDINATE_ARRAY) 
+    throws SQLException {
+		// SDO_POINT_TYPE: Struct of 3 Doubles (X, Y, Z)
+		Struct sdo_point = null;
+		if (_SDO_POINT != null && _SDO_POINT.length >= 2) {
+			Double[] point = new Double[] { _SDO_POINT[0], _SDO_POINT[1],
+					_SDO_POINT.length > 2 ? _SDO_POINT[2] : null };
+			sdo_point = _conn.createStruct(Constants.TAG_MDSYS_SDO_POINT_TYPE, point);
+		}
 
-    public static Struct toSdoGeometry(Connection _conn,
-    		                           int        _SDO_GTYPE,
-    		                           int        _SDO_SRID,
-    		                           double[]   _SDO_POINT,
-    		                           int[]      _SDO_ELEM_INFO_ARRAY,
-                                       double[]   _SDO_ORDINATE_ARRAY)
-    throws SQLException
-    {
-    	Integer[] _sdo_point = Arrays.stream( _SDO_ELEM_INFO_ARRAY ).boxed().toArray( Integer[]::new );
-        Integer[] _sdo_elem_info_array = Arrays.stream( _SDO_ELEM_INFO_ARRAY ).boxed().toArray( Integer[]::new );
-        Double[] _sdo_ordinate_array = Arrays.stream( _SDO_ORDINATE_ARRAY ).boxed().toArray( Double[]::new );
-    	Struct sdo_point = _conn.createStruct (Constants.TAG_MDSYS_SDO_POINT_TYPE,(Object[])_sdo_point);
-    	Array  sdo_elem_info_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ELEM_ARRAY,(Object[])_sdo_elem_info_array);
-    	Array  sdo_ordinate_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ORD_ARRAY,(Object[])_sdo_ordinate_array);
-    	Object sdoGeometryComponents[] = new Object[] { 
-                new NUMBER(_SDO_GTYPE), 
-                new NUMBER(_SDO_SRID), 
-                sdo_point, 
-                sdo_elem_info_array,
-                sdo_ordinate_array
-                };
-        return OraUtil.toStruct(sdoGeometryComponents, OraGeom.TYPE_GEOMETRY, _conn);
-    }
+		// Convert arrays
+		Integer[] elemInfo = Arrays.stream(_SDO_ELEM_INFO_ARRAY).boxed().toArray(Integer[]::new);
+		Double[] ordinates = Arrays.stream(_SDO_ORDINATE_ARRAY).boxed().toArray(Double[]::new);
 
+		Array sdo_elem_info_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ELEM_ARRAY, elemInfo);
+		Array sdo_ordinate_array = _conn.createArrayOf(Constants.TAG_MDSYS_SDO_ORD_ARRAY, ordinates);
+
+		Object[] sdoGeometryComponents = new Object[] { 
+				new oracle.sql.NUMBER(_SDO_GTYPE),
+				new oracle.sql.NUMBER(_SDO_SRID), 
+				sdo_point, 
+				sdo_elem_info_array, 
+				sdo_ordinate_array 
+		};
+
+		return OraUtil.toStruct(sdoGeometryComponents, OraGeom.TYPE_GEOMETRY, _conn);
+	}
+    
 }

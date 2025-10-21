@@ -1193,7 +1193,7 @@ public class Queries {
     }
     
     /**
-     * @method getLayerGType
+     * @method getLayerGeometryType
      * @param _conn
      * @param _schemaName
      * @param _objectName

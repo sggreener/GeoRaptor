@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.swing.DefaultListModel;
@@ -28,7 +27,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.ListModel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -45,6 +43,7 @@ import org.GeoRaptor.OracleSpatial.SRID.SRIDPanel;
 import org.GeoRaptor.sql.DatabaseConnection;
 import org.GeoRaptor.sql.DatabaseConnections;
 import org.GeoRaptor.sql.Queries;
+import org.GeoRaptor.sql.SQLConversionTools;
 import org.GeoRaptor.tools.HtmlHelp;
 import org.GeoRaptor.tools.JGeom;
 import org.GeoRaptor.tools.PropertiesManager;
@@ -122,7 +121,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	public ShapefileLoad(java.awt.Frame parent, boolean modal) {
 		super(parent, modal);
 		this.parent = parent;
-		LOGGER.debug("ShapefielLoad(parent,modal)");
+		//LOGGER.debug("ShapefielLoad(parent,modal)");
 		initComponents();
 
 		this.prefs = MainSettings.getInstance().getPreferences();
@@ -171,7 +170,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		if (ShapefileLoad.classInstance == null) {
 			ShapefileLoad.classInstance = new ShapefileLoad();
 		}
-		LOGGER.debug("getInstance()");
+		//LOGGER.debug("getInstance()");
 		return ShapefileLoad.classInstance;
 	}
 
@@ -207,7 +206,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
         lblDecimalPlaces = new javax.swing.JLabel();
         sldrCommitInterval = new javax.swing.JSlider();
         lblCommitInterval = new javax.swing.JLabel();
-        cmbDecimalPlaces = new javax.swing.JComboBox<Object>();
+        cmbDecimalPlaces = new javax.swing.JComboBox<String>();
         cbSpatialIndex = new javax.swing.JCheckBox();
         cbMetadata = new javax.swing.JCheckBox();
         cbMigrateGeometry = new javax.swing.JCheckBox();
@@ -491,7 +490,9 @@ public class ShapefileLoad extends javax.swing.JDialog {
             lblCommitInterval.setName("lblCommitInterval"); // NOI18N
             lblCommitInterval.setPreferredSize(new java.awt.Dimension(104, 14));
 
-            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }));
+            cmbDecimalPlaces.setModel(new javax.swing.DefaultComboBoxModel<String>(
+            	    new String[] { "<<NONE>>", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" }
+            	));
             cmbDecimalPlaces.setMaximumSize(new java.awt.Dimension(86, 20));
             cmbDecimalPlaces.setName("cmbDecimalPlaces"); // NOI18N
 
@@ -926,7 +927,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
     private javax.swing.JCheckBox cbSQL;
     private javax.swing.JCheckBox cbSpatialIndex;
     private javax.swing.JComboBox<String> cmbConnections;
-    private javax.swing.JComboBox<?> cmbDecimalPlaces;
+    private javax.swing.JComboBox<String> cmbDecimalPlaces;
     private javax.swing.JComboBox<String> cmbFID;
     private javax.swing.JFileChooser fcShapefile;
     private javax.swing.JScrollPane jScrollPane1;
@@ -977,7 +978,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			this.setAlwaysOnTop(true);
 			return;
 		}
-		LOGGER.debug("this.cmbConnections.getSelectedIndex(0)=" + this.cmbConnections.getItemAt(0));
+		//LOGGER.debug("this.cmbConnections.getSelectedIndex(0)=" + this.cmbConnections.getItemAt(0));
 
 		// Initialise other widgets if second or subsequent call
 		//
@@ -1039,7 +1040,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			if (metaEntries.size() == 0) {
 				throw new Exception("No metadata for " + Strings.objectString(_schemaName, _objectName, _columnName));
 			}
-			LOGGER.debug(metaEntries.toString());
+			//LOGGER.debug(metaEntries.toString());
 			if (Strings.isEmpty(_columnName) && metaEntries.size() > 1) {
 				LOGGER.debug("Building list of metadatEntries to determine choice.");
 				// Ask which one want to map
@@ -1171,7 +1172,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 	}
 
 	public void setConnection(String _connName) {
-		LOGGER.debug("ShapefileLoad setConnection(" + _connName + ")");
+		//LOGGER.debug("ShapefileLoad setConnection(" + _connName + ")");
 		if (!Strings.isEmpty(_connName)) {
 			this.connName = _connName;
 			DatabaseConnections.getInstance().addConnection(this.connName);
@@ -1463,7 +1464,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			if (!((Boolean) shptm.getValueAt(i, this.is_load)).booleanValue()) {
 				continue;
 			}
-			if (!ShapefileLoad.isDBFTypeNumeric((String) shptm.getValueAt(i, this.dbf_typ))) {
+			if (!Tools.isDBFTypeNumeric((String) shptm.getValueAt(i, this.dbf_typ))) {
 				continue;
 			}
 			this.cmbFID.addItem(shptm.getValueAt(i, ora_col).toString());
@@ -1800,106 +1801,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						String.valueOf(this.currentShapefile + 1).trim(), String.valueOf(this.shapeFileCount).trim());
 			}
 			this.progressBar.updateProgress((int) processedRecords, progressText, stepText);
-		}
-
-		private boolean isOracleNumber(String _oracleDataType) {
-			String oracleDataType = _oracleDataType.toUpperCase(Locale.getDefault());
-			return (oracleDataType.startsWith("NUMBER") || oracleDataType.startsWith("BINARY_FLOAT")
-					|| oracleDataType.startsWith("BINARY_DOUBLE") || oracleDataType.startsWith("NUMERIC")
-					|| oracleDataType.startsWith("DECIMAL") || oracleDataType.startsWith("FLOAT")
-					|| oracleDataType.startsWith("REAL") || oracleDataType.startsWith("DOUBLE PRECISION"));
-		}
-
-		private boolean isOracleInteger(String _oracleDataType) {
-			return (_oracleDataType.equalsIgnoreCase("INTEGER") || _oracleDataType.equalsIgnoreCase("INT")
-					|| _oracleDataType.equalsIgnoreCase("SMALLINT"));
-		}
-
-		private boolean isOracleDate(String _oracleDataType) {
-			return (_oracleDataType.equalsIgnoreCase("DATE"));
-		}
-
-		/**
-		 * @method fixNumber
-		 * @precis Fixes string number so it matches the Oracle numeric data type.
-		 *
-		 *         For example, if you let Oracle do an implicit conversion of
-		 *         1234.56789 into a number(7,3) it will work. But if it was number(6,3)
-		 *         it won't as there aren't enough precision digits for the 1234. The
-		 *         error message would be:
-		 *
-		 *         SQL Error: ORA-01438: value larger than specified precision allowed
-		 *         for this column 01438. 00000 - "value larger than specified precision
-		 *         allowed for this column"
-		 *
-		 *         Similarly, if the string contained non-numeric items then these need
-		 *         to be trapped.
-		 *
-		 * @param _oracleDataType
-		 * @param _number
-		 * @param roundLeft       -- Divide precision by power(10,maxPossible) - true -
-		 *                        or Mod(precisionValue,power(10,maxPossible) false
-		 * @return String
-		 * @author Simon Greener May 25th 2010 - Original Coding
-		 */
-		private String fixNumber(String _oracleDataType, String _number, boolean roundLeft) 
-		{
-			LOGGER.debug("Fixing number " + _number + " of type " + _oracleDataType);
-			String result = null;
-			Integer intVal = null;
-			Double dblVal = null;
-			// First off, let's check if it is a valid number
-			//
-			try {
-				intVal = Integer.parseInt(_number);
-				if (isOracleInteger(_oracleDataType) || (_oracleDataType.indexOf("(") < 0))
-					return _number; // No need to truncate the number
-			} catch (Exception ie) {
-				try {
-					dblVal = Double.parseDouble(_number);
-				} catch (Exception de) {
-					return null;
-				}
-			}
-			// Yes it is
-			// Now match it against the Oracle specification
-			//
-
-			int scale = 0;
-			int precision = 0;
-			String precisionToken = "";
-			String scaleToken = "";
-
-			try {
-				// Get precision and, if exists, scale
-				//
-				StringTokenizer it = new StringTokenizer(_oracleDataType, "(,)", false);
-				if (it.countTokens() < 2) // DOUBLE_INT ?
-					return _number;
-				precisionToken = it.nextToken(); // discard data type
-				precisionToken = it.nextToken(); // this should be the precision
-				precision = Integer.valueOf(precisionToken);
-				scaleToken = it.hasMoreTokens() ? it.nextToken() : "";
-				scale = (scaleToken.length() == 0) ? 0 : Integer.valueOf(scaleToken);
-
-				// Now make number match that which is required
-				//
-				int leftSize = (intVal != null) ? String.valueOf(Math.abs(intVal)).length()
-						: String.valueOf(Math.abs(dblVal.intValue())).length();
-				double leftVal = roundLeft ? Math.pow(10, leftSize - (precision - scale))
-						: Math.pow(10, precision - scale);
-				leftVal = leftVal < 1 ? 1 : leftVal;
-				String fmt = "%" + precision + ((scale == 0) ? ".0" : "." + String.valueOf(scale)) + "f";
-				result = roundLeft
-						? String.format(fmt, (intVal == null ? dblVal : Double.valueOf(intVal)) / leftVal).trim()
-						: String.format(fmt, (intVal == null ? dblVal : Double.valueOf(intVal)) % leftVal).trim();
-				return result;
-			} catch (Exception e) {
-				LOGGER.warning(
-						"Problem fixing number " + _number + " for " + _oracleDataType + " ==> " + e.getMessage());
-			}
-			LOGGER.debug("__ "+ _number);
-			return _number;
 		}
 
 		private String getLayerGType(int _shpFileType, String _existingLayerGType) 
@@ -2308,7 +2209,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 			for (int rec = 1; rec <= numRecords; rec++) {
 				try {
 					
-					LOGGER.debug("6.1. Use Oracle conversion utility to get feature");
+					//LOGGER.debug("6.1. Use Oracle conversion utility to get feature");
 					// NOTE: this approach by the Oracle Utility does not handle DATES!
 					//
 					ht = ShapefileFeatureJGeom.fromRecordToFeature(
@@ -2325,7 +2226,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					return;
 				}
 
-				LOGGER.debug("6.2. Create primary key id value if needed");
+				//LOGGER.debug("6.2. Create primary key id value if needed");
 				//
 				parameterIndex = 1;
 				if (_fidProcessing) {
@@ -2333,7 +2234,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					if (userFID) {
 						// User entered FID is always first in parameters
 						try {
-							LOGGER.debug("Setting FID to " + this.fid);
+							//LOGGER.debug("Setting FID to " + this.fid);
 							ps.setLong(parameterIndex++, this.fid);
 						} catch (SQLException sqle) {
 							LOGGER.warning(
@@ -2343,7 +2244,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					}
 				}
 
-				LOGGER.debug("6.2. Convert all the non-geometry column data for this record");
+				//LOGGER.debug("6.2. Convert all the non-geometry column data for this record");
 				
 				ListIterator<Object[]> setIter = columnData.listIterator();
 				while (setIter.hasNext()) {
@@ -2372,15 +2273,15 @@ public class ShapefileLoad extends javax.swing.JDialog {
 							
 						} else if ((ht.get(oracleColumnName) instanceof String)) 
 						{
-							if (isOracleInteger(oracleDataType)) {
+							if (SQLConversionTools.isOracleInteger(oracleDataType)) {
 								ps.setInt(parameterIndex++,Integer.valueOf(ht.get(oracleColumnName).toString()).intValue());
-							} else if (isOracleNumber(oracleDataType)) {
+							} else if (SQLConversionTools.isOracleNumber(oracleDataType)) {
 								// need precision and scale
 								String number = ht.get(oracleColumnName).toString();
 								if (Strings.isEmpty(number) || number.equals("NaN") ) {
 									ps.setNull(parameterIndex++, Types.DOUBLE);
 								} else {
-									number = fixNumber(oracleDataType, number, false);
+									number = SQLConversionTools.fixNumber(oracleDataType, number, false);
 									if (Strings.isEmpty(number)) {
 										ps.setNull(parameterIndex++, Types.DOUBLE);
 									} else {
@@ -2391,7 +2292,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 								ps.setString(parameterIndex++, ht.get(oracleColumnName).toString());
 							}
 							
-						} else if (isOracleDate(oracleDataType)) {
+						} else if (SQLConversionTools.isOracleDate(oracleDataType)) {
 							String d = ht.get(oracleColumnName).toString().trim();
 							if (d.length() == 8)
 								d = /* Year */d.substring(0, 4) + "-" + /* Month */d.substring(4, 6) + "-" + /* Day */d.substring(6, 8);
@@ -2425,7 +2326,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					e.printStackTrace();
 				}*/
 				
-				LOGGER.debug("6.3. Convert geometry of shapefile");
+				//LOGGER.debug("6.3. Convert geometry of shapefile");
 				//
 				try {
 					jGeom = (JGeometry) ht.get("geometry");
@@ -2444,32 +2345,32 @@ public class ShapefileLoad extends javax.swing.JDialog {
 					e.printStackTrace();
 				}
 
-				LOGGER.debug("6.4. Set geometry value into prepared statement");
+				//LOGGER.debug("6.4. Set geometry value into prepared statement");
 				try {
 				    if (gStruct == null) {
-				        LOGGER.debug("6.4.1. Setting geometry column to NULL");
+				        //LOGGER.debug("6.4.1. Setting geometry column to NULL");
 				        ps.setNull(parameterIndex, Types.STRUCT, Constants.TAG_MDSYS_SDO_GEOMETRY);
 				    } else {
-				        LOGGER.debug("6.4.2. Setting actual geometry value to sdo_geoemtry column");
+				        //LOGGER.debug("6.4.2. Setting actual geometry value to sdo_geoemtry column");
 				        ps.setObject(parameterIndex, gStruct);
 				    }
-				    LOGGER.debug("6.4.2. Geometry value set for record #" + rec);
+				    //LOGGER.debug("6.4.2. Geometry value set for record #" + rec);
 				} catch (SQLException sqle) {
 				    this.errorCount++;
-				    LOGGER.error("Record #" + rec + " ERROR converting geometry column: " + sqle.getMessage());
+				    //LOGGER.error("Record #" + rec + " ERROR converting geometry column: " + sqle.getMessage());
 				}
 
-				LOGGER.debug("6.5. Send record to Oracle");
+				//LOGGER.debug("6.5. Send record to Oracle");
 				try {
 					ps.executeUpdate();
 					this.successCount++;
-					LOGGER.debug("6.5.1. Update Successful");
+					//LOGGER.debug("6.5.1. Update Successful");
 				} catch (Exception e) {
 					this.errorCount++;
 					LOGGER.error("ERROR: " + e.getMessage() + "\nRecord #" + rec + " not converted.");
 				}
 
-				LOGGER.debug("6.6. Commit and at the same time, display progress and check for termination");
+				//LOGGER.debug("6.6. Commit and at the same time, display progress and check for termination");
 				if ((rec % this.commitInterval) == 0) {
 					try {
 						conn.commit();
@@ -2553,56 +2454,6 @@ public class ShapefileLoad extends javax.swing.JDialog {
 		}
 	}
 
-	public static String mapDBFTypeToOracle(char _dbfType, int _length, int _decPlaces) {
-		String dataType = "";
-		switch (_dbfType) {
-		case 'C':
-			if (_length > 0) {
-				dataType = "VARCHAR2(" + String.valueOf(_length) + ")";
-			} else {
-				dataType = "TIMESTAMP";
-			}
-			break;
-		case 'D':
-			dataType = "DATE";
-			break;
-		case 'L':
-			dataType = "CHAR(1)";
-			break;
-		case 'M': /* Memo */
-			dataType = "CLOB";
-			break;
-		case 'P': /* Picture */
-			dataType = "BLOB";
-			break;
-		case 'F':
-			dataType = "FLOAT(" + String.valueOf(Math.round(_length * 3.32193)) + ")";
-			break;
-		case 'N':
-			int length = (_length > 38) ? 38 : _length;
-			if (_decPlaces != 0) {
-				int decPlaces = (int) ((_length > 38) ? (38.0 * (((double) _decPlaces) / ((double) _length)))
-						: _decPlaces);
-				dataType = "NUMBER(" + String.valueOf(length) + "," + String.valueOf(decPlaces) + ")";
-			} else {
-				dataType = "NUMBER(" + String.valueOf(_length) + ")";
-			}
-			break;
-		default:
-			dataType = "VARCHAR2(254)";
-			break;
-		}
-		return dataType;
-	}
-
-	private static boolean isDBFTypeNumeric(String _dbfType) {
-		return (_dbfType.equalsIgnoreCase("N") || (_dbfType.equalsIgnoreCase("F")));
-	}
-
-	@SuppressWarnings("unused")
-	private static boolean isDBFTypeInteger(String _dbfType, int _length) {
-		return _length == 0 && isDBFTypeNumeric(_dbfType);
-	}
 
 	// Don't use hard-coded column integers eg 0-4 throughout code
 	//
@@ -2790,7 +2641,7 @@ public class ShapefileLoad extends javax.swing.JDialog {
 						Object[] record = new Object[5];
 						record[dbf_col] = dbFld.getName();
 						record[ora_col] = dbFld.getName().toUpperCase(Locale.getDefault());
-						record[ora_typ] = mapDBFTypeToOracle(dbFld.getType(), dbFld.getLength(),
+						record[ora_typ] = SQLConversionTools.mapDBFTypeToOracle(dbFld.getType(), dbFld.getLength(),
 								dbFld.getDecimalPositionCount());
 						record[is_load] = Boolean.TRUE;
 						record[dbf_typ] = String.valueOf(dbFld.getType());

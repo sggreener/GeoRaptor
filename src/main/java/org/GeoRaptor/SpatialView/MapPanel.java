@@ -821,7 +821,8 @@ public class MapPanel
         ViewOperationListener.VIEW_OPERATION svo = this.spatialView.getSVPanel().getVoListener().getSpatialViewOpr();
         //LOGGER.debug("mousePressed: " + svo.toString());
         try {
-            if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
+        	if (e.getButton() == MouseEvent.BUTTON1)
+            //if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
             {
                 LOGGER.debug("mousePressed: BUTTON1_MASK is LEFT MOUSE BUTTON");
                 Stroke oldStroke = this.getBiG2D().getStroke();
@@ -1145,8 +1146,10 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
           default:
             return;
         }
-        
-        if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
+        if (SwingUtilities.isLeftMouseButton(e))
+        	//if (e.getButton() == MouseEvent.BUTTON1)
+        	//if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
+        {
             //LOGGER.debug("mouseDragged: LEFT MOUSE BUTTON; svo="+svo.toString() );
             switch (svo)
             {
@@ -1269,7 +1272,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
             }
         }
         try {
-            if ((_mouseEvent.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
+        	if (_mouseEvent.getButton() == MouseEvent.BUTTON1)
+            //if ((_mouseEvent.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) 
             {
                 //LOGGER.debug("mouseReleased: LEFT MOUSE BUTTON: "+ svo.toString());
                 switch (svo)
@@ -1439,7 +1443,7 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
 				case ZOOM_OUT:          break;
 				default:                break;
                 }
-            } else if ((_mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
+            } else if (_mouseEvent.getButton() == MouseEvent.BUTTON3) // if ((_mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
             {
                 //LOGGER.debug("mouseReleased: RIGHT MOUSE BUTTON: "+ svo.toString());
                 Stroke oldStroke = this.getBiG2D().getStroke();
@@ -1591,7 +1595,8 @@ LOGGER.info("layerCount=" + this.spatialView.getLayerCount() + " getMBR.isInvali
 								public void actionPerformed(ActionEvent e) 
 								{
 									String sGeometry = "";
-                                    sGeometry = JOptionPane.showInputDialog(MAP_MENU_QUESTION_JUMP_TO_GEOMETRY);
+                                    //sGeometry = JOptionPane.showInputDialog(MAP_MENU_QUESTION_JUMP_TO_GEOMETRY);
+                                    sGeometry = JOptionPane.showInputDialog(this, MAP_MENU_QUESTION_JUMP_TO_GEOMETRY);
                                     if ( Strings.isEmpty(sGeometry))
                                     	return;
                                 	Connection conn = DatabaseConnections.getInstance().getAnyOpenConnection();

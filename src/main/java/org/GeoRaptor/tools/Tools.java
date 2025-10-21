@@ -796,4 +796,12 @@ public class Tools {
     		Messages.log(_message,false);
     }
 
+    public static boolean isDBFTypeNumeric(String _dbfType) {
+		return (_dbfType.equalsIgnoreCase("N") || (_dbfType.equalsIgnoreCase("F")));
+	}
+
+	public static boolean isDBFTypeInteger(String _dbfType, int _length) {
+		return _length == 0 && isDBFTypeNumeric(_dbfType);
+	}
+	
 }

@@ -157,8 +157,6 @@ public class ViewLayerTree
     //
     protected LinkedHashMap<String,DefaultMutableTreeNode> selectedNodes = new LinkedHashMap<String,DefaultMutableTreeNode>();
 
-    private final static int CTRL_LEFT_MOUSE = InputEvent.CTRL_MASK + InputEvent.BUTTON1_MASK;  
-
     Color selectionBorderColor;
     Color selectionForeground;
     Color selectionBackground;
@@ -212,7 +210,7 @@ public class ViewLayerTree
 	private String dialogError             = null;
     private String noDrawableLayer         = null;
     private JPanel messageNoDrawableLayer  = null;
-
+    
     static DataFlavor localObjectFlavor;
     static {
         try {
@@ -221,7 +219,11 @@ public class ViewLayerTree
         } catch (ClassNotFoundException cnfe) { cnfe.printStackTrace(); }
     }
     static DataFlavor[] supportedFlavors = { localObjectFlavor, TransferableTreeNode.TREE_NODE_FLAVOR };
-    
+
+    public static boolean isCtrlLeftClick(MouseEvent e) {
+        return e.getButton() == MouseEvent.BUTTON1 && e.isControlDown();
+    }
+
     public ViewLayerTree(SpatialViewPanel _sViewPanel) 
     {
         try {
@@ -577,22 +579,21 @@ public class ViewLayerTree
            /**
             * Display right mouse click menu when release right mouse button
             */
-           public void mouseReleased(MouseEvent e) 
-           {
-                if ((e.getModifiers() & CTRL_LEFT_MOUSE) == CTRL_LEFT_MOUSE) {
-                      processMultiSelection(e);
-                } else if ((e.getModifiers() & InputEvent.BUTTON1_MASK) == InputEvent.BUTTON1_MASK) {
-                      processLeftMouseEvent(e);
-                } else
-                      maybeShowPopup(e);
-           }
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON1 && e.isControlDown()) {
+                    processMultiSelection(e);
+                } else if (e.getButton() == MouseEvent.BUTTON1) {
+                    processLeftMouseEvent(e);
+                } else {
+                    maybeShowPopup(e);
+                }
+            }
 
-           private void maybeShowPopup(MouseEvent e) {
-               if (e.isPopupTrigger()) {
-                 if ((e.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK) 
-                     processPopupEvent(e);
-               }
-           }
+            private void maybeShowPopup(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    processPopupEvent(e);
+                }
+            }
            
       };
     }

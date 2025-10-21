@@ -171,8 +171,10 @@ public class IndexFile {
 	  }
 
 	  /**
-	   * @see java.lang.Object#finalize()
+	   * @deprecated finalize() is deprecated in Java 9+. Consider using AutoCloseable or Cleaner.
 	   */
+	  @Override
+	  @Deprecated
 	  protected void finalize() throws Throwable {
 	      this.close();
 	      super.finalize();

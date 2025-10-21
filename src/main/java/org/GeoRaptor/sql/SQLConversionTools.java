@@ -17,6 +17,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DecimalFormat;
+import java.util.Locale;
+import java.util.StringTokenizer;
 
 import org.GeoRaptor.Constants;
 import org.GeoRaptor.Preferences;
@@ -649,5 +651,145 @@ public class SQLConversionTools {
         return _default;
     }
     
+    public static boolean isOracleNumber(String _oracleDataType) {
+		String oracleDataType = _oracleDataType.toUpperCase(Locale.getDefault());
+		return (oracleDataType.startsWith("NUMBER") || oracleDataType.startsWith("BINARY_FLOAT")
+				|| oracleDataType.startsWith("BINARY_DOUBLE") || oracleDataType.startsWith("NUMERIC")
+				|| oracleDataType.startsWith("DECIMAL") || oracleDataType.startsWith("FLOAT")
+				|| oracleDataType.startsWith("REAL") || oracleDataType.startsWith("DOUBLE PRECISION"));
+	}
 
+	public static boolean isOracleInteger(String _oracleDataType) {
+		return (_oracleDataType.equalsIgnoreCase("INTEGER") || _oracleDataType.equalsIgnoreCase("INT")
+				|| _oracleDataType.equalsIgnoreCase("SMALLINT"));
+	}
+
+	public static boolean isOracleDate(String _oracleDataType) {
+		return (_oracleDataType.equalsIgnoreCase("DATE"));
+	}
+
+	/**
+	 * @method fixNumber
+	 * @precis Fixes string number so it matches the Oracle numeric data type.
+	 *
+	 *         For example, if you let Oracle do an implicit conversion of
+	 *         1234.56789 into a number(7,3) it will work. But if it was number(6,3)
+	 *         it won't as there aren't enough precision digits for the 1234. The
+	 *         error message would be:
+	 *
+	 *         SQL Error: ORA-01438: value larger than specified precision allowed
+	 *         for this column 01438. 00000 - "value larger than specified precision
+	 *         allowed for this column"
+	 *
+	 *         Similarly, if the string contained non-numeric items then these need
+	 *         to be trapped.
+	 *
+	 * @param _oracleDataType
+	 * @param _number
+	 * @param roundLeft       -- Divide precision by power(10,maxPossible) - true -
+	 *                        or Mod(precisionValue,power(10,maxPossible) false
+	 * @return String
+	 * @author Simon Greener May 25th 2010 - Original Coding
+	 */
+	public static String fixNumber(String _oracleDataType, String _number, boolean roundLeft) 
+	{
+		LOGGER.debug("Fixing number " + _number + " of type " + _oracleDataType);
+		String result = null;
+		Integer intVal = null;
+		Double dblVal = null;
+		// First off, let's check if it is a valid number
+		//
+		try {
+			intVal = Integer.parseInt(_number);
+			if (isOracleInteger(_oracleDataType) || (_oracleDataType.indexOf("(") < 0))
+				return _number; // No need to truncate the number
+		} catch (Exception ie) {
+			try {
+				dblVal = Double.parseDouble(_number);
+			} catch (Exception de) {
+				return null;
+			}
+		}
+		// Yes it is
+		// Now match it against the Oracle specification
+		//
+
+		int scale = 0;
+		int precision = 0;
+		String precisionToken = "";
+		String scaleToken = "";
+
+		try {
+			// Get precision and, if exists, scale
+			//
+			StringTokenizer it = new StringTokenizer(_oracleDataType, "(,)", false);
+			if (it.countTokens() < 2) // DOUBLE_INT ?
+				return _number;
+			precisionToken = it.nextToken(); // discard data type
+			precisionToken = it.nextToken(); // this should be the precision
+			precision = Integer.valueOf(precisionToken);
+			scaleToken = it.hasMoreTokens() ? it.nextToken() : "";
+			scale = (scaleToken.length() == 0) ? 0 : Integer.valueOf(scaleToken);
+
+			// Now make number match that which is required
+			//
+			int leftSize = (intVal != null) ? String.valueOf(Math.abs(intVal)).length()
+					: String.valueOf(Math.abs(dblVal.intValue())).length();
+			double leftVal = roundLeft ? Math.pow(10, leftSize - (precision - scale))
+					: Math.pow(10, precision - scale);
+			leftVal = leftVal < 1 ? 1 : leftVal;
+			String fmt = "%" + precision + ((scale == 0) ? ".0" : "." + String.valueOf(scale)) + "f";
+			result = roundLeft
+					? String.format(fmt, (intVal == null ? dblVal : Double.valueOf(intVal)) / leftVal).trim()
+					: String.format(fmt, (intVal == null ? dblVal : Double.valueOf(intVal)) % leftVal).trim();
+			return result;
+		} catch (Exception e) {
+			LOGGER.warning(
+					"Problem fixing number " + _number + " for " + _oracleDataType + " ==> " + e.getMessage());
+		}
+		LOGGER.debug("__ "+ _number);
+		return _number;
+	}
+	
+	public static String mapDBFTypeToOracle(char _dbfType, int _length, int _decPlaces) {
+		String dataType = "";
+		switch (_dbfType) {
+		case 'C':
+			if (_length > 0) {
+				dataType = "VARCHAR2(" + String.valueOf(_length) + ")";
+			} else {
+				dataType = "TIMESTAMP";
+			}
+			break;
+		case 'D':
+			dataType = "DATE";
+			break;
+		case 'L':
+			dataType = "CHAR(1)";
+			break;
+		case 'M': /* Memo */
+			dataType = "CLOB";
+			break;
+		case 'P': /* Picture */
+			dataType = "BLOB";
+			break;
+		case 'F':
+			dataType = "FLOAT(" + String.valueOf(Math.round(_length * 3.32193)) + ")";
+			break;
+		case 'N':
+			int length = (_length > 38) ? 38 : _length;
+			if (_decPlaces != 0) {
+				int decPlaces = (int) ((_length > 38) ? (38.0 * (((double) _decPlaces) / ((double) _length)))
+						: _decPlaces);
+				dataType = "NUMBER(" + String.valueOf(length) + "," + String.valueOf(decPlaces) + ")";
+			} else {
+				dataType = "NUMBER(" + String.valueOf(_length) + ")";
+			}
+			break;
+		default:
+			dataType = "VARCHAR2(254)";
+			break;
+		}
+		return dataType;
+	}
 }
