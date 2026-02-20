@@ -69,7 +69,7 @@
                       </Group>
                       <Component id="panelSQL" alignment="1" max="-2" attributes="1"/>
                       <Component id="panelParameter" alignment="1" max="-2" attributes="1"/>
-                      <Component id="panelButtonMessage" pref="0" max="32767" attributes="1"/>
+                      <Component id="panelButtonMessage" pref="619" max="32767" attributes="1"/>
                   </Group>
                   <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
               </Group>
@@ -84,10 +84,10 @@
                       <Component id="pnlIndexObject" alignment="0" max="-2" attributes="1"/>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="panelParameter" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
-                  <Component id="panelSQL" max="-2" attributes="0"/>
+                  <Component id="panelParameter" min="-2" pref="318" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
+                  <Component id="panelSQL" min="-2" pref="133" max="-2" attributes="0"/>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Component id="panelButtonMessage" min="-2" pref="22" max="-2" attributes="0"/>
                   <EmptySpace min="-2" pref="17" max="-2" attributes="0"/>
               </Group>
@@ -119,11 +119,16 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="panelTablespace" max="-2" attributes="1"/>
-                          <Component id="panelLayerGtype" max="-2" attributes="1"/>
-                          <Component id="pnlMiscellaneous" alignment="0" max="-2" attributes="1"/>
+                          <Component id="pnlMiscellaneous" pref="589" max="32767" attributes="1"/>
+                          <Group type="102" attributes="0">
+                              <EmptySpace min="6" pref="6" max="-2" attributes="0"/>
+                              <Component id="chkLayerGTypeApply" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                          </Group>
+                          <Component id="panelLayerGtype" alignment="0" pref="589" max="32767" attributes="1"/>
+                          <Component id="panelTablespace" alignment="0" pref="589" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -134,8 +139,10 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="panelLayerGtype" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="pnlMiscellaneous" max="-2" attributes="0"/>
+                      <Component id="pnlMiscellaneous" min="-2" pref="107" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
+                      <Component id="chkLayerGTypeApply" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -175,16 +182,12 @@
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Group type="102" attributes="0">
-                                  <Component id="cmbLayerGType" min="-2" pref="193" max="-2" attributes="1"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="discoverLayerGTypeBTN" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <Component id="sldrSample" min="-2" pref="281" max="-2" attributes="1"/>
+                              <Component id="cmbLayerGType" min="-2" pref="219" max="-2" attributes="1"/>
+                              <Component id="sldrSample" min="-2" pref="222" max="-2" attributes="1"/>
                           </Group>
-                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                          <Component id="chkLayerGTypeApply" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace pref="109" max="32767" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="discoverLayerGTypeBTN" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -195,7 +198,6 @@
                               <Component id="cmbLayerGType" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="lblLayerType" alignment="3" min="-2" max="-2" attributes="0"/>
                               <Component id="discoverLayerGTypeBTN" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="chkLayerGTypeApply" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
@@ -267,21 +269,6 @@
                     </Property>
                   </Properties>
                 </Component>
-                <Component class="javax.swing.JCheckBox" name="chkLayerGTypeApply">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Apply"/>
-                    <Property name="horizontalTextPosition" type="int" value="10"/>
-                    <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="null"/>
-                    </Property>
-                    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="null"/>
-                    </Property>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="chkLayerGTypeApplyStateChanged"/>
-                  </Events>
-                </Component>
                 <Component class="javax.swing.JLabel" name="llblSamplePct">
                   <Properties>
                     <Property name="horizontalAlignment" type="int" value="11"/>
@@ -351,8 +338,8 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="lblWorkTablespace" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="cmbWorkTablespaces" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace pref="29" max="32767" attributes="0"/>
+                          <Component id="cmbWorkTablespaces" pref="245" max="32767" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -464,23 +451,25 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="102" attributes="0">
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="lblDimension" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="cmbDimension" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="cbNonLeaf" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="cbSpatialIndexV2" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="cbLOCAL" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="cbCbTree" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="32767" attributes="0"/>
+                      </Group>
                       <Group type="102" alignment="0" attributes="0">
+                          <Component id="lblBatchSize" min="-2" pref="159" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="cbNonLeaf" min="-2" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <Component id="lblDimension" min="-2" max="-2" attributes="0"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="cmbDimension" min="-2" max="-2" attributes="0"/>
-                                  </Group>
-                                  <Component id="chkIsGeodeticIndex" alignment="1" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                          </Group>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="lblBatchSize" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="sldrBatchSize" min="-2" max="-2" attributes="1"/>
+                          <Component id="sldrBatchSize" max="32767" attributes="1"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -488,44 +477,25 @@
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Group type="102" attributes="0">
-                                  <Component id="sldrBatchSize" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                              </Group>
-                              <Group type="102" alignment="0" attributes="0">
-                                  <Group type="103" groupAlignment="3" attributes="0">
-                                      <Component id="lblDimension" alignment="3" min="-2" max="-2" attributes="0"/>
-                                      <Component id="cmbDimension" alignment="3" min="-2" max="-2" attributes="1"/>
-                                      <Component id="lblBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  </Group>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="chkIsGeodeticIndex" min="-2" max="-2" attributes="1"/>
-                                  <EmptySpace pref="2" max="32767" attributes="0"/>
-                                  <Component id="cbNonLeaf" min="-2" max="-2" attributes="0"/>
-                              </Group>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="lblDimension" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="cmbDimension" alignment="3" min="-2" max="-2" attributes="1"/>
+                              <Component id="cbNonLeaf" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbSpatialIndexV2" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbLOCAL" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="cbCbTree" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="lblBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="sldrBatchSize" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <EmptySpace max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
               </Layout>
               <SubComponents>
-                <Component class="javax.swing.JCheckBox" name="chkIsGeodeticIndex">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Geodetic:"/>
-                    <Property name="horizontalTextPosition" type="int" value="10"/>
-                    <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="null"/>
-                    </Property>
-                    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                      <Dimension value="null"/>
-                    </Property>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="chkIsGeodeticIndexStateChanged"/>
-                  </Events>
-                </Component>
                 <Component class="javax.swing.JComboBox" name="cmbDimension">
                   <Properties>
                     <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
@@ -550,6 +520,7 @@
                 <Component class="javax.swing.JCheckBox" name="cbNonLeaf">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Non Leaf"/>
+                    <Property name="toolTipText" type="java.lang.String" value="For spatial indexes, Oracle may use separate tables for non-leaf and leaf nodes when sdo_non_leaf_tbl=TRUE is specified, allowing for better performance and maintenance."/>
                     <Property name="horizontalTextPosition" type="int" value="10"/>
                     <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                       <Dimension value="null"/>
@@ -619,8 +590,41 @@
                     </Property>
                   </Properties>
                 </Component>
+                <Component class="javax.swing.JCheckBox" name="cbSpatialIndexV2">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="V2"/>
+                    <Property name="toolTipText" type="java.lang.String" value="This will change the spatial index from MDSYS.SPATIAL_INDEX to MDSYS.SPATIAL_INDEX_V2"/>
+                    <Property name="horizontalTextPosition" type="int" value="2"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="cbSpatialIndexV2StateChanged"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JCheckBox" name="cbLOCAL">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Partitioned"/>
+                    <Property name="toolTipText" type="java.lang.String" value="This will create a partitioned spatial index using the LOCAL keyword."/>
+                    <Property name="horizontalTextPosition" type="int" value="10"/>
+                  </Properties>
+                </Component>
+                <Component class="javax.swing.JCheckBox" name="cbCbTree">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Composite B-Tree Index"/>
+                    <Property name="toolTipText" type="java.lang.String" value="You can create a composite B-tree spatial index only when the point data is stored in the SDO_POINT attribute and the SDO_ORDINATES attribute of the geometry is NULL."/>
+                    <Property name="horizontalTextPosition" type="int" value="10"/>
+                  </Properties>
+                </Component>
               </SubComponents>
             </Container>
+            <Component class="javax.swing.JCheckBox" name="chkLayerGTypeApply">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Apply Parameter Changes to SQL"/>
+                <Property name="horizontalTextPosition" type="int" value="10"/>
+              </Properties>
+              <Events>
+                <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="chkLayerGTypeApplyStateChanged"/>
+              </Events>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="panelSQL">
@@ -654,32 +658,35 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
+                  <Group type="102" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="scrpSQL" max="-2" attributes="0"/>
                           <Group type="102" attributes="0">
-                              <Component id="btnCreateIndex" min="-2" pref="111" max="-2" attributes="0"/>
+                              <Component id="btnCreateIndex" min="-2" pref="123" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="btnCopySqlToClipboard" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace pref="275" max="32767" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
                               <Component id="chkEditSQL" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <Component id="scrpSQL" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace pref="16" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <Component id="scrpSQL" max="-2" attributes="0"/>
+                      <Component id="scrpSQL" min="-2" pref="78" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="chkEditSQL" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="btnCreateIndex" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="btnCopySqlToClipboard" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="btnCreateIndex" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="btnCopySqlToClipboard" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Component id="chkEditSQL" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -789,11 +796,11 @@
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" alignment="0" attributes="0">
-                      <Component id="btnHelp" min="-2" pref="59" max="-2" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnHelp" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
                       <Component id="lblMessage" min="-2" pref="472" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="btnClose" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnClose" min="-2" pref="67" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
