@@ -160,11 +160,11 @@ SELECT * FROM DUAL;
 
 COMMIT;
 
-SELECT geometry,name, SC4O.ST_isValidReason(geometry,1) as sc4oValidReason
+SELECT geometry,name, sdo_geom.validate_geometry_with_context(geometry,0.05) as ValidReason
   FROM ORACLE_TEST_GEOMETRIES a
  WHERE a.geometry is not null
-   AND a.geometry.sdo_gtype is not null  -- id=53 breaks validate_geometry_with_context
-   AND SC4O.ST_isValidReason(geometry,1) <> 'VALID';
+   AND a.geometry.sdo_gtype is not null  -- id=53 breaks 
+   AND sdo_geom.validate_geometry(geometry,0.05) <> 'TRUE';
 
 
 -- Ring Self-intersection at or near point org.locationtech.jts.geom.Coordinate@87e8fae9
