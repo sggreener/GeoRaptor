@@ -223,6 +223,7 @@ public class TableContextMenuController implements Controller
 		} else if (cmdId == DROP_SPATIAL_INDEX) {
 
 			// ManageSpatialIndex.getInstance().dropIndex(null, "", "", "", "", true);
+			LOGGER.debug("Dropping Spatial Index");
             ManageSpatialIndex.getInstance()
             				  .dropIndex(conn,
             						     selectedSchemaName,

@@ -846,18 +846,6 @@ public class ManageSpatialIndex extends javax.swing.JDialog
         // Does nothing
     }//GEN-LAST:event_cbSpatialIndexV2StateChanged
 
-    private void btnCopySqlToClipboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCopySqlToClipboardActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnCopySqlToClipboardActionPerformed
-
-    private void btnCreateIndexActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCreateIndexActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnCreateIndexActionPerformed
-
-    private void chkEditSQLStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_chkEditSQLStateChanged
-        // TODO add your handling code here:
-    }//GEN-LAST:event_chkEditSQLStateChanged
-
 	private void chkEditSQLStateChanged(javax.swing.event.ChangeEvent evt) {// GEN-FIRST:event_chkEditSQLStateChanged
 		// Enable/Disable actual editing
 		this.txtSQL.setEditable(this.chkEditSQL.isSelected());
@@ -1463,6 +1451,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			// Should get back same as what we supply ... except if NULL
 			//
 			getColumnValue = Queries.getGeometryColumn(_conn, _schemaName, _tableName, _columnName);
+			LOGGER.debug("Geometry Column=" + getColumnValue);
 			if (Strings.isEmpty(getColumnValue)) {
 				// There is no geometry column in this table
 				//
@@ -1481,14 +1470,15 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 			}
 
 			// geoColumn is not null and will contain the right SDO_GEOMETRY column
-			String spatialIndexName = getIndexName(_conn, _schemaName, _tableName, this.geoColumn);
+			String spatialIndexName = Queries.getSpatialIndexName(_conn, _schemaName,  _tableName, getColumnValue);
+            // String spatialIndexName = getIndexName(_conn, _schemaName, _tableName, this.geoColumn);
+			LOGGER.debug("Spatial Index Name=" + spatialIndexName);
+
 			if (Strings.isEmpty(spatialIndexName)) {
 				this.errorDialogHandler.showErrorDialog(this, "NOTHING_TO_DROP",
 						Strings.objectString(_schemaName, _tableName, this.geoColumn));
 				return false;
 			}
-
-			spatialIndexName = spatialIndexName.substring(0, spatialIndexName.indexOf("("));
 
 			Object[] options = { this.propertyManager.getMsg("BUTTON_DROP_INDEX"),
 					             this.propertyManager.getMsg("BUTTON_CANCEL") };
@@ -1504,6 +1494,7 @@ public class ManageSpatialIndex extends javax.swing.JDialog
 						+ (Strings.isEmpty(_schemaName) ? spatialIndexName
 								: Strings.append(_schemaName, spatialIndexName, Constants.TABLE_COLUMN_SEPARATOR))
 						+ " FORCE";
+				LOGGER.debug(dropSQL);
 				Statement st;
 				st = _conn.createStatement();
 				st.executeUpdate(dropSQL);
