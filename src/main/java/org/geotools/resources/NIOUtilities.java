@@ -21,9 +21,6 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -284,7 +281,7 @@ public final class NIOUtilities {
             return !warned && (
                     Boolean.getBoolean("org.geotools.io.debugBuffer") ||
                     System.getProperty("os.name").indexOf("Windows") >= 0 );
-        } catch (SecurityException exception) {
+        } catch (Exception exception) {
             // The utilities may be running in an Applet, in which case we
             // can't read properties. Assumes we are not in debugging mode.
             return false;

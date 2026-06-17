@@ -28,11 +28,11 @@ import org.GeoRaptor.tools.Strings;
 import org.GeoRaptor.tools.Tools;
 import org.GeoRaptor.util.logging.Logger;
 
-import oracle.dbtools.raptor.datatypes.oracle.plsql.BOOLEAN;
 import oracle.jdbc.OracleResultSetMetaData;
 import oracle.jdbc.OracleTypes;
 import oracle.sql.BINARY_DOUBLE;
 import oracle.sql.BINARY_FLOAT;
+import oracle.sql.BOOLEAN;
 import oracle.sql.CHAR;
 import oracle.sql.DATE;
 import oracle.sql.INTERVALDS;
