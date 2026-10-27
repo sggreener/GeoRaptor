@@ -17,10 +17,8 @@
 package org.geotools.resources;
 
 import java.lang.reflect.Method;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +34,7 @@ import org.GeoRaptor.util.logging.Logging;
  * @source $URL: https://svn.osgeo.org/geotools/tags/2.7-M4/modules/library/metadata/src/main/java/org/geotools/resources/NIOUtilities.java $
  * @version $Id: NIOUtilities.java 36225 2010-09-26 16:36:51Z aaime $
  * @author Andrea Aimes
+ * @author simon: Removed java.security references
  */
 public final class NIOUtilities {
     
@@ -205,34 +204,31 @@ public final class NIOUtilities {
      * 
      * @see java.nio.MappedByteBuffer
      */
+    
     public static boolean clean(final ByteBuffer buffer) {
-        if(buffer == null || !buffer.isDirect()) {
+        if (buffer == null || !buffer.isDirect()) {
             return true;
         }
-        
-        Boolean b = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                Boolean success = Boolean.FALSE;
-                try {
-                    Method getCleanerMethod = getCleanerMethod(buffer);
-                    if(getCleanerMethod != null) {
-                        Object cleaner = getCleanerMethod.invoke(buffer, (Object[]) null);
-                        if(cleaner != null) {
-	                        Method clean = cleaner.getClass().getMethod("clean", (Class[]) null);
-	                        clean.invoke(cleaner, (Object[]) null);
-	                        success = Boolean.TRUE;
-                        }
-                    }
-                } catch (Exception e) {
-                    // This really is a show stopper on windows
-                    if (isLoggable()) {
-                        log(e, buffer);
-                    }
-                }
-                return success;
+
+        try {
+            // Modern approach using reflection (works on Java 8 through 21+)
+            Method getCleanerMethod = buffer.getClass().getMethod("cleaner");
+            getCleanerMethod.setAccessible(true);
+            Object cleaner = getCleanerMethod.invoke(buffer);
+
+            if (cleaner != null) {
+                Method cleanMethod = cleaner.getClass().getMethod("clean");
+                cleanMethod.setAccessible(true);
+                cleanMethod.invoke(cleaner);
+                return true;
             }
-        });
-        return b.booleanValue();
+        } catch (Exception e) {
+            // This really is a show stopper on Windows
+            if (isLoggable()) {
+                log(e, buffer);
+            }
+        }
+        return false;
     }
     
     static Method getCleanerMethod(final ByteBuffer buffer) throws NoSuchMethodException {
